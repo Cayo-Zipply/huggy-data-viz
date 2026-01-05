@@ -37,7 +37,7 @@ const Index = () => {
         />
 
         {/* Métricas principais */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
           <MetricCard
             title="Investimento"
             value={formatCurrency(currentData.investimento)}
@@ -69,6 +69,12 @@ const Index = () => {
             value={formatNumber(currentData.mensagens)}
             variation={getVariation(currentData.mensagens, previousData?.mensagens)}
             delay={200}
+          />
+          <MetricCard
+            title="Mensagens Efetivas"
+            value={formatNumber(currentData.mensagensEfetivas)}
+            variation={getVariation(currentData.mensagensEfetivas, previousData?.mensagensEfetivas)}
+            delay={225}
           />
         </div>
 
