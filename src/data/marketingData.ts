@@ -6,6 +6,7 @@ export interface MonthData {
   ctr: number;
   cpc: number;
   mensagens: number;
+  mensagensEfetivas: number;
   cpa: number;
   cpm: number;
   frequencia: number;
@@ -23,6 +24,7 @@ export const marketingData: Record<string, MonthData> = {
     ctr: 0.46,
     cpc: 6.36,
     mensagens: 917,
+    mensagensEfetivas: 908,
     cpa: 15.97,
     cpm: 29.52,
     frequencia: 1.75,
@@ -37,6 +39,7 @@ export const marketingData: Record<string, MonthData> = {
     ctr: 0.71,
     cpc: 2.31,
     mensagens: 989,
+    mensagensEfetivas: 911,
     cpa: 13.67,
     cpm: 21.47,
     frequencia: 1.61,
