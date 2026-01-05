@@ -4,6 +4,7 @@ import { TrafficFunnel } from "@/components/TrafficFunnel";
 import { ROICard } from "@/components/ROICard";
 import { PerformanceChart } from "@/components/PerformanceChart";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { SalesFunnel } from "@/components/SalesFunnel";
 import { 
   marketingData, 
   calculateVariation, 
@@ -11,6 +12,7 @@ import {
   formatNumber, 
   formatPercent 
 } from "@/data/marketingData";
+import { salesData } from "@/data/salesData";
 
 const Index = () => {
   const [selectedMonth, setSelectedMonth] = useState<string>("dezembro");
@@ -99,8 +101,8 @@ const Index = () => {
           />
         </div>
 
-        {/* Seção inferior com funil, ROI e gráfico */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Seção inferior com funis, ROI e gráfico */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <TrafficFunnel
             impressoes={currentData.impressoes}
             cliques={cliques}
@@ -108,6 +110,10 @@ const Index = () => {
             vendas={currentData.vendas}
           />
           
+          <SalesFunnel data={salesData[selectedMonth] || salesData.novembro} />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ROICard
             investimento={currentData.investimento}
             faturamento={currentData.faturamento}

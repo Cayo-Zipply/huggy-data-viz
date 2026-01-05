@@ -14,8 +14,8 @@ export const DashboardHeader = ({ selectedMonth, onSelectMonth }: DashboardHeade
           <BarChart3 className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard de Marketing</h1>
-          <p className="text-sm text-muted-foreground">Análise de performance de campanhas</p>
+          <h1 className="text-2xl font-bold text-foreground">Funil Marketing e Vendas PQA</h1>
+          <p className="text-sm text-muted-foreground">Análise de performance de campanhas e vendas</p>
         </div>
       </div>
       
