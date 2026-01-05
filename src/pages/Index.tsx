@@ -28,6 +28,12 @@ const Index = () => {
   // Calcular cliques a partir de impressões e CTR
   const cliques = Math.round((currentData.impressoes * currentData.ctr) / 100);
 
+  // Calcular conversão geral (mensagens efetivas -> contratos)
+  const conversaoGeral = (currentData.vendas / currentData.mensagensEfetivas) * 100;
+  const previousConversaoGeral = previousData 
+    ? (previousData.vendas / previousData.mensagensEfetivas) * 100 
+    : undefined;
+
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
@@ -79,7 +85,7 @@ const Index = () => {
         </div>
 
         {/* Segunda linha de métricas */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
           <MetricCard
             title="CPA"
             value={formatCurrency(currentData.cpa)}
@@ -104,6 +110,12 @@ const Index = () => {
             title="Cliques"
             value={formatNumber(cliques)}
             delay={400}
+          />
+          <MetricCard
+            title="Conversão Geral"
+            value={formatPercent(conversaoGeral)}
+            variation={getVariation(conversaoGeral, previousConversaoGeral)}
+            delay={450}
           />
         </div>
 
