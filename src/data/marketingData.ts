@@ -95,7 +95,7 @@ export const marketingData: Record<string, MonthData> = {
     month: "Fevereiro",
     year: 2025,
     investimento: 20694.44,
-    impressoes: 769291,
+    impressoes: 801582,
     ctr: 0.39,
     cpc: 3.03,
     mensagens: 1483,
