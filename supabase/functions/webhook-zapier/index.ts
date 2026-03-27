@@ -10,8 +10,8 @@ function mapStatus(status: string): { pipe: string; sdr_stage: string | null; cl
   const s = (status || '').toLowerCase().trim()
   
   // SDR stages
-  if (s.includes('lead') || s.includes('novo')) return { pipe: 'sdr', sdr_stage: 'lead', closer_stage: null }
-  if (s.includes('fez contato') || s.includes('em contato') || s.includes('conecta')) return { pipe: 'sdr', sdr_stage: 'conectado', closer_stage: null }
+  if (s.includes('fez contato') || s.includes('lead') || s.includes('novo')) return { pipe: 'sdr', sdr_stage: 'lead', closer_stage: null }
+  if (s.includes('conecta') || s.includes('em contato')) return { pipe: 'sdr', sdr_stage: 'conectado', closer_stage: null }
   if (s.includes('sql') || s.includes('qualificado')) return { pipe: 'sdr', sdr_stage: 'sql', closer_stage: null }
   if (s.includes('reunião marcada') || s.includes('reuniao marcada') || s.includes('marcada') || s.includes('agend')) {
     return { pipe: 'closer', sdr_stage: null, closer_stage: 'reuniao_agendada' }
