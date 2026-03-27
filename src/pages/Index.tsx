@@ -123,7 +123,7 @@ const Index = () => {
           <DashboardHeader 
             selectedMonth={selectedMonth} 
             onSelectMonth={setSelectedMonth}
-            hideMonthSelector={activeTab === "rentabilidade" || activeTab === "consolidado" || activeTab === "crm" || activeTab === "pipeline"}
+            hideMonthSelector={activeTab === "rentabilidade" || activeTab === "consolidado" || activeTab === "pipeline"}
           />
 
           {/* Marketing Tab */}
@@ -271,10 +271,6 @@ const Index = () => {
             <ConsolidatedPanel />
           )}
 
-          {/* CRM Tab */}
-          {activeTab === "crm" && (
-            <CRMPanel />
-          )}
 
           {/* Pipeline Tab */}
           {activeTab === "pipeline" && (
