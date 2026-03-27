@@ -87,7 +87,12 @@ export function PipelinePanel() {
     return STAGE_ORDER;
   };
 
-  const getCardsForStage = (stage: Stage) => visibleCards.filter(c => c.stage === stage);
+  const getCardsForStage = (stage: Stage) => {
+    if (stage === "reuniao_agendada") {
+      return visibleCards.filter(c => c.stage === "reuniao_agendada" || c.stage === "reuniao_marcada");
+    }
+    return visibleCards.filter(c => c.stage === stage);
+  };
 
   const sdrCount = visibleCards.filter(c => c.pipe === "sdr").length;
   const closerCount = visibleCards.filter(c => c.pipe === "closer").length;
