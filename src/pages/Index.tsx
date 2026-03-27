@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { RevenuePanel } from "@/components/RevenuePanel";
 import { ConsolidatedPanel } from "@/components/ConsolidatedPanel";
 import { CRMPanel } from "@/components/CRMPanel";
+import { PipelinePanel } from "@/components/PipelinePanel";
 
 const tabs = [
   { key: "marketing", label: "Funil de Marketing", icon: BarChart3 },
@@ -29,6 +30,7 @@ const tabs = [
   { key: "rentabilidade", label: "Rentabilidade", icon: DollarSign },
   { key: "consolidado", label: "Consolidado", icon: PieChart },
   { key: "crm", label: "CRM", icon: Contact },
+  { key: "pipeline", label: "Pipeline", icon: GitCompare },
 ];
 
 const Index = () => {
