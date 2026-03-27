@@ -2,77 +2,80 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
-  ChevronDown, ChevronUp, Clock, Trophy, XCircle, UserCircle, Plus, Check
+  ChevronDown, ChevronUp, Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap
 } from "lucide-react";
-import type { PipelineCard as CardType, PipelineTask, PipeType } from "./types";
-import { CLOSERS, formatBRL, getStageLabel } from "./types";
+import type { PipelineCard as CardType, PipelineTask, PipeType, LossCategory } from "./types";
+import { CLOSERS, LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
 
 interface Props {
   card: CardType;
   tasks: PipelineTask[];
-  onUpdate: (u: Partial<CardType> & { id: string }) => void;
-  onUploadContract: (card: CardType, file: File) => void;
+  onUpdate: (id: string, u: Partial<CardType>) => void;
   onMarkWon: (id: string) => void;
-  onMarkLost: (id: string, reason: string) => void;
+  onMarkLost: (id: string, cat: string, reason: string) => void;
   onCreateTask: (task: Omit<PipelineTask, "id" | "created_at">) => void;
-  onToggleTask: (taskId: string, status: string) => void;
+  onToggleTask: (id: string) => void;
 }
 
-export function PipelineCardItem({ card, tasks, onUpdate, onUploadContract, onMarkWon, onMarkLost, onCreateTask, onToggleTask }: Props) {
+type Tab = "info" | "historico" | "tarefas" | "acoes";
+
+export function PipelineCardItem({ card, tasks, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const [tab, setTab] = useState<Tab>("info");
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
-  const [lossReason, setLossReason] = useState("");
-  const [showLossForm, setShowLossForm] = useState(false);
+  const [lossCat, setLossCat] = useState<LossCategory>("preco");
+  const [lossText, setLossText] = useState("");
+  const [showLoss, setShowLoss] = useState(false);
   const [showTaskForm, setShowTaskForm] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [newTaskDate, setNewTaskDate] = useState(new Date().toISOString().split("T")[0]);
-  const [newTaskResp, setNewTaskResp] = useState(card.owner || "Cayo");
+  const [ntTitle, setNtTitle] = useState("");
+  const [ntDate, setNtDate] = useState(new Date().toISOString().split("T")[0]);
+  const [ntResp, setNtResp] = useState(card.owner || "Cayo");
 
+  const stale = isStale(card);
   const isLost = card.lead_status === "perdido";
   const isWon = card.lead_status === "ganho";
-  const whatsappLink = card.telefone ? `https://wa.me/55${card.telefone.replace(/\D/g, "")}` : null;
+  const wa = card.telefone ? `https://wa.me/55${card.telefone.replace(/\D/g, "")}` : null;
   const cardTasks = tasks.filter(t => t.card_id === card.id);
+  const pendingCount = cardTasks.filter(t => t.status === "pendente").length;
+  const staleDays = daysDiff(card.stage_changed_at);
 
-  const startEdit = (field: string, value: string) => { setEditing(field); setEditValue(value || ""); };
-  const saveEdit = (field: string) => {
+  const startEdit = (f: string, v: string) => { setEditing(f); setEditValue(v || ""); };
+  const saveEdit = (f: string) => {
     let val: any = editValue || null;
-    if (field === "deal_value" || field === "valor_divida") {
-      val = editValue ? parseFloat(editValue.replace(/[^\d.,]/g, "").replace(",", ".")) : null;
-      if (field === "deal_value" && !val) val = 1621;
-    }
-    onUpdate({ id: card.id, [field]: val } as any);
+    if (f === "deal_value" || f === "valor_divida") val = editValue ? parseFloat(editValue.replace(/[^\d.,]/g, "").replace(",", ".")) : null;
+    if (f === "deal_value" && !val) val = 1621;
+    onUpdate(card.id, { [f]: val } as any);
     setEditing(null);
   };
 
   const submitLoss = () => {
-    if (!lossReason.trim()) return;
-    onMarkLost(card.id, lossReason);
-    setShowLossForm(false);
-    setLossReason("");
+    const reason = lossCat === "outro" ? lossText : LOSS_CATEGORIES.find(l => l.key === lossCat)?.label || lossCat;
+    if (lossCat === "outro" && !lossText.trim()) return;
+    onMarkLost(card.id, lossCat, reason);
+    setShowLoss(false);
   };
 
   const submitTask = () => {
-    if (!newTaskTitle.trim()) return;
-    onCreateTask({
-      card_id: card.id,
-      title: newTaskTitle,
-      due_date: newTaskDate,
-      responsible: newTaskResp,
-      status: "pendente",
-      pipe_context: card.pipe,
-      auto_generated: false,
-    });
-    setNewTaskTitle("");
-    setShowTaskForm(false);
+    if (!ntTitle.trim()) return;
+    onCreateTask({ card_id: card.id, title: ntTitle, due_date: ntDate, responsible: ntResp, status: "pendente", pipe_context: card.pipe, auto_generated: false });
+    setNtTitle(""); setShowTaskForm(false);
   };
+
+  const tabs: { key: Tab; label: string; icon: any }[] = [
+    { key: "info", label: "Info", icon: Info },
+    { key: "historico", label: "Histórico", icon: History },
+    { key: "tarefas", label: "Tarefas", icon: ListChecks },
+    { key: "acoes", label: "Ações", icon: Zap },
+  ];
 
   return (
     <div className={cn(
-      "bg-card border border-border rounded-xl overflow-hidden transition-all group",
-      isLost && "opacity-60",
+      "bg-card border rounded-xl overflow-hidden transition-all group",
+      stale && "border-red-500/60",
+      isLost && "opacity-50 border-destructive/40",
       isWon && "border-green-500/40",
-      !isLost && !isWon && "hover:border-primary/30"
+      !stale && !isLost && !isWon && "border-border hover:border-primary/30"
     )}>
       <div className="p-3">
         {/* Header */}
@@ -82,10 +85,10 @@ export function PipelineCardItem({ card, tasks, onUpdate, onUploadContract, onMa
               <p className="font-semibold text-foreground text-sm truncate">{card.nome}</p>
               {isWon && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">Ganho</span>}
               {isLost && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-destructive/20 text-red-400 font-medium">Perdido</span>}
+              {stale && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400">{staleDays}d parado</span>}
             </div>
             {card.telefone && (
-              <a href={whatsappLink || "#"} target="_blank" rel="noopener noreferrer"
-                className="text-xs text-emerald-400 hover:underline flex items-center gap-1 mt-0.5">
+              <a href={wa || "#"} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-400 hover:underline flex items-center gap-1 mt-0.5">
                 <Phone size={10} /> {card.telefone}
               </a>
             )}
@@ -97,7 +100,6 @@ export function PipelineCardItem({ card, tasks, onUpdate, onUploadContract, onMa
 
         {/* Quick badges */}
         <div className="flex flex-wrap gap-1 mt-2">
-          {/* Deal value - inline editable */}
           {editing === "deal_value" ? (
             <div className="flex gap-1">
               <input value={editValue} onChange={e => setEditValue(e.target.value)}
@@ -108,166 +110,203 @@ export function PipelineCardItem({ card, tasks, onUpdate, onUploadContract, onMa
           ) : (
             <button onClick={() => startEdit("deal_value", card.deal_value?.toString() || "1621")}
               className="text-[10px] px-1.5 py-0.5 bg-emerald-400/10 rounded text-emerald-400 hover:bg-emerald-400/20">
-              <DollarSign size={8} className="inline mr-0.5" />{formatBRL(card.deal_value || 1621)}
+              {formatBRL(card.deal_value || 1621)}
             </button>
           )}
-          {card.owner && (
-            <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 rounded text-primary flex items-center gap-0.5">
-              <UserCircle size={8} /> {card.owner}
-            </span>
-          )}
+          {card.owner && <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 rounded text-primary flex items-center gap-0.5"><UserCircle size={8} />{card.owner}</span>}
           {card.origem && <span className="text-[10px] px-1.5 py-0.5 bg-muted/50 rounded text-muted-foreground">{card.origem}</span>}
-          {card.created_at && (
-            <span className="text-[10px] px-1.5 py-0.5 bg-muted/50 rounded text-muted-foreground flex items-center gap-0.5">
-              <Clock size={8} /> {new Date(card.created_at).toLocaleDateString("pt-BR")}
-            </span>
-          )}
-          {card.contract_url && (
-            <span className="text-[10px] px-1.5 py-0.5 bg-blue-400/10 rounded text-blue-400 flex items-center gap-0.5">
-              <FileText size={8} /> Contrato
-            </span>
-          )}
-          {cardTasks.filter(t => t.status === "pendente").length > 0 && (
-            <span className="text-[10px] px-1.5 py-0.5 bg-yellow-400/10 rounded text-yellow-400">
-              {cardTasks.filter(t => t.status === "pendente").length} tarefa(s)
-            </span>
-          )}
+          <span className="text-[10px] px-1.5 py-0.5 bg-muted/50 rounded text-muted-foreground flex items-center gap-0.5">
+            <Clock size={8} />{new Date(card.created_at).toLocaleDateString("pt-BR")}
+          </span>
+          {pendingCount > 0 && <span className="text-[10px] px-1.5 py-0.5 bg-yellow-400/10 rounded text-yellow-400">{pendingCount} tarefa(s)</span>}
         </div>
 
         {/* Expanded */}
         {expanded && (
-          <div className="mt-3 space-y-2 border-t border-border pt-3">
-            {/* Owner select */}
-            <div className="flex items-center gap-2">
-              <UserCircle size={12} className="text-muted-foreground flex-shrink-0" />
-              <select value={card.owner || ""} onChange={e => onUpdate({ id: card.id, owner: e.target.value || null } as any)}
-                className="flex-1 text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground">
-                <option value="">Sem dono</option>
-                {CLOSERS.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-
-            {/* Custom fields */}
-            {([
-              { key: "email", label: "Email", icon: Mail },
-              { key: "cnpj", label: "CNPJ", icon: Building2 },
-              { key: "valor_divida", label: "Valor da Dívida", icon: DollarSign },
-            ] as const).map(field => (
-              <div key={field.key} className="flex items-center gap-2">
-                <field.icon size={12} className="text-muted-foreground flex-shrink-0" />
-                {editing === field.key ? (
-                  <div className="flex-1 flex gap-1">
-                    <input value={editValue} onChange={e => setEditValue(e.target.value)}
-                      className="flex-1 text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground"
-                      autoFocus onKeyDown={e => e.key === "Enter" && saveEdit(field.key)} />
-                    <button onClick={() => saveEdit(field.key)} className="text-xs px-2 py-1 bg-primary/20 text-primary rounded">OK</button>
-                  </div>
-                ) : (
-                  <button onClick={() => startEdit(field.key, (card as any)[field.key]?.toString() || "")}
-                    className="flex-1 text-left text-xs text-muted-foreground hover:text-foreground truncate">
-                    {(card as any)[field.key] || `Adicionar ${field.label}...`}
-                  </button>
-                )}
-              </div>
-            ))}
-
-            {/* Contract */}
-            <div className="flex items-center gap-2">
-              <Paperclip size={12} className="text-muted-foreground flex-shrink-0" />
-              {card.contract_url ? (
-                <a href={card.contract_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
-                  <FileText size={10} /> Ver contrato
-                </a>
-              ) : (
-                <label className="text-xs text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-1">
-                  <Upload size={10} /> Anexar contrato (PDF)
-                  <input type="file" accept=".pdf" className="hidden" onChange={e => {
-                    const f = e.target.files?.[0]; if (f) onUploadContract(card, f);
-                  }} />
-                </label>
-              )}
-            </div>
-
-            {/* Notes */}
-            {editing === "anotacoes" ? (
-              <div className="space-y-1">
-                <textarea value={editValue} onChange={e => setEditValue(e.target.value)}
-                  className="w-full text-xs bg-muted/50 border border-border rounded-lg p-2 resize-none text-foreground" rows={2} autoFocus />
-                <div className="flex gap-1">
-                  <button onClick={() => saveEdit("anotacoes")} className="text-xs px-2 py-1 bg-primary/20 text-primary rounded">Salvar</button>
-                  <button onClick={() => setEditing(null)} className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded">Cancelar</button>
-                </div>
-              </div>
-            ) : (
-              <button onClick={() => startEdit("anotacoes", card.anotacoes || "")}
-                className="w-full text-left text-xs p-2 rounded-lg bg-muted/30 border border-border/30 hover:bg-muted/60 text-muted-foreground">
-                {card.anotacoes || "Adicionar anotação..."}
-              </button>
-            )}
-
-            {/* Tasks */}
-            <div className="border-t border-border pt-2 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-foreground">Tarefas</span>
-                <button onClick={() => setShowTaskForm(!showTaskForm)} className="text-[10px] text-primary hover:underline flex items-center gap-0.5">
-                  <Plus size={10} /> Nova tarefa
+          <div className="mt-3 border-t border-border pt-2">
+            {/* Tabs */}
+            <div className="flex gap-1 mb-3">
+              {tabs.map(t => (
+                <button key={t.key} onClick={() => setTab(t.key)}
+                  className={cn("flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg transition-all",
+                    tab === t.key ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground")}>
+                  <t.icon size={10} />{t.label}
                 </button>
-              </div>
-              {showTaskForm && (
-                <div className="space-y-1.5 bg-muted/30 rounded-lg p-2">
-                  <input value={newTaskTitle} onChange={e => setNewTaskTitle(e.target.value)} placeholder="Título da tarefa"
-                    className="w-full text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground" />
-                  <div className="flex gap-1.5">
-                    <input type="date" value={newTaskDate} onChange={e => setNewTaskDate(e.target.value)}
-                      className="flex-1 text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground" />
-                    <select value={newTaskResp} onChange={e => setNewTaskResp(e.target.value)}
-                      className="text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground">
-                      {CLOSERS.map(c => <option key={c}>{c}</option>)}
-                    </select>
-                  </div>
-                  <button onClick={submitTask} className="text-xs px-3 py-1 bg-primary/20 text-primary rounded w-full">Criar</button>
-                </div>
-              )}
-              {cardTasks.map(t => (
-                <div key={t.id} className="flex items-center gap-2 text-xs">
-                  <button onClick={() => onToggleTask(t.id, t.status === "pendente" ? "concluida" : "pendente")}
-                    className={cn("flex-shrink-0", t.status === "concluida" ? "text-green-400" : "text-muted-foreground")}>
-                    <Check size={12} />
-                  </button>
-                  <span className={cn("flex-1 truncate", t.status === "concluida" && "line-through text-muted-foreground")}>{t.title}</span>
-                  <span className="text-muted-foreground text-[10px]">{new Date(t.due_date + "T12:00:00").toLocaleDateString("pt-BR")}</span>
-                </div>
               ))}
             </div>
 
-            {/* Actions */}
-            {card.lead_status === "aberto" && (
-              <div className="border-t border-border pt-2 flex gap-2">
-                <button onClick={() => onMarkWon(card.id)}
-                  className="flex-1 text-xs py-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 flex items-center justify-center gap-1">
-                  <Trophy size={12} /> Ganho
-                </button>
-                <button onClick={() => setShowLossForm(true)}
-                  className="flex-1 text-xs py-1.5 rounded-lg bg-destructive/10 text-red-400 hover:bg-destructive/20 flex items-center justify-center gap-1">
-                  <XCircle size={12} /> Perdido
-                </button>
-              </div>
-            )}
-            {showLossForm && (
-              <div className="space-y-1.5 bg-destructive/5 rounded-lg p-2 border border-destructive/20">
-                <input value={lossReason} onChange={e => setLossReason(e.target.value)} placeholder="Motivo da perda (obrigatório)"
-                  className="w-full text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground" autoFocus
-                  onKeyDown={e => e.key === "Enter" && submitLoss()} />
-                <div className="flex gap-1">
-                  <button onClick={submitLoss} className="text-xs px-3 py-1 bg-destructive/20 text-red-400 rounded flex-1">Confirmar</button>
-                  <button onClick={() => setShowLossForm(false)} className="text-xs px-3 py-1 bg-muted text-muted-foreground rounded">Cancelar</button>
+            {/* Info tab */}
+            {tab === "info" && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <UserCircle size={12} className="text-muted-foreground flex-shrink-0" />
+                  <select value={card.owner || ""} onChange={e => onUpdate(card.id, { owner: e.target.value || null })}
+                    className="flex-1 text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground">
+                    <option value="">Sem dono</option>
+                    {CLOSERS.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
                 </div>
+                {([
+                  { key: "email", label: "Email", icon: Mail },
+                  { key: "cnpj", label: "CNPJ", icon: Building2 },
+                  { key: "valor_divida", label: "Valor da Dívida", icon: DollarSign },
+                ] as const).map(f => (
+                  <div key={f.key} className="flex items-center gap-2">
+                    <f.icon size={12} className="text-muted-foreground flex-shrink-0" />
+                    {editing === f.key ? (
+                      <div className="flex-1 flex gap-1">
+                        <input value={editValue} onChange={e => setEditValue(e.target.value)}
+                          className="flex-1 text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground"
+                          autoFocus onKeyDown={e => e.key === "Enter" && saveEdit(f.key)} />
+                        <button onClick={() => saveEdit(f.key)} className="text-xs px-2 py-1 bg-primary/20 text-primary rounded">OK</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => startEdit(f.key, (card as any)[f.key]?.toString() || "")}
+                        className="flex-1 text-left text-xs text-muted-foreground hover:text-foreground truncate">
+                        {(card as any)[f.key] || `Adicionar ${f.label}...`}
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <div className="flex items-center gap-2">
+                  <Paperclip size={12} className="text-muted-foreground flex-shrink-0" />
+                  {card.contract_url ? (
+                    <a href={card.contract_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1"><FileText size={10} />Ver contrato</a>
+                  ) : (
+                    <label className="text-xs text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-1">
+                      <Upload size={10} />Anexar contrato (PDF)
+                      <input type="file" accept=".pdf" className="hidden" onChange={e => {
+                        const f = e.target.files?.[0];
+                        if (f) { const url = URL.createObjectURL(f); onUpdate(card.id, { contract_url: url }); }
+                      }} />
+                    </label>
+                  )}
+                </div>
+                {editing === "anotacoes" ? (
+                  <div className="space-y-1">
+                    <textarea value={editValue} onChange={e => setEditValue(e.target.value)}
+                      className="w-full text-xs bg-muted/50 border border-border rounded-lg p-2 resize-none text-foreground" rows={2} autoFocus />
+                    <div className="flex gap-1">
+                      <button onClick={() => saveEdit("anotacoes")} className="text-xs px-2 py-1 bg-primary/20 text-primary rounded">Salvar</button>
+                      <button onClick={() => setEditing(null)} className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded">Cancelar</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={() => startEdit("anotacoes", card.anotacoes || "")}
+                    className="w-full text-left text-xs p-2 rounded-lg bg-muted/30 border border-border/30 hover:bg-muted/60 text-muted-foreground">
+                    {card.anotacoes || "Adicionar anotação..."}
+                  </button>
+                )}
               </div>
             )}
-            {isLost && card.loss_reason && (
-              <div className="text-xs text-red-400/70 bg-destructive/5 rounded-lg p-2">
-                <strong>Motivo:</strong> {card.loss_reason}
-                {card.last_stage && <span className="ml-2 text-muted-foreground">Última etapa: {card.last_stage}</span>}
+
+            {/* History tab */}
+            {tab === "historico" && (
+              <div className="space-y-0">
+                {card.history.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-4">Sem movimentações</p>
+                ) : (
+                  [...card.history].reverse().map((h, i) => (
+                    <div key={i} className="flex gap-2">
+                      <div className="flex flex-col items-center">
+                        <div className="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                        {i < card.history.length - 1 && <div className="w-0.5 flex-1 bg-border min-h-[16px]" />}
+                      </div>
+                      <div className="pb-3">
+                        <p className="text-xs text-foreground">
+                          {h.from ? `${STAGE_CONFIG[h.from as keyof typeof STAGE_CONFIG]?.label || h.from} → ` : "Criado em "}
+                          <strong>{STAGE_CONFIG[h.to as keyof typeof STAGE_CONFIG]?.label || h.to}</strong>
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {new Date(h.at).toLocaleString("pt-BR")} · por {h.by}
+                          {h.duration_days != null && ` · ${h.duration_days}d na etapa anterior`}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* Tasks tab */}
+            {tab === "tarefas" && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-foreground">{cardTasks.length} tarefa(s)</span>
+                  <button onClick={() => setShowTaskForm(!showTaskForm)} className="text-[10px] text-primary hover:underline flex items-center gap-0.5"><Plus size={10} />Nova tarefa</button>
+                </div>
+                {showTaskForm && (
+                  <div className="space-y-1.5 bg-muted/30 rounded-lg p-2">
+                    <input value={ntTitle} onChange={e => setNtTitle(e.target.value)} placeholder="Título"
+                      className="w-full text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground" />
+                    <div className="flex gap-1.5">
+                      <input type="date" value={ntDate} onChange={e => setNtDate(e.target.value)}
+                        className="flex-1 text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground" />
+                      <select value={ntResp} onChange={e => setNtResp(e.target.value)}
+                        className="text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground">
+                        {CLOSERS.map(c => <option key={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <button onClick={submitTask} className="text-xs px-3 py-1 bg-primary/20 text-primary rounded w-full">Criar</button>
+                  </div>
+                )}
+                {cardTasks.map(t => (
+                  <div key={t.id} className="flex items-center gap-2 text-xs">
+                    <button onClick={() => onToggleTask(t.id)}
+                      className={cn("flex-shrink-0", t.status === "concluida" ? "text-green-400" : "text-muted-foreground")}>
+                      <Check size={12} />
+                    </button>
+                    <span className={cn("flex-1 truncate", t.status === "concluida" && "line-through text-muted-foreground")}>{t.title}</span>
+                    <span className="text-muted-foreground text-[10px]">{new Date(t.due_date + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+                    {t.auto_generated && <span className="text-[9px] text-muted-foreground italic">auto</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Actions tab */}
+            {tab === "acoes" && (
+              <div className="space-y-2">
+                {card.lead_status === "aberto" && (
+                  <div className="flex gap-2">
+                    <button onClick={() => onMarkWon(card.id)}
+                      className="flex-1 text-xs py-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 flex items-center justify-center gap-1">
+                      <Trophy size={12} />Ganho
+                    </button>
+                    <button onClick={() => setShowLoss(true)}
+                      className="flex-1 text-xs py-1.5 rounded-lg bg-destructive/10 text-red-400 hover:bg-destructive/20 flex items-center justify-center gap-1">
+                      <XCircle size={12} />Perdido
+                    </button>
+                  </div>
+                )}
+                {showLoss && (
+                  <div className="space-y-2 bg-destructive/5 rounded-lg p-3 border border-destructive/20">
+                    <p className="text-xs font-medium text-foreground">Motivo da perda</p>
+                    <select value={lossCat} onChange={e => setLossCat(e.target.value as LossCategory)}
+                      className="w-full text-xs bg-muted/50 border border-border rounded px-2 py-1.5 text-foreground">
+                      {LOSS_CATEGORIES.map(l => <option key={l.key} value={l.key}>{l.label}</option>)}
+                    </select>
+                    {lossCat === "outro" && (
+                      <input value={lossText} onChange={e => setLossText(e.target.value)} placeholder="Descreva o motivo..."
+                        className="w-full text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground" />
+                    )}
+                    <div className="flex gap-1">
+                      <button onClick={submitLoss} className="text-xs px-3 py-1 bg-destructive/20 text-red-400 rounded flex-1">Confirmar</button>
+                      <button onClick={() => setShowLoss(false)} className="text-xs px-3 py-1 bg-muted text-muted-foreground rounded">Cancelar</button>
+                    </div>
+                  </div>
+                )}
+                {isLost && (
+                  <div className="text-xs text-red-400/70 bg-destructive/5 rounded-lg p-2">
+                    <strong>Motivo:</strong> {card.loss_reason}
+                    {card.last_stage && <span className="ml-2 text-muted-foreground">Última etapa: {STAGE_CONFIG[card.last_stage as keyof typeof STAGE_CONFIG]?.label || card.last_stage}</span>}
+                  </div>
+                )}
+                {isWon && <div className="text-xs text-green-400 bg-green-500/5 rounded-lg p-2 text-center">✅ Negócio fechado</div>}
+                {card.lead_status !== "aberto" && (
+                  <button onClick={() => onUpdate(card.id, { lead_status: "aberto", loss_reason: null, loss_category: null, last_stage: null })}
+                    className="w-full text-xs py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground">Reabrir lead</button>
+                )}
               </div>
             )}
           </div>
