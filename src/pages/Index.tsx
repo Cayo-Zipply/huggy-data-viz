@@ -16,10 +16,11 @@ import {
   getPreviousMonth,
 } from "@/data/marketingData";
 import { salesData } from "@/data/salesData";
-import { BarChart3, Users, GitCompare, DollarSign, PieChart } from "lucide-react";
+import { BarChart3, Users, GitCompare, DollarSign, PieChart, Contact } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RevenuePanel } from "@/components/RevenuePanel";
 import { ConsolidatedPanel } from "@/components/ConsolidatedPanel";
+import { CRMPanel } from "@/components/CRMPanel";
 
 const tabs = [
   { key: "marketing", label: "Funil de Marketing", icon: BarChart3 },
@@ -27,6 +28,7 @@ const tabs = [
   { key: "comparativo", label: "Comparativo", icon: GitCompare },
   { key: "rentabilidade", label: "Rentabilidade", icon: DollarSign },
   { key: "consolidado", label: "Consolidado", icon: PieChart },
+  { key: "crm", label: "CRM", icon: Contact },
 ];
 
 const Index = () => {
@@ -120,7 +122,7 @@ const Index = () => {
           <DashboardHeader 
             selectedMonth={selectedMonth} 
             onSelectMonth={setSelectedMonth}
-            hideMonthSelector={activeTab === "rentabilidade" || activeTab === "consolidado"}
+            hideMonthSelector={activeTab === "rentabilidade" || activeTab === "consolidado" || activeTab === "crm"}
           />
 
           {/* Marketing Tab */}
@@ -266,6 +268,11 @@ const Index = () => {
           {/* Consolidado Tab */}
           {activeTab === "consolidado" && (
             <ConsolidatedPanel />
+          )}
+
+          {/* CRM Tab */}
+          {activeTab === "crm" && (
+            <CRMPanel />
           )}
         </div>
       </main>
