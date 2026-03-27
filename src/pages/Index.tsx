@@ -16,11 +16,11 @@ import {
   getPreviousMonth,
 } from "@/data/marketingData";
 import { salesData } from "@/data/salesData";
-import { BarChart3, Users, GitCompare, DollarSign, PieChart, Contact } from "lucide-react";
+import { BarChart3, Users, GitCompare, DollarSign, PieChart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RevenuePanel } from "@/components/RevenuePanel";
 import { ConsolidatedPanel } from "@/components/ConsolidatedPanel";
-import { CRMPanel } from "@/components/CRMPanel";
+
 import { PipelinePanel } from "@/components/PipelinePanel";
 
 const tabs = [
