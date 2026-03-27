@@ -261,6 +261,11 @@ const Index = () => {
           {activeTab === "comparativo" && (
             <ComparisonPanel />
           )}
+
+          {/* Consolidado Tab */}
+          {activeTab === "consolidado" && (
+            <ConsolidatedPanel />
+          )}
         </div>
       </main>
     </div>
