@@ -14,7 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      pipeline_cards: {
+        Row: {
+          anotacoes: string | null
+          closer_stage: Database["public"]["Enums"]["closer_stage"] | null
+          cnpj: string | null
+          contract_url: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nome: string
+          origem: string | null
+          pipe: Database["public"]["Enums"]["pipe_type"]
+          sdr_stage: Database["public"]["Enums"]["sdr_stage"] | null
+          sheet_row_id: string | null
+          telefone: string | null
+          updated_at: string
+          valor_divida: number | null
+        }
+        Insert: {
+          anotacoes?: string | null
+          closer_stage?: Database["public"]["Enums"]["closer_stage"] | null
+          cnpj?: string | null
+          contract_url?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome: string
+          origem?: string | null
+          pipe?: Database["public"]["Enums"]["pipe_type"]
+          sdr_stage?: Database["public"]["Enums"]["sdr_stage"] | null
+          sheet_row_id?: string | null
+          telefone?: string | null
+          updated_at?: string
+          valor_divida?: number | null
+        }
+        Update: {
+          anotacoes?: string | null
+          closer_stage?: Database["public"]["Enums"]["closer_stage"] | null
+          cnpj?: string | null
+          contract_url?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          origem?: string | null
+          pipe?: Database["public"]["Enums"]["pipe_type"]
+          sdr_stage?: Database["public"]["Enums"]["sdr_stage"] | null
+          sheet_row_id?: string | null
+          telefone?: string | null
+          updated_at?: string
+          valor_divida?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +76,14 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      closer_stage:
+        | "reuniao_agendada"
+        | "no_show"
+        | "reuniao_realizada"
+        | "link_enviado"
+        | "contrato_assinado"
+      pipe_type: "sdr" | "closer"
+      sdr_stage: "lead" | "conectado" | "sql" | "reuniao_marcada"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +210,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      closer_stage: [
+        "reuniao_agendada",
+        "no_show",
+        "reuniao_realizada",
+        "link_enviado",
+        "contrato_assinado",
+      ],
+      pipe_type: ["sdr", "closer"],
+      sdr_stage: ["lead", "conectado", "sql", "reuniao_marcada"],
+    },
   },
 } as const
