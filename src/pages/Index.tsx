@@ -16,12 +16,14 @@ import {
   getPreviousMonth,
 } from "@/data/marketingData";
 import { salesData } from "@/data/salesData";
-import { BarChart3, Users, GitCompare } from "lucide-react";
+import { BarChart3, Users, GitCompare, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RevenuePanel } from "@/components/RevenuePanel";
 
 const tabs = [
   { key: "marketing", label: "Funil de Marketing", icon: BarChart3 },
   { key: "comercial", label: "Funil Comercial", icon: Users },
+  { key: "rentabilidade", label: "Rentabilidade", icon: DollarSign },
   { key: "comparativo", label: "Comparativo", icon: GitCompare },
 ];
 
@@ -246,6 +248,11 @@ const Index = () => {
                 faturamento={currentData.faturamento}
               />
             </div>
+          )}
+
+          {/* Rentabilidade Tab */}
+          {activeTab === "rentabilidade" && (
+            <RevenuePanel />
           )}
 
           {/* Comparativo Tab */}
