@@ -5,15 +5,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Map sheet status to pipeline stages
+// Map sheet "Etapa" to pipeline stages
 function mapStatus(status: string): { pipe: string; sdr_stage: string | null; closer_stage: string | null } {
   const s = (status || '').toLowerCase().trim()
   
   // SDR stages
   if (s.includes('lead') || s.includes('novo')) return { pipe: 'sdr', sdr_stage: 'lead', closer_stage: null }
-  if (s.includes('conecta')) return { pipe: 'sdr', sdr_stage: 'conectado', closer_stage: null }
-  if (s.includes('sql') || s.includes('convid')) return { pipe: 'sdr', sdr_stage: 'sql', closer_stage: null }
-  if (s.includes('reunião marcada') || s.includes('reuniao marcada') || s.includes('marcada') || s.includes('agend')) {
+  if (s.includes('fez contato') || s.includes('em contato') || s.includes('conecta')) return { pipe: 'sdr', sdr_stage: 'conectado', closer_stage: null }
+  if (s.includes('sql') || s.includes('qualificado')) return { pipe: 'sdr', sdr_stage: 'sql', closer_stage: null }
+  if (s.includes('reunião marcada') || s.includes('reuniao marcada') || s.includes('marcada')) {
     return { pipe: 'closer', sdr_stage: null, closer_stage: 'reuniao_agendada' }
   }
   
