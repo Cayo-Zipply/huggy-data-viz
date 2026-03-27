@@ -205,12 +205,15 @@ export const ConsolidatedPanel = () => {
 
         <TabsContent value="tri1">
           <PeriodCard data={tri1} label={periods.tri1.label} />
+          <ConsolidatedCharts months={periods.tri1.months} />
         </TabsContent>
         <TabsContent value="tri2">
           <PeriodCard data={tri2} label={periods.tri2.label} />
+          <ConsolidatedCharts months={periods.tri2.months} />
         </TabsContent>
         <TabsContent value="semestral">
           <PeriodCard data={semestral} label={periods.semestral.label} />
+          <ConsolidatedCharts months={periods.semestral.months} />
         </TabsContent>
       </Tabs>
     </div>
