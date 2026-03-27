@@ -129,7 +129,7 @@ const PeriodCard = ({ data, label }: { data: ConsolidatedMetrics; label: string 
     <h3 className="text-lg font-bold text-foreground">{label}</h3>
 
     {/* Marketing */}
-    <div className="bg-card border border-border rounded-xl p-4">
+    <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
       <h4 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
         📊 Marketing
       </h4>
@@ -145,7 +145,7 @@ const PeriodCard = ({ data, label }: { data: ConsolidatedMetrics; label: string 
     </div>
 
     {/* Comercial */}
-    <div className="bg-card border border-border rounded-xl p-4">
+    <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
       <h4 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
         👥 Comercial
       </h4>
@@ -168,7 +168,7 @@ const PeriodCard = ({ data, label }: { data: ConsolidatedMetrics; label: string 
     </div>
 
     {/* Rentabilidade */}
-    <div className="bg-card border border-border rounded-xl p-4">
+    <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
       <h4 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
         💰 Rentabilidade
       </h4>

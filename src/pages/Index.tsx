@@ -66,13 +66,13 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-card border-r border-border flex-shrink-0 hidden md:flex flex-col">
+      {/* Sidebar - desktop only */}
+      <aside className="w-56 lg:w-64 bg-card border-r border-border flex-shrink-0 hidden md:flex flex-col">
         <div className="p-4 border-b border-border">
           <h2 className="text-lg font-bold text-foreground">Dashboard PQA</h2>
           <p className="text-xs text-muted-foreground">Análise de performance</p>
         </div>
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="flex-1 p-2 space-y-1">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
@@ -80,13 +80,13 @@ const Index = () => {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left",
+                  "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left",
                   activeTab === tab.key
                     ? "bg-primary/20 text-primary"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
-                <Icon size={18} />
+                <Icon size={16} />
                 {tab.label}
               </button>
             );
@@ -94,8 +94,8 @@ const Index = () => {
         </nav>
       </aside>
 
-      {/* Mobile tabs */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex z-50">
+      {/* Mobile tabs - bottom nav */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex z-50 safe-area-bottom">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -103,19 +103,19 @@ const Index = () => {
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={cn(
-                "flex-1 flex flex-col items-center gap-1 py-3 text-xs transition-colors",
+                "flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] transition-colors min-w-0",
                 activeTab === tab.key ? "text-primary" : "text-muted-foreground"
               )}
             >
-              <Icon size={18} />
-              <span className="truncate px-1">{tab.label.split(" ")[0]}</span>
+              <Icon size={16} />
+              <span className="truncate px-0.5 leading-tight">{tab.label.split(" ")[0]}</span>
             </button>
           );
         })}
       </div>
 
       {/* Main content */}
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-20 md:pb-8 overflow-auto">
+      <main className="flex-1 p-3 sm:p-4 lg:p-8 pb-24 md:pb-8 overflow-auto">
         <div className="max-w-7xl mx-auto">
           <DashboardHeader 
             selectedMonth={selectedMonth} 
@@ -127,7 +127,7 @@ const Index = () => {
           {activeTab === "marketing" && (
             <>
               {/* Métricas principais */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 mb-4 sm:mb-6">
                 <MetricCard
                   title="Investimento"
                   value={formatCurrency(currentData.investimento)}
@@ -171,7 +171,7 @@ const Index = () => {
               </div>
 
               {/* Segunda linha de métricas */}
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-4 mb-4 sm:mb-6">
                 <MetricCard
                   title={metricTooltips.cpa.label}
                   value={formatCurrency(currentData.cpa)}
@@ -222,7 +222,7 @@ const Index = () => {
               </div>
 
               {/* Funil de tráfego */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
                 <TrafficFunnel
                   impressoes={currentData.impressoes}
                   cliques={cliques}
@@ -241,7 +241,7 @@ const Index = () => {
 
           {/* Comercial Tab */}
           {activeTab === "comercial" && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
               <SalesFunnel 
                 data={salesData[selectedMonth] || salesData.novembro} 
                 investimento={currentData.investimento}
