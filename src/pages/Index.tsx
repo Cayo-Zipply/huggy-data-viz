@@ -250,6 +250,11 @@ const Index = () => {
             </div>
           )}
 
+          {/* Rentabilidade Tab */}
+          {activeTab === "rentabilidade" && (
+            <RevenuePanel />
+          )}
+
           {/* Comparativo Tab */}
           {activeTab === "comparativo" && (
             <ComparisonPanel />
