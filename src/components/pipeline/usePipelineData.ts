@@ -8,12 +8,12 @@ function load<T>(k: string, d: T): T { try { const v = localStorage.getItem(k); 
 
 function mapDbStage(pipe: string, sdr_stage: string | null, closer_stage: string | null): Stage {
   if (pipe === "closer") {
-    if (closer_stage === "reuniao_agendada") return "reuniao_marcada";
-    if (closer_stage === "no_show") return "reuniao_realizada";
+    if (closer_stage === "reuniao_agendada") return "reuniao_agendada";
+    if (closer_stage === "no_show") return "no_show";
     if (closer_stage === "reuniao_realizada") return "reuniao_realizada";
-    if (closer_stage === "link_enviado") return "proposta_enviada";
-    if (closer_stage === "contrato_assinado") return "venda";
-    return "reuniao_realizada";
+    if (closer_stage === "link_enviado") return "link_enviado";
+    if (closer_stage === "contrato_assinado") return "contrato_assinado";
+    return "reuniao_agendada";
   }
   if (sdr_stage === "lead" || sdr_stage === "conectado") return "conectado";
   if (sdr_stage === "sql") return "sql";
