@@ -1,34 +1,36 @@
-import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface MonthSelectorProps {
   selectedMonth: string;
   onSelectMonth: (month: string) => void;
 }
 
-export const MonthSelector = ({ selectedMonth, onSelectMonth }: MonthSelectorProps) => {
-  const months = [
-    { key: 'novembro', label: 'Nov 2024' },
-    { key: 'dezembro', label: 'Dez 2024' },
-    { key: 'janeiro', label: 'Jan 2025' },
-    { key: 'fevereiro', label: 'Fev 2025' },
-  ];
+const months = [
+  { key: 'novembro', label: 'Novembro 2024' },
+  { key: 'dezembro', label: 'Dezembro 2024' },
+  { key: 'janeiro', label: 'Janeiro 2025' },
+  { key: 'fevereiro', label: 'Fevereiro 2025' },
+];
 
+export const MonthSelector = ({ selectedMonth, onSelectMonth }: MonthSelectorProps) => {
   return (
-    <div className="flex gap-2">
-      {months.map((month) => (
-        <button
-          key={month.key}
-          onClick={() => onSelectMonth(month.key)}
-          className={cn(
-            "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-            selectedMonth === month.key
-              ? "bg-primary text-primary-foreground"
-              : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-          )}
-        >
-          {month.label}
-        </button>
-      ))}
-    </div>
+    <Select value={selectedMonth} onValueChange={onSelectMonth}>
+      <SelectTrigger className="w-[200px]">
+        <SelectValue placeholder="Selecione o mês" />
+      </SelectTrigger>
+      <SelectContent>
+        {months.map((month) => (
+          <SelectItem key={month.key} value={month.key}>
+            {month.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 };
