@@ -1,14 +1,73 @@
 import { useState, useCallback, useEffect } from "react";
 import type { PipelineCard, PipelineTask, PipelineGoal, Stage, PipeType } from "./types";
 import { DEFAULT_DEAL_VALUE, STAGE_CONFIG, AUTO_TASKS, addDays } from "./types";
+import { supabase } from "@/integrations/supabase/client";
 
-const K = { cards: "crm_cards", tasks: "crm_tasks", goals: "crm_goals" };
+const K = { cards: "crm_cards", tasks: "crm_tasks", goals: "crm_goals", loaded: "crm_db_loaded" };
 function load<T>(k: string, d: T): T { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }
+
+function mapDbStage(pipe: string, sdr_stage: string | null, closer_stage: string | null): Stage {
+  if (pipe === "closer") {
+    if (closer_stage === "reuniao_agendada") return "reuniao_marcada";
+    if (closer_stage === "no_show") return "reuniao_realizada";
+    if (closer_stage === "reuniao_realizada") return "reuniao_realizada";
+    if (closer_stage === "link_enviado") return "proposta_enviada";
+    if (closer_stage === "contrato_assinado") return "venda";
+    return "reuniao_realizada";
+  }
+  if (sdr_stage === "lead" || sdr_stage === "conectado") return "conectado";
+  if (sdr_stage === "sql") return "sql";
+  if (sdr_stage === "reuniao_marcada") return "reuniao_marcada";
+  return "conectado";
+}
 
 export function usePipelineData(activeUser: string) {
   const [cards, setCards] = useState<PipelineCard[]>(() => load(K.cards, []));
   const [tasks, setTasks] = useState<PipelineTask[]>(() => load(K.tasks, []));
   const [goals, setGoals] = useState<PipelineGoal[]>(() => load(K.goals, []));
+
+  // Load from DB on first mount
+  useEffect(() => {
+    const alreadyLoaded = localStorage.getItem(K.loaded);
+    if (alreadyLoaded) return;
+
+    (async () => {
+      const { data, error } = await supabase.from("pipeline_cards").select("*");
+      if (error || !data || data.length === 0) return;
+
+      const mapped: PipelineCard[] = data.map((row: any) => {
+        const stage = mapDbStage(row.pipe, row.sdr_stage, row.closer_stage);
+        const now = row.updated_at || new Date().toISOString();
+        return {
+          id: row.id,
+          nome: row.nome,
+          telefone: row.telefone || null,
+          email: row.email || null,
+          cnpj: row.cnpj || null,
+          valor_divida: row.valor_divida || null,
+          pipe: STAGE_CONFIG[stage].pipe as PipeType,
+          stage,
+          origem: row.origem || null,
+          anotacoes: row.anotacoes || null,
+          contract_url: row.contract_url || null,
+          created_at: row.created_at,
+          updated_at: now,
+          owner: row.owner || null,
+          deal_value: row.deal_value || DEFAULT_DEAL_VALUE,
+          lead_status: (row.lead_status as any) || "aberto",
+          loss_reason: row.loss_reason || null,
+          loss_category: null,
+          last_stage: row.last_stage || null,
+          stage_changed_at: row.stage_changed_at || row.created_at,
+          history: [{ from: null, to: stage, at: row.created_at, by: "sistema", duration_days: null }],
+        };
+      });
+
+      setCards(mapped);
+      localStorage.setItem(K.cards, JSON.stringify(mapped));
+      localStorage.setItem(K.loaded, "true");
+    })();
+  }, []);
 
   useEffect(() => { localStorage.setItem(K.cards, JSON.stringify(cards)); }, [cards]);
   useEffect(() => { localStorage.setItem(K.tasks, JSON.stringify(tasks)); }, [tasks]);
