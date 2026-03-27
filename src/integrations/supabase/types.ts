@@ -21,13 +21,19 @@ export type Database = {
           cnpj: string | null
           contract_url: string | null
           created_at: string
+          deal_value: number | null
           email: string | null
           id: string
+          last_stage: string | null
+          lead_status: string | null
+          loss_reason: string | null
           nome: string
           origem: string | null
+          owner: string | null
           pipe: Database["public"]["Enums"]["pipe_type"]
           sdr_stage: Database["public"]["Enums"]["sdr_stage"] | null
           sheet_row_id: string | null
+          stage_changed_at: string | null
           telefone: string | null
           updated_at: string
           valor_divida: number | null
@@ -38,13 +44,19 @@ export type Database = {
           cnpj?: string | null
           contract_url?: string | null
           created_at?: string
+          deal_value?: number | null
           email?: string | null
           id?: string
+          last_stage?: string | null
+          lead_status?: string | null
+          loss_reason?: string | null
           nome: string
           origem?: string | null
+          owner?: string | null
           pipe?: Database["public"]["Enums"]["pipe_type"]
           sdr_stage?: Database["public"]["Enums"]["sdr_stage"] | null
           sheet_row_id?: string | null
+          stage_changed_at?: string | null
           telefone?: string | null
           updated_at?: string
           valor_divida?: number | null
@@ -55,18 +67,104 @@ export type Database = {
           cnpj?: string | null
           contract_url?: string | null
           created_at?: string
+          deal_value?: number | null
           email?: string | null
           id?: string
+          last_stage?: string | null
+          lead_status?: string | null
+          loss_reason?: string | null
           nome?: string
           origem?: string | null
+          owner?: string | null
           pipe?: Database["public"]["Enums"]["pipe_type"]
           sdr_stage?: Database["public"]["Enums"]["sdr_stage"] | null
           sheet_row_id?: string | null
+          stage_changed_at?: string | null
           telefone?: string | null
           updated_at?: string
           valor_divida?: number | null
         }
         Relationships: []
+      }
+      pipeline_goals: {
+        Row: {
+          closer: string
+          conversao_meta: number | null
+          created_at: string | null
+          faturamento_meta: number | null
+          id: string
+          month: string
+          reunioes_marcadas_meta: number | null
+          reunioes_realizadas_meta: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          closer: string
+          conversao_meta?: number | null
+          created_at?: string | null
+          faturamento_meta?: number | null
+          id?: string
+          month: string
+          reunioes_marcadas_meta?: number | null
+          reunioes_realizadas_meta?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          closer?: string
+          conversao_meta?: number | null
+          created_at?: string | null
+          faturamento_meta?: number | null
+          id?: string
+          month?: string
+          reunioes_marcadas_meta?: number | null
+          reunioes_realizadas_meta?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      pipeline_tasks: {
+        Row: {
+          auto_generated: boolean | null
+          card_id: string
+          created_at: string | null
+          due_date: string
+          id: string
+          pipe_context: string | null
+          responsible: string | null
+          status: string | null
+          title: string
+        }
+        Insert: {
+          auto_generated?: boolean | null
+          card_id: string
+          created_at?: string | null
+          due_date?: string
+          id?: string
+          pipe_context?: string | null
+          responsible?: string | null
+          status?: string | null
+          title: string
+        }
+        Update: {
+          auto_generated?: boolean | null
+          card_id?: string
+          created_at?: string | null
+          due_date?: string
+          id?: string
+          pipe_context?: string | null
+          responsible?: string | null
+          status?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_tasks_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_cards"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
