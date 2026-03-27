@@ -73,12 +73,14 @@ interface ComparisonRowProps {
 }
 
 const ComparisonRow = ({ label, valueA, valueB, variation, invertColors }: ComparisonRowProps) => (
-  <div className="grid grid-cols-4 items-center py-2 border-b border-border/50 text-sm">
-    <span className="text-muted-foreground">{label}</span>
-    <span className="text-foreground text-center">{valueA}</span>
-    <span className="text-foreground text-center">{valueB}</span>
-    <div className="flex justify-center">
-      <InsightBadge value={variation} invertColors={invertColors} />
+  <div className="flex flex-col sm:flex-row sm:items-center py-2 border-b border-border/50 gap-1 sm:gap-0">
+    <span className="text-xs sm:text-sm text-muted-foreground font-medium sm:font-normal sm:w-1/4">{label}</span>
+    <div className="flex items-center justify-between sm:justify-around flex-1 gap-2">
+      <span className="text-xs sm:text-sm text-foreground">{valueA}</span>
+      <span className="text-xs sm:text-sm text-foreground">{valueB}</span>
+      <div className="flex justify-end min-w-[60px]">
+        <InsightBadge value={variation} invertColors={invertColors} />
+      </div>
     </div>
   </div>
 );
@@ -139,10 +141,10 @@ export const RevenuePanel = () => {
     <div className="space-y-6">
       {/* Overview */}
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-foreground">Rentabilidade Real</h2>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+          <h2 className="text-base sm:text-lg font-bold text-foreground">Rentabilidade Real</h2>
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -241,35 +243,37 @@ export const RevenuePanel = () => {
       </div>
 
       {/* Comparison */}
-      <div className="bg-card border border-border rounded-xl p-4">
+      <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
         <h3 className="text-sm font-bold text-foreground mb-4">Comparativo de Rentabilidade</h3>
-        <div className="flex flex-wrap gap-3 mb-4">
-          <Select value={compareA} onValueChange={setCompareA}>
-            <SelectTrigger className="w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {monthOrder.map((m) => (
-                <SelectItem key={m} value={m}>{monthLabels[m]}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <span className="text-muted-foreground self-center text-sm">vs</span>
-          <Select value={compareB} onValueChange={setCompareB}>
-            <SelectTrigger className="w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {monthOrder.map((m) => (
-                <SelectItem key={m} value={m}>{monthLabels[m]}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex flex-col gap-3 mb-4">
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+            <Select value={compareA} onValueChange={setCompareA}>
+              <SelectTrigger className="w-full sm:w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOrder.map((m) => (
+                  <SelectItem key={m} value={m}>{monthLabels[m]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-muted-foreground self-center text-sm">vs</span>
+            <Select value={compareB} onValueChange={setCompareB}>
+              <SelectTrigger className="w-full sm:w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOrder.map((m) => (
+                  <SelectItem key={m} value={m}>{monthLabels[m]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {metricsA && metricsB && (
           <div>
-            <div className="grid grid-cols-4 items-center py-2 border-b border-border text-xs text-muted-foreground font-medium">
+            <div className="hidden sm:grid grid-cols-4 items-center py-2 border-b border-border text-xs text-muted-foreground font-medium">
               <span>Métrica</span>
               <span className="text-center">{monthLabels[compareA]}</span>
               <span className="text-center">{monthLabels[compareB]}</span>

@@ -55,54 +55,60 @@ export const ConsolidatedCharts = ({ months }: Props) => {
   const data = buildChartData(months);
 
   return (
-    <div className="space-y-6">
-      <h3 className="text-lg font-bold text-foreground">📈 Evolução Mensal</h3>
+    <div className="space-y-4 sm:space-y-6 mt-6">
+      <h3 className="text-base sm:text-lg font-bold text-foreground">📈 Evolução Mensal</h3>
 
       {/* Investimento vs Faturamento vs Valor Deixado */}
-      <div className="bg-card border border-border rounded-xl p-4">
-        <h4 className="text-sm font-bold text-foreground mb-4">Investimento × Faturamento × Valor Deixado</h4>
-        <ResponsiveContainer width="100%" height={280}>
-          <ComposedChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
-            <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar dataKey="investimento" name="Investimento" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} opacity={0.8} />
-            <Bar dataKey="faturamento" name="Faturamento" fill="hsl(210 80% 55%)" radius={[4, 4, 0, 0]} opacity={0.8} />
-            <Area dataKey="valorDeixado" name="Valor Deixado" fill="hsl(142 70% 45% / 0.15)" stroke="hsl(142 70% 45%)" type="monotone" />
-          </ComposedChart>
-        </ResponsiveContainer>
+      <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
+        <h4 className="text-xs sm:text-sm font-bold text-foreground mb-3 sm:mb-4">Investimento × Faturamento × Valor Deixado</h4>
+        <div className="-mx-2 sm:mx-0">
+          <ResponsiveContainer width="100%" height={220}>
+            <ComposedChart data={data} margin={{ left: -10, right: 5, top: 5, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+              <YAxis tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} width={35} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend wrapperStyle={{ fontSize: 10 }} />
+              <Bar dataKey="investimento" name="Investimento" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} opacity={0.8} />
+              <Bar dataKey="faturamento" name="Faturamento" fill="hsl(210 80% 55%)" radius={[4, 4, 0, 0]} opacity={0.8} />
+              <Area dataKey="valorDeixado" name="Valor Deixado" fill="hsl(142 70% 45% / 0.15)" stroke="hsl(142 70% 45%)" type="monotone" />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* ROI */}
-      <div className="bg-card border border-border rounded-xl p-4">
-        <h4 className="text-sm font-bold text-foreground mb-4">ROI Mensal (%)</h4>
-        <ResponsiveContainer width="100%" height={250}>
-          <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
-            <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={pctFormatter} />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Line dataKey="roiAds" name="ROI Ads" stroke="hsl(210 80% 55%)" strokeWidth={2} dot={{ r: 4 }} />
-            <Line dataKey="roiReal" name="ROI Real" stroke="hsl(142 70% 45%)" strokeWidth={2} dot={{ r: 4 }} />
-          </LineChart>
-        </ResponsiveContainer>
+      <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
+        <h4 className="text-xs sm:text-sm font-bold text-foreground mb-3 sm:mb-4">ROI Mensal (%)</h4>
+        <div className="-mx-2 sm:mx-0">
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={data} margin={{ left: -10, right: 5, top: 5, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+              <YAxis tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} tickFormatter={pctFormatter} width={35} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend wrapperStyle={{ fontSize: 10 }} />
+              <Line dataKey="roiAds" name="ROI Ads" stroke="hsl(210 80% 55%)" strokeWidth={2} dot={{ r: 3 }} />
+              <Line dataKey="roiReal" name="ROI Real" stroke="hsl(142 70% 45%)" strokeWidth={2} dot={{ r: 3 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Vendas */}
-      <div className="bg-card border border-border rounded-xl p-4">
-        <h4 className="text-sm font-bold text-foreground mb-4">Vendas por Mês</h4>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="name" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
-            <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-            <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="vendas" name="Vendas" fill="hsl(280 70% 55%)" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
+        <h4 className="text-xs sm:text-sm font-bold text-foreground mb-3 sm:mb-4">Vendas por Mês</h4>
+        <div className="-mx-2 sm:mx-0">
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={data} margin={{ left: -10, right: 5, top: 5, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+              <YAxis tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} width={30} />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="vendas" name="Vendas" fill="hsl(280 70% 55%)" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );

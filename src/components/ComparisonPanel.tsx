@@ -127,12 +127,14 @@ interface ComparisonRowProps {
 }
 
 const ComparisonRow = ({ label, valueA, valueB, variation, invertColors = false, insight }: ComparisonRowProps) => (
-  <div className="flex items-center justify-between py-3 border-b border-border last:border-0">
-    <span className="text-sm text-muted-foreground w-1/4">{label}</span>
-    <span className="text-sm font-semibold text-foreground w-1/4 text-center">{valueA}</span>
-    <span className="text-sm font-semibold text-foreground w-1/4 text-center">{valueB}</span>
-    <div className="w-1/4 flex justify-end">
-      <InsightBadge value={variation} invertColors={invertColors} insight={insight} />
+  <div className="flex flex-col sm:flex-row sm:items-center justify-between py-2.5 sm:py-3 border-b border-border last:border-0 gap-1 sm:gap-0">
+    <span className="text-xs sm:text-sm text-muted-foreground font-medium sm:font-normal sm:w-1/4">{label}</span>
+    <div className="flex items-center justify-between sm:justify-around flex-1 gap-2">
+      <span className="text-xs sm:text-sm font-semibold text-foreground">{valueA}</span>
+      <span className="text-xs sm:text-sm font-semibold text-foreground">{valueB}</span>
+      <div className="flex justify-end min-w-[80px]">
+        <InsightBadge value={variation} invertColors={invertColors} insight={insight} />
+      </div>
     </div>
   </div>
 );
@@ -206,7 +208,7 @@ const MonthComparison = () => {
         </Select>
       </div>
 
-      <div className="flex items-center justify-between py-2 border-b-2 border-border mb-1">
+      <div className="hidden sm:flex items-center justify-between py-2 border-b-2 border-border mb-1">
         <span className="text-xs font-semibold text-muted-foreground uppercase w-1/4">Métrica</span>
         <span className="text-xs font-semibold text-primary uppercase w-1/4 text-center">{labelA}</span>
         <span className="text-xs font-semibold text-primary uppercase w-1/4 text-center">{labelB}</span>
@@ -314,7 +316,7 @@ const SellerComparison = () => {
         </div>
       ) : (
         <>
-          <div className="flex items-center justify-between py-2 border-b-2 border-border mb-1">
+          <div className="hidden sm:flex items-center justify-between py-2 border-b-2 border-border mb-1">
             <span className="text-xs font-semibold text-muted-foreground uppercase w-1/4">Métrica</span>
             <span className="text-xs font-semibold text-primary uppercase w-1/4 text-center">{sellerA}</span>
             <span className="text-xs font-semibold text-primary uppercase w-1/4 text-center">{sellerB}</span>
@@ -338,7 +340,7 @@ const SellerComparison = () => {
 
 export const ComparisonPanel = () => {
   return (
-    <div className="bg-card rounded-xl p-6 border border-border animate-fade-in">
+    <div className="bg-card rounded-xl p-3 sm:p-6 border border-border animate-fade-in">
       <h3 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
         <BarChart3 className="text-primary" size={20} />
         Comparativo

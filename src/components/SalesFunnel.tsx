@@ -45,8 +45,8 @@ export const SalesFunnel = ({ data, investimento }: SalesFunnelProps) => {
   };
 
   return (
-    <div className="bg-card rounded-xl p-6 border border-border animate-fade-in">
-      <h3 className="text-lg font-semibold text-foreground mb-6 flex items-center gap-2">
+    <div className="bg-card rounded-xl p-3 sm:p-6 border border-border animate-fade-in">
+      <h3 className="text-base sm:text-lg font-semibold text-foreground mb-4 sm:mb-6 flex items-center gap-2">
         <Target className="text-primary" size={20} />
         Funil Comercial
       </h3>
@@ -188,7 +188,7 @@ export const SalesFunnel = ({ data, investimento }: SalesFunnelProps) => {
                       {atingiuMeta ? 'Meta Atingida' : 'Abaixo da Meta'}
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-3 text-sm">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 text-sm">
                     <div>
                       <p className="text-muted-foreground text-xs">Contratos</p>
                       <p className="font-semibold text-foreground">{pessoa.contratos}</p>
@@ -213,7 +213,7 @@ export const SalesFunnel = ({ data, investimento }: SalesFunnelProps) => {
                       <p className="text-muted-foreground text-xs">Custo Investido</p>
                       <p className="font-semibold text-orange-400">{formatCurrency(custoInvestido)}</p>
                     </div>
-                    <div className="col-span-3">
+                    <div className="col-span-2 sm:col-span-3">
                       <p className="text-muted-foreground text-xs">ROI Individual</p>
                       <p className={`font-semibold ${parseFloat(roiIndividual) >= 100 ? 'text-green-400' : 'text-red-400'}`}>
                         {roiIndividual}% 
@@ -224,7 +224,7 @@ export const SalesFunnel = ({ data, investimento }: SalesFunnelProps) => {
                     </div>
 
                     {/* Comissão */}
-                    <div className="col-span-3 border-t border-border pt-2 mt-1">
+                    <div className="col-span-2 sm:col-span-3 border-t border-border pt-2 mt-1">
                       <p className="text-muted-foreground text-xs mb-1">
                         Comissão Paga
                         <MetricTooltip text="Valor pago de comissão ao vendedor neste mês. Ao preencher, o custo real investido será recalculado." />
