@@ -1,12 +1,13 @@
 import { MonthSalesData } from "@/data/salesData";
 import { formatCurrency } from "@/data/marketingData";
-import { MessageSquare, Users, FileCheck, DollarSign, Target, TrendingUp, TrendingDown } from "lucide-react";
+import { MessageSquare, Users, FileCheck, DollarSign, Target, TrendingUp, TrendingDown, Percent, Wallet } from "lucide-react";
 
 interface SalesFunnelProps {
   data: MonthSalesData;
+  investimento: number;
 }
 
-const MetaIndicator = ({ realizado, meta, isCurrency = false }: { realizado: number; meta: number; isCurrency?: boolean }) => {
+const MetaIndicator = ({ realizado, meta }: { realizado: number; meta: number; isCurrency?: boolean }) => {
   if (meta === 0) return null;
   
   const atingido = realizado >= meta;
@@ -20,10 +21,14 @@ const MetaIndicator = ({ realizado, meta, isCurrency = false }: { realizado: num
   );
 };
 
-export const SalesFunnel = ({ data }: SalesFunnelProps) => {
+export const SalesFunnel = ({ data, investimento }: SalesFunnelProps) => {
   const { funnel, individuais } = data;
   
-  const hasData = funnel.reunioes.meta > 0 || funnel.contratos.meta > 0;
+  const reunioesTotal = funnel.reunioes.realizado;
+  const custoPorReuniao = reunioesTotal > 0 ? investimento / reunioesTotal : 0;
+  const conversaoReunioes = reunioesTotal > 0 
+    ? ((funnel.contratos.realizado / reunioesTotal) * 100).toFixed(1) 
+    : "N/A";
 
   return (
     <div className="bg-card rounded-xl p-6 border border-border animate-fade-in">
@@ -107,6 +112,22 @@ export const SalesFunnel = ({ data }: SalesFunnelProps) => {
             </div>
           </div>
         </div>
+
+        {/* Conversão Reuniões → Contratos */}
+        {reunioesTotal > 0 && (
+          <div className="bg-gradient-to-r from-cyan-500/20 to-cyan-600/10 rounded-lg p-4 border border-cyan-500/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Percent className="text-cyan-400" size={20} />
+                <div>
+                  <p className="text-xs text-muted-foreground">Taxa de Conversão</p>
+                  <p className="text-sm font-medium text-foreground">Reuniões → Contratos</p>
+                </div>
+              </div>
+              <span className="text-2xl font-bold text-cyan-400">{conversaoReunioes}%</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Conversões Individuais */}
@@ -117,6 +138,13 @@ export const SalesFunnel = ({ data }: SalesFunnelProps) => {
             {individuais.map((pessoa, index) => {
               const atingiuMeta = pessoa.faturamento >= pessoa.meta;
               const percentualMeta = ((pessoa.faturamento / pessoa.meta) * 100).toFixed(1);
+              const conversaoIndividual = pessoa.reunioes > 0 
+                ? ((pessoa.contratos / pessoa.reunioes) * 100).toFixed(1) 
+                : "0";
+              const custoInvestido = custoPorReuniao * pessoa.reunioes;
+              const roiIndividual = custoInvestido > 0 
+                ? ((pessoa.faturamento / custoInvestido) * 100).toFixed(0)
+                : "0";
               
               return (
                 <div 
@@ -130,7 +158,7 @@ export const SalesFunnel = ({ data }: SalesFunnelProps) => {
                       {atingiuMeta ? 'Meta Atingida' : 'Abaixo da Meta'}
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="grid grid-cols-3 gap-3 text-sm">
                     <div>
                       <p className="text-muted-foreground text-xs">Contratos</p>
                       <p className="font-semibold text-foreground">{pessoa.contratos}</p>
@@ -140,6 +168,10 @@ export const SalesFunnel = ({ data }: SalesFunnelProps) => {
                       <p className="font-semibold text-foreground">{pessoa.reunioes}</p>
                     </div>
                     <div>
+                      <p className="text-muted-foreground text-xs">Conv. Individual</p>
+                      <p className="font-semibold text-cyan-400">{conversaoIndividual}%</p>
+                    </div>
+                    <div>
                       <p className="text-muted-foreground text-xs">Faturamento</p>
                       <p className="font-semibold text-primary">{formatCurrency(pessoa.faturamento)}</p>
                     </div>
@@ -147,10 +179,23 @@ export const SalesFunnel = ({ data }: SalesFunnelProps) => {
                       <p className="text-muted-foreground text-xs">Meta</p>
                       <p className="font-semibold text-muted-foreground">{formatCurrency(pessoa.meta)}</p>
                     </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Custo Investido</p>
+                      <p className="font-semibold text-orange-400">{formatCurrency(custoInvestido)}</p>
+                    </div>
+                    <div className="col-span-3">
+                      <p className="text-muted-foreground text-xs">ROI Individual</p>
+                      <p className={`font-semibold ${parseFloat(roiIndividual) >= 100 ? 'text-green-400' : 'text-red-400'}`}>
+                        {roiIndividual}% 
+                        <span className="text-xs text-muted-foreground ml-1">
+                          (Lucro: {formatCurrency(pessoa.faturamento - custoInvestido)})
+                        </span>
+                      </p>
+                    </div>
                   </div>
                   <div className="mt-2">
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="text-muted-foreground">Progresso</span>
+                      <span className="text-muted-foreground">Progresso da Meta</span>
                       <span className={atingiuMeta ? 'text-green-400' : 'text-red-400'}>{percentualMeta}%</span>
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
