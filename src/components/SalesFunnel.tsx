@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { MonthSalesData } from "@/data/salesData";
 import { formatCurrency } from "@/data/marketingData";
 import { MessageSquare, Users, FileCheck, DollarSign, Target, TrendingUp, TrendingDown, Percent, Wallet } from "lucide-react";
+import { MetricTooltip } from "./MetricTooltip";
 
 interface SalesFunnelProps {
   data: MonthSalesData;
@@ -23,12 +25,24 @@ const MetaIndicator = ({ realizado, meta }: { realizado: number; meta: number; i
 
 export const SalesFunnel = ({ data, investimento }: SalesFunnelProps) => {
   const { funnel, individuais } = data;
+  const [comissoes, setComissoes] = useState<Record<string, number>>({});
   
   const reunioesTotal = funnel.reunioes.realizado;
   const custoPorReuniao = reunioesTotal > 0 ? investimento / reunioesTotal : 0;
   const conversaoReunioes = reunioesTotal > 0 
     ? ((funnel.contratos.realizado / reunioesTotal) * 100).toFixed(1) 
     : "N/A";
+  const conversaoMsgVenda = funnel.mensagens > 0
+    ? ((funnel.contratos.realizado / funnel.mensagens) * 100).toFixed(2)
+    : "N/A";
+  const conversaoMsgReuniao = funnel.mensagens > 0 && reunioesTotal > 0
+    ? ((reunioesTotal / funnel.mensagens) * 100).toFixed(1)
+    : "N/A";
+
+  const handleComissaoChange = (nome: string, value: string) => {
+    const num = parseFloat(value.replace(/[^\d.,]/g, '').replace(',', '.'));
+    setComissoes(prev => ({ ...prev, [nome]: isNaN(num) ? 0 : num }));
+  };
 
   return (
     <div className="bg-card rounded-xl p-6 border border-border animate-fade-in">
@@ -39,7 +53,6 @@ export const SalesFunnel = ({ data, investimento }: SalesFunnelProps) => {
 
       {/* Funil de Vendas */}
       <div className="space-y-4 mb-6">
-        {/* Topo do Funil - Mensagens */}
         <div className="bg-gradient-to-r from-blue-500/20 to-blue-600/10 rounded-lg p-4 border border-blue-500/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -53,7 +66,6 @@ export const SalesFunnel = ({ data, investimento }: SalesFunnelProps) => {
           </div>
         </div>
 
-        {/* Meio do Funil - Reuniões */}
         <div className="bg-gradient-to-r from-purple-500/20 to-purple-600/10 rounded-lg p-4 border border-purple-500/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -73,7 +85,6 @@ export const SalesFunnel = ({ data, investimento }: SalesFunnelProps) => {
           </div>
         </div>
 
-        {/* Fundo do Funil - Contratos */}
         <div className="bg-gradient-to-r from-green-500/20 to-green-600/10 rounded-lg p-4 border border-green-500/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -93,7 +104,6 @@ export const SalesFunnel = ({ data, investimento }: SalesFunnelProps) => {
           </div>
         </div>
 
-        {/* Faturamento */}
         <div className="bg-gradient-to-r from-yellow-500/20 to-yellow-600/10 rounded-lg p-4 border border-yellow-500/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -113,21 +123,36 @@ export const SalesFunnel = ({ data, investimento }: SalesFunnelProps) => {
           </div>
         </div>
 
-        {/* Conversão Reuniões → Contratos */}
-        {reunioesTotal > 0 && (
-          <div className="bg-gradient-to-r from-cyan-500/20 to-cyan-600/10 rounded-lg p-4 border border-cyan-500/30">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Percent className="text-cyan-400" size={20} />
-                <div>
-                  <p className="text-xs text-muted-foreground">Taxa de Conversão</p>
-                  <p className="text-sm font-medium text-foreground">Reuniões → Contratos</p>
-                </div>
-              </div>
-              <span className="text-2xl font-bold text-cyan-400">{conversaoReunioes}%</span>
+        {/* Conversões gerais */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {reunioesTotal > 0 && (
+            <div className="bg-gradient-to-r from-cyan-500/20 to-cyan-600/10 rounded-lg p-4 border border-cyan-500/30">
+              <p className="text-xs text-muted-foreground mb-1">
+                Reuniões → Contratos
+                <MetricTooltip text="Percentual de reuniões que se converteram em contratos fechados." />
+              </p>
+              <span className="text-xl font-bold text-cyan-400">{conversaoReunioes}%</span>
             </div>
-          </div>
-        )}
+          )}
+          {conversaoMsgVenda !== "N/A" && (
+            <div className="bg-gradient-to-r from-emerald-500/20 to-emerald-600/10 rounded-lg p-4 border border-emerald-500/30">
+              <p className="text-xs text-muted-foreground mb-1">
+                Conversa → Venda
+                <MetricTooltip text="Percentual de mensagens que se converteram em vendas/contratos." />
+              </p>
+              <span className="text-xl font-bold text-emerald-400">{conversaoMsgVenda}%</span>
+            </div>
+          )}
+          {conversaoMsgReuniao !== "N/A" && (
+            <div className="bg-gradient-to-r from-violet-500/20 to-violet-600/10 rounded-lg p-4 border border-violet-500/30">
+              <p className="text-xs text-muted-foreground mb-1">
+                Conversa → Reunião
+                <MetricTooltip text="Percentual de mensagens que se converteram em reuniões agendadas." />
+              </p>
+              <span className="text-xl font-bold text-violet-400">{conversaoMsgReuniao}%</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Conversões Individuais */}
@@ -137,13 +162,18 @@ export const SalesFunnel = ({ data, investimento }: SalesFunnelProps) => {
           <div className="space-y-3">
             {individuais.map((pessoa, index) => {
               const atingiuMeta = pessoa.faturamento >= pessoa.meta;
-              const percentualMeta = ((pessoa.faturamento / pessoa.meta) * 100).toFixed(1);
+              const percentualMeta = pessoa.meta > 0 ? ((pessoa.faturamento / pessoa.meta) * 100).toFixed(1) : "N/A";
               const conversaoIndividual = pessoa.reunioes > 0 
                 ? ((pessoa.contratos / pessoa.reunioes) * 100).toFixed(1) 
                 : "0";
               const custoInvestido = custoPorReuniao * pessoa.reunioes;
+              const comissao = comissoes[pessoa.nome] || pessoa.comissao || 0;
+              const custoReal = custoInvestido + comissao;
               const roiIndividual = custoInvestido > 0 
                 ? ((pessoa.faturamento / custoInvestido) * 100).toFixed(0)
+                : "0";
+              const roiComComissao = custoReal > 0
+                ? ((pessoa.faturamento / custoReal) * 100).toFixed(0)
                 : "0";
               
               return (
@@ -192,19 +222,48 @@ export const SalesFunnel = ({ data, investimento }: SalesFunnelProps) => {
                         </span>
                       </p>
                     </div>
-                  </div>
-                  <div className="mt-2">
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-muted-foreground">Progresso da Meta</span>
-                      <span className={atingiuMeta ? 'text-green-400' : 'text-red-400'}>{percentualMeta}%</span>
+
+                    {/* Comissão */}
+                    <div className="col-span-3 border-t border-border pt-2 mt-1">
+                      <p className="text-muted-foreground text-xs mb-1">
+                        Comissão Paga
+                        <MetricTooltip text="Valor pago de comissão ao vendedor neste mês. Ao preencher, o custo real investido será recalculado." />
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="text"
+                          placeholder="R$ 0,00"
+                          defaultValue={comissao > 0 ? comissao.toString() : ""}
+                          onChange={(e) => handleComissaoChange(pessoa.nome, e.target.value)}
+                          className="bg-muted border border-border rounded px-2 py-1 text-sm text-foreground w-32"
+                        />
+                        {comissao > 0 && (
+                          <div className="text-xs">
+                            <span className="text-muted-foreground">Custo Real: </span>
+                            <span className="font-semibold text-orange-400">{formatCurrency(custoReal)}</span>
+                            <span className="text-muted-foreground ml-2">ROI Real: </span>
+                            <span className={`font-semibold ${parseFloat(roiComComissao) >= 100 ? 'text-green-400' : 'text-red-400'}`}>
+                              {roiComComissao}%
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full transition-all duration-500 ${atingiuMeta ? 'bg-green-500' : 'bg-red-500'}`}
-                        style={{ width: `${Math.min(parseFloat(percentualMeta), 100)}%` }}
-                      />
-                    </div>
                   </div>
+                  {percentualMeta !== "N/A" && (
+                    <div className="mt-2">
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-muted-foreground">Progresso da Meta</span>
+                        <span className={atingiuMeta ? 'text-green-400' : 'text-red-400'}>{percentualMeta}%</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-500 ${atingiuMeta ? 'bg-green-500' : 'bg-red-500'}`}
+                          style={{ width: `${Math.min(parseFloat(percentualMeta), 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
