@@ -53,8 +53,8 @@ Deno.serve(async (req) => {
       const origem = lead.origem || lead.source || lead.Source || lead.Origem || ''
       const status = lead.etapa || lead.Etapa || lead.status || lead.Status || 'lead'
       const sheetRowId = lead.sheet_row_id || lead.row_id || lead.id || lead.ID || ''
-      const uf = lead.uf || lead.UF || ''
-      const data = lead.data || lead.Data || ''
+      const leadUf = lead.uf || lead.UF || ''
+      const leadData = lead.data || lead.Data || ''
 
       const { pipe, sdr_stage, closer_stage } = mapStatus(status)
 
