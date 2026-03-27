@@ -5,6 +5,7 @@ import { revenueData } from "@/data/revenueData";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ConsolidatedCharts } from "./ConsolidatedCharts";
 
 const periods = {
   tri1: { label: "1º Trimestre (Set–Nov/24)", months: ["setembro", "outubro", "novembro"] },
