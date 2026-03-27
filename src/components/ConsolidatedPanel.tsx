@@ -5,6 +5,7 @@ import { revenueData } from "@/data/revenueData";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ConsolidatedCharts } from "./ConsolidatedCharts";
 
 const periods = {
   tri1: { label: "1º Trimestre (Set–Nov/24)", months: ["setembro", "outubro", "novembro"] },
@@ -204,12 +205,15 @@ export const ConsolidatedPanel = () => {
 
         <TabsContent value="tri1">
           <PeriodCard data={tri1} label={periods.tri1.label} />
+          <ConsolidatedCharts months={periods.tri1.months} />
         </TabsContent>
         <TabsContent value="tri2">
           <PeriodCard data={tri2} label={periods.tri2.label} />
+          <ConsolidatedCharts months={periods.tri2.months} />
         </TabsContent>
         <TabsContent value="semestral">
           <PeriodCard data={semestral} label={periods.semestral.label} />
+          <ConsolidatedCharts months={periods.semestral.months} />
         </TabsContent>
       </Tabs>
     </div>
