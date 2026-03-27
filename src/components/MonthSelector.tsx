@@ -11,7 +11,9 @@ interface MonthSelectorProps {
   onSelectMonth: (month: string) => void;
 }
 
-const months = [
+export const months = [
+  { key: 'setembro', label: 'Setembro 2024' },
+  { key: 'outubro', label: 'Outubro 2024' },
   { key: 'novembro', label: 'Novembro 2024' },
   { key: 'dezembro', label: 'Dezembro 2024' },
   { key: 'janeiro', label: 'Janeiro 2025' },

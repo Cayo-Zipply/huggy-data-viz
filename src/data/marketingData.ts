@@ -16,6 +16,36 @@ export interface MonthData {
 }
 
 export const marketingData: Record<string, MonthData> = {
+  setembro: {
+    month: "Setembro",
+    year: 2024,
+    investimento: 8890.71,
+    impressoes: 206572,
+    ctr: 0.61,
+    cpc: 4.36,
+    mensagens: 362,
+    mensagensEfetivas: 362,
+    cpa: 24.55,
+    cpm: 43.04,
+    frequencia: 2.52,
+    vendas: 32,
+    faturamento: 60249.60,
+  },
+  outubro: {
+    month: "Outubro",
+    year: 2024,
+    investimento: 7514.11,
+    impressoes: 164817,
+    ctr: 0.59,
+    cpc: 4.98,
+    mensagens: 273,
+    mensagensEfetivas: 273,
+    cpa: 27.52,
+    cpm: 45.59,
+    frequencia: 2.36,
+    vendas: 8,
+    faturamento: 11968.40,
+  },
   novembro: {
     month: "Novembro",
     year: 2024,
@@ -78,7 +108,7 @@ export const marketingData: Record<string, MonthData> = {
   },
 };
 
-export const monthOrder = ["novembro", "dezembro", "janeiro", "fevereiro"];
+export const monthOrder = ["setembro", "outubro", "novembro", "dezembro", "janeiro", "fevereiro"];
 
 export const getPreviousMonth = (month: string): string | null => {
   const idx = monthOrder.indexOf(month);

@@ -8,17 +8,15 @@ import {
 } from "@/components/ui/select";
 import { marketingData, formatCurrency, formatNumber, formatPercent } from "@/data/marketingData";
 import { salesData } from "@/data/salesData";
-import { TrendingUp, TrendingDown, Minus, BarChart3, Users } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, BarChart3, Users, HelpCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { months } from "./MonthSelector";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-const months = [
-  { key: "novembro", label: "Novembro 2024" },
-  { key: "dezembro", label: "Dezembro 2024" },
-  { key: "janeiro", label: "Janeiro 2025" },
-  { key: "fevereiro", label: "Fevereiro 2025" },
-];
-
-// Get all unique sellers across all months
 const getAllSellers = () => {
   const sellers = new Set<string>();
   Object.values(salesData).forEach((monthData) => {
@@ -32,19 +30,65 @@ const calcVariation = (a: number, b: number) => {
   return ((a - b) / b) * 100;
 };
 
-const InsightBadge = ({ value, invertColors = false }: { value: number; invertColors?: boolean }) => {
+const generateInsight = (
+  metricLabel: string,
+  valueA: number,
+  valueB: number,
+  dataA: any,
+  dataB: any,
+  salesA: any,
+  salesB: any
+): string => {
+  const variation = calcVariation(valueB, valueA);
+  const direction = variation > 0 ? "aumentou" : "diminuiu";
+  const abs = Math.abs(variation).toFixed(1);
+
+  switch (metricLabel) {
+    case "Investimento":
+      return `O investimento ${direction} ${abs}%. ${variation > 0 ? "Maior investimento pode ampliar alcance, mas precisa ser acompanhado de performance." : "Redução no investimento pode impactar o volume de leads."}`;
+    case "Impressões":
+      return `As impressões ${direction}ram ${abs}%. ${variation > 0 ? "O alcance cresceu, possivelmente por mais investimento ou melhor segmentação." : "Queda pode indicar saturação de audiência ou redução de budget."}`;
+    case "CTR":
+      return `O CTR ${direction} ${abs}%. ${variation > 0 ? "Criativos e segmentação estão mais relevantes para o público." : "Os anúncios podem estar perdendo relevância — revise criativos e copy."}`;
+    case "CPC":
+      return `O CPC ${direction} ${abs}%. ${variation > 0 ? "O custo por clique subiu, possível aumento de concorrência ou queda de relevância." : "Cliques mais baratos indicam melhor performance dos anúncios."}`;
+    case "CPA":
+      return `O CPA ${direction} ${abs}%. ${variation > 0 ? "Leads estão mais caros. Verifique se a qualidade dos leads justifica o custo." : "Leads mais baratos é um bom sinal de eficiência."}`;
+    case "CPM":
+      return `O CPM ${direction} ${abs}%. ${variation > 0 ? "O custo para alcançar 1.000 pessoas aumentou, possivelmente por alta concorrência no leilão." : "Mais barato alcançar o público — bom momento para escalar."}`;
+    case "Mensagens":
+      return `As mensagens ${direction}ram ${abs}%. ${variation > 0 ? "Mais leads chegando — verifique capacidade comercial para absorver." : "Menos leads podem significar problema no tráfego ou saturação."}`;
+    case "Vendas":
+      return `As vendas ${direction}ram ${abs}%. ${variation > 0 ? "Crescimento nas vendas! Verifique se o ticket médio também cresceu." : "Queda nas vendas pode ser reflexo de menor volume ou pior conversão."}`;
+    case "Faturamento":
+      return `O faturamento ${direction} ${abs}%. ${variation > 0 ? "Boa evolução! ROI tende a melhorar se custos se mantiveram." : "Queda no faturamento precisa de atenção — verifique ticket médio e volume."}`;
+    case "Custo/Reunião": {
+      const reunA = salesA?.funnel.reunioes.realizado || 0;
+      const reunB = salesB?.funnel.reunioes.realizado || 0;
+      return `O custo por reunião ${direction} ${abs}%. ${variation > 0 
+        ? `Possível causa: ${reunB < reunA ? "o número de reuniões caiu" : "o investimento subiu"} sem acompanhar proporcionalmente.` 
+        : "Reuniões saindo mais baratas — eficiência comercial melhorando."}`;
+    }
+    case "Conv. Reuniões":
+      return `A conversão de reuniões para contratos ${direction} ${abs}%. ${variation > 0 ? "Vendedores estão fechando mais — qualidade das reuniões melhorando." : "Menos reuniões estão virando contratos — revise abordagem e qualificação."}`;
+    case "Conv. Msg→Venda":
+      return `A conversão de mensagem para venda ${direction} ${abs}%. ${variation > 0 ? "Funil mais eficiente do topo ao fundo." : "Mais mensagens estão sendo perdidas no caminho — revise o funil."}`;
+    case "Conv. Msg→Reunião":
+      return `A conversão de mensagem para reunião ${direction} ${abs}%. ${variation > 0 ? "SDR/pré-vendas está conseguindo agendar mais." : "Menos mensagens virando reuniões — verifique o script de qualificação."}`;
+    default:
+      return `Esta métrica ${direction} ${abs}% na comparação.`;
+  }
+};
+
+const InsightBadge = ({ value, invertColors = false, insight }: { value: number; invertColors?: boolean; insight?: string }) => {
   const isPositive = invertColors ? value < 0 : value > 0;
   const isNeutral = Math.abs(value) < 0.01;
 
-  if (isNeutral) {
-    return (
-      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-        <Minus size={10} /> Igual
-      </span>
-    );
-  }
-
-  return (
+  const badge = isNeutral ? (
+    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+      <Minus size={10} /> Igual
+    </span>
+  ) : (
     <span
       className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${
         isPositive ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
@@ -55,6 +99,22 @@ const InsightBadge = ({ value, invertColors = false }: { value: number; invertCo
       {value.toFixed(1)}%
     </span>
   );
+
+  if (!insight) return badge;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex items-center gap-1 cursor-help">
+          {badge}
+          <HelpCircle size={12} className="text-muted-foreground" />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-[320px] text-xs leading-relaxed">
+        {insight}
+      </TooltipContent>
+    </Tooltip>
+  );
 };
 
 interface ComparisonRowProps {
@@ -63,15 +123,16 @@ interface ComparisonRowProps {
   valueB: string;
   variation: number;
   invertColors?: boolean;
+  insight?: string;
 }
 
-const ComparisonRow = ({ label, valueA, valueB, variation, invertColors = false }: ComparisonRowProps) => (
+const ComparisonRow = ({ label, valueA, valueB, variation, invertColors = false, insight }: ComparisonRowProps) => (
   <div className="flex items-center justify-between py-3 border-b border-border last:border-0">
     <span className="text-sm text-muted-foreground w-1/4">{label}</span>
     <span className="text-sm font-semibold text-foreground w-1/4 text-center">{valueA}</span>
     <span className="text-sm font-semibold text-foreground w-1/4 text-center">{valueB}</span>
     <div className="w-1/4 flex justify-end">
-      <InsightBadge value={variation} invertColors={invertColors} />
+      <InsightBadge value={variation} invertColors={invertColors} insight={insight} />
     </div>
   </div>
 );
@@ -91,23 +152,32 @@ const MonthComparison = () => {
   const custoReunB = reunioesB > 0 ? dataB.investimento / reunioesB : 0;
   const convReunA = reunioesA > 0 ? (salesA.funnel.contratos.realizado / reunioesA) * 100 : 0;
   const convReunB = reunioesB > 0 ? (salesB.funnel.contratos.realizado / reunioesB) * 100 : 0;
+  const convMsgVendaA = dataA.mensagens > 0 ? (salesA?.funnel.contratos.realizado / dataA.mensagens) * 100 : 0;
+  const convMsgVendaB = dataB.mensagens > 0 ? (salesB?.funnel.contratos.realizado / dataB.mensagens) * 100 : 0;
+  const convMsgReunA = dataA.mensagens > 0 && reunioesA > 0 ? (reunioesA / dataA.mensagens) * 100 : 0;
+  const convMsgReunB = dataB.mensagens > 0 && reunioesB > 0 ? (reunioesB / dataB.mensagens) * 100 : 0;
 
   const labelA = months.find((m) => m.key === monthA)?.label || monthA;
   const labelB = months.find((m) => m.key === monthB)?.label || monthB;
 
+  const makeInsight = (label: string, a: number, b: number) =>
+    generateInsight(label, a, b, dataA, dataB, salesA, salesB);
+
   const metrics = [
-    { label: "Investimento", a: formatCurrency(dataA.investimento), b: formatCurrency(dataB.investimento), var: calcVariation(dataB.investimento, dataA.investimento), invert: true },
-    { label: "Impressões", a: formatNumber(dataA.impressoes), b: formatNumber(dataB.impressoes), var: calcVariation(dataB.impressoes, dataA.impressoes) },
-    { label: "CTR", a: formatPercent(dataA.ctr), b: formatPercent(dataB.ctr), var: calcVariation(dataB.ctr, dataA.ctr) },
-    { label: "CPC", a: formatCurrency(dataA.cpc), b: formatCurrency(dataB.cpc), var: calcVariation(dataB.cpc, dataA.cpc), invert: true },
-    { label: "Mensagens", a: formatNumber(dataA.mensagens), b: formatNumber(dataB.mensagens), var: calcVariation(dataB.mensagens, dataA.mensagens) },
-    { label: "CPA", a: formatCurrency(dataA.cpa), b: formatCurrency(dataB.cpa), var: calcVariation(dataB.cpa, dataA.cpa), invert: true },
-    { label: "CPM", a: formatCurrency(dataA.cpm), b: formatCurrency(dataB.cpm), var: calcVariation(dataB.cpm, dataA.cpm), invert: true },
-    { label: "Vendas", a: String(dataA.vendas), b: String(dataB.vendas), var: calcVariation(dataB.vendas, dataA.vendas) },
-    { label: "Faturamento", a: formatCurrency(dataA.faturamento), b: formatCurrency(dataB.faturamento), var: calcVariation(dataB.faturamento, dataA.faturamento) },
-    { label: "Reuniões", a: String(reunioesA), b: String(reunioesB), var: calcVariation(reunioesB, reunioesA) },
-    { label: "Custo/Reunião", a: custoReunA > 0 ? formatCurrency(custoReunA) : "N/A", b: custoReunB > 0 ? formatCurrency(custoReunB) : "N/A", var: calcVariation(custoReunB, custoReunA), invert: true },
-    { label: "Conv. Reuniões", a: convReunA > 0 ? `${convReunA.toFixed(1)}%` : "N/A", b: convReunB > 0 ? `${convReunB.toFixed(1)}%` : "N/A", var: calcVariation(convReunB, convReunA) },
+    { label: "Investimento", a: formatCurrency(dataA.investimento), b: formatCurrency(dataB.investimento), var: calcVariation(dataB.investimento, dataA.investimento), invert: true, numA: dataA.investimento, numB: dataB.investimento },
+    { label: "Impressões", a: formatNumber(dataA.impressoes), b: formatNumber(dataB.impressoes), var: calcVariation(dataB.impressoes, dataA.impressoes), numA: dataA.impressoes, numB: dataB.impressoes },
+    { label: "CTR", a: formatPercent(dataA.ctr), b: formatPercent(dataB.ctr), var: calcVariation(dataB.ctr, dataA.ctr), numA: dataA.ctr, numB: dataB.ctr },
+    { label: "CPC", a: formatCurrency(dataA.cpc), b: formatCurrency(dataB.cpc), var: calcVariation(dataB.cpc, dataA.cpc), invert: true, numA: dataA.cpc, numB: dataB.cpc },
+    { label: "Mensagens", a: formatNumber(dataA.mensagens), b: formatNumber(dataB.mensagens), var: calcVariation(dataB.mensagens, dataA.mensagens), numA: dataA.mensagens, numB: dataB.mensagens },
+    { label: "CPA", a: formatCurrency(dataA.cpa), b: formatCurrency(dataB.cpa), var: calcVariation(dataB.cpa, dataA.cpa), invert: true, numA: dataA.cpa, numB: dataB.cpa },
+    { label: "CPM", a: formatCurrency(dataA.cpm), b: formatCurrency(dataB.cpm), var: calcVariation(dataB.cpm, dataA.cpm), invert: true, numA: dataA.cpm, numB: dataB.cpm },
+    { label: "Vendas", a: String(dataA.vendas), b: String(dataB.vendas), var: calcVariation(dataB.vendas, dataA.vendas), numA: dataA.vendas, numB: dataB.vendas },
+    { label: "Faturamento", a: formatCurrency(dataA.faturamento), b: formatCurrency(dataB.faturamento), var: calcVariation(dataB.faturamento, dataA.faturamento), numA: dataA.faturamento, numB: dataB.faturamento },
+    { label: "Reuniões", a: String(reunioesA), b: String(reunioesB), var: calcVariation(reunioesB, reunioesA), numA: reunioesA, numB: reunioesB },
+    { label: "Custo/Reunião", a: custoReunA > 0 ? formatCurrency(custoReunA) : "N/A", b: custoReunB > 0 ? formatCurrency(custoReunB) : "N/A", var: calcVariation(custoReunB, custoReunA), invert: true, numA: custoReunA, numB: custoReunB },
+    { label: "Conv. Reuniões", a: convReunA > 0 ? `${convReunA.toFixed(1)}%` : "N/A", b: convReunB > 0 ? `${convReunB.toFixed(1)}%` : "N/A", var: calcVariation(convReunB, convReunA), numA: convReunA, numB: convReunB },
+    { label: "Conv. Msg→Venda", a: convMsgVendaA > 0 ? `${convMsgVendaA.toFixed(2)}%` : "N/A", b: convMsgVendaB > 0 ? `${convMsgVendaB.toFixed(2)}%` : "N/A", var: calcVariation(convMsgVendaB, convMsgVendaA), numA: convMsgVendaA, numB: convMsgVendaB },
+    { label: "Conv. Msg→Reunião", a: convMsgReunA > 0 ? `${convMsgReunA.toFixed(1)}%` : "N/A", b: convMsgReunB > 0 ? `${convMsgReunB.toFixed(1)}%` : "N/A", var: calcVariation(convMsgReunB, convMsgReunA), numA: convMsgReunA, numB: convMsgReunB },
   ];
 
   return (
@@ -136,7 +206,6 @@ const MonthComparison = () => {
         </Select>
       </div>
 
-      {/* Header */}
       <div className="flex items-center justify-between py-2 border-b-2 border-border mb-1">
         <span className="text-xs font-semibold text-muted-foreground uppercase w-1/4">Métrica</span>
         <span className="text-xs font-semibold text-primary uppercase w-1/4 text-center">{labelA}</span>
@@ -152,6 +221,7 @@ const MonthComparison = () => {
           valueB={m.b}
           variation={m.var}
           invertColors={m.invert}
+          insight={makeInsight(m.label, m.numA, m.numB)}
         />
       ))}
     </div>

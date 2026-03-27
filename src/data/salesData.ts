@@ -20,6 +20,7 @@ export interface IndividualPerformance {
   faturamento: number;
   meta: number;
   reunioes: number;
+  comissao?: number;
 }
 
 export interface MonthSalesData {
@@ -28,6 +29,65 @@ export interface MonthSalesData {
 }
 
 export const salesData: Record<string, MonthSalesData> = {
+  setembro: {
+    funnel: {
+      mensagens: 362,
+      reunioes: {
+        realizado: 121,
+        meta: 0,
+      },
+      contratos: {
+        realizado: 32,
+        meta: 0,
+      },
+      faturamento: {
+        realizado: 60249.60,
+        meta: 61600.00,
+      },
+    },
+    individuais: [
+      {
+        nome: "Stephanie",
+        contratos: 18,
+        faturamento: 37149.40,
+        meta: 30800.00,
+        reunioes: 68,
+      },
+      {
+        nome: "Vitor",
+        contratos: 11,
+        faturamento: 19305.20,
+        meta: 30800.00,
+        reunioes: 53,
+      },
+    ],
+  },
+  outubro: {
+    funnel: {
+      mensagens: 273,
+      reunioes: {
+        realizado: 82,
+        meta: 130,
+      },
+      contratos: {
+        realizado: 8,
+        meta: 28,
+      },
+      faturamento: {
+        realizado: 11968.40,
+        meta: 50000.00,
+      },
+    },
+    individuais: [
+      {
+        nome: "Stephanie",
+        contratos: 8,
+        faturamento: 11968.40,
+        meta: 50000.00,
+        reunioes: 82,
+      },
+    ],
+  },
   novembro: {
     funnel: {
       mensagens: 917,

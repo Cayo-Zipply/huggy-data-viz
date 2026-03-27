@@ -1,5 +1,6 @@
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MetricTooltip } from "./MetricTooltip";
 
 interface MetricCardProps {
   title: string;
@@ -7,9 +8,10 @@ interface MetricCardProps {
   variation?: number;
   delay?: number;
   invertColors?: boolean;
+  tooltip?: string;
 }
 
-export const MetricCard = ({ title, value, variation, delay = 0, invertColors = false }: MetricCardProps) => {
+export const MetricCard = ({ title, value, variation, delay = 0, invertColors = false, tooltip }: MetricCardProps) => {
   const isPositive = invertColors ? (variation ?? 0) < 0 : (variation ?? 0) > 0;
   const showVariation = variation !== undefined && variation !== 0;
 
@@ -18,7 +20,10 @@ export const MetricCard = ({ title, value, variation, delay = 0, invertColors = 
       className="bg-card border border-border rounded-lg p-4 opacity-0 animate-fade-in"
       style={{ animationDelay: `${delay}ms` }}
     >
-      <p className="text-muted-foreground text-sm mb-1">{title}</p>
+      <p className="text-muted-foreground text-sm mb-1">
+        {title}
+        {tooltip && <MetricTooltip text={tooltip} />}
+      </p>
       <p className="text-2xl font-semibold text-foreground">{value}</p>
       {showVariation && (
         <div className={cn(
