@@ -5,6 +5,7 @@ import { ROICard } from "@/components/ROICard";
 import { PerformanceChart } from "@/components/PerformanceChart";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { SalesFunnel } from "@/components/SalesFunnel";
+import { ComparisonPanel } from "@/components/ComparisonPanel";
 import { 
   marketingData, 
   calculateVariation, 
@@ -176,6 +177,11 @@ const Index = () => {
             investimento={currentData.investimento}
             faturamento={currentData.faturamento}
           />
+        </div>
+
+        {/* Comparativo */}
+        <div className="mt-6">
+          <ComparisonPanel />
         </div>
       </div>
     </div>
