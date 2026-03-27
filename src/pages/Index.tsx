@@ -119,7 +119,8 @@ const Index = () => {
         <div className="max-w-7xl mx-auto">
           <DashboardHeader 
             selectedMonth={selectedMonth} 
-            onSelectMonth={setSelectedMonth} 
+            onSelectMonth={setSelectedMonth}
+            hideMonthSelector={activeTab === "rentabilidade" || activeTab === "consolidado"}
           />
 
           {/* Marketing Tab */}
