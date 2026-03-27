@@ -104,6 +104,11 @@ function CardItem({ card, onUpdate, onUploadContract }: {
           {card.origem && (
             <span className="text-[10px] px-1.5 py-0.5 bg-muted/50 rounded text-muted-foreground">{card.origem}</span>
           )}
+          {card.created_at && (
+            <span className="text-[10px] px-1.5 py-0.5 bg-muted/50 rounded text-muted-foreground flex items-center gap-0.5">
+              <Clock size={8} /> {new Date(card.created_at).toLocaleDateString("pt-BR")}
+            </span>
+          )}
           {card.valor_divida && (
             <span className="text-[10px] px-1.5 py-0.5 bg-emerald-400/10 rounded text-emerald-400">
               R$ {card.valor_divida.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
@@ -439,7 +444,7 @@ export function PipelinePanel() {
           <div className="text-xs text-muted-foreground space-y-1">
             <p><strong>Método:</strong> POST</p>
             <p><strong>Campos reconhecidos:</strong> Nome, Telefone, Source, Etapa, ID, UF, Data</p>
-            <p><strong>Etapas mapeadas:</strong> Fez Contato → Conectado · SQL → SQL · Reunião marcada → Closer</p>
+            <p><strong>Etapas mapeadas:</strong> Fez Contato → Lead · Conectado → Conectado · SQL → SQL · Reunião marcada → Closer</p>
           </div>
         </div>
       )}
