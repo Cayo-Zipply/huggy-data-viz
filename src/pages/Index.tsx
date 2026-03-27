@@ -20,7 +20,7 @@ import { BarChart3, Users, GitCompare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const tabs = [
-  { key: "marketing", label: "Funil Marketing e Vendas PQA", icon: BarChart3 },
+  { key: "marketing", label: "Funil de Marketing", icon: BarChart3 },
   { key: "comercial", label: "Funil Comercial", icon: Users },
   { key: "comparativo", label: "Comparativo", icon: GitCompare },
 ];

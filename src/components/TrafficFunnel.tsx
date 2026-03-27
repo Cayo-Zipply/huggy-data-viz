@@ -17,6 +17,10 @@ export const TrafficFunnel = ({ impressoes, cliques, mensagens, vendas }: Traffi
     return formatNumber(value);
   };
 
+  const pctCliques = impressoes > 0 ? ((cliques / impressoes) * 100).toFixed(2) : "0";
+  const pctMensagens = cliques > 0 ? ((mensagens / cliques) * 100).toFixed(2) : "0";
+  const pctVendas = mensagens > 0 ? ((vendas / mensagens) * 100).toFixed(2) : "0";
+
   return (
     <div className="bg-card border border-border rounded-lg p-6 opacity-0 animate-fade-in" style={{ animationDelay: '400ms' }}>
       <h3 className="text-foreground font-semibold mb-6">Funil de Tráfego</h3>
@@ -35,8 +39,11 @@ export const TrafficFunnel = ({ impressoes, cliques, mensagens, vendas }: Traffi
           </div>
         </div>
 
+        {/* Taxa Impressões → Cliques */}
+        <div className="my-1 text-xs font-semibold text-muted-foreground">{pctCliques}%</div>
+
         {/* Cliques */}
-        <div className="w-[75%] max-w-[210px] relative -mt-1">
+        <div className="w-[75%] max-w-[210px] relative">
           <div 
             className="h-16 bg-primary flex flex-col items-center justify-center"
             style={{
@@ -48,10 +55,13 @@ export const TrafficFunnel = ({ impressoes, cliques, mensagens, vendas }: Traffi
           </div>
         </div>
 
+        {/* Taxa Cliques → Mensagens */}
+        <div className="my-1 text-xs font-semibold text-muted-foreground">{pctMensagens}%</div>
+
         {/* Mensagens */}
-        <div className="w-[55%] max-w-[154px] relative -mt-1">
+        <div className="w-[55%] max-w-[154px] relative">
           <div 
-            className="h-14 bg-chart-blue flex flex-col items-center justify-center"
+            className="h-14 flex flex-col items-center justify-center"
             style={{
               clipPath: 'polygon(8% 0%, 92% 0%, 80% 100%, 20% 100%)',
               backgroundColor: 'hsl(207, 90%, 45%)',
@@ -62,8 +72,11 @@ export const TrafficFunnel = ({ impressoes, cliques, mensagens, vendas }: Traffi
           </div>
         </div>
 
+        {/* Taxa Mensagens → Vendas */}
+        <div className="my-1 text-xs font-semibold text-muted-foreground">{pctVendas}%</div>
+
         {/* Vendas - Base estreita */}
-        <div className="w-[35%] max-w-[98px] relative -mt-1">
+        <div className="w-[35%] max-w-[98px] relative">
           <div 
             className="h-12 flex flex-col items-center justify-center"
             style={{
