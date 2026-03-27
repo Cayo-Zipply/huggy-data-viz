@@ -46,6 +46,43 @@ export const marketingData: Record<string, MonthData> = {
     vendas: 28,
     faturamento: 47706.20,
   },
+  janeiro: {
+    month: "Janeiro",
+    year: 2025,
+    investimento: 22950.59,
+    impressoes: 769291,
+    ctr: 0.43,
+    cpc: 3.41,
+    mensagens: 1483,
+    mensagensEfetivas: 1483,
+    cpa: 15.34,
+    cpm: 29.83,
+    frequencia: 1.76,
+    vendas: 46,
+    faturamento: 71240.50,
+  },
+  fevereiro: {
+    month: "Fevereiro",
+    year: 2025,
+    investimento: 20694.44,
+    impressoes: 769291,
+    ctr: 0.39,
+    cpc: 3.03,
+    mensagens: 1483,
+    mensagensEfetivas: 1483,
+    cpa: 13.95,
+    cpm: 25.82,
+    frequencia: 1.64,
+    vendas: 33,
+    faturamento: 49557.40,
+  },
+};
+
+export const monthOrder = ["novembro", "dezembro", "janeiro", "fevereiro"];
+
+export const getPreviousMonth = (month: string): string | null => {
+  const idx = monthOrder.indexOf(month);
+  return idx > 0 ? monthOrder[idx - 1] : null;
 };
 
 export const calculateVariation = (current: number, previous: number): number => {

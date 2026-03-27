@@ -7,8 +7,10 @@ interface MonthSelectorProps {
 
 export const MonthSelector = ({ selectedMonth, onSelectMonth }: MonthSelectorProps) => {
   const months = [
-    { key: 'novembro', label: 'Novembro 2024' },
-    { key: 'dezembro', label: 'Dezembro 2024' },
+    { key: 'novembro', label: 'Nov 2024' },
+    { key: 'dezembro', label: 'Dez 2024' },
+    { key: 'janeiro', label: 'Jan 2025' },
+    { key: 'fevereiro', label: 'Fev 2025' },
   ];
 
   return (
