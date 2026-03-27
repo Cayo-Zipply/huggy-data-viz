@@ -5,15 +5,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Map sheet status to pipeline stages
+// Map sheet "Etapa" to pipeline stages
 function mapStatus(status: string): { pipe: string; sdr_stage: string | null; closer_stage: string | null } {
   const s = (status || '').toLowerCase().trim()
   
   // SDR stages
   if (s.includes('lead') || s.includes('novo')) return { pipe: 'sdr', sdr_stage: 'lead', closer_stage: null }
-  if (s.includes('conecta')) return { pipe: 'sdr', sdr_stage: 'conectado', closer_stage: null }
-  if (s.includes('sql') || s.includes('convid')) return { pipe: 'sdr', sdr_stage: 'sql', closer_stage: null }
-  if (s.includes('reunião marcada') || s.includes('reuniao marcada') || s.includes('marcada') || s.includes('agend')) {
+  if (s.includes('fez contato') || s.includes('em contato') || s.includes('conecta')) return { pipe: 'sdr', sdr_stage: 'conectado', closer_stage: null }
+  if (s.includes('sql') || s.includes('qualificado')) return { pipe: 'sdr', sdr_stage: 'sql', closer_stage: null }
+  if (s.includes('reunião marcada') || s.includes('reuniao marcada') || s.includes('marcada')) {
     return { pipe: 'closer', sdr_stage: null, closer_stage: 'reuniao_agendada' }
   }
   
@@ -45,14 +45,16 @@ Deno.serve(async (req) => {
 
     const results = []
     for (const lead of leads) {
-      const nome = lead.nome || lead.name || lead.Nome || lead.Name || 'Sem nome'
-      const telefone = lead.telefone || lead.phone || lead.Telefone || lead.Phone || ''
+      const nome = lead.nome || lead.Nome || lead.name || lead.Name || 'Sem nome'
+      const telefone = lead.telefone || lead.Telefone || lead.phone || lead.Phone || ''
       const email = lead.email || lead.Email || ''
       const cnpj = lead.cnpj || lead.CNPJ || ''
       const valorDivida = lead.valor_divida || lead.valor || lead.Valor || null
-      const origem = lead.origem || lead.source || lead.Origem || ''
-      const status = lead.status || lead.Status || 'lead'
-      const sheetRowId = lead.sheet_row_id || lead.row_id || lead.id || ''
+      const origem = lead.origem || lead.source || lead.Source || lead.Origem || ''
+      const status = lead.etapa || lead.Etapa || lead.status || lead.Status || 'lead'
+      const sheetRowId = lead.sheet_row_id || lead.row_id || lead.id || lead.ID || ''
+      const uf = lead.uf || lead.UF || ''
+      const data = lead.data || lead.Data || ''
 
       const { pipe, sdr_stage, closer_stage } = mapStatus(status)
 
