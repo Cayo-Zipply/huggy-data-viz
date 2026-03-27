@@ -16,12 +16,13 @@ import {
   getPreviousMonth,
 } from "@/data/marketingData";
 import { salesData } from "@/data/salesData";
-import { BarChart3, Users, GitCompare, DollarSign, PieChart } from "lucide-react";
+import { BarChart3, Users, GitCompare, DollarSign, PieChart, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RevenuePanel } from "@/components/RevenuePanel";
 import { ConsolidatedPanel } from "@/components/ConsolidatedPanel";
 
 import { PipelinePanel } from "@/components/PipelinePanel";
+import { HelpPanel } from "@/components/HelpPanel";
 
 const tabs = [
   { key: "marketing", label: "Funil de Marketing", icon: BarChart3 },
@@ -30,6 +31,7 @@ const tabs = [
   { key: "rentabilidade", label: "Rentabilidade", icon: DollarSign },
   { key: "consolidado", label: "Consolidado", icon: PieChart },
   { key: "pipeline", label: "Pipeline", icon: GitCompare },
+  { key: "ajuda", label: "Ajuda", icon: HelpCircle },
 ];
 
 const Index = () => {
@@ -123,7 +125,7 @@ const Index = () => {
           <DashboardHeader 
             selectedMonth={selectedMonth} 
             onSelectMonth={setSelectedMonth}
-            hideMonthSelector={activeTab === "rentabilidade" || activeTab === "consolidado" || activeTab === "pipeline"}
+            hideMonthSelector={activeTab === "rentabilidade" || activeTab === "consolidado" || activeTab === "pipeline" || activeTab === "ajuda"}
           />
 
           {/* Marketing Tab */}
@@ -275,6 +277,11 @@ const Index = () => {
           {/* Pipeline Tab */}
           {activeTab === "pipeline" && (
             <PipelinePanel />
+          )}
+
+          {/* Ajuda Tab */}
+          {activeTab === "ajuda" && (
+            <HelpPanel />
           )}
         </div>
       </main>
