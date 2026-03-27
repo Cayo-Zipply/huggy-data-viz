@@ -1,8 +1,8 @@
-import { Clock, Phone, CalendarCheck, CheckCircle, Send, FileText, Handshake, Target, MessageSquare } from "lucide-react";
+import { Clock, Phone, CalendarCheck, CheckCircle, Send, FileText, Handshake, Target, MessageSquare, XCircle, Link, FileSignature } from "lucide-react";
 
 export type PipeType = "sdr" | "closer";
 export type SdrStage = "conectado" | "sql" | "reuniao_marcada";
-export type CloserStage = "reuniao_realizada" | "proposta_enviada" | "negociacao" | "venda";
+export type CloserStage = "reuniao_agendada" | "no_show" | "reuniao_realizada" | "link_enviado" | "contrato_assinado";
 export type Stage = SdrStage | CloserStage;
 export type LeadStatus = "aberto" | "ganho" | "perdido";
 export type LossCategory = "preco" | "timing" | "concorrente" | "sem_budget" | "sem_resposta" | "outro";
@@ -64,7 +64,7 @@ export const CLOSERS = ["Cayo", "Stephanie", "Fillipe"] as const;
 export const DEFAULT_DEAL_VALUE = 1621;
 export const STALE_DAYS = 7;
 
-export const STAGE_ORDER: Stage[] = ["conectado", "sql", "reuniao_marcada", "reuniao_realizada", "proposta_enviada", "negociacao", "venda"];
+export const STAGE_ORDER: Stage[] = ["conectado", "sql", "reuniao_marcada", "reuniao_agendada", "no_show", "reuniao_realizada", "link_enviado", "contrato_assinado"];
 
 export const STAGE_CONFIG: Record<Stage, {
   label: string; pipe: PipeType; probability: number; exitCriteria: string;
@@ -73,10 +73,11 @@ export const STAGE_CONFIG: Record<Stage, {
   conectado: { label: "Conectado", pipe: "sdr", probability: 0.05, exitCriteria: "Lead respondeu e tem interesse mínimo", icon: Phone, color: "text-blue-400", bg: "bg-blue-400/10 border-blue-400/30" },
   sql: { label: "SQL", pipe: "sdr", probability: 0.15, exitCriteria: "Qualificado (tem problema, verba e autoridade)", icon: CheckCircle, color: "text-purple-400", bg: "bg-purple-400/10 border-purple-400/30" },
   reuniao_marcada: { label: "Reunião Marcada", pipe: "sdr", probability: 0.30, exitCriteria: "Data confirmada na agenda", icon: CalendarCheck, color: "text-emerald-400", bg: "bg-emerald-400/10 border-emerald-400/30" },
+  reuniao_agendada: { label: "Reunião Agendada", pipe: "closer", probability: 0.40, exitCriteria: "Reunião confirmada na agenda do closer", icon: CalendarCheck, color: "text-cyan-400", bg: "bg-cyan-400/10 border-cyan-400/30" },
+  no_show: { label: "No Show", pipe: "closer", probability: 0.20, exitCriteria: "Lead não compareceu à reunião", icon: XCircle, color: "text-red-400", bg: "bg-red-400/10 border-red-400/30" },
   reuniao_realizada: { label: "Reunião Realizada", pipe: "closer", probability: 0.50, exitCriteria: "Reunião aconteceu independente do resultado", icon: Handshake, color: "text-blue-400", bg: "bg-blue-400/10 border-blue-400/30" },
-  proposta_enviada: { label: "Proposta Enviada", pipe: "closer", probability: 0.65, exitCriteria: "Proposta formal enviada", icon: Send, color: "text-yellow-400", bg: "bg-yellow-400/10 border-yellow-400/30" },
-  negociacao: { label: "Negociação", pipe: "closer", probability: 0.80, exitCriteria: "Objeções ativas sendo tratadas", icon: MessageSquare, color: "text-orange-400", bg: "bg-orange-400/10 border-orange-400/30" },
-  venda: { label: "Venda", pipe: "closer", probability: 1.0, exitCriteria: "Contrato assinado", icon: Target, color: "text-green-400", bg: "bg-green-400/10 border-green-400/30" },
+  link_enviado: { label: "Link Enviado", pipe: "closer", probability: 0.70, exitCriteria: "Link de pagamento/proposta enviado ao lead", icon: Link, color: "text-yellow-400", bg: "bg-yellow-400/10 border-yellow-400/30" },
+  contrato_assinado: { label: "Contrato Assinado", pipe: "closer", probability: 1.0, exitCriteria: "Contrato assinado e venda fechada", icon: FileSignature, color: "text-green-400", bg: "bg-green-400/10 border-green-400/30" },
 };
 
 export const SDR_STAGES = STAGE_ORDER.filter(s => STAGE_CONFIG[s].pipe === "sdr");
@@ -89,10 +90,11 @@ export const AUTO_TASKS: Record<Stage, { title: (n: string) => string; daysOffse
     { title: n => `Enviar lembrete 24h antes — ${n}`, daysOffset: 0 },
     { title: n => `Preparar material da reunião — ${n}`, daysOffset: 0 },
   ],
+  reuniao_agendada: [{ title: n => `Confirmar presença do lead — ${n}`, daysOffset: 0 }],
+  no_show: [{ title: n => `Reagendar reunião — ${n}`, daysOffset: 1 }],
   reuniao_realizada: [{ title: n => `Enviar proposta em até 24h — ${n}`, daysOffset: 1 }],
-  proposta_enviada: [{ title: n => `Follow-up da proposta — ${n}`, daysOffset: 2 }],
-  negociacao: [{ title: n => `Verificar objeções pendentes — ${n}`, daysOffset: 1 }],
-  venda: [],
+  link_enviado: [{ title: n => `Follow-up do link enviado — ${n}`, daysOffset: 2 }],
+  contrato_assinado: [],
 };
 
 export const LOSS_CATEGORIES: { key: LossCategory; label: string }[] = [
