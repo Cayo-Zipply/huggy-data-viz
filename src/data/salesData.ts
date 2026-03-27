@@ -28,6 +28,24 @@ export interface MonthSalesData {
 }
 
 export const salesData: Record<string, MonthSalesData> = {
+  novembro: {
+    funnel: {
+      mensagens: 917,
+      reunioes: {
+        realizado: 0,
+        meta: 0,
+      },
+      contratos: {
+        realizado: 30,
+        meta: 0,
+      },
+      faturamento: {
+        realizado: 45345.10,
+        meta: 0,
+      },
+    },
+    individuais: [],
+  },
   dezembro: {
     funnel: {
       mensagens: 989,
@@ -61,22 +79,84 @@ export const salesData: Record<string, MonthSalesData> = {
       },
     ],
   },
-  novembro: {
+  janeiro: {
     funnel: {
-      mensagens: 917,
+      mensagens: 1496,
       reunioes: {
-        realizado: 0,
-        meta: 0,
+        realizado: 137,
+        meta: 130,
       },
       contratos: {
-        realizado: 30,
-        meta: 0,
+        realizado: 46,
+        meta: 43,
       },
       faturamento: {
-        realizado: 45345.10,
-        meta: 0,
+        realizado: 71240.50,
+        meta: 66550.00,
       },
     },
-    individuais: [],
+    individuais: [
+      {
+        nome: "Stephanie",
+        contratos: 22,
+        faturamento: 36310.40,
+        meta: 29750.00,
+        reunioes: 57,
+      },
+      {
+        nome: "João Reis",
+        contratos: 15,
+        faturamento: 20989.50,
+        meta: 20000.00,
+        reunioes: 57,
+      },
+      {
+        nome: "Cayo",
+        contratos: 7,
+        faturamento: 10374.40,
+        meta: 16800.00,
+        reunioes: 23,
+      },
+    ],
+  },
+  fevereiro: {
+    funnel: {
+      mensagens: 1483,
+      reunioes: {
+        realizado: 90,
+        meta: 119,
+      },
+      contratos: {
+        realizado: 33,
+        meta: 40,
+      },
+      faturamento: {
+        realizado: 49557.40,
+        meta: 65800.00,
+      },
+    },
+    individuais: [
+      {
+        nome: "Stephanie",
+        contratos: 17,
+        faturamento: 25080.30,
+        meta: 29650.00,
+        reunioes: 46,
+      },
+      {
+        nome: "João Reis",
+        contratos: 6,
+        faturamento: 8753.40,
+        meta: 19650.00,
+        reunioes: 25,
+      },
+      {
+        nome: "Cayo",
+        contratos: 10,
+        faturamento: 15723.70,
+        meta: 16500.00,
+        reunioes: 19,
+      },
+    ],
   },
 };

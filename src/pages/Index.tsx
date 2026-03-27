@@ -10,28 +10,45 @@ import {
   calculateVariation, 
   formatCurrency, 
   formatNumber, 
-  formatPercent 
+  formatPercent,
+  getPreviousMonth,
 } from "@/data/marketingData";
 import { salesData } from "@/data/salesData";
 
 const Index = () => {
-  const [selectedMonth, setSelectedMonth] = useState<string>("dezembro");
+  const [selectedMonth, setSelectedMonth] = useState<string>("fevereiro");
   
   const currentData = marketingData[selectedMonth];
-  const previousData = selectedMonth === "dezembro" ? marketingData.novembro : null;
+  const prevKey = getPreviousMonth(selectedMonth);
+  const previousData = prevKey ? marketingData[prevKey] : null;
 
   const getVariation = (current: number, previous: number | undefined) => {
     if (!previous) return undefined;
     return calculateVariation(current, previous);
   };
 
-  // Calcular cliques a partir de impressões e CTR
   const cliques = Math.round((currentData.impressoes * currentData.ctr) / 100);
 
-  // Calcular conversão geral (mensagens efetivas -> contratos)
   const conversaoGeral = (currentData.vendas / currentData.mensagensEfetivas) * 100;
   const previousConversaoGeral = previousData 
     ? (previousData.vendas / previousData.mensagensEfetivas) * 100 
+    : undefined;
+
+  // Custo por reunião
+  const currentSales = salesData[selectedMonth];
+  const reunioesRealizadas = currentSales?.funnel.reunioes.realizado || 0;
+  const custoPorReuniao = reunioesRealizadas > 0 ? currentData.investimento / reunioesRealizadas : 0;
+  
+  const prevSales = prevKey ? salesData[prevKey] : null;
+  const prevReunioes = prevSales?.funnel.reunioes.realizado || 0;
+  const prevCustoPorReuniao = prevReunioes > 0 && previousData ? previousData.investimento / prevReunioes : undefined;
+
+  // Conversão reuniões → contratos
+  const conversaoReunioes = reunioesRealizadas > 0 
+    ? (currentSales.funnel.contratos.realizado / reunioesRealizadas) * 100 
+    : 0;
+  const prevConversaoReunioes = prevReunioes > 0 && prevSales
+    ? (prevSales.funnel.contratos.realizado / prevReunioes) * 100
     : undefined;
 
   return (
@@ -85,7 +102,7 @@ const Index = () => {
         </div>
 
         {/* Segunda linha de métricas */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
           <MetricCard
             title="CPA"
             value={formatCurrency(currentData.cpa)}
@@ -117,6 +134,19 @@ const Index = () => {
             variation={getVariation(conversaoGeral, previousConversaoGeral)}
             delay={450}
           />
+          <MetricCard
+            title="Custo por Reunião"
+            value={custoPorReuniao > 0 ? formatCurrency(custoPorReuniao) : "N/A"}
+            variation={getVariation(custoPorReuniao, prevCustoPorReuniao)}
+            invertColors
+            delay={500}
+          />
+          <MetricCard
+            title="Conv. Reuniões"
+            value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "N/A"}
+            variation={getVariation(conversaoReunioes, prevConversaoReunioes)}
+            delay={550}
+          />
         </div>
 
         {/* Seção inferior com funis, ROI e gráfico */}
@@ -128,7 +158,10 @@ const Index = () => {
             vendas={currentData.vendas}
           />
           
-          <SalesFunnel data={salesData[selectedMonth] || salesData.novembro} />
+          <SalesFunnel 
+            data={salesData[selectedMonth] || salesData.novembro} 
+            investimento={currentData.investimento}
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
