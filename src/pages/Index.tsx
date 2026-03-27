@@ -29,7 +29,6 @@ const tabs = [
   { key: "comparativo", label: "Comparativo", icon: GitCompare },
   { key: "rentabilidade", label: "Rentabilidade", icon: DollarSign },
   { key: "consolidado", label: "Consolidado", icon: PieChart },
-  { key: "crm", label: "CRM", icon: Contact },
   { key: "pipeline", label: "Pipeline", icon: GitCompare },
 ];
 
