@@ -276,6 +276,11 @@ const Index = () => {
           {activeTab === "crm" && (
             <CRMPanel />
           )}
+
+          {/* Pipeline Tab */}
+          {activeTab === "pipeline" && (
+            <PipelinePanel />
+          )}
         </div>
       </main>
     </div>
