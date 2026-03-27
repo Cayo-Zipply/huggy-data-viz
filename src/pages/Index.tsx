@@ -23,8 +23,8 @@ import { RevenuePanel } from "@/components/RevenuePanel";
 const tabs = [
   { key: "marketing", label: "Funil de Marketing", icon: BarChart3 },
   { key: "comercial", label: "Funil Comercial", icon: Users },
-  { key: "rentabilidade", label: "Rentabilidade", icon: DollarSign },
   { key: "comparativo", label: "Comparativo", icon: GitCompare },
+  { key: "rentabilidade", label: "Rentabilidade", icon: DollarSign },
 ];
 
 const Index = () => {
