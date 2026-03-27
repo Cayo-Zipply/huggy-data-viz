@@ -419,8 +419,9 @@ export function PipelinePanel() {
       {showWebhook && (
         <div className="bg-muted/30 border border-border rounded-xl p-4 space-y-2">
           <p className="text-sm font-medium text-foreground flex items-center gap-2">
-            <Link2 size={14} /> URL do Webhook para Zapier
+            <Link2 size={14} /> Webhook — Google Sheets
           </p>
+          <p className="text-xs text-muted-foreground">Cole esta URL na extensão de webhook da sua planilha. Quando uma linha for alterada, o card será criado ou atualizado automaticamente.</p>
           <div className="flex gap-2">
             <code className="flex-1 text-xs bg-card border border-border rounded-lg p-2.5 text-foreground break-all select-all">
               {webhookUrl}
@@ -437,8 +438,8 @@ export function PipelinePanel() {
           </div>
           <div className="text-xs text-muted-foreground space-y-1">
             <p><strong>Método:</strong> POST</p>
-            <p><strong>Campos:</strong> nome, telefone, email, cnpj, valor_divida, status, origem, sheet_row_id</p>
-            <p><strong>Status aceitos:</strong> lead, conectado, sql, reunião marcada, no show, reunião realizada, link enviado, contrato assinado</p>
+            <p><strong>Campos reconhecidos:</strong> Nome, Telefone, Source, Etapa, ID, UF, Data</p>
+            <p><strong>Etapas mapeadas:</strong> Fez Contato → Conectado · SQL → SQL · Reunião marcada → Closer</p>
           </div>
         </div>
       )}
