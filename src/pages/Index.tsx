@@ -124,7 +124,7 @@ const Index = () => {
           <DashboardHeader 
             selectedMonth={selectedMonth} 
             onSelectMonth={setSelectedMonth}
-            hideMonthSelector={activeTab === "rentabilidade" || activeTab === "consolidado" || activeTab === "crm"}
+            hideMonthSelector={activeTab === "rentabilidade" || activeTab === "consolidado" || activeTab === "crm" || activeTab === "pipeline"}
           />
 
           {/* Marketing Tab */}
