@@ -45,14 +45,16 @@ Deno.serve(async (req) => {
 
     const results = []
     for (const lead of leads) {
-      const nome = lead.nome || lead.name || lead.Nome || lead.Name || 'Sem nome'
-      const telefone = lead.telefone || lead.phone || lead.Telefone || lead.Phone || ''
+      const nome = lead.nome || lead.Nome || lead.name || lead.Name || 'Sem nome'
+      const telefone = lead.telefone || lead.Telefone || lead.phone || lead.Phone || ''
       const email = lead.email || lead.Email || ''
       const cnpj = lead.cnpj || lead.CNPJ || ''
       const valorDivida = lead.valor_divida || lead.valor || lead.Valor || null
-      const origem = lead.origem || lead.source || lead.Origem || ''
-      const status = lead.status || lead.Status || 'lead'
-      const sheetRowId = lead.sheet_row_id || lead.row_id || lead.id || ''
+      const origem = lead.origem || lead.source || lead.Source || lead.Origem || ''
+      const status = lead.etapa || lead.Etapa || lead.status || lead.Status || 'lead'
+      const sheetRowId = lead.sheet_row_id || lead.row_id || lead.id || lead.ID || ''
+      const uf = lead.uf || lead.UF || ''
+      const data = lead.data || lead.Data || ''
 
       const { pipe, sdr_stage, closer_stage } = mapStatus(status)
 
