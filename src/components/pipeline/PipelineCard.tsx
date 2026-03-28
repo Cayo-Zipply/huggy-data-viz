@@ -15,11 +15,12 @@ interface Props {
   onMarkLost: (id: string, cat: string, reason: string) => void;
   onCreateTask: (task: Omit<PipelineTask, "id" | "created_at">) => void;
   onToggleTask: (id: string) => void;
+  onCardClick?: (card: CardType) => void;
 }
 
 type Tab = "info" | "historico" | "tarefas" | "acoes";
 
-export function PipelineCardItem({ card, tasks, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask }: Props) {
+export function PipelineCardItem({ card, tasks, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [tab, setTab] = useState<Tab>("info");
   const [editing, setEditing] = useState<string | null>(null);
