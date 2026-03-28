@@ -5,19 +5,19 @@ import { sbExt } from "@/lib/supabaseExternal";
 
 /* ── helpers: map DB etapa → local Stage ── */
 function mapEtapa(etapa: string | null): Stage {
-  if (!etapa) return "conectado";
+  if (!etapa) return "fez_contato";
   const e = etapa.toLowerCase().trim();
-  if (e === "fez contato" || e === "lead") return "conectado";
+  if (e === "fez contato" || e === "lead" || e === "fez_contato") return "fez_contato";
   if (e === "conectado") return "conectado";
   if (e === "sql") return "sql";
+  if (e === "contestado") return "sql";
   if (e === "reunião marcada" || e === "reuniao_marcada" || e === "reuniao marcada") return "reuniao_marcada";
   if (e === "reunião agendada" || e === "reuniao_agendada" || e === "reuniao agendada") return "reuniao_agendada";
   if (e === "no show" || e === "no_show") return "no_show";
   if (e === "reunião realizada" || e === "reuniao_realizada" || e === "reuniao realizada") return "reuniao_realizada";
   if (e === "link enviado" || e === "link_enviado") return "link_enviado";
   if (e === "contrato assinado" || e === "contrato_assinado") return "contrato_assinado";
-  if (e === "contestado") return "sql";
-  return "conectado";
+  return "fez_contato";
 }
 
 function mapStatus(status: string | null): "aberto" | "ganho" | "perdido" {
