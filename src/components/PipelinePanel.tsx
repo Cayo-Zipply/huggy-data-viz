@@ -32,6 +32,7 @@ export function PipelinePanel() {
   const [showNewLead, setShowNewLead] = useState(false);
   const [newLeadName, setNewLeadName] = useState("");
   const [newLeadPhone, setNewLeadPhone] = useState("");
+  const [drawerCard, setDrawerCard] = useState<PipelineCard | null>(null);
   const { toast } = useToast();
 
   const isAdmin = activeUser === "Cayo";
