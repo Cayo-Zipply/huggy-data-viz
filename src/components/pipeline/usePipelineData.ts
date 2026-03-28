@@ -1,78 +1,188 @@
-import { useState, useCallback, useEffect } from "react";
-import type { PipelineCard, PipelineTask, PipelineGoal, Stage, PipeType } from "./types";
+import { useState, useCallback, useEffect, useRef } from "react";
+import type { PipelineCard, PipelineTask, PipelineGoal, Stage, PipeType, StageChange } from "./types";
 import { DEFAULT_DEAL_VALUE, STAGE_CONFIG, AUTO_TASKS, addDays } from "./types";
-import { supabase } from "@/integrations/supabase/client";
+import { sbExt } from "@/lib/supabaseExternal";
 
-const K = { cards: "crm_cards", tasks: "crm_tasks", goals: "crm_goals", loaded: "crm_db_loaded" };
-function load<T>(k: string, d: T): T { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }
-
-function mapDbStage(pipe: string, sdr_stage: string | null, closer_stage: string | null): Stage {
-  if (pipe === "closer") {
-    if (closer_stage === "reuniao_agendada") return "reuniao_agendada";
-    if (closer_stage === "no_show") return "no_show";
-    if (closer_stage === "reuniao_realizada") return "reuniao_realizada";
-    if (closer_stage === "link_enviado") return "link_enviado";
-    if (closer_stage === "contrato_assinado") return "contrato_assinado";
-    return "reuniao_agendada";
-  }
-  if (sdr_stage === "lead" || sdr_stage === "conectado") return "conectado";
-  if (sdr_stage === "sql") return "sql";
-  if (sdr_stage === "reuniao_marcada") return "reuniao_marcada";
+/* ── helpers: map DB etapa → local Stage ── */
+function mapEtapa(etapa: string | null): Stage {
+  if (!etapa) return "conectado";
+  const e = etapa.toLowerCase().trim();
+  if (e === "fez contato" || e === "lead") return "conectado";
+  if (e === "conectado") return "conectado";
+  if (e === "sql") return "sql";
+  if (e === "reunião marcada" || e === "reuniao_marcada" || e === "reuniao marcada") return "reuniao_marcada";
+  if (e === "reunião agendada" || e === "reuniao_agendada" || e === "reuniao agendada") return "reuniao_agendada";
+  if (e === "no show" || e === "no_show") return "no_show";
+  if (e === "reunião realizada" || e === "reuniao_realizada" || e === "reuniao realizada") return "reuniao_realizada";
+  if (e === "link enviado" || e === "link_enviado") return "link_enviado";
+  if (e === "contrato assinado" || e === "contrato_assinado") return "contrato_assinado";
+  if (e === "contestado") return "sql";
   return "conectado";
 }
 
+function mapStatus(status: string | null): "aberto" | "ganho" | "perdido" {
+  if (!status) return "aberto";
+  const s = status.toLowerCase().trim();
+  if (s === "ganho" || s === "convertido" || s === "contrato assinado") return "ganho";
+  if (s === "perdido") return "perdido";
+  return "aberto";
+}
+
+function stageToEtapa(stage: Stage): string {
+  const map: Record<Stage, string> = {
+    conectado: "conectado",
+    sql: "sql",
+    reuniao_marcada: "reunião marcada",
+    reuniao_agendada: "reunião agendada",
+    no_show: "no show",
+    reuniao_realizada: "reunião realizada",
+    link_enviado: "link enviado",
+    contrato_assinado: "contrato assinado",
+  };
+  return map[stage] || stage;
+}
+
+function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
+  const stage = mapEtapa(row.etapa_atual);
+  return {
+    id: row.id,
+    nome: row.nome || "",
+    telefone: row.telefone || null,
+    email: null,
+    cnpj: null,
+    valor_divida: null,
+    pipe: STAGE_CONFIG[stage].pipe as PipeType,
+    stage,
+    origem: row.origem || null,
+    anotacoes: row.anotacoes || null,
+    contract_url: null,
+    created_at: row.data_entrada || row.created_at || new Date().toISOString(),
+    updated_at: row.data_ultima_mudanca_etapa || new Date().toISOString(),
+    owner: row.closer || null,
+    deal_value: row.valor_negocio || DEFAULT_DEAL_VALUE,
+    lead_status: mapStatus(row.status),
+    loss_reason: row.motivo_perda_detalhe || row.motivo_perda || null,
+    loss_category: null,
+    last_stage: row.ultima_etapa || null,
+    stage_changed_at: row.data_ultima_mudanca_etapa || row.data_entrada || new Date().toISOString(),
+    history,
+  };
+}
+
+function dbRowToTask(row: any): PipelineTask {
+  return {
+    id: row.id,
+    card_id: row.lead_id,
+    title: row.titulo,
+    due_date: row.data_tarefa,
+    responsible: row.closer || null,
+    status: row.status === "concluida" ? "concluida" : "pendente",
+    pipe_context: (row.pipeline || "sdr") as PipeType,
+    auto_generated: row.auto || false,
+    created_at: row.created_at || new Date().toISOString(),
+  };
+}
+
+function dbRowToGoal(row: any): PipelineGoal {
+  return {
+    closer: row.closer,
+    month: row.mes,
+    reunioes_marcadas_meta: row.meta_reunioes_marcadas || 0,
+    reunioes_realizadas_meta: row.meta_reunioes_realizadas || 0,
+    faturamento_meta: row.meta_faturamento || 0,
+    conversao_meta: row.meta_conversao || 0,
+  };
+}
+
+/* ── main hook ── */
 export function usePipelineData(activeUser: string) {
-  const [cards, setCards] = useState<PipelineCard[]>(() => load(K.cards, []));
-  const [tasks, setTasks] = useState<PipelineTask[]>(() => load(K.tasks, []));
-  const [goals, setGoals] = useState<PipelineGoal[]>(() => load(K.goals, []));
+  const [cards, setCards] = useState<PipelineCard[]>([]);
+  const [tasks, setTasks] = useState<PipelineTask[]>([]);
+  const [goals, setGoals] = useState<PipelineGoal[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const channelRef = useRef<any>(null);
 
-  // Load from DB on first mount
+  /* ── initial fetch ── */
   useEffect(() => {
-    const alreadyLoaded = localStorage.getItem(K.loaded);
-    if (alreadyLoaded) return;
-
     (async () => {
-      const { data, error } = await supabase.from("pipeline_cards").select("*");
-      if (error || !data || data.length === 0) return;
+      const [leadsRes, tasksRes, goalsRes, histRes] = await Promise.all([
+        sbExt.from("leads").select("*"),
+        sbExt.from("tarefas").select("*"),
+        sbExt.from("metas").select("*"),
+        sbExt.from("lead_historico").select("*").order("created_at", { ascending: true }),
+      ]);
 
-      const mapped: PipelineCard[] = data.map((row: any) => {
-        const stage = mapDbStage(row.pipe, row.sdr_stage, row.closer_stage);
-        const now = row.updated_at || new Date().toISOString();
-        return {
-          id: row.id,
-          nome: row.nome,
-          telefone: row.telefone || null,
-          email: row.email || null,
-          cnpj: row.cnpj || null,
-          valor_divida: row.valor_divida || null,
-          pipe: STAGE_CONFIG[stage].pipe as PipeType,
-          stage,
-          origem: row.origem || null,
-          anotacoes: row.anotacoes || null,
-          contract_url: row.contract_url || null,
-          created_at: row.created_at,
-          updated_at: now,
-          owner: row.owner || null,
-          deal_value: row.deal_value || DEFAULT_DEAL_VALUE,
-          lead_status: (row.lead_status as any) || "aberto",
-          loss_reason: row.loss_reason || null,
-          loss_category: null,
-          last_stage: row.last_stage || null,
-          stage_changed_at: row.stage_changed_at || row.created_at,
-          history: [{ from: null, to: stage, at: row.created_at, by: "sistema", duration_days: null }],
-        };
+      // group history by lead_id
+      const histMap = new Map<string, StageChange[]>();
+      (histRes.data || []).forEach((h: any) => {
+        const arr = histMap.get(h.lead_id) || [];
+        arr.push({
+          from: h.etapa_de || null,
+          to: h.etapa_para || "",
+          at: h.created_at,
+          by: h.closer || "sistema",
+          duration_days: null,
+        });
+        histMap.set(h.lead_id, arr);
       });
 
-      setCards(mapped);
-      localStorage.setItem(K.cards, JSON.stringify(mapped));
-      localStorage.setItem(K.loaded, "true");
+      const mappedCards = (leadsRes.data || []).map((row: any) => {
+        const hist = histMap.get(row.id) || [{ from: null, to: mapEtapa(row.etapa_atual), at: row.data_entrada || new Date().toISOString(), by: "sistema", duration_days: null }];
+        return dbRowToCard(row, hist);
+      });
+
+      setCards(mappedCards);
+      setTasks((tasksRes.data || []).map(dbRowToTask));
+      setGoals((goalsRes.data || []).map(dbRowToGoal));
+      setLoaded(true);
     })();
   }, []);
 
-  useEffect(() => { localStorage.setItem(K.cards, JSON.stringify(cards)); }, [cards]);
-  useEffect(() => { localStorage.setItem(K.tasks, JSON.stringify(tasks)); }, [tasks]);
-  useEffect(() => { localStorage.setItem(K.goals, JSON.stringify(goals)); }, [goals]);
+  /* ── realtime subscription ── */
+  useEffect(() => {
+    if (!loaded) return;
 
+    const channel = sbExt
+      .channel("crm-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, async (payload) => {
+        if (payload.eventType === "DELETE") {
+          setCards(prev => prev.filter(c => c.id !== (payload.old as any).id));
+          return;
+        }
+        const row = payload.new as any;
+        // fetch history for this lead
+        const { data: hist } = await sbExt.from("lead_historico").select("*").eq("lead_id", row.id).order("created_at", { ascending: true });
+        const history: StageChange[] = (hist || []).map((h: any) => ({
+          from: h.etapa_de || null, to: h.etapa_para || "", at: h.created_at, by: h.closer || "sistema", duration_days: null,
+        }));
+        if (!history.length) history.push({ from: null, to: mapEtapa(row.etapa_atual), at: row.data_entrada || new Date().toISOString(), by: "sistema", duration_days: null });
+
+        const card = dbRowToCard(row, history);
+        setCards(prev => {
+          const idx = prev.findIndex(c => c.id === row.id);
+          if (idx >= 0) { const n = [...prev]; n[idx] = card; return n; }
+          return [card, ...prev];
+        });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "tarefas" }, (payload) => {
+        if (payload.eventType === "DELETE") {
+          setTasks(prev => prev.filter(t => t.id !== (payload.old as any).id));
+          return;
+        }
+        const task = dbRowToTask(payload.new as any);
+        setTasks(prev => {
+          const idx = prev.findIndex(t => t.id === task.id);
+          if (idx >= 0) { const n = [...prev]; n[idx] = task; return n; }
+          return [task, ...prev];
+        });
+      })
+      .subscribe();
+
+    channelRef.current = channel;
+    return () => { sbExt.removeChannel(channel); };
+  }, [loaded]);
+
+  /* ── auto tasks generator ── */
   const genAutoTasks = useCallback((card: PipelineCard, stage: Stage) => {
     const cfg = AUTO_TASKS[stage] || [];
     const now = new Date().toISOString();
@@ -90,91 +200,177 @@ export function usePipelineData(activeUser: string) {
     }));
   }, []);
 
-  const createCard = useCallback((data: Partial<PipelineCard> & { nome: string }) => {
+  /* ── CRUD: create card ── */
+  const createCard = useCallback(async (data: Partial<PipelineCard> & { nome: string }) => {
     const now = new Date().toISOString();
     const stage = data.stage || "conectado";
-    const card: PipelineCard = {
-      id: crypto.randomUUID(),
+    const id = crypto.randomUUID();
+
+    const { error } = await sbExt.from("leads").insert({
+      id,
       nome: data.nome,
       telefone: data.telefone || null,
-      email: data.email || null,
-      cnpj: data.cnpj || null,
-      valor_divida: data.valor_divida || null,
-      pipe: STAGE_CONFIG[stage].pipe as PipeType,
-      stage,
       origem: data.origem || null,
+      etapa_atual: stageToEtapa(stage),
+      status: "aberto",
+      closer: data.owner || activeUser,
+      valor_negocio: data.deal_value || DEFAULT_DEAL_VALUE,
+      data_entrada: data.created_at || now,
+      data_ultima_mudanca_etapa: now,
       anotacoes: data.anotacoes || null,
-      contract_url: null,
-      created_at: data.created_at || now,
-      updated_at: now,
-      owner: data.owner || activeUser,
-      deal_value: data.deal_value || DEFAULT_DEAL_VALUE,
-      lead_status: "aberto",
-      loss_reason: null,
-      loss_category: null,
-      last_stage: null,
-      stage_changed_at: now,
+    });
+    if (error) { console.error("Insert lead error:", error); return null; }
+
+    // insert history
+    await sbExt.from("lead_historico").insert({
+      lead_id: id,
+      etapa_de: null,
+      etapa_para: stageToEtapa(stage),
+      evento: "criado",
+      closer: data.owner || activeUser,
+    });
+
+    // auto tasks
+    const card: PipelineCard = {
+      id, nome: data.nome, telefone: data.telefone || null, email: null, cnpj: null, valor_divida: null,
+      pipe: STAGE_CONFIG[stage].pipe as PipeType, stage, origem: data.origem || null, anotacoes: data.anotacoes || null,
+      contract_url: null, created_at: data.created_at || now, updated_at: now, owner: data.owner || activeUser,
+      deal_value: data.deal_value || DEFAULT_DEAL_VALUE, lead_status: "aberto", loss_reason: null, loss_category: null,
+      last_stage: null, stage_changed_at: now,
       history: [{ from: null, to: stage, at: now, by: activeUser, duration_days: null }],
     };
-    setCards(prev => [card, ...prev]);
-    // Auto task: first contact
-    const firstTask: PipelineTask = {
-      id: crypto.randomUUID(), card_id: card.id,
-      title: `Primeiro contato — ${card.nome}`,
-      due_date: addDays(now, 1), responsible: card.owner,
-      status: "pendente", pipe_context: "sdr", auto_generated: true, created_at: now,
+
+    const firstTask = {
+      id: crypto.randomUUID(), lead_id: id, titulo: `Primeiro contato — ${data.nome}`,
+      data_tarefa: addDays(now, 1), status: "pendente", pipeline: "sdr", closer: data.owner || activeUser, auto: true,
     };
-    const stageTasks = genAutoTasks(card, stage);
-    setTasks(prev => [firstTask, ...stageTasks, ...prev]);
+    const stageTasks = genAutoTasks(card, stage).map(t => ({
+      id: t.id, lead_id: t.card_id, titulo: t.title, data_tarefa: t.due_date,
+      status: "pendente", pipeline: t.pipe_context, closer: t.responsible, auto: true,
+    }));
+    await sbExt.from("tarefas").insert([firstTask, ...stageTasks]);
+
     return card;
   }, [activeUser, genAutoTasks]);
 
-  const updateCard = useCallback((id: string, updates: Partial<PipelineCard>) => {
+  /* ── update card ── */
+  const updateCard = useCallback(async (id: string, updates: Partial<PipelineCard>) => {
+    const dbUpdates: any = {};
+    if (updates.nome !== undefined) dbUpdates.nome = updates.nome;
+    if (updates.telefone !== undefined) dbUpdates.telefone = updates.telefone;
+    if (updates.origem !== undefined) dbUpdates.origem = updates.origem;
+    if (updates.anotacoes !== undefined) dbUpdates.anotacoes = updates.anotacoes;
+    if (updates.deal_value !== undefined) dbUpdates.valor_negocio = updates.deal_value;
+    if (updates.owner !== undefined) dbUpdates.closer = updates.owner;
+    if (updates.lead_status !== undefined) dbUpdates.status = updates.lead_status;
+    if (updates.loss_reason !== undefined) dbUpdates.motivo_perda_detalhe = updates.loss_reason;
+    if (updates.loss_category !== undefined) dbUpdates.motivo_perda = updates.loss_category;
+    if (updates.last_stage !== undefined) dbUpdates.ultima_etapa = updates.last_stage;
+
+    if (Object.keys(dbUpdates).length) {
+      await sbExt.from("leads").update(dbUpdates).eq("id", id);
+    }
+
+    // optimistic
     setCards(prev => prev.map(c => c.id === id ? { ...c, ...updates, updated_at: new Date().toISOString() } : c));
   }, []);
 
-  const moveCard = useCallback((cardId: string, targetStage: Stage) => {
+  /* ── move card ── */
+  const moveCard = useCallback(async (cardId: string, targetStage: Stage) => {
     const card = cards.find(c => c.id === cardId);
     if (!card || card.stage === targetStage) return;
     const now = new Date().toISOString();
     const dur = Math.round((Date.now() - new Date(card.stage_changed_at).getTime()) / 86400000);
-    const entry = { from: card.stage, to: targetStage, at: now, by: activeUser, duration_days: dur };
+
+    // update DB
+    await sbExt.from("leads").update({
+      etapa_atual: stageToEtapa(targetStage),
+      ultima_etapa: stageToEtapa(card.stage),
+      data_ultima_mudanca_etapa: now,
+    }).eq("id", cardId);
+
+    // insert history
+    await sbExt.from("lead_historico").insert({
+      lead_id: cardId,
+      etapa_de: stageToEtapa(card.stage),
+      etapa_para: stageToEtapa(targetStage),
+      evento: "mudança de etapa",
+      closer: activeUser,
+    });
+
+    // auto tasks
     const updated: PipelineCard = {
       ...card, stage: targetStage, pipe: STAGE_CONFIG[targetStage].pipe as PipeType,
-      stage_changed_at: now, updated_at: now, history: [...card.history, entry],
+      stage_changed_at: now, updated_at: now,
+      history: [...card.history, { from: card.stage, to: targetStage, at: now, by: activeUser, duration_days: dur }],
     };
-    setCards(prev => prev.map(c => c.id === cardId ? updated : c));
     const newTasks = genAutoTasks(updated, targetStage);
-    if (newTasks.length) setTasks(prev => [...newTasks, ...prev]);
+    if (newTasks.length) {
+      await sbExt.from("tarefas").insert(newTasks.map(t => ({
+        id: t.id, lead_id: t.card_id, titulo: t.title, data_tarefa: t.due_date,
+        status: "pendente", pipeline: t.pipe_context, closer: t.responsible, auto: true,
+      })));
+    }
+
+    // optimistic
+    setCards(prev => prev.map(c => c.id === cardId ? updated : c));
   }, [cards, activeUser, genAutoTasks]);
 
-  const markWon = useCallback((id: string) => {
-    updateCard(id, { lead_status: "ganho" });
-  }, [updateCard]);
+  /* ── mark won/lost ── */
+  const markWon = useCallback(async (id: string) => {
+    await sbExt.from("leads").update({ status: "ganho" }).eq("id", id);
+    setCards(prev => prev.map(c => c.id === id ? { ...c, lead_status: "ganho", updated_at: new Date().toISOString() } : c));
+  }, []);
 
-  const markLost = useCallback((id: string, category: string, reason: string) => {
+  const markLost = useCallback(async (id: string, category: string, reason: string) => {
     const card = cards.find(c => c.id === id);
-    updateCard(id, {
-      lead_status: "perdido",
-      loss_category: category as any,
-      loss_reason: reason || category,
-      last_stage: card?.stage || null,
+    await sbExt.from("leads").update({
+      status: "perdido",
+      motivo_perda: category,
+      motivo_perda_detalhe: reason || category,
+      ultima_etapa: card ? stageToEtapa(card.stage) : null,
+    }).eq("id", id);
+    setCards(prev => prev.map(c => c.id === id ? {
+      ...c, lead_status: "perdido", loss_category: category as any,
+      loss_reason: reason || category, last_stage: card?.stage || null,
+      updated_at: new Date().toISOString(),
+    } : c));
+  }, [cards]);
+
+  /* ── tasks ── */
+  const createTask = useCallback(async (task: Omit<PipelineTask, "id" | "created_at">) => {
+    const id = crypto.randomUUID();
+    await sbExt.from("tarefas").insert({
+      id, lead_id: task.card_id, titulo: task.title, data_tarefa: task.due_date,
+      status: task.status, pipeline: task.pipe_context, closer: task.responsible, auto: task.auto_generated,
     });
-  }, [cards, updateCard]);
-
-  const createTask = useCallback((task: Omit<PipelineTask, "id" | "created_at">) => {
-    setTasks(prev => [{ ...task, id: crypto.randomUUID(), created_at: new Date().toISOString() }, ...prev]);
+    setTasks(prev => [{ ...task, id, created_at: new Date().toISOString() }, ...prev]);
   }, []);
 
-  const toggleTask = useCallback((id: string) => {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, status: t.status === "pendente" ? "concluida" : "pendente" } : t));
-  }, []);
+  const toggleTask = useCallback(async (id: string) => {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    const newStatus = task.status === "pendente" ? "concluida" : "pendente";
+    await sbExt.from("tarefas").update({ status: newStatus }).eq("id", id);
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
+  }, [tasks]);
 
-  const rescheduleTask = useCallback((id: string, date: string) => {
+  const rescheduleTask = useCallback(async (id: string, date: string) => {
+    await sbExt.from("tarefas").update({ data_tarefa: date }).eq("id", id);
     setTasks(prev => prev.map(t => t.id === id ? { ...t, due_date: date } : t));
   }, []);
 
-  const upsertGoal = useCallback((goal: PipelineGoal) => {
+  /* ── goals ── */
+  const upsertGoal = useCallback(async (goal: PipelineGoal) => {
+    await sbExt.from("metas").upsert({
+      closer: goal.closer,
+      mes: goal.month,
+      meta_reunioes_marcadas: goal.reunioes_marcadas_meta,
+      meta_reunioes_realizadas: goal.reunioes_realizadas_meta,
+      meta_faturamento: goal.faturamento_meta,
+      meta_conversao: goal.conversao_meta,
+    }, { onConflict: "closer,mes" });
+
     setGoals(prev => {
       const idx = prev.findIndex(g => g.closer === goal.closer && g.month === goal.month);
       if (idx >= 0) { const n = [...prev]; n[idx] = goal; return n; }
@@ -182,7 +378,8 @@ export function usePipelineData(activeUser: string) {
     });
   }, []);
 
-  const importCSV = useCallback((text: string) => {
+  /* ── CSV import ── */
+  const importCSV = useCallback(async (text: string) => {
     const lines = text.split("\n").map(l => l.split(",").map(c => c.trim().replace(/^"|"$/g, "")));
     if (lines.length < 2) return 0;
     const header = lines[0].map(h => h.toLowerCase());
@@ -191,20 +388,31 @@ export function usePipelineData(activeUser: string) {
     const oi = header.findIndex(h => h.includes("source") || h.includes("origem"));
     const di = header.findIndex(h => h.includes("data") || h.includes("date"));
     if (ni < 0) return 0;
-    let count = 0;
+
+    const rows: any[] = [];
     for (let i = 1; i < lines.length; i++) {
       const row = lines[i];
       if (!row[ni]) continue;
-      createCard({
+      rows.push({
+        id: crypto.randomUUID(),
         nome: row[ni],
         telefone: ti >= 0 ? row[ti] : null,
         origem: oi >= 0 ? row[oi] : null,
-        created_at: di >= 0 && row[di] ? new Date(row[di]).toISOString() : undefined,
+        etapa_atual: "conectado",
+        status: "aberto",
+        closer: activeUser,
+        valor_negocio: DEFAULT_DEAL_VALUE,
+        data_entrada: di >= 0 && row[di] ? new Date(row[di]).toISOString() : new Date().toISOString(),
+        data_ultima_mudanca_etapa: new Date().toISOString(),
       });
-      count++;
     }
-    return count;
-  }, [createCard]);
+
+    if (rows.length) {
+      const { error } = await sbExt.from("leads").insert(rows);
+      if (error) console.error("CSV import error:", error);
+    }
+    return rows.length;
+  }, [activeUser]);
 
   return {
     cards, tasks, goals,
