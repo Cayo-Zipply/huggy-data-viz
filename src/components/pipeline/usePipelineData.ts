@@ -95,6 +95,9 @@ function dbRowToGoal(row: any): PipelineGoal {
   };
 }
 
+/* ── localStorage legacy helpers ── */
+function loadLS<T>(k: string, d: T): T { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }
+
 /* ── main hook ── */
 export function usePipelineData(activeUser: string) {
   const [cards, setCards] = useState<PipelineCard[]>([]);
@@ -103,9 +106,15 @@ export function usePipelineData(activeUser: string) {
   const [loaded, setLoaded] = useState(false);
   const channelRef = useRef<any>(null);
 
-  /* ── initial fetch ── */
+  /* ── initial fetch: merge localStorage legacy + Supabase ── */
   useEffect(() => {
     (async () => {
+      // Load old localStorage cards (legacy)
+      const legacyCards: PipelineCard[] = loadLS("crm_cards", []);
+      const legacyTasks: PipelineTask[] = loadLS("crm_tasks", []);
+      const legacyGoals: PipelineGoal[] = loadLS("crm_goals", []);
+
+      // Fetch from Supabase
       const [leadsRes, tasksRes, goalsRes, histRes] = await Promise.all([
         sbExt.from("leads").select("*"),
         sbExt.from("tarefas").select("*"),
@@ -127,14 +136,24 @@ export function usePipelineData(activeUser: string) {
         histMap.set(h.lead_id, arr);
       });
 
-      const mappedCards = (leadsRes.data || []).map((row: any) => {
+      const supaCards = (leadsRes.data || []).map((row: any) => {
         const hist = histMap.get(row.id) || [{ from: null, to: mapEtapa(row.etapa_atual), at: row.data_entrada || new Date().toISOString(), by: "sistema", duration_days: null }];
         return dbRowToCard(row, hist);
       });
 
-      setCards(mappedCards);
-      setTasks((tasksRes.data || []).map(dbRowToTask));
-      setGoals((goalsRes.data || []).map(dbRowToGoal));
+      // Merge: Supabase cards take priority, legacy cards fill in missing IDs
+      const supaIds = new Set(supaCards.map(c => c.id));
+      const mergedCards = [...supaCards, ...legacyCards.filter(c => !supaIds.has(c.id))];
+
+      const supaTasks = (tasksRes.data || []).map(dbRowToTask);
+      const supaTaskIds = new Set(supaTasks.map(t => t.id));
+      const mergedTasks = [...supaTasks, ...legacyTasks.filter(t => !supaTaskIds.has(t.id))];
+
+      const supaGoals = (goalsRes.data || []).map(dbRowToGoal);
+
+      setCards(mergedCards);
+      setTasks(mergedTasks);
+      setGoals(supaGoals.length ? supaGoals : legacyGoals);
       setLoaded(true);
     })();
   }, []);
