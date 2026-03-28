@@ -8,8 +8,9 @@ import { TasksPanel } from "./pipeline/TasksPanel";
 import { CRMDashboard } from "./pipeline/CRMDashboard";
 import { GoalsPanel } from "./pipeline/GoalsPanel";
 import { HandoffChecklist } from "./pipeline/HandoffChecklist";
+import { LeadDrawer } from "./pipeline/LeadDrawer";
 import { CLOSERS, SDR_STAGES, CLOSER_STAGES, STAGE_CONFIG, STAGE_ORDER } from "./pipeline/types";
-import type { PipeType, Stage } from "./pipeline/types";
+import type { PipeType, Stage, PipelineCard } from "./pipeline/types";
 import { useToast } from "@/hooks/use-toast";
 
 const SUB_TABS = [
