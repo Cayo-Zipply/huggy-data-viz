@@ -8,8 +8,9 @@ import { TasksPanel } from "./pipeline/TasksPanel";
 import { CRMDashboard } from "./pipeline/CRMDashboard";
 import { GoalsPanel } from "./pipeline/GoalsPanel";
 import { HandoffChecklist } from "./pipeline/HandoffChecklist";
+import { LeadDrawer } from "./pipeline/LeadDrawer";
 import { CLOSERS, SDR_STAGES, CLOSER_STAGES, STAGE_CONFIG, STAGE_ORDER } from "./pipeline/types";
-import type { PipeType, Stage } from "./pipeline/types";
+import type { PipeType, Stage, PipelineCard } from "./pipeline/types";
 import { useToast } from "@/hooks/use-toast";
 
 const SUB_TABS = [
@@ -31,6 +32,7 @@ export function PipelinePanel() {
   const [showNewLead, setShowNewLead] = useState(false);
   const [newLeadName, setNewLeadName] = useState("");
   const [newLeadPhone, setNewLeadPhone] = useState("");
+  const [drawerCard, setDrawerCard] = useState<PipelineCard | null>(null);
   const { toast } = useToast();
 
   const isAdmin = activeUser === "Cayo";
@@ -186,7 +188,8 @@ export function PipelinePanel() {
             {getStages().map(s => (
               <StageColumn key={s} stageKey={s} cards={getCardsForStage(s)} tasks={tasks}
                 onUpdate={updateCard} onDrop={handleDrop} onMarkWon={markWon} onMarkLost={markLost}
-                onCreateTask={createTask} onToggleTask={toggleTask} />
+                onCreateTask={createTask} onToggleTask={toggleTask}
+                onCardClick={(c) => setDrawerCard(c)} />
             ))}
           </div>
         </>
@@ -195,6 +198,19 @@ export function PipelinePanel() {
       {subTab === "hoje" && <TasksPanel tasks={tasks} cards={cards} activeUser={activeUser} onToggle={toggleTask} onReschedule={rescheduleTask} />}
       {subTab === "dashboard" && <CRMDashboard cards={cards} activeUser={activeUser} />}
       {subTab === "metas" && <GoalsPanel cards={cards} goals={goals} activeUser={activeUser} onSave={upsertGoal} />}
+
+      {/* Lead Drawer */}
+      <LeadDrawer
+        card={drawerCard ? cards.find(c => c.id === drawerCard.id) || drawerCard : null}
+        tasks={tasks}
+        open={!!drawerCard}
+        onOpenChange={(open) => { if (!open) setDrawerCard(null); }}
+        onUpdate={updateCard}
+        onMarkWon={markWon}
+        onMarkLost={markLost}
+        onCreateTask={createTask}
+        onToggleTask={toggleTask}
+      />
     </div>
   );
 }

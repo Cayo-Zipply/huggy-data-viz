@@ -15,11 +15,12 @@ interface Props {
   onMarkLost: (id: string, cat: string, reason: string) => void;
   onCreateTask: (task: Omit<PipelineTask, "id" | "created_at">) => void;
   onToggleTask: (id: string) => void;
+  onCardClick?: (card: CardType) => void;
 }
 
 type Tab = "info" | "historico" | "tarefas" | "acoes";
 
-export function PipelineCardItem({ card, tasks, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask }: Props) {
+export function PipelineCardItem({ card, tasks, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [tab, setTab] = useState<Tab>("info");
   const [editing, setEditing] = useState<string | null>(null);
@@ -80,9 +81,9 @@ export function PipelineCardItem({ card, tasks, onUpdate, onMarkWon, onMarkLost,
       <div className="p-3">
         {/* Header */}
         <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onCardClick?.(card)}>
             <div className="flex items-center gap-1.5">
-              <p className="font-semibold text-foreground text-sm truncate">{card.nome}</p>
+              <p className="font-semibold text-foreground text-sm truncate hover:text-primary transition-colors">{card.nome}</p>
               {isWon && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">Ganho</span>}
               {isLost && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-destructive/20 text-red-400 font-medium">Perdido</span>}
               {stale && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400">{staleDays}d parado</span>}

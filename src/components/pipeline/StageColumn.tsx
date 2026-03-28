@@ -15,9 +15,10 @@ interface Props {
   onMarkLost: (id: string, cat: string, reason: string) => void;
   onCreateTask: (task: Omit<PipelineTask, "id" | "created_at">) => void;
   onToggleTask: (id: string) => void;
+  onCardClick?: (card: PipelineCard) => void;
 }
 
-export function StageColumn({ stageKey, cards, tasks, onUpdate, onDrop, onMarkWon, onMarkLost, onCreateTask, onToggleTask }: Props) {
+export function StageColumn({ stageKey, cards, tasks, onUpdate, onDrop, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick }: Props) {
   const cfg = STAGE_CONFIG[stageKey];
   const Icon = cfg.icon;
   const [dragOver, setDragOver] = useState(false);
@@ -64,7 +65,8 @@ export function StageColumn({ stageKey, cards, tasks, onUpdate, onDrop, onMarkWo
         {cards.map(card => (
           <div key={card.id} draggable onDragStart={e => e.dataTransfer.setData("cardId", card.id)} className="cursor-grab active:cursor-grabbing">
             <PipelineCardItem card={card} tasks={tasks} onUpdate={onUpdate}
-              onMarkWon={onMarkWon} onMarkLost={onMarkLost} onCreateTask={onCreateTask} onToggleTask={onToggleTask} />
+              onMarkWon={onMarkWon} onMarkLost={onMarkLost} onCreateTask={onCreateTask} onToggleTask={onToggleTask}
+              onCardClick={onCardClick} />
           </div>
         ))}
         {cards.length === 0 && <p className="text-xs text-muted-foreground text-center py-8">Nenhum lead</p>}
