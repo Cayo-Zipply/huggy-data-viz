@@ -30,6 +30,7 @@ function mapStatus(status: string | null): "aberto" | "ganho" | "perdido" {
 
 function stageToEtapa(stage: Stage): string {
   const map: Record<Stage, string> = {
+    fez_contato: "fez contato",
     conectado: "conectado",
     sql: "sql",
     reuniao_marcada: "reunião marcada",
