@@ -85,6 +85,7 @@ export const SDR_STAGES = STAGE_ORDER.filter(s => STAGE_CONFIG[s].pipe === "sdr"
 export const CLOSER_STAGES = STAGE_ORDER.filter(s => STAGE_CONFIG[s].pipe === "closer");
 
 export const AUTO_TASKS: Record<Stage, { title: (n: string) => string; daysOffset: number }[]> = {
+  fez_contato: [{ title: n => `Primeiro contato — ${n}`, daysOffset: 1 }],
   conectado: [{ title: n => `Enviar áudio de apresentação — ${n}`, daysOffset: 1 }],
   sql: [{ title: n => `Confirmar dor principal e agendar reunião — ${n}`, daysOffset: 0 }],
   reuniao_marcada: [
