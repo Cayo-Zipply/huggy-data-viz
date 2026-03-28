@@ -22,7 +22,7 @@ const SUB_TABS = [
 
 export function PipelinePanel() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeUser, setActiveUser] = useState(() => localStorage.getItem("crm_active_user") || "Cayo");
+  const [State(() => localStorage.getItem("crm_active_user") || "Cayo");
   useEffect(() => { localStorage.setItem("crm_active_user", activeUser); }, [activeUser]);
 
   const { cards, tasks, goals, createCard, updateCard, moveCard, markWon, markLost, createTask, toggleTask, rescheduleTask, upsertGoal, importCSV } = usePipelineData(activeUser);
@@ -52,7 +52,7 @@ export function PipelinePanel() {
   const handleDrop = (cardId: string, targetStage: string) => {
     const card = cards.find(c => c.id === cardId);
     if (!card || card.stage === targetStage) return;
-    // Handoff check: SDR â Closer
+    // Handoff check: SDR → Closer
     if (card.pipe === "sdr" && STAGE_CONFIG[targetStage as Stage]?.pipe === "closer") {
       setPendingHandoff({ cardId, targetStage: targetStage as Stage });
       return;
@@ -105,7 +105,7 @@ export function PipelinePanel() {
   const sdrCount = visibleCards.filter(c => c.pipe === "sdr").length;
   const closerCount = visibleCards.filter(c => c.pipe === "closer").length;
 
-  const filterLeads = (items) => {
+  const filterLeads = <T extends Record<string, unknown>>(items: T[]): T[] => {
     if (!searchQuery.trim()) return items;
     const q = searchQuery.toLowerCase();
     return items.filter(item => JSON.stringify(item).toLowerCase().includes(q));
@@ -126,8 +126,8 @@ export function PipelinePanel() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold text-foreground">Pipeline de Vendas</h2>
-      {/* Search bar */}
-      <div className="relative mb-4 mt-1">
+      {/* Barra de busca de leads */}
+      <div className="relative mb-4">
         <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
         </svg>
@@ -136,15 +136,17 @@ export function PipelinePanel() {
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           placeholder="Buscar lead por nome, e-mail ou empresa..."
-          className="w-full pl-9 pr-9 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
+          className="w-full pl-9 pr-9 py-2.5 bg-gray-800/60 border border-gray-700 rounded-lg text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
         />
         {searchQuery && (
-          <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+          <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors" aria-label="Limpar busca">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+            </svg>
           </button>
         )}
       </div>
-          <p className="text-xs text-muted-foreground mt-0.5">{cards.length} leads Â· {visibleCards.length} visÃ­veis</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{cards.length} leads · {visibleCards.length} visíveis</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1.5 border border-border rounded-lg px-3 py-1.5">
