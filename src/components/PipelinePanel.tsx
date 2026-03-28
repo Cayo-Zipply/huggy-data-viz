@@ -105,10 +105,10 @@ export function PipelinePanel() {
   const sdrCount = visibleCards.filter(c => c.pipe === "sdr").length;
   const closerCount = visibleCards.filter(c => c.pipe === "closer").length;
 
-  const filterLeads = <T extends Record<string, unknown>>(items: T[]): T[] => {
+  const filterLeads = >(items: T[]): T[] => {
     if (!searchQuery.trim()) return items;
     const q = searchQuery.toLowerCase();
-    return items.filter(item => JSON.stringify(item).toLowerCase().includes(q));
+    return (items as Record<string, unknown>[]).filter(item => JSON.stringify(item).toLowerCase().includes(q));
   };
 
   return (
