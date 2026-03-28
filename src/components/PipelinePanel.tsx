@@ -88,6 +88,11 @@ export function PipelinePanel() {
   };
 
   const getCardsForStage = (stage: Stage) => {
+    // Mirror: reuniao_marcada (SDR) also shows reuniao_agendada cards
+    if (stage === "reuniao_marcada") {
+      return visibleCards.filter(c => c.stage === "reuniao_marcada" || c.stage === "reuniao_agendada");
+    }
+    // Mirror: reuniao_agendada (Closer) also shows reuniao_marcada cards
     if (stage === "reuniao_agendada") {
       return visibleCards.filter(c => c.stage === "reuniao_agendada" || c.stage === "reuniao_marcada");
     }
