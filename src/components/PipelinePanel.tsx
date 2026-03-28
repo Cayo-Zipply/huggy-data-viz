@@ -188,7 +188,8 @@ export function PipelinePanel() {
             {getStages().map(s => (
               <StageColumn key={s} stageKey={s} cards={getCardsForStage(s)} tasks={tasks}
                 onUpdate={updateCard} onDrop={handleDrop} onMarkWon={markWon} onMarkLost={markLost}
-                onCreateTask={createTask} onToggleTask={toggleTask} />
+                onCreateTask={createTask} onToggleTask={toggleTask}
+                onCardClick={(c) => setDrawerCard(c)} />
             ))}
           </div>
         </>
@@ -197,6 +198,19 @@ export function PipelinePanel() {
       {subTab === "hoje" && <TasksPanel tasks={tasks} cards={cards} activeUser={activeUser} onToggle={toggleTask} onReschedule={rescheduleTask} />}
       {subTab === "dashboard" && <CRMDashboard cards={cards} activeUser={activeUser} />}
       {subTab === "metas" && <GoalsPanel cards={cards} goals={goals} activeUser={activeUser} onSave={upsertGoal} />}
+
+      {/* Lead Drawer */}
+      <LeadDrawer
+        card={drawerCard ? cards.find(c => c.id === drawerCard.id) || drawerCard : null}
+        tasks={tasks}
+        open={!!drawerCard}
+        onOpenChange={(open) => { if (!open) setDrawerCard(null); }}
+        onUpdate={updateCard}
+        onMarkWon={markWon}
+        onMarkLost={markLost}
+        onCreateTask={createTask}
+        onToggleTask={toggleTask}
+      />
     </div>
   );
 }
