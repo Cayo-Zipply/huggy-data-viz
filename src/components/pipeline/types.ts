@@ -1,7 +1,7 @@
 import { Clock, Phone, CalendarCheck, CheckCircle, Send, FileText, Handshake, Target, MessageSquare, XCircle, Link, FileSignature } from "lucide-react";
 
 export type PipeType = "sdr" | "closer";
-export type SdrStage = "conectado" | "sql" | "reuniao_marcada";
+export type SdrStage = "fez_contato" | "conectado" | "sql" | "reuniao_marcada";
 export type CloserStage = "reuniao_agendada" | "no_show" | "reuniao_realizada" | "link_enviado" | "contrato_assinado";
 export type Stage = SdrStage | CloserStage;
 export type LeadStatus = "aberto" | "ganho" | "perdido";
@@ -64,12 +64,13 @@ export const CLOSERS = ["Cayo", "Stephanie", "Fillipe"] as const;
 export const DEFAULT_DEAL_VALUE = 1621;
 export const STALE_DAYS = 7;
 
-export const STAGE_ORDER: Stage[] = ["conectado", "sql", "reuniao_marcada", "reuniao_agendada", "no_show", "reuniao_realizada", "link_enviado", "contrato_assinado"];
+export const STAGE_ORDER: Stage[] = ["fez_contato", "conectado", "sql", "reuniao_marcada", "reuniao_agendada", "no_show", "reuniao_realizada", "link_enviado", "contrato_assinado"];
 
 export const STAGE_CONFIG: Record<Stage, {
   label: string; pipe: PipeType; probability: number; exitCriteria: string;
   icon: any; color: string; bg: string;
 }> = {
+  fez_contato: { label: "Fez Contato", pipe: "sdr", probability: 0.02, exitCriteria: "Lead recém-chegado, ainda não abordado", icon: MessageSquare, color: "text-orange-400", bg: "bg-orange-400/10 border-orange-400/30" },
   conectado: { label: "Conectado", pipe: "sdr", probability: 0.05, exitCriteria: "Lead respondeu e tem interesse mínimo", icon: Phone, color: "text-blue-400", bg: "bg-blue-400/10 border-blue-400/30" },
   sql: { label: "SQL", pipe: "sdr", probability: 0.15, exitCriteria: "Qualificado (tem problema, verba e autoridade)", icon: CheckCircle, color: "text-purple-400", bg: "bg-purple-400/10 border-purple-400/30" },
   reuniao_marcada: { label: "Reunião Marcada", pipe: "sdr", probability: 0.30, exitCriteria: "Data confirmada na agenda", icon: CalendarCheck, color: "text-emerald-400", bg: "bg-emerald-400/10 border-emerald-400/30" },
