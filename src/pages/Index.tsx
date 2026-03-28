@@ -23,6 +23,7 @@ import { ConsolidatedPanel } from "@/components/ConsolidatedPanel";
 
 import { PipelinePanel } from "@/components/PipelinePanel";
 import { HelpPanel } from "@/components/HelpPanel";
+import { SalesPieChart } from "@/components/SalesPieChart";
 
 const tabs = [
   { key: "marketing", label: "Funil de Marketing", icon: BarChart3 },
@@ -75,7 +76,7 @@ const Index = () => {
       <aside className="w-56 lg:w-64 bg-card border-r border-border flex-shrink-0 hidden md:flex flex-col">
         <div className="p-4 border-b border-border">
           <h2 className="text-lg font-bold text-foreground">Dashboard PQA</h2>
-          <p className="text-xs text-muted-foreground">Análise de performance</p>
+          <p className="text-xs text-muted-foreground">AnÃ¡lise de performance</p>
         </div>
         <nav className="flex-1 p-2 space-y-1">
           {tabs.map((tab) => {
@@ -131,7 +132,7 @@ const Index = () => {
           {/* Marketing Tab */}
           {activeTab === "marketing" && (
             <>
-              {/* Métricas principais */}
+              {/* MÃ©tricas principais */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 mb-4 sm:mb-6">
                 <MetricCard
                   title="Investimento"
@@ -141,7 +142,7 @@ const Index = () => {
                   delay={0}
                 />
                 <MetricCard
-                  title="Impressões"
+                  title="ImpressÃµes"
                   value={formatNumber(currentData.impressoes)}
                   variation={getVariation(currentData.impressoes, previousData?.impressoes)}
                   delay={50}
@@ -175,7 +176,7 @@ const Index = () => {
                 />
               </div>
 
-              {/* Segunda linha de métricas */}
+              {/* Segunda linha de mÃ©tricas */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-4 mb-4 sm:mb-6">
                 <MetricCard
                   title={metricTooltips.cpa.label}
@@ -206,27 +207,27 @@ const Index = () => {
                   delay={400}
                 />
                 <MetricCard
-                  title="Conversão Geral"
+                  title="ConversÃ£o Geral"
                   value={formatPercent(conversaoGeral)}
                   variation={getVariation(conversaoGeral, previousConversaoGeral)}
                   delay={450}
                 />
                 <MetricCard
-                  title="Custo por Reunião"
+                  title="Custo por ReuniÃ£o"
                   value={custoPorReuniao > 0 ? formatCurrency(custoPorReuniao) : "N/A"}
                   variation={getVariation(custoPorReuniao, prevCustoPorReuniao)}
                   invertColors
                   delay={500}
                 />
                 <MetricCard
-                  title="Conv. Reuniões"
+                  title="Conv. ReuniÃµes"
                   value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "N/A"}
                   variation={getVariation(conversaoReunioes, prevConversaoReunioes)}
                   delay={550}
                 />
               </div>
 
-              {/* Funil de tráfego */}
+              {/* Funil de trÃ¡fego */}
               <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
                 <TrafficFunnel
                   impressoes={currentData.impressoes}
