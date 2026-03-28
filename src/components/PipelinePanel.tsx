@@ -40,8 +40,15 @@ export function PipelinePanel() {
   const visibleCards = useMemo(() => {
     let filtered = isAdmin ? cards : cards.filter(c => c.owner === activeUser || !c.owner);
     filtered = applyFilters(filtered, filters);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(c =>
+        c.nome.toLowerCase().includes(q) ||
+        (c.telefone || '').includes(q)
+      );
+    }
     return filtered;
-  }, [cards, isAdmin, activeUser, filters]);
+  }, [cards, isAdmin, activeUser, filters, searchQuery]);
 
   const todayPending = useMemo(() => {
     const today = new Date().toISOString().split("T")[0];
