@@ -66,17 +66,17 @@ export function PipelinePanel() {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      const count = importCSV(ev.target?.result as string);
+    reader.onload = async (ev) => {
+      const count = await importCSV(ev.target?.result as string);
       toast({ title: `${count} leads importados!` });
     };
     reader.readAsText(file);
     e.target.value = "";
   };
 
-  const addLead = () => {
+  const addLead = async () => {
     if (!newLeadName.trim()) return;
-    createCard({ nome: newLeadName, telefone: newLeadPhone || null, owner: activeUser });
+    await createCard({ nome: newLeadName, telefone: newLeadPhone || null, owner: activeUser });
     setNewLeadName(""); setNewLeadPhone(""); setShowNewLead(false);
     toast({ title: "Lead criado!" });
   };
