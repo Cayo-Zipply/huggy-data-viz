@@ -8,9 +8,8 @@ import { TasksPanel } from "./pipeline/TasksPanel";
 import { CRMDashboard } from "./pipeline/CRMDashboard";
 import { GoalsPanel } from "./pipeline/GoalsPanel";
 import { HandoffChecklist } from "./pipeline/HandoffChecklist";
-import { LeadDrawer } from "./pipeline/LeadDrawer";
 import { CLOSERS, SDR_STAGES, CLOSER_STAGES, STAGE_CONFIG, STAGE_ORDER } from "./pipeline/types";
-import type { PipeType, Stage, PipelineCard } from "./pipeline/types";
+import type { PipeType, Stage } from "./pipeline/types";
 import { useToast } from "@/hooks/use-toast";
 
 const SUB_TABS = [
@@ -22,7 +21,7 @@ const SUB_TABS = [
 
 export function PipelinePanel() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [State(() => localStorage.getItem("crm_active_user") || "Cayo");
+  const [activeUser, setActiveUser] = useState(() => localStorage.getItem("crm_active_user") || "Cayo");
   useEffect(() => { localStorage.setItem("crm_active_user", activeUser); }, [activeUser]);
 
   const { cards, tasks, goals, createCard, updateCard, moveCard, markWon, markLost, createTask, toggleTask, rescheduleTask, upsertGoal, importCSV } = usePipelineData(activeUser);
@@ -33,7 +32,6 @@ export function PipelinePanel() {
   const [showNewLead, setShowNewLead] = useState(false);
   const [newLeadName, setNewLeadName] = useState("");
   const [newLeadPhone, setNewLeadPhone] = useState("");
-  const [drawerCard, setDrawerCard] = useState<PipelineCard | null>(null);
   const { toast } = useToast();
 
   const isAdmin = activeUser === "Cayo";
@@ -69,17 +67,17 @@ export function PipelinePanel() {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const count = await importCSV(ev.target?.result as string);
+    reader.onload = (ev) => {
+      const count = importCSV(ev.target?.result as string);
       toast({ title: `${count} leads importados!` });
     };
     reader.readAsText(file);
     e.target.value = "";
   };
 
-  const addLead = async () => {
+  const addLead = () => {
     if (!newLeadName.trim()) return;
-    await createCard({ nome: newLeadName, telefone: newLeadPhone || null, owner: activeUser });
+    createCard({ nome: newLeadName, telefone: newLeadPhone || null, owner: activeUser });
     setNewLeadName(""); setNewLeadPhone(""); setShowNewLead(false);
     toast({ title: "Lead criado!" });
   };
@@ -90,26 +88,10 @@ export function PipelinePanel() {
     return STAGE_ORDER;
   };
 
-  const getCardsForStage = (stage: Stage) => {
-    // Mirror: reuniao_marcada (SDR) also shows reuniao_agendada cards
-    if (stage === "reuniao_marcada") {
-      return visibleCards.filter(c => c.stage === "reuniao_marcada" || c.stage === "reuniao_agendada");
-    }
-    // Mirror: reuniao_agendada (Closer) also shows reuniao_marcada cards
-    if (stage === "reuniao_agendada") {
-      return visibleCards.filter(c => c.stage === "reuniao_agendada" || c.stage === "reuniao_marcada");
-    }
-    return visibleCards.filter(c => c.stage === stage);
-  };
+  const getCardsForStage = (stage: Stage) => visibleCards.filter(c => c.stage === stage);
 
   const sdrCount = visibleCards.filter(c => c.pipe === "sdr").length;
   const closerCount = visibleCards.filter(c => c.pipe === "closer").length;
-
-  const filterLeads = >(items: T[]): T[] => {
-    if (!searchQuery.trim()) return items;
-    const q = searchQuery.toLowerCase();
-    return (items as Record<string, unknown>[]).filter(item => JSON.stringify(item).toLowerCase().includes(q));
-  };
 
   return (
     <div className="space-y-4">
@@ -126,26 +108,6 @@ export function PipelinePanel() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold text-foreground">Pipeline de Vendas</h2>
-      {/* Barra de busca de leads */}
-      <div className="relative mb-4">
-        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-        </svg>
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          placeholder="Buscar lead por nome, e-mail ou empresa..."
-          className="w-full pl-9 pr-9 py-2.5 bg-gray-800/60 border border-gray-700 rounded-lg text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-colors"
-        />
-        {searchQuery && (
-          <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors" aria-label="Limpar busca">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-          </button>
-        )}
-      </div>
           <p className="text-xs text-muted-foreground mt-0.5">{cards.length} leads · {visibleCards.length} visíveis</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -215,8 +177,7 @@ export function PipelinePanel() {
             {getStages().map(s => (
               <StageColumn key={s} stageKey={s} cards={getCardsForStage(s)} tasks={tasks}
                 onUpdate={updateCard} onDrop={handleDrop} onMarkWon={markWon} onMarkLost={markLost}
-                onCreateTask={createTask} onToggleTask={toggleTask}
-                onCardClick={(c) => setDrawerCard(c)} />
+                onCreateTask={createTask} onToggleTask={toggleTask} />
             ))}
           </div>
         </>
@@ -225,19 +186,6 @@ export function PipelinePanel() {
       {subTab === "hoje" && <TasksPanel tasks={tasks} cards={cards} activeUser={activeUser} onToggle={toggleTask} onReschedule={rescheduleTask} />}
       {subTab === "dashboard" && <CRMDashboard cards={cards} activeUser={activeUser} />}
       {subTab === "metas" && <GoalsPanel cards={cards} goals={goals} activeUser={activeUser} onSave={upsertGoal} />}
-
-      {/* Lead Drawer */}
-      <LeadDrawer
-        card={drawerCard ? cards.find(c => c.id === drawerCard.id) || drawerCard : null}
-        tasks={tasks}
-        open={!!drawerCard}
-        onOpenChange={(open) => { if (!open) setDrawerCard(null); }}
-        onUpdate={updateCard}
-        onMarkWon={markWon}
-        onMarkLost={markLost}
-        onCreateTask={createTask}
-        onToggleTask={toggleTask}
-      />
     </div>
   );
 }
