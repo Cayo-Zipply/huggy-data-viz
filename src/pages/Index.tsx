@@ -183,7 +183,7 @@ const Index = () => {
                 />
               </div>
 
-              {/* Segunda linha de mÃ©tricas */}
+              {/* Segunda linha de métricas */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-4 mb-4 sm:mb-6">
                 <MetricCard
                   title={metricTooltips.cpa.label}
