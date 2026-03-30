@@ -139,7 +139,7 @@ const Index = () => {
           {/* Marketing Tab */}
           {activeTab === "marketing" && (
             <>
-              {/* MÃ©tricas principais */}
+              {/* Métricas principais */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 mb-4 sm:mb-6">
                 <MetricCard
                   title="Investimento"
@@ -149,7 +149,7 @@ const Index = () => {
                   delay={0}
                 />
                 <MetricCard
-                  title="ImpressÃµes"
+                  title="Impressões"
                   value={formatNumber(currentData.impressoes)}
                   variation={getVariation(currentData.impressoes, previousData?.impressoes)}
                   delay={50}
@@ -183,7 +183,7 @@ const Index = () => {
                 />
               </div>
 
-              {/* Segunda linha de mÃ©tricas */}
+              {/* Segunda linha de métricas */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-4 mb-4 sm:mb-6">
                 <MetricCard
                   title={metricTooltips.cpa.label}
@@ -214,27 +214,27 @@ const Index = () => {
                   delay={400}
                 />
                 <MetricCard
-                  title="ConversÃ£o Geral"
+                  title="Conversão Geral"
                   value={formatPercent(conversaoGeral)}
                   variation={getVariation(conversaoGeral, previousConversaoGeral)}
                   delay={450}
                 />
                 <MetricCard
-                  title="Custo por ReuniÃ£o"
+                  title="Custo por Reunião"
                   value={custoPorReuniao > 0 ? formatCurrency(custoPorReuniao) : "N/A"}
                   variation={getVariation(custoPorReuniao, prevCustoPorReuniao)}
                   invertColors
                   delay={500}
                 />
                 <MetricCard
-                  title="Conv. ReuniÃµes"
+                  title="Conv. Reuniões"
                   value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "N/A"}
                   variation={getVariation(conversaoReunioes, prevConversaoReunioes)}
                   delay={550}
                 />
               </div>
 
-              {/* Funil de trÃ¡fego */}
+              {/* Funil de tráfego */}
               <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
                 <TrafficFunnel
                   impressoes={currentData.impressoes}
