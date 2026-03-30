@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { MetricCard } from "@/components/MetricCard";
 import { TrafficFunnel } from "@/components/TrafficFunnel";
 import { ROICard } from "@/components/ROICard";
@@ -74,9 +75,12 @@ const Index = () => {
     <div className="min-h-screen bg-background flex">
       {/* Sidebar - desktop only */}
       <aside className="w-56 lg:w-64 bg-card border-r border-border flex-shrink-0 hidden md:flex flex-col">
-        <div className="p-4 border-b border-border">
-          <h2 className="text-lg font-bold text-foreground">Dashboard PQA</h2>
-          <p className="text-xs text-muted-foreground">AnÃ¡lise de performance</p>
+        <div className="p-4 border-b border-border flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-foreground">Dashboard PQA</h2>
+            <p className="text-xs text-muted-foreground">Análise de performance</p>
+          </div>
+          <ThemeToggle />
         </div>
         <nav className="flex-1 p-2 space-y-1">
           {tabs.map((tab) => {
@@ -122,6 +126,9 @@ const Index = () => {
 
       {/* Main content */}
       <main className="flex-1 p-3 sm:p-4 lg:p-8 pb-24 md:pb-8 overflow-auto">
+        <div className="md:hidden flex justify-end mb-2">
+          <ThemeToggle />
+        </div>
         <div className="max-w-7xl mx-auto">
           <DashboardHeader 
             selectedMonth={selectedMonth} 

@@ -21,7 +21,6 @@ const SUB_TABS = [
 
 export function PipelinePanel() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
   const [activeUser, setActiveUser] = useState(() => localStorage.getItem("crm_active_user") || "Cayo");
   useEffect(() => { localStorage.setItem("crm_active_user", activeUser); }, [activeUser]);
 

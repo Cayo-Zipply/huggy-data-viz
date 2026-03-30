@@ -10,7 +10,8 @@ const formatCurrency = (value: number) =>
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const item = payload[0].payload;
-    const total = marketingData.reduce((s, d) => s + d.faturamento, 0);
+  const allData = Object.values(marketingData);
+  const total = allData.reduce((s, d) => s + d.faturamento, 0);
     return (
       <div className="bg-gray-900 border border-gray-700 rounded-lg p-3 shadow-xl text-sm">
         <p className="text-white font-semibold mb-1">{item.name}</p>
@@ -24,7 +25,7 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export const SalesPieChart = () => {
-  const data = marketingData.map((d) => ({
+  const data = Object.values(marketingData).map((d) => ({
     name: d.month + "/" + String(d.year).slice(2),
     faturamento: d.faturamento,
     vendas: d.vendas,
