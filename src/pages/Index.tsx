@@ -149,7 +149,7 @@ const Index = () => {
                   delay={0}
                 />
                 <MetricCard
-                  title="ImpressÃµes"
+                  title="Impressões"
                   value={formatNumber(currentData.impressoes)}
                   variation={getVariation(currentData.impressoes, previousData?.impressoes)}
                   delay={50}
