@@ -126,6 +126,9 @@ const Index = () => {
 
       {/* Main content */}
       <main className="flex-1 p-3 sm:p-4 lg:p-8 pb-24 md:pb-8 overflow-auto">
+        <div className="md:hidden flex justify-end mb-2">
+          <ThemeToggle />
+        </div>
         <div className="max-w-7xl mx-auto">
           <DashboardHeader 
             selectedMonth={selectedMonth} 
