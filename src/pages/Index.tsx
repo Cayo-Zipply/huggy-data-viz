@@ -220,7 +220,7 @@ const Index = () => {
                   delay={450}
                 />
                 <MetricCard
-                  title="Custo por ReuniÃ£o"
+                  title="Custo por Reunião"
                   value={custoPorReuniao > 0 ? formatCurrency(custoPorReuniao) : "N/A"}
                   variation={getVariation(custoPorReuniao, prevCustoPorReuniao)}
                   invertColors
