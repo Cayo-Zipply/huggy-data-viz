@@ -227,7 +227,7 @@ const Index = () => {
                   delay={500}
                 />
                 <MetricCard
-                  title="Conv. ReuniÃµes"
+                  title="Conv. Reuniões"
                   value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "N/A"}
                   variation={getVariation(conversaoReunioes, prevConversaoReunioes)}
                   delay={550}
