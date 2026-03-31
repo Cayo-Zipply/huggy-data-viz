@@ -33,7 +33,7 @@ export function PipelinePanel() {
   const [showNewLead, setShowNewLead] = useState(false);
   const [newLeadName, setNewLeadName] = useState("");
   const [newLeadPhone, setNewLeadPhone] = useState("");
-  const [selectedCard, setSelectedCard] = useState<PipelineCard | null>(null);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { toast } = useToast();
 
@@ -56,6 +56,11 @@ export function PipelinePanel() {
     const today = new Date().toISOString().split("T")[0];
     return tasks.filter(t => t.due_date <= today && t.status === "pendente" && (isAdmin || t.responsible === activeUser)).length;
   }, [tasks, isAdmin, activeUser]);
+
+  const selectedCard = useMemo(() => {
+    if (!selectedCardId) return null;
+    return cards.find(c => c.id === selectedCardId) || null;
+  }, [cards, selectedCardId]);
 
   const handleDrop = (cardId: string, targetStage: string) => {
     const card = cards.find(c => c.id === cardId);
@@ -104,13 +109,13 @@ export function PipelinePanel() {
   const closerCount = visibleCards.filter(c => c.pipe === "closer").length;
 
   const handleCardClick = (card: PipelineCard) => {
-    setSelectedCard(card);
+    setSelectedCardId(card.id);
     setDrawerOpen(true);
   };
 
   const handleDrawerOpenChange = (open: boolean) => {
     setDrawerOpen(open);
-    if (!open) setSelectedCard(null);
+    if (!open) setSelectedCardId(null);
   };
 
   return (
