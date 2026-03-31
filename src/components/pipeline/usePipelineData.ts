@@ -105,102 +105,100 @@ export function usePipelineData(activeUser: string) {
   const [goals, setGoals] = useState<PipelineGoal[]>([]);
   const [loaded, setLoaded] = useState(false);
   const channelRef = useRef<any>(null);
+  const legacyRef = useRef<{ cards: PipelineCard[]; tasks: PipelineTask[]; goals: PipelineGoal[] }>({
+    cards: [],
+    tasks: [],
+    goals: [],
+  });
+
+  const fetchPipelineSnapshot = useCallback(async () => {
+    const [leadsRes, tasksRes, goalsRes, histRes] = await Promise.all([
+      sbExt.from("leads").select("*"),
+      sbExt.from("tarefas").select("*"),
+      sbExt.from("metas").select("*"),
+      sbExt.from("lead_historico").select("*").order("created_at", { ascending: true }),
+    ]);
+
+    if (leadsRes.error || tasksRes.error || goalsRes.error || histRes.error) {
+      console.error("Erro ao carregar snapshot do pipeline:", {
+        leads: leadsRes.error,
+        tasks: tasksRes.error,
+        goals: goalsRes.error,
+        history: histRes.error,
+      });
+      return;
+    }
+
+    const histMap = new Map<string, StageChange[]>();
+    (histRes.data || []).forEach((h: any) => {
+      const arr = histMap.get(h.lead_id) || [];
+      arr.push({
+        from: h.etapa_de || null,
+        to: h.etapa_para || "",
+        at: h.created_at,
+        by: h.closer || "sistema",
+        duration_days: null,
+      });
+      histMap.set(h.lead_id, arr);
+    });
+
+    const supaCards = (leadsRes.data || []).map((row: any) => {
+      const hist = histMap.get(row.id) || [{ from: null, to: mapEtapa(row.etapa_atual), at: row.data_entrada || new Date().toISOString(), by: "sistema", duration_days: null }];
+      return dbRowToCard(row, hist);
+    });
+    const supaCardIds = new Set(supaCards.map(c => c.id));
+    const mergedCards = [...supaCards, ...legacyRef.current.cards.filter(c => !supaCardIds.has(c.id))];
+
+    const supaTasks = (tasksRes.data || []).map(dbRowToTask);
+    const supaTaskIds = new Set(supaTasks.map(t => t.id));
+    const mergedTasks = [...supaTasks, ...legacyRef.current.tasks.filter(t => !supaTaskIds.has(t.id))];
+
+    const supaGoals = (goalsRes.data || []).map(dbRowToGoal);
+
+    setCards(mergedCards);
+    setTasks(mergedTasks);
+    setGoals(supaGoals.length ? supaGoals : legacyRef.current.goals);
+    setLoaded(true);
+  }, []);
 
   /* ── initial fetch: merge localStorage legacy + Supabase ── */
   useEffect(() => {
-    (async () => {
-      // Load old localStorage cards (legacy)
-      const legacyCards: PipelineCard[] = loadLS("crm_cards", []);
-      const legacyTasks: PipelineTask[] = loadLS("crm_tasks", []);
-      const legacyGoals: PipelineGoal[] = loadLS("crm_goals", []);
-
-      // Fetch from Supabase
-      const [leadsRes, tasksRes, goalsRes, histRes] = await Promise.all([
-        sbExt.from("leads").select("*"),
-        sbExt.from("tarefas").select("*"),
-        sbExt.from("metas").select("*"),
-        sbExt.from("lead_historico").select("*").order("created_at", { ascending: true }),
-      ]);
-
-      // group history by lead_id
-      const histMap = new Map<string, StageChange[]>();
-      (histRes.data || []).forEach((h: any) => {
-        const arr = histMap.get(h.lead_id) || [];
-        arr.push({
-          from: h.etapa_de || null,
-          to: h.etapa_para || "",
-          at: h.created_at,
-          by: h.closer || "sistema",
-          duration_days: null,
-        });
-        histMap.set(h.lead_id, arr);
-      });
-
-      const supaCards = (leadsRes.data || []).map((row: any) => {
-        const hist = histMap.get(row.id) || [{ from: null, to: mapEtapa(row.etapa_atual), at: row.data_entrada || new Date().toISOString(), by: "sistema", duration_days: null }];
-        return dbRowToCard(row, hist);
-      });
-
-      // Merge: Supabase cards take priority, legacy cards fill in missing IDs
-      const supaIds = new Set(supaCards.map(c => c.id));
-      const mergedCards = [...supaCards, ...legacyCards.filter(c => !supaIds.has(c.id))];
-
-      const supaTasks = (tasksRes.data || []).map(dbRowToTask);
-      const supaTaskIds = new Set(supaTasks.map(t => t.id));
-      const mergedTasks = [...supaTasks, ...legacyTasks.filter(t => !supaTaskIds.has(t.id))];
-
-      const supaGoals = (goalsRes.data || []).map(dbRowToGoal);
-
-      setCards(mergedCards);
-      setTasks(mergedTasks);
-      setGoals(supaGoals.length ? supaGoals : legacyGoals);
-      setLoaded(true);
-    })();
-  }, []);
+    legacyRef.current = {
+      cards: loadLS("crm_cards", []),
+      tasks: loadLS("crm_tasks", []),
+      goals: loadLS("crm_goals", []),
+    };
+    void fetchPipelineSnapshot();
+  }, [fetchPipelineSnapshot]);
 
   /* ── realtime subscription ── */
   useEffect(() => {
     if (!loaded) return;
 
     const channel = sbExt
-      .channel("crm-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, async (payload) => {
-        if (payload.eventType === "DELETE") {
-          setCards(prev => prev.filter(c => c.id !== (payload.old as any).id));
-          return;
+      .channel(`crm-realtime-${crypto.randomUUID()}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, () => { void fetchPipelineSnapshot(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "tarefas" }, () => { void fetchPipelineSnapshot(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "lead_historico" }, () => { void fetchPipelineSnapshot(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "metas" }, () => { void fetchPipelineSnapshot(); })
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          void fetchPipelineSnapshot();
         }
-        const row = payload.new as any;
-        // fetch history for this lead
-        const { data: hist } = await sbExt.from("lead_historico").select("*").eq("lead_id", row.id).order("created_at", { ascending: true });
-        const history: StageChange[] = (hist || []).map((h: any) => ({
-          from: h.etapa_de || null, to: h.etapa_para || "", at: h.created_at, by: h.closer || "sistema", duration_days: null,
-        }));
-        if (!history.length) history.push({ from: null, to: mapEtapa(row.etapa_atual), at: row.data_entrada || new Date().toISOString(), by: "sistema", duration_days: null });
-
-        const card = dbRowToCard(row, history);
-        setCards(prev => {
-          const idx = prev.findIndex(c => c.id === row.id);
-          if (idx >= 0) { const n = [...prev]; n[idx] = card; return n; }
-          return [card, ...prev];
-        });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "tarefas" }, (payload) => {
-        if (payload.eventType === "DELETE") {
-          setTasks(prev => prev.filter(t => t.id !== (payload.old as any).id));
-          return;
-        }
-        const task = dbRowToTask(payload.new as any);
-        setTasks(prev => {
-          const idx = prev.findIndex(t => t.id === task.id);
-          if (idx >= 0) { const n = [...prev]; n[idx] = task; return n; }
-          return [task, ...prev];
-        });
-      })
-      .subscribe();
+      });
 
     channelRef.current = channel;
     return () => { sbExt.removeChannel(channel); };
-  }, [loaded]);
+  }, [loaded, fetchPipelineSnapshot]);
+
+  /* ── fallback sync: garante atualização mesmo se realtime falhar ── */
+  useEffect(() => {
+    if (!loaded) return;
+    const intervalId = window.setInterval(() => {
+      void fetchPipelineSnapshot();
+    }, 8000);
+    return () => window.clearInterval(intervalId);
+  }, [loaded, fetchPipelineSnapshot]);
 
   /* ── auto tasks generator ── */
   const genAutoTasks = useCallback((card: PipelineCard, stage: Stage) => {
