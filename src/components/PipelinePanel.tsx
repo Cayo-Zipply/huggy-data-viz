@@ -8,8 +8,9 @@ import { TasksPanel } from "./pipeline/TasksPanel";
 import { CRMDashboard } from "./pipeline/CRMDashboard";
 import { GoalsPanel } from "./pipeline/GoalsPanel";
 import { HandoffChecklist } from "./pipeline/HandoffChecklist";
+import { LeadDrawer } from "./pipeline/LeadDrawer";
 import { CLOSERS, SDR_STAGES, CLOSER_STAGES, STAGE_CONFIG, STAGE_ORDER } from "./pipeline/types";
-import type { PipeType, Stage } from "./pipeline/types";
+import type { PipelineCard, Stage } from "./pipeline/types";
 import { useToast } from "@/hooks/use-toast";
 
 const SUB_TABS = [
@@ -32,6 +33,8 @@ export function PipelinePanel() {
   const [showNewLead, setShowNewLead] = useState(false);
   const [newLeadName, setNewLeadName] = useState("");
   const [newLeadPhone, setNewLeadPhone] = useState("");
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const { toast } = useToast();
 
   const isAdmin = activeUser === "Cayo";
@@ -53,6 +56,11 @@ export function PipelinePanel() {
     const today = new Date().toISOString().split("T")[0];
     return tasks.filter(t => t.due_date <= today && t.status === "pendente" && (isAdmin || t.responsible === activeUser)).length;
   }, [tasks, isAdmin, activeUser]);
+
+  const selectedCard = useMemo(() => {
+    if (!selectedCardId) return null;
+    return cards.find(c => c.id === selectedCardId) || null;
+  }, [cards, selectedCardId]);
 
   const handleDrop = (cardId: string, targetStage: string) => {
     const card = cards.find(c => c.id === cardId);
@@ -100,12 +108,14 @@ export function PipelinePanel() {
   const sdrCount = visibleCards.filter(c => c.pipe === "sdr").length;
   const closerCount = visibleCards.filter(c => c.pipe === "closer").length;
 
-  const filterLeads = (items) => {
-    if (!searchQuery.trim()) return items;
-    const q = searchQuery.toLowerCase();
-    return items.filter(item =>
-      JSON.stringify(item).toLowerCase().includes(q)
-    );
+  const handleCardClick = (card: PipelineCard) => {
+    setSelectedCardId(card.id);
+    setDrawerOpen(true);
+  };
+
+  const handleDrawerOpenChange = (open: boolean) => {
+    setDrawerOpen(open);
+    if (!open) setSelectedCardId(null);
   };
 
   return (
@@ -219,7 +229,7 @@ export function PipelinePanel() {
             {getStages().map(s => (
               <StageColumn key={s} stageKey={s} cards={getCardsForStage(s)} tasks={tasks}
                 onUpdate={updateCard} onDrop={handleDrop} onMarkWon={markWon} onMarkLost={markLost}
-                onCreateTask={createTask} onToggleTask={toggleTask} />
+                onCreateTask={createTask} onToggleTask={toggleTask} onCardClick={handleCardClick} />
             ))}
           </div>
         </>
@@ -228,6 +238,18 @@ export function PipelinePanel() {
       {subTab === "hoje" && <TasksPanel tasks={tasks} cards={cards} activeUser={activeUser} onToggle={toggleTask} onReschedule={rescheduleTask} />}
       {subTab === "dashboard" && <CRMDashboard cards={cards} activeUser={activeUser} />}
       {subTab === "metas" && <GoalsPanel cards={cards} goals={goals} activeUser={activeUser} onSave={upsertGoal} />}
+
+      <LeadDrawer
+        card={selectedCard}
+        tasks={tasks}
+        open={drawerOpen}
+        onOpenChange={handleDrawerOpenChange}
+        onUpdate={updateCard}
+        onMarkWon={markWon}
+        onMarkLost={markLost}
+        onCreateTask={createTask}
+        onToggleTask={toggleTask}
+      />
     </div>
   );
 }

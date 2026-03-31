@@ -63,7 +63,17 @@ export function StageColumn({ stageKey, cards, tasks, onUpdate, onDrop, onMarkWo
       </div>
       <div className="p-2 space-y-2 flex-1 overflow-y-auto max-h-[55vh]">
         {cards.map(card => (
-          <div key={card.id} draggable onDragStart={e => e.dataTransfer.setData("cardId", card.id)} className="cursor-grab active:cursor-grabbing">
+          <div
+            key={card.id}
+            draggable
+            onDragStart={e => e.dataTransfer.setData("cardId", card.id)}
+            onClick={(e) => {
+              const target = e.target as HTMLElement;
+              const isInteractive = Boolean(target.closest("button, input, select, textarea, a, label"));
+              if (!isInteractive) onCardClick?.(card);
+            }}
+            className="cursor-grab active:cursor-grabbing"
+          >
             <PipelineCardItem card={card} tasks={tasks} onUpdate={onUpdate}
               onMarkWon={onMarkWon} onMarkLost={onMarkLost} onCreateTask={onCreateTask} onToggleTask={onToggleTask}
               onCardClick={onCardClick} />
