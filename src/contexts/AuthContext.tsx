@@ -41,26 +41,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // 1. Set up listener FIRST so we catch the token exchange event
     const { data: { subscription } } = supabaseExt.auth.onAuthStateChange(
-      async (_event, sess) => {
+      (_event, sess) => {
         setSession(sess);
         setUser(sess?.user ?? null);
         if (sess?.user) {
-          await fetchProfile(sess.user.id);
+          // Use setTimeout to avoid Supabase deadlock on async calls inside callback
+          setTimeout(() => fetchProfile(sess.user.id), 0);
         } else {
           setProfile(null);
         }
-        setLoading(false);
       }
     );
 
+    // 2. THEN call getSession — this processes the ?code= in the URL
     supabaseExt.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        fetchProfile(s.user.id);
+        fetchProfile(s.user.id).finally(() => setLoading(false));
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
