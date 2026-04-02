@@ -36,9 +36,9 @@ const tabs = [
   { key: "ajuda", label: "Ajuda", icon: HelpCircle },
 ];
 
-const Index = () => {
+const Index = ({ initialTab }: { initialTab?: string }) => {
   const [selectedMonth, setSelectedMonth] = useState<string>("fevereiro");
-  const [activeTab, setActiveTab] = useState("marketing");
+  const [activeTab, setActiveTab] = useState(initialTab || "marketing");
   
   const currentData = marketingData[selectedMonth];
   const prevKey = getPreviousMonth(selectedMonth);
