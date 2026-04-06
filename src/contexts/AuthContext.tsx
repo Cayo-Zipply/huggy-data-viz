@@ -57,8 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data = res.data;
         error = res.error;
 
-        // Link user_id to profile on first login via email match
-        if (data && !data.user_id) {
+        // Link/fix user_id in profile when found by email
+        if (data && data.user_id !== userId) {
           await supabaseExt
             .from("user_profiles")
             .update({ user_id: userId })
