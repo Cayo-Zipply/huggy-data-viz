@@ -28,7 +28,6 @@ export function useLeads() {
   const fetchLeads = useCallback(async () => {
     let query = supabaseExt.from("leads").select("*").order("created_at", { ascending: false });
 
-    // Closers só veem seus próprios leads
     if (isCloser && profile?.email) {
       query = query.eq("closer", profile.email);
     }
@@ -44,7 +43,6 @@ export function useLeads() {
     fetchLeads();
   }, [fetchLeads]);
 
-  // Realtime subscription
   useEffect(() => {
     const channelId = `leads-rt-${Date.now()}`;
     const channel = supabaseExt

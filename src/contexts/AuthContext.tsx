@@ -9,7 +9,7 @@ import {
 import { supabaseExt } from "@/lib/supabase";
 import type { User, Session } from "@supabase/supabase-js";
 
-interface UserProfile {
+export interface UserProfile {
   id: string;
   user_id: string;
   email: string;
@@ -23,7 +23,10 @@ interface AuthContextType {
   session: Session | null;
   profile: UserProfile | null;
   loading: boolean;
-  signIn: () => Promise<void>;
+  isAdmin: boolean;
+  isSdr: boolean;
+  isCloser: boolean;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -35,13 +38,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (email: string) => {
+  const fetchProfile = useCallback(async (userId: string, email?: string) => {
     try {
-      const { data, error } = await supabaseExt
+      // Try by user_id first
+      let { data, error } = await supabaseExt
         .from("user_profiles")
         .select("*")
-        .eq("email", email)
+        .eq("user_id", userId)
         .maybeSingle();
+
+      // Fallback: try by email
+      if (!data && email) {
+        const res = await supabaseExt
+          .from("user_profiles")
+          .select("*")
+          .eq("email", email.toLowerCase())
+          .maybeSingle();
+        data = res.data;
+        error = res.error;
+      }
 
       if (error) {
         console.error("Erro ao buscar perfil:", error.message);
@@ -55,87 +70,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const applySession = useCallback(
+    async (sess: Session | null) => {
+      setSession(sess);
+      setUser(sess?.user ?? null);
+      if (sess?.user) {
+        await fetchProfile(sess.user.id, sess.user.email);
+      } else {
+        setProfile(null);
+      }
+    },
+    [fetchProfile]
+  );
+
   useEffect(() => {
     let mounted = true;
 
-    // 1) Tenta recuperar a sessão existente (ou trocar o ?code= por sessão no PKCE)
-    supabaseExt.auth.getSession().then(({ data: { session: currentSession }, error }) => {
-      if (!mounted) return;
-
-      if (error) {
-        console.error("Erro ao recuperar sessão:", error.message);
-        // Limpa dados stale para evitar loop
-        supabaseExt.auth.signOut().catch(() => {});
-        setUser(null);
-        setSession(null);
-        setProfile(null);
-        setLoading(false);
-        return;
-      }
-
-      if (currentSession?.user) {
-        setUser(currentSession.user);
-        setSession(currentSession);
-        fetchProfile(currentSession.user.email!).then(() => {
-          if (mounted) setLoading(false);
-        });
-      } else {
-        setUser(null);
-        setSession(null);
-        setProfile(null);
-        setLoading(false);
-      }
-    });
-
-    // 2) Escuta mudanças de auth (login, logout, refresh)
+    // 1) Register listener FIRST
     const {
       data: { subscription },
-    } = supabaseExt.auth.onAuthStateChange(async (event, newSession) => {
+    } = supabaseExt.auth.onAuthStateChange((_event, newSession) => {
       if (!mounted) return;
-
-      console.log("Auth event:", event);
-
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        if (newSession?.user) {
-          setUser(newSession.user);
-          setSession(newSession);
-          await fetchProfile(newSession.user.email!);
-        }
-        setLoading(false);
-      } else if (event === "SIGNED_OUT") {
-        setUser(null);
-        setSession(null);
-        setProfile(null);
-        setLoading(false);
-      } else if (event === "INITIAL_SESSION") {
-        // Já tratado pelo getSession acima
-        // Apenas garante que loading sai de true
-        if (!newSession) {
-          setLoading(false);
-        }
-      }
+      // Fire-and-forget to avoid blocking auth queue
+      applySession(newSession).then(() => {
+        if (mounted) setLoading(false);
+      });
     });
+
+    // 2) Then restore/process session (handles ?code= from OAuth)
+    supabaseExt.auth
+      .getSession()
+      .then(async ({ data: { session: restored } }) => {
+        if (!mounted) return;
+        await applySession(restored);
+        if (mounted) setLoading(false);
+      })
+      .catch(() => {
+        if (mounted) setLoading(false);
+      });
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [fetchProfile]);
+  }, [applySession]);
 
-  const signIn = useCallback(async () => {
-    const redirectUrl = `${window.location.origin}/pipeline`;
+  const signInWithGoogle = useCallback(async () => {
     const { error } = await supabaseExt.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: redirectUrl,
-        queryParams: {
-          prompt: "select_account",
-        },
+        redirectTo: window.location.origin,
+        queryParams: { prompt: "select_account" },
       },
     });
-    if (error) {
-      console.error("Erro no login:", error.message);
-    }
+    if (error) console.error("Erro no login:", error.message);
   }, []);
 
   const signOut = useCallback(async () => {
@@ -145,9 +133,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
   }, []);
 
+  const isAdmin = profile?.role === "admin";
+  const isSdr = profile?.role === "sdr";
+  const isCloser = profile?.role === "closer";
+
   return (
     <AuthContext.Provider
-      value={{ user, session, profile, loading, signIn, signOut }}
+      value={{
+        user,
+        session,
+        profile,
+        loading,
+        isAdmin,
+        isSdr,
+        isCloser,
+        signInWithGoogle,
+        signOut,
+      }}
     >
       {children}
     </AuthContext.Provider>
