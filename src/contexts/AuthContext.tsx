@@ -1,3 +1,4 @@
+// src/contexts/AuthContext.tsx
 import {
   createContext,
   useContext,
@@ -6,16 +7,15 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { supabaseExt } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
-export interface UserProfile {
+interface UserProfile {
   id: string;
-  user_id: string;
   email: string;
-  nome: string | null;
-  avatar_url: string | null;
+  nome: string;
   role: "admin" | "sdr" | "closer";
+  user_id: string | null;
 }
 
 interface AuthContextType {
@@ -38,105 +38,108 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (userId: string, email?: string) => {
+  const fetchProfile = useCallback(async (email: string) => {
     try {
-      // Try by user_id first
-      let { data, error } = await supabaseExt
+      const { data, error } = await supabase
         .from("user_profiles")
         .select("*")
-        .eq("user_id", userId)
+        .eq("email", email)
         .maybeSingle();
-
-      // Fallback: try by email
-      if (!data && email) {
-        const res = await supabaseExt
-          .from("user_profiles")
-          .select("*")
-          .eq("email", email.toLowerCase())
-          .maybeSingle();
-        data = res.data;
-        error = res.error;
-
-        // Link/fix user_id in profile when found by email
-        if (data && data.user_id !== userId) {
-          await supabaseExt
-            .from("user_profiles")
-            .update({ user_id: userId })
-            .eq("id", data.id);
-          data = { ...data, user_id: userId };
-        }
-      }
 
       if (error) {
         console.error("Erro ao buscar perfil:", error.message);
         setProfile(null);
         return;
       }
-      setProfile(data as UserProfile | null);
+
+      if (!data) {
+        console.warn("Perfil não encontrado para:", email);
+        setProfile(null);
+        return;
+      }
+
+      setProfile(data as UserProfile);
     } catch (err) {
       console.error("Erro inesperado ao buscar perfil:", err);
       setProfile(null);
     }
   }, []);
 
-  const applySession = useCallback(
-    async (sess: Session | null) => {
-      setSession(sess);
-      setUser(sess?.user ?? null);
-      if (sess?.user) {
-        await fetchProfile(sess.user.id, sess.user.email);
-      } else {
-        setProfile(null);
-      }
-    },
-    [fetchProfile]
-  );
-
   useEffect(() => {
     let mounted = true;
 
-    // 1) Register listener FIRST
-    const {
-      data: { subscription },
-    } = supabaseExt.auth.onAuthStateChange((_event, newSession) => {
+    // 1) Buscar sessão inicial (inclui troca PKCE do ?code= se presente)
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
       if (!mounted) return;
-      // Fire-and-forget to avoid blocking auth queue
-      applySession(newSession).then(() => {
-        if (mounted) setLoading(false);
-      });
+      setSession(initialSession);
+      setUser(initialSession?.user ?? null);
+      if (initialSession?.user?.email) {
+        fetchProfile(initialSession.user.email).then(() => {
+          if (mounted) setLoading(false);
+        });
+      } else {
+        setLoading(false);
+      }
     });
 
-    // 2) Then restore/process session (handles ?code= from OAuth)
-    supabaseExt.auth
-      .getSession()
-      .then(async ({ data: { session: restored } }) => {
-        if (!mounted) return;
-        await applySession(restored);
+    // 2) Escutar mudanças de auth (login, logout, refresh)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      if (!mounted) return;
+
+      console.log("[Auth]", event, newSession?.user?.email ?? "no user");
+
+      if (
+        event === "SIGNED_IN" ||
+        event === "TOKEN_REFRESHED" ||
+        event === "INITIAL_SESSION"
+      ) {
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        if (newSession?.user?.email) {
+          await fetchProfile(newSession.user.email);
+        }
         if (mounted) setLoading(false);
-      })
-      .catch(() => {
+      }
+
+      if (event === "SIGNED_OUT") {
+        setSession(null);
+        setUser(null);
+        setProfile(null);
         if (mounted) setLoading(false);
-      });
+      }
+    });
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [applySession]);
+  }, [fetchProfile]);
 
   const signInWithGoogle = useCallback(async () => {
-    const { error } = await supabaseExt.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: window.location.origin,
-        queryParams: { prompt: "select_account" },
+        queryParams: {
+          access_type: "offline",
+          prompt: "select_account",
+          hd: "penaquadros.com",
+        },
       },
     });
-    if (error) console.error("Erro no login:", error.message);
+    if (error) {
+      console.error("Erro no login:", error.message);
+    }
   }, []);
 
   const signOut = useCallback(async () => {
-    await supabaseExt.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error("Erro ao fazer logout:", err);
+    }
     setUser(null);
     setSession(null);
     setProfile(null);
@@ -166,7 +169,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth deve ser usado dentro de AuthProvider");
-  return ctx;
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth deve ser usado dentro de AuthProvider");
+  }
+  return context;
 }
