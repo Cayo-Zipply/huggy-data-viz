@@ -56,6 +56,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .maybeSingle();
         data = res.data;
         error = res.error;
+
+        // Link/fix user_id in profile when found by email
+        if (data && data.user_id !== userId) {
+          await supabaseExt
+            .from("user_profiles")
+            .update({ user_id: userId })
+            .eq("id", data.id);
+          data = { ...data, user_id: userId };
+        }
       }
 
       if (error) {
