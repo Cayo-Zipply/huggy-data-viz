@@ -434,9 +434,15 @@ export function usePipelineData(actorName: string) {
     return rows.length;
   }, [actorName]);
 
+  const deleteCard = useCallback(async (id: string) => {
+    await sbExt.from("leads").delete().eq("id", id);
+    setCards(prev => prev.filter(c => c.id !== id));
+    setTasks(prev => prev.filter(t => t.card_id !== id));
+  }, []);
+
   return {
     cards, tasks, goals,
     createCard, updateCard, moveCard, markWon, markLost,
-    createTask, toggleTask, rescheduleTask, upsertGoal, importCSV,
+    createTask, toggleTask, rescheduleTask, upsertGoal, importCSV, deleteCard,
   };
 }
