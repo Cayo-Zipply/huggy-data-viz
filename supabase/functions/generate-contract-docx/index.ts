@@ -9,6 +9,8 @@ const corsHeaders = {
 const EXT_URL = "https://riyfdcmmabvpcubusujw.supabase.co";
 const EXT_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpeWZkY21tYWJ2cGN1YnVzdWp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NTMyMDMsImV4cCI6MjA5MDIyOTIwM30.pCRIa4UEC9WQiBP8EwzVrO73qS1FbsQ9fvKzlUPD1Gc";
 
+// ── Helpers ──
+
 function numberToWords(n: number): string {
   const units = ["", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove"];
   const teens = ["dez", "onze", "doze", "treze", "quatorze", "quinze", "dezesseis", "dezessete", "dezoito", "dezenove"];
@@ -19,7 +21,6 @@ function numberToWords(n: number): string {
   if (n === 100) return "cem";
 
   const parts: string[] = [];
-
   if (n >= 1000) {
     const mil = Math.floor(n / 1000);
     if (mil === 1) parts.push("mil");
@@ -27,14 +28,12 @@ function numberToWords(n: number): string {
     n %= 1000;
     if (n > 0) parts.push("e");
   }
-
   if (n >= 100) {
     if (n === 100) { parts.push("cem"); return parts.join(" "); }
     parts.push(hundreds[Math.floor(n / 100)]);
     n %= 100;
     if (n > 0) parts.push("e");
   }
-
   if (n >= 20) {
     parts.push(tens[Math.floor(n / 10)]);
     n %= 10;
@@ -44,7 +43,6 @@ function numberToWords(n: number): string {
   } else if (n > 0) {
     parts.push(units[n]);
   }
-
   return parts.join(" ");
 }
 
@@ -71,7 +69,8 @@ function salarioMinLabel(qtd: string): string {
   return `${qtd} salários mínimos`;
 }
 
-// Generate a simple .docx XML
+// ── Document XML generation ──
+
 function generateDocxXml(lead: any): string {
   const tipo = lead.tipo_contrato || "tributario_cnpj";
   const isCPF = tipo === "tributario_cpf";
@@ -176,9 +175,9 @@ ${bodyXml}
 </w:document>`;
 }
 
-// Minimal .docx as a ZIP
+// ── ZIP builder ──
+
 async function buildDocxBytes(documentXml: string): Promise<Uint8Array> {
-  // We'll use a minimal docx structure
   const contentTypesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
 <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
@@ -195,19 +194,68 @@ async function buildDocxBytes(documentXml: string): Promise<Uint8Array> {
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
 </Relationships>`;
 
-  // Use fflate for ZIP creation
   const { zipSync } = await import("https://esm.sh/fflate@0.8.2");
-
   const encoder = new TextEncoder();
-  const zip = zipSync({
+  return zipSync({
     "[Content_Types].xml": encoder.encode(contentTypesXml),
     "_rels/.rels": encoder.encode(relsXml),
     "word/_rels/document.xml.rels": encoder.encode(wordRelsXml),
     "word/document.xml": encoder.encode(documentXml),
   });
-
-  return zip;
 }
+
+// ── ZapSign integration ──
+
+async function sendToZapSign(
+  apiKey: string,
+  docxBytes: Uint8Array,
+  docName: string,
+  signerName: string,
+  signerEmail: string,
+  signerPhone: string | null,
+): Promise<{ doc_token: string; signer_token: string; sign_url: string }> {
+  // Convert to base64
+  const b64 = btoa(String.fromCharCode(...docxBytes));
+
+  const body: any = {
+    name: docName,
+    lang: "pt-br",
+    signers: [
+      {
+        name: signerName,
+        email: signerEmail,
+        send_automatic_email: true,
+        send_automatic_whatsapp: !!signerPhone,
+        ...(signerPhone ? { phone_country: "55", phone_number: signerPhone.replace(/\D/g, "") } : {}),
+      },
+    ],
+    base64_pdf: b64,
+  };
+
+  const res = await fetch("https://api.zapsign.com.br/api/v1/docs/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`ZapSign API error (${res.status}): ${errText}`);
+  }
+
+  const data = await res.json();
+  const signer = data.signers?.[0] || {};
+  return {
+    doc_token: data.token || "",
+    signer_token: signer.token || "",
+    sign_url: signer.sign_url || data.sign_url || "",
+  };
+}
+
+// ── Main handler ──
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -256,7 +304,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Generate document XML
+    // Generate document
     const docXml = generateDocxXml(lead);
     const docxBytes = await buildDocxBytes(docXml);
 
@@ -266,15 +314,15 @@ Deno.serve(async (req) => {
     const sbInternal = createClient(supabaseUrl, serviceKey);
 
     const fileName = `contratos/${lead_id}_${Date.now()}.docx`;
-
-    // Try to upload to storage bucket
     const { error: uploadError } = await sbInternal.storage
       .from("contracts")
-      .upload(fileName, docxBytes, { contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", upsert: true });
+      .upload(fileName, docxBytes, {
+        contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        upsert: true,
+      });
 
     let fileUrl: string;
     if (uploadError) {
-      // Fallback: encode as base64 data URL
       const b64 = btoa(String.fromCharCode(...docxBytes));
       fileUrl = `data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,${b64}`;
     } else {
@@ -282,18 +330,64 @@ Deno.serve(async (req) => {
       fileUrl = urlData.publicUrl;
     }
 
+    // ── ZapSign auto-send ──
+    const zapSignKey = Deno.env.get("ZAPSIGN_API_KEY");
+    let zapSignResult: { doc_token: string; signer_token: string; sign_url: string } | null = null;
+    let zapSignError: string | null = null;
+
+    const isCPF = lead.tipo_contrato === "tributario_cpf";
+    const empresaName = isCPF ? (lead.representante_nome || "Cliente") : (lead.empresa || "Empresa");
+    const docName = `CONTRATO DE ASSESSORIA JURÍDICA TRIBUTÁRIA E EMPRESARIAL - PQA & ${empresaName}`;
+
+    if (zapSignKey) {
+      try {
+        zapSignResult = await sendToZapSign(
+          zapSignKey,
+          docxBytes,
+          docName,
+          lead.representante_nome || empresaName,
+          lead.email,
+          lead.telefone || null,
+        );
+      } catch (e: any) {
+        console.error("ZapSign error:", e.message);
+        zapSignError = e.message;
+      }
+    } else {
+      zapSignError = "ZAPSIGN_API_KEY não configurada";
+    }
+
     // Update lead status in external DB
-    await sbExt.from("leads").update({
-      contrato_status: "gerado",
+    const updatePayload: any = {
       contrato_file_url: fileUrl,
       contrato_preparado_em: new Date().toISOString(),
-    }).eq("id", lead_id);
+    };
+
+    if (zapSignResult) {
+      updatePayload.contrato_status = "enviado";
+      updatePayload.zapsign_doc_token = zapSignResult.doc_token;
+      updatePayload.zapsign_signer_token = zapSignResult.signer_token;
+      updatePayload.contract_url = zapSignResult.sign_url;
+    } else {
+      updatePayload.contrato_status = "gerado";
+    }
+
+    await sbExt.from("leads").update(updatePayload).eq("id", lead_id);
 
     return new Response(JSON.stringify({
       success: true,
       file_name: fileName,
       file_url: fileUrl,
-      message: "Contrato gerado com sucesso",
+      sign_url: zapSignResult?.sign_url || null,
+      doc_token: zapSignResult?.doc_token || null,
+      docx_generated: true,
+      zapsign_sent: !!zapSignResult,
+      zapsign_error: zapSignError,
+      message: zapSignResult
+        ? "Contrato gerado e enviado para assinatura no ZapSign!"
+        : zapSignError
+          ? `Contrato gerado, mas erro no ZapSign: ${zapSignError}. Baixe o Word e suba manualmente.`
+          : "Contrato gerado com sucesso",
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
