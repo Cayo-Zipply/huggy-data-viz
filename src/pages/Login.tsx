@@ -22,6 +22,11 @@ export default function Login() {
     setMessage(null);
 
     try {
+      const normalizedEmail = email.toLowerCase().trim();
+      if (!normalizedEmail.endsWith("@penaquadros.com")) {
+        throw new Error("Apenas e-mails @penaquadros.com são permitidos.");
+      }
+
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({
           email,
@@ -32,7 +37,7 @@ export default function Login() {
           },
         });
         if (error) throw error;
-        setMessage({ type: "success", text: "Conta criada! Verifique seu e-mail para confirmar." });
+        // Auto-confirm is enabled, user will be logged in automatically
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
