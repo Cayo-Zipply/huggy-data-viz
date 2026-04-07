@@ -4,13 +4,14 @@ import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
   Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap,
   X, Copy, ExternalLink, MapPin, Megaphone, MessageSquare, Save, Loader2,
-  AlertTriangle, Tag, StickyNote
+  AlertTriangle, Tag, StickyNote, FileSignature
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import type { PipelineCard as CardType, PipelineTask, LossCategory } from "./types";
 import { CLOSERS, LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
+import { ContractTab } from "./ContractTab";
 import type { PipelineLabel } from "@/hooks/useLabels";
 
 /* ── Draft helpers (localStorage) ── */
@@ -69,7 +70,7 @@ interface Props {
   onRemoveLabel?: (cardId: string, labelId: string) => void;
 }
 
-type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "anexo" | "acoes";
+type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "contrato" | "anexo" | "acoes";
 
 export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onSaveObservation, labels = [], cardLabels = [], onAddLabel, onRemoveLabel }: Props) {
   const [activeSection, setActiveSection] = useState<SectionKey>("dados");
@@ -201,6 +202,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
     { key: "origem", label: "Origem", icon: Megaphone },
     { key: "historico", label: "Histórico", icon: History },
     { key: "tarefas", label: "Tarefas", icon: ListChecks },
+    { key: "contrato", label: "Contrato", icon: FileSignature },
     { key: "anexo", label: "Anexo", icon: Paperclip },
     { key: "acoes", label: "Ações", icon: Zap },
   ];
@@ -629,6 +631,11 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                   </div>
                 ))}
               </div>
+            )}
+
+            {/* CONTRATO */}
+            {activeSection === "contrato" && (
+              <ContractTab card={card} onUpdate={onUpdate} />
             )}
 
             {/* ANEXO */}

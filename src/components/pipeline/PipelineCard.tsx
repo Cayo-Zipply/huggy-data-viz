@@ -92,6 +92,10 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], onUpdate, onMar
               {isLost && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-destructive/20 text-red-400 font-medium">Perdido</span>}
               {stale && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400">{staleDays}d parado</span>}
               {(card.resumo_reuniao || card.transcricao_reuniao) && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-medium">📎 Anexo</span>}
+              {card.contrato_status === "gerado" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-medium">📄 Contrato</span>}
+              {card.contrato_status === "enviado" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-medium">📝 Assinatura</span>}
+              {card.contrato_status === "assinado" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">✅ Assinado</span>}
+              {card.contrato_status === "recusado" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 font-medium">❌ Recusado</span>}
             </div>
             {card.empresa && (
               <p className="text-[11px] text-muted-foreground truncate mt-0.5">{card.empresa}</p>
