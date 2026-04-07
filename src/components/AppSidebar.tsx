@@ -73,7 +73,7 @@ export function AppSidebar() {
         <ThemeToggle />
         <div className="flex items-center gap-2">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={profile?.avatar_url ?? undefined} />
+            <AvatarImage src={undefined} />
             <AvatarFallback className="text-xs">{initials}</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
