@@ -21,6 +21,7 @@ import { ConsolidatedPanel } from "@/components/ConsolidatedPanel";
 import { PipelinePanel } from "@/components/PipelinePanel";
 import { HelpPanel } from "@/components/HelpPanel";
 import { SalesPieChart } from "@/components/SalesPieChart";
+import { MarketingMetaPanel } from "@/components/MarketingMetaPanel";
 
 const Index = ({ initialTab }: { initialTab?: string }) => {
   const [selectedMonth, setSelectedMonth] = useState<string>("fevereiro");
@@ -85,36 +86,7 @@ const Index = ({ initialTab }: { initialTab?: string }) => {
           />
 
           {/* Marketing Tab */}
-          {activeTab === "marketing" && (
-            <>
-              {/* Metricas principais */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 mb-4 sm:mb-6">
-                <MetricCard title="Investimento" value={formatCurrency(currentData.investimento)} variation={getVariation(currentData.investimento, previousData?.investimento)} invertColors delay={0} />
-                <MetricCard title="Impressoes" value={formatNumber(currentData.impressoes)} variation={getVariation(currentData.impressoes, previousData?.impressoes)} delay={50} />
-                <MetricCard title={metricTooltips.ctr.label} value={formatPercent(currentData.ctr)} variation={getVariation(currentData.ctr, previousData?.ctr)} tooltip={metricTooltips.ctr.tooltip} delay={100} />
-                <MetricCard title={metricTooltips.cpc.label} value={formatCurrency(currentData.cpc)} variation={getVariation(currentData.cpc, previousData?.cpc)} invertColors tooltip={metricTooltips.cpc.tooltip} delay={150} />
-                <MetricCard title="Mensagens" value={formatNumber(currentData.mensagens)} variation={getVariation(currentData.mensagens, previousData?.mensagens)} delay={200} />
-                <MetricCard title="Mensagens Efetivas" value={formatNumber(currentData.mensagensEfetivas)} variation={getVariation(currentData.mensagensEfetivas, previousData?.mensagensEfetivas)} delay={225} />
-              </div>
-
-              {/* Segunda linha de metricas */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-4 mb-4 sm:mb-6">
-                <MetricCard title={metricTooltips.cpa.label} value={formatCurrency(currentData.cpa)} variation={getVariation(currentData.cpa, previousData?.cpa)} invertColors tooltip={metricTooltips.cpa.tooltip} delay={250} />
-                <MetricCard title={metricTooltips.cpm.label} value={formatCurrency(currentData.cpm)} variation={getVariation(currentData.cpm, previousData?.cpm)} invertColors tooltip={metricTooltips.cpm.tooltip} delay={300} />
-                <MetricCard title={metricTooltips.frequencia.label} value={formatPercent(currentData.frequencia)} variation={getVariation(currentData.frequencia, previousData?.frequencia)} tooltip={metricTooltips.frequencia.tooltip} delay={350} />
-                <MetricCard title="Cliques" value={formatNumber(cliques)} delay={400} />
-                <MetricCard title="Conversao Geral" value={formatPercent(conversaoGeral)} variation={getVariation(conversaoGeral, previousConversaoGeral)} delay={450} />
-                <MetricCard title="Custo por Reuniao" value={custoPorReuniao > 0 ? formatCurrency(custoPorReuniao) : "N/A"} variation={getVariation(custoPorReuniao, prevCustoPorReuniao)} invertColors delay={500} />
-                <MetricCard title="Conv. Reunioes" value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "N/A"} variation={getVariation(conversaoReunioes, prevConversaoReunioes)} delay={550} />
-              </div>
-
-              {/* Funil de trafego */}
-              <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
-                <TrafficFunnel impressoes={currentData.impressoes} cliques={cliques} mensagens={currentData.mensagens} vendas={currentData.vendas} />
-                <ROICard investimento={currentData.investimento} faturamento={currentData.faturamento} vendas={currentData.vendas} diasUteis={currentData.diasUteis} />
-              </div>
-            </>
-          )}
+          {activeTab === "marketing" && <MarketingMetaPanel />}
 
           {/* Comercial Tab */}
           {activeTab === "comercial" && (
