@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FileText, Download, Loader2, RefreshCw, FileSignature } from "lucide-react";
+import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import type { PipelineCard as CardType, ContractType, ContractStatus } from "./types";
 import { formatBRL } from "./types";
@@ -148,12 +148,22 @@ export function ContractTab({ card, onUpdate }: Props) {
         return;
       }
 
-      toast.success("✅ Contrato gerado! Faça o download abaixo.");
-      onUpdate(card.id, {
-        contrato_status: "gerado" as ContractStatus,
-        contrato_file_url: data.file_url,
-        contrato_preparado_em: new Date().toISOString(),
-      });
+      if (data.zapsign_sent) {
+        toast.success("✅ Contrato gerado e enviado para assinatura!");
+        onUpdate(card.id, {
+          contrato_status: "enviado" as ContractStatus,
+          contrato_file_url: data.file_url,
+          contract_url: data.sign_url,
+          contrato_preparado_em: new Date().toISOString(),
+        });
+      } else if (data.docx_generated) {
+        toast.warning(`⚠️ ${data.message}`);
+        onUpdate(card.id, {
+          contrato_status: "gerado" as ContractStatus,
+          contrato_file_url: data.file_url,
+          contrato_preparado_em: new Date().toISOString(),
+        });
+      }
     } catch (e: any) {
       toast.error(e.message || "Erro ao gerar contrato");
     } finally {
@@ -162,7 +172,7 @@ export function ContractTab({ card, onUpdate }: Props) {
   };
 
   const handleRegenerate = () => {
-    onUpdate(card.id, { contrato_status: "pendente" as ContractStatus, contrato_file_url: null });
+    onUpdate(card.id, { contrato_status: "pendente" as ContractStatus, contrato_file_url: null, contract_url: null });
   };
 
   const updateField = (key: string, value: string) => {
@@ -172,10 +182,13 @@ export function ContractTab({ card, onUpdate }: Props) {
   const inputClass = (fieldName: string) =>
     `w-full text-sm bg-muted/50 border rounded-md px-3 py-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary ${errors.includes(fieldName) ? "border-red-500" : "border-border"}`;
 
-  // ── GENERATED VIEW ──
+  // ── GENERATED / ENVIADO / ASSINADO VIEW ──
   if (isGenerated) {
     const statusInfo = STATUS_BADGES[card.contrato_status!] || { label: card.contrato_status, color: "bg-muted text-foreground" };
     const tipoLabel = CONTRACT_TYPE_OPTIONS.find(t => t.value === card.tipo_contrato)?.label || card.tipo_contrato;
+    const isCPFType = card.tipo_contrato === "tributario_cpf";
+    const empresaName = isCPFType ? (card.representante_nome || "Cliente") : (card.empresa || "Empresa");
+    const docName = `CONTRATO DE ASSESSORIA JURÍDICA TRIBUTÁRIA E EMPRESARIAL - PQA & ${empresaName}`;
 
     return (
       <div className="space-y-4">
@@ -183,6 +196,8 @@ export function ContractTab({ card, onUpdate }: Props) {
           <span className="text-xs px-2.5 py-1 rounded-full bg-primary/20 text-primary font-medium">{tipoLabel}</span>
           <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusInfo.color}`}>{statusInfo.label}</span>
         </div>
+
+        <p className="text-sm font-medium text-foreground">{docName}</p>
 
         {card.contrato_preparado_em && (
           <p className="text-xs text-muted-foreground">
@@ -202,20 +217,28 @@ export function ContractTab({ card, onUpdate }: Props) {
           </div>
         )}
 
-        {card.contrato_file_url && (
-          <a href={card.contrato_file_url} download className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20 w-fit">
-            <Download size={16} />Baixar Contrato
+        {/* ZapSign link */}
+        {card.contrato_status === "enviado" && card.contract_url && (
+          <a href={card.contract_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors border border-amber-500/20 w-fit">
+            <ExternalLink size={16} />Ver no ZapSign
           </a>
         )}
 
-        {card.contrato_status !== "assinado" && (
+        {/* Download Word */}
+        {card.contrato_file_url && (
+          <a href={card.contrato_file_url} download className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20 w-fit">
+            <Download size={16} />Baixar Word
+          </a>
+        )}
+
+        {card.contrato_status === "gerado" && (
           <p className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-3 border border-border/50">
-            Faça o download, suba no ZapSign e envie para assinatura do cliente.
+            ⚠️ Não foi possível enviar automaticamente ao ZapSign. Faça o download do Word e suba manualmente.
           </p>
         )}
 
         <button onClick={handleRegenerate} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 mt-4">
-          <RefreshCw size={12} />Gerar Novo Contrato
+          <RefreshCw size={12} />Regerar Contrato
         </button>
       </div>
     );
@@ -375,7 +398,7 @@ export function ContractTab({ card, onUpdate }: Props) {
               Salvar Dados
             </button>
             <button onClick={handleGenerate} disabled={generating} className="flex-1 text-sm px-4 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
-              {generating ? <><Loader2 size={16} className="animate-spin" />Gerando contrato...</> : <><FileSignature size={16} />Gerar Contrato</>}
+              {generating ? <><Loader2 size={16} className="animate-spin" />Gerando e enviando ao ZapSign...</> : <><FileSignature size={16} />Gerar Contrato</>}
             </button>
           </div>
 
