@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   useCallback,
   type ReactNode,
@@ -37,6 +38,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const mountedRef = useRef(true);
+  const profileRequestRef = useRef(0);
 
   const fetchProfile = useCallback(async (userId: string, email: string) => {
     try {
@@ -77,8 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.error("Erro ao buscar perfil:", error.message);
-        setProfile(null);
-        return;
+        return null;
       }
 
       if (!data) {
@@ -90,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .eq("user_id", userId)
           .maybeSingle();
         if (retry.data) {
-          setProfile(retry.data as UserProfile);
+          return retry.data as UserProfile;
         } else {
           const created = await (supabase as any)
             .from("user_profiles")
@@ -104,81 +106,127 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .maybeSingle();
 
           if (created.data) {
-            setProfile(created.data as UserProfile);
+            return created.data as UserProfile;
           } else {
             console.warn("Perfil não encontrado para:", normalizedEmail, created.error?.message);
-            setProfile(null);
+            return null;
           }
         }
-        return;
+      } else {
+        return data as UserProfile;
       }
-
-      setProfile(data as UserProfile);
     } catch (err) {
       console.error("Erro inesperado ao buscar perfil:", err);
-      setProfile(null);
+      return null;
     }
   }, []);
 
-  const applySession = useCallback(
-    async (s: Session | null) => {
-      if (s?.user) {
-        setSession(s);
-        setUser(s.user);
-        if (s.user.email) {
-          await fetchProfile(s.user.id, s.user.email);
-        }
-      } else {
-        setSession(null);
-        setUser(null);
-        setProfile(null);
+  const clearAuthState = useCallback(() => {
+    setSession(null);
+    setUser(null);
+    setProfile(null);
+  }, []);
+
+  const applySessionState = useCallback(
+    (nextSession: Session | null) => {
+      if (nextSession?.user) {
+        setSession(nextSession);
+        setUser(nextSession.user);
+        return;
       }
+
+      clearAuthState();
+    },
+    [clearAuthState]
+  );
+
+  const loadProfile = useCallback(
+    async (userId: string, email: string) => {
+      const requestId = ++profileRequestRef.current;
+      const nextProfile = await fetchProfile(userId, email);
+
+      if (!mountedRef.current || requestId !== profileRequestRef.current) {
+        return;
+      }
+
+      setProfile(nextProfile);
+      setLoading(false);
     },
     [fetchProfile]
   );
 
   useEffect(() => {
-    let mounted = true;
+    mountedRef.current = true;
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
-      if (!mounted) return;
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
+      if (!mountedRef.current) return;
 
-      if (_event === "SIGNED_OUT") {
-        setSession(null);
-        setUser(null);
+      if (event === "SIGNED_OUT" || !newSession?.user) {
+        profileRequestRef.current += 1;
+        clearAuthState();
+        setLoading(false);
+        return;
+      }
+
+      applySessionState(newSession);
+
+      if (event === "TOKEN_REFRESHED") {
+        setLoading(false);
+        return;
+      }
+
+      if (!newSession.user.email) {
         setProfile(null);
         setLoading(false);
         return;
       }
 
-      await applySession(newSession);
-      if (mounted) setLoading(false);
+      setLoading(true);
+      window.setTimeout(() => {
+        if (!mountedRef.current || !newSession.user.email) return;
+        void loadProfile(newSession.user.id, newSession.user.email);
+      }, 0);
     });
 
-    supabase.auth.getSession().then(async ({ data: { session: restored } }) => {
-      if (!mounted) return;
-      await applySession(restored);
-      if (mounted) setLoading(false);
+    void supabase.auth.getSession().then(async ({ data: { session: restored } }) => {
+      if (!mountedRef.current) return;
+
+      if (!restored?.user) {
+        clearAuthState();
+        setLoading(false);
+        return;
+      }
+
+      applySessionState(restored);
+
+      if (!restored.user.email) {
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      await loadProfile(restored.user.id, restored.user.email);
     });
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
       subscription.unsubscribe();
     };
-  }, [applySession]);
+  }, [applySessionState, clearAuthState, loadProfile]);
 
   const signOut = useCallback(async () => {
     try {
+      profileRequestRef.current += 1;
       await supabase.auth.signOut();
     } catch (err) {
       console.error("Erro ao fazer logout:", err);
     }
-    setUser(null);
-    setSession(null);
-    setProfile(null);
-  }, []);
+    clearAuthState();
+    setLoading(false);
+  }, [clearAuthState]);
 
   const refreshProfile = useCallback(async () => {
     if (user?.email) {
