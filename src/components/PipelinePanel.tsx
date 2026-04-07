@@ -71,6 +71,10 @@ export function PipelinePanel() {
     localStorage.removeItem("crm_active_user");
   }, [activeUser, isAdmin]);
 
+  // Persist search & filters to sessionStorage
+  useEffect(() => { sessionStorage.setItem("crm_search", searchQuery); }, [searchQuery]);
+  useEffect(() => { sessionStorage.setItem("crm_filters", JSON.stringify(filters)); }, [filters]);
+
   const ownerOptions = useMemo(() => {
     const pool = new Set<string>([
       currentUserName,
