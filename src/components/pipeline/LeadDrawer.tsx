@@ -3,13 +3,15 @@ import { cn } from "@/lib/utils";
 import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
   Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap,
-  X, Copy, ExternalLink, MapPin, Megaphone, MessageSquare, Save, Loader2
+  X, Copy, ExternalLink, MapPin, Megaphone, MessageSquare, Save, Loader2,
+  AlertTriangle, Tag
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import type { PipelineCard as CardType, PipelineTask, LossCategory } from "./types";
 import { CLOSERS, LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
+import type { PipelineLabel } from "@/hooks/useLabels";
 
 interface Props {
   card: CardType | null;
@@ -21,11 +23,15 @@ interface Props {
   onMarkLost: (id: string, cat: string, reason: string) => void;
   onCreateTask: (task: Omit<PipelineTask, "id" | "created_at">) => void;
   onToggleTask: (id: string) => void;
+  labels?: PipelineLabel[];
+  cardLabels?: PipelineLabel[];
+  onAddLabel?: (cardId: string, labelId: string) => void;
+  onRemoveLabel?: (cardId: string, labelId: string) => void;
 }
 
 type Section = "dados" | "origem" | "historico" | "tarefas" | "acoes";
 
-export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask }: Props) {
+export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, labels = [], cardLabels = [], onAddLabel, onRemoveLabel }: Props) {
   const [activeSection, setActiveSection] = useState<Section>("dados");
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -156,6 +162,14 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
             {isLost && <span className="text-xs px-2 py-1 rounded-full bg-destructive/20 text-red-400 font-medium">❌ Perdido</span>}
             {stale && <span className="text-xs px-2 py-1 rounded-full bg-red-500/20 text-red-400">{staleDays}d parado</span>}
             {pendingCount > 0 && <span className="text-xs px-2 py-1 rounded-full bg-yellow-400/10 text-yellow-400">{pendingCount} tarefa(s)</span>}
+            {card.owner === "SDR" && (
+              <span className="text-xs px-2 py-1 rounded-full bg-amber-500/20 text-amber-500 font-medium flex items-center gap-1">
+                <AlertTriangle size={12} />Atribuir responsável
+              </span>
+            )}
+            {cardLabels.map(cl => (
+              <span key={cl.id} className="text-xs px-2 py-1 rounded-full font-medium" style={{ backgroundColor: cl.color + "20", color: cl.color }}>{cl.name}</span>
+            ))}
           </div>
 
           {/* Quick actions */}
@@ -218,6 +232,38 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     </select>
                   </div>
                 </div>
+                <Separator className="my-1" />
+
+                {/* Labels */}
+                {labels.length > 0 && (
+                  <div className="py-2">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Tag size={14} className="text-muted-foreground" />
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Etiquetas</p>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {labels.map(label => {
+                        const isAssigned = cardLabels.some(cl => cl.id === label.id);
+                        return (
+                          <button
+                            key={label.id}
+                            onClick={() => {
+                              if (isAssigned) onRemoveLabel?.(card.id, label.id);
+                              else onAddLabel?.(card.id, label.id);
+                            }}
+                            className={cn(
+                              "text-[11px] px-2 py-1 rounded-full border transition-all font-medium",
+                              isAssigned ? "border-transparent" : "border-border opacity-40 hover:opacity-100"
+                            )}
+                            style={isAssigned ? { backgroundColor: label.color + "25", color: label.color, borderColor: label.color + "50" } : {}}
+                          >
+                            {label.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <Separator className="my-1" />
 
                 {/* Dates */}

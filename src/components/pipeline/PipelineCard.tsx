@@ -2,14 +2,17 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
-  ChevronDown, ChevronUp, Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap
+  ChevronDown, ChevronUp, Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap,
+  AlertTriangle
 } from "lucide-react";
 import type { PipelineCard as CardType, PipelineTask, PipeType, LossCategory } from "./types";
 import { CLOSERS, LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
+import type { PipelineLabel } from "@/hooks/useLabels";
 
 interface Props {
   card: CardType;
   tasks: PipelineTask[];
+  cardLabels?: PipelineLabel[];
   onUpdate: (id: string, u: Partial<CardType>) => void;
   onMarkWon: (id: string) => void;
   onMarkLost: (id: string, cat: string, reason: string) => void;
@@ -20,7 +23,7 @@ interface Props {
 
 type Tab = "info" | "historico" | "tarefas" | "acoes";
 
-export function PipelineCardItem({ card, tasks, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick }: Props) {
+export function PipelineCardItem({ card, tasks, cardLabels = [], onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [tab, setTab] = useState<Tab>("info");
   const [editing, setEditing] = useState<string | null>(null);
@@ -115,12 +118,23 @@ export function PipelineCardItem({ card, tasks, onUpdate, onMarkWon, onMarkLost,
               {formatBRL(card.deal_value || 1621)}
             </button>
           )}
-          {card.owner && <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 rounded text-primary flex items-center gap-0.5"><UserCircle size={8} />{card.owner}</span>}
+          {card.owner && card.owner === "SDR" ? (
+            <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 rounded text-amber-500 flex items-center gap-0.5 font-medium">
+              <AlertTriangle size={9} />Atribuir responsável
+            </span>
+          ) : card.owner ? (
+            <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 rounded text-primary flex items-center gap-0.5"><UserCircle size={8} />{card.owner}</span>
+          ) : null}
           {card.origem && <span className="text-[10px] px-1.5 py-0.5 bg-muted/50 rounded text-muted-foreground">{card.origem}</span>}
           <span className="text-[10px] px-1.5 py-0.5 bg-muted/50 rounded text-muted-foreground flex items-center gap-0.5">
             <Clock size={8} />{new Date(card.created_at).toLocaleDateString("pt-BR")}
           </span>
           {pendingCount > 0 && <span className="text-[10px] px-1.5 py-0.5 bg-yellow-400/10 rounded text-yellow-400">{pendingCount} tarefa(s)</span>}
+          {cardLabels.map(label => (
+            <span key={label.id} className="text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: label.color + "20", color: label.color }}>
+              {label.name}
+            </span>
+          ))}
         </div>
 
         {/* Expanded */}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { Search, UserCircle, LayoutGrid, ListChecks, BarChart3, Target, Upload, Plus, ChevronDown } from "lucide-react";
+import { Search, UserCircle, LayoutGrid, ListChecks, BarChart3, Target, Upload, Plus, ChevronDown, AlertTriangle } from "lucide-react";
 import { usePipelineData } from "./pipeline/usePipelineData";
 import { StageColumn } from "./pipeline/StageColumn";
 import { PipelineFiltersBar, applyFilters, exportCSV, defaultFilters, type FilterState } from "./pipeline/PipelineFilters";
@@ -13,6 +13,7 @@ import { CLOSERS, SDR_STAGES, CLOSER_STAGES, STAGE_CONFIG, STAGE_ORDER } from ".
 import type { PipelineCard, Stage } from "./pipeline/types";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLabels } from "@/hooks/useLabels";
 
 const SUB_TABS = [
   { key: "kanban", label: "Kanban", icon: LayoutGrid },
@@ -24,14 +25,16 @@ const SUB_TABS = [
 export function PipelinePanel() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeUser, setActiveUser] = useState<string>("all");
-  const { profile, isAdmin } = useAuth();
+  const { profile, isAdmin, isSdr, isCloser } = useAuth();
+  const { labels, getCardLabels, addLabelToCard, removeLabelFromCard } = useLabels();
   const currentUserName = useMemo(() => {
     const raw = (profile?.nome ?? profile?.email?.split("@")[0] ?? "Usuário").trim();
     return raw || "Usuário";
   }, [profile?.email, profile?.nome]);
 
   const { cards, tasks, goals, createCard, updateCard, moveCard, markWon, markLost, createTask, toggleTask, rescheduleTask, upsertGoal, importCSV } = usePipelineData(currentUserName);
-  const [activePipe, setActivePipe] = useState<"sdr" | "closer" | "all">("all");
+  const defaultPipe = isCloser ? "closer" : isSdr ? "sdr" : "all";
+  const [activePipe, setActivePipe] = useState<"sdr" | "closer" | "all">(defaultPipe);
   const [subTab, setSubTab] = useState("kanban");
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [pendingHandoff, setPendingHandoff] = useState<{ cardId: string; targetStage: Stage } | null>(null);
@@ -125,7 +128,11 @@ export function PipelinePanel() {
   };
 
   const confirmHandoff = () => {
-    if (pendingHandoff) moveCard(pendingHandoff.cardId, pendingHandoff.targetStage);
+    if (pendingHandoff) {
+      // When moving to closer pipe, set owner to "SDR" so closer must reassign manually
+      updateCard(pendingHandoff.cardId, { owner: "SDR" });
+      moveCard(pendingHandoff.cardId, pendingHandoff.targetStage);
+    }
     setPendingHandoff(null);
   };
 
@@ -153,6 +160,8 @@ export function PipelinePanel() {
   };
 
   const getStages = () => {
+    if (isCloser) return CLOSER_STAGES;
+    if (isSdr && activePipe !== "closer") return SDR_STAGES;
     if (activePipe === "sdr") return SDR_STAGES;
     if (activePipe === "closer") return CLOSER_STAGES;
     return STAGE_ORDER;
@@ -262,13 +271,16 @@ export function PipelinePanel() {
 
             <div className="flex flex-wrap gap-2">
               {([
-                { key: "all", label: "Todos", count: visibleCards.length },
-                { key: "sdr", label: "SDR", count: sdrCount },
-                { key: "closer", label: "Closer", count: closerCount },
-              ] as const).map((pipe) => (
+                { key: "all", label: "Todos", count: visibleCards.length, roles: ["admin"] },
+                { key: "sdr", label: "SDR", count: sdrCount, roles: ["admin", "sdr"] },
+                { key: "closer", label: "Closer", count: closerCount, roles: ["admin", "closer"] },
+              ] as const).filter(pipe => {
+                const role = profile?.role || "closer";
+                return (pipe.roles as readonly string[]).includes(role);
+              }).map((pipe) => (
                 <button
                   key={pipe.key}
-                  onClick={() => setActivePipe(pipe.key)}
+                  onClick={() => setActivePipe(pipe.key as any)}
                   className={cn(
                     "rounded-xl border px-4 py-2 text-sm font-medium transition-all",
                     activePipe === pipe.key
@@ -319,6 +331,7 @@ export function PipelinePanel() {
           <div className="flex gap-3 overflow-x-auto rounded-2xl border border-border bg-muted/20 p-3 pb-4">
             {getStages().map(s => (
               <StageColumn key={s} stageKey={s} cards={getCardsForStage(s)} tasks={tasks}
+                getCardLabels={getCardLabels}
                 onUpdate={updateCard} onDrop={handleDrop} onMarkWon={markWon} onMarkLost={markLost}
                 onCreateTask={createTask} onToggleTask={toggleTask} onCardClick={handleCardClick} />
             ))}
@@ -340,6 +353,10 @@ export function PipelinePanel() {
         onMarkLost={markLost}
         onCreateTask={createTask}
         onToggleTask={toggleTask}
+        labels={labels}
+        cardLabels={selectedCard ? getCardLabels(selectedCard.id) : []}
+        onAddLabel={addLabelToCard}
+        onRemoveLabel={removeLabelFromCard}
       />
     </div>
   );

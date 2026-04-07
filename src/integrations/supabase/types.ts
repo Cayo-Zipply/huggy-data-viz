@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      pipeline_card_labels: {
+        Row: {
+          card_id: string
+          created_at: string
+          id: string
+          label_id: string
+        }
+        Insert: {
+          card_id: string
+          created_at?: string
+          id?: string
+          label_id: string
+        }
+        Update: {
+          card_id?: string
+          created_at?: string
+          id?: string
+          label_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_card_labels_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pipeline_card_labels_label_id_fkey"
+            columns: ["label_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_labels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pipeline_cards: {
         Row: {
           anotacoes: string | null
@@ -119,6 +155,27 @@ export type Database = {
           reunioes_marcadas_meta?: number | null
           reunioes_realizadas_meta?: number | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      pipeline_labels: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
         }
         Relationships: []
       }

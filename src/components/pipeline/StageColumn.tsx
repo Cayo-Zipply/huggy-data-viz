@@ -4,11 +4,13 @@ import { Info } from "lucide-react";
 import type { PipelineCard, PipelineTask, Stage } from "./types";
 import { STAGE_CONFIG, formatBRL } from "./types";
 import { PipelineCardItem } from "./PipelineCard";
+import type { PipelineLabel } from "@/hooks/useLabels";
 
 interface Props {
   stageKey: Stage;
   cards: PipelineCard[];
   tasks: PipelineTask[];
+  getCardLabels?: (cardId: string) => PipelineLabel[];
   onUpdate: (id: string, u: Partial<PipelineCard>) => void;
   onDrop: (cardId: string, stage: string) => void;
   onMarkWon: (id: string) => void;
@@ -18,7 +20,7 @@ interface Props {
   onCardClick?: (card: PipelineCard) => void;
 }
 
-export function StageColumn({ stageKey, cards, tasks, onUpdate, onDrop, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick }: Props) {
+export function StageColumn({ stageKey, cards, tasks, getCardLabels, onUpdate, onDrop, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick }: Props) {
   const cfg = STAGE_CONFIG[stageKey];
   const Icon = cfg.icon;
   const [dragOver, setDragOver] = useState(false);
@@ -74,7 +76,7 @@ export function StageColumn({ stageKey, cards, tasks, onUpdate, onDrop, onMarkWo
             }}
             className="cursor-grab active:cursor-grabbing"
           >
-            <PipelineCardItem card={card} tasks={tasks} onUpdate={onUpdate}
+            <PipelineCardItem card={card} tasks={tasks} cardLabels={getCardLabels?.(card.id) || []} onUpdate={onUpdate}
               onMarkWon={onMarkWon} onMarkLost={onMarkLost} onCreateTask={onCreateTask} onToggleTask={onToggleTask}
               onCardClick={onCardClick} />
           </div>

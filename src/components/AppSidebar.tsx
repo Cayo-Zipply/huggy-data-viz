@@ -11,18 +11,20 @@ import {
   LogOut,
   HelpCircle,
   UsersRound,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const NAV_ITEMS = [
   { key: "/pipeline", label: "Pipeline", icon: Kanban, roles: ["admin", "sdr", "closer"] },
-  { key: "/marketing", label: "Marketing", icon: BarChart3, roles: ["admin", "sdr", "closer"] },
-  { key: "/comercial", label: "Comercial", icon: Users, roles: ["admin", "sdr", "closer"] },
-  { key: "/comparativo", label: "Comparativo", icon: GitCompare, roles: ["admin", "sdr", "closer"] },
+  { key: "/marketing", label: "Marketing", icon: BarChart3, roles: ["admin"] },
+  { key: "/comercial", label: "Comercial", icon: Users, roles: ["admin"] },
+  { key: "/comparativo", label: "Comparativo", icon: GitCompare, roles: ["admin"] },
   { key: "/rentabilidade", label: "Rentabilidade", icon: DollarSign, roles: ["admin"] },
   { key: "/consolidado", label: "Consolidado", icon: PieChart, roles: ["admin"] },
   { key: "/usuarios", label: "Usuários", icon: UsersRound, roles: ["admin"] },
+  { key: "/configuracoes", label: "Configurações", icon: Settings, roles: ["admin"] },
   { key: "/ajuda", label: "Ajuda", icon: HelpCircle, roles: ["admin", "sdr", "closer"] },
 ];
 
