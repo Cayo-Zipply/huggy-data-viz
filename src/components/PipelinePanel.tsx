@@ -160,6 +160,8 @@ export function PipelinePanel() {
   };
 
   const getStages = () => {
+    if (isCloser) return CLOSER_STAGES;
+    if (isSdr && activePipe !== "closer") return SDR_STAGES;
     if (activePipe === "sdr") return SDR_STAGES;
     if (activePipe === "closer") return CLOSER_STAGES;
     return STAGE_ORDER;
