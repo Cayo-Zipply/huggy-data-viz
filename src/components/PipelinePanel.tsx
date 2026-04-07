@@ -25,7 +25,8 @@ const SUB_TABS = [
 export function PipelinePanel() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeUser, setActiveUser] = useState<string>("all");
-  const { profile, isAdmin } = useAuth();
+  const { profile, isAdmin, isSdr, isCloser } = useAuth();
+  const { labels, getCardLabels, addLabelToCard, removeLabelFromCard } = useLabels();
   const currentUserName = useMemo(() => {
     const raw = (profile?.nome ?? profile?.email?.split("@")[0] ?? "Usuário").trim();
     return raw || "Usuário";
