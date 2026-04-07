@@ -11,6 +11,9 @@ interface Props {
   cards: PipelineCard[];
   tasks: PipelineTask[];
   getCardLabels?: (cardId: string) => PipelineLabel[];
+  bulkMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
   onUpdate: (id: string, u: Partial<PipelineCard>) => void;
   onDrop: (cardId: string, stage: string) => void;
   onMarkWon: (id: string) => void;
@@ -20,7 +23,7 @@ interface Props {
   onCardClick?: (card: PipelineCard) => void;
 }
 
-export function StageColumn({ stageKey, cards, tasks, getCardLabels, onUpdate, onDrop, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick }: Props) {
+export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, selectedIds, onToggleSelect, onUpdate, onDrop, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick }: Props) {
   const cfg = STAGE_CONFIG[stageKey];
   const Icon = cfg.icon;
   const [dragOver, setDragOver] = useState(false);
@@ -67,15 +70,33 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, onUpdate, o
         {cards.map(card => (
           <div
             key={card.id}
-            draggable
+            draggable={!bulkMode}
             onDragStart={e => e.dataTransfer.setData("cardId", card.id)}
             onClick={(e) => {
+              if (bulkMode) {
+                onToggleSelect?.(card.id);
+                return;
+              }
               const target = e.target as HTMLElement;
               const isInteractive = Boolean(target.closest("button, input, select, textarea, a, label"));
               if (!isInteractive) onCardClick?.(card);
             }}
-            className="cursor-grab active:cursor-grabbing"
+            className={cn(
+              "cursor-grab active:cursor-grabbing relative",
+              bulkMode && "cursor-pointer",
+              bulkMode && selectedIds?.has(card.id) && "ring-2 ring-primary rounded-2xl"
+            )}
           >
+            {bulkMode && (
+              <div className={cn(
+                "absolute top-2 left-2 z-20 w-5 h-5 rounded border-2 flex items-center justify-center text-[10px]",
+                selectedIds?.has(card.id)
+                  ? "bg-primary border-primary text-primary-foreground"
+                  : "bg-background border-border"
+              )}>
+                {selectedIds?.has(card.id) && "✓"}
+              </div>
+            )}
             <PipelineCardItem card={card} tasks={tasks} cardLabels={getCardLabels?.(card.id) || []} onUpdate={onUpdate}
               onMarkWon={onMarkWon} onMarkLost={onMarkLost} onCreateTask={onCreateTask} onToggleTask={onToggleTask}
               onCardClick={onCardClick} />
