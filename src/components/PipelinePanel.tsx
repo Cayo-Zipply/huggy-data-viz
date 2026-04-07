@@ -23,7 +23,7 @@ const SUB_TABS = [
 ];
 
 export function PipelinePanel() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => sessionStorage.getItem("crm_search") || "");
   const [activeUser, setActiveUser] = useState<string>("all");
   const { profile, isAdmin, isSdr, isCloser } = useAuth();
   const { labels, getCardLabels, addLabelToCard, removeLabelFromCard } = useLabels();
@@ -36,7 +36,9 @@ export function PipelinePanel() {
   const defaultPipe = isCloser ? "closer" : isSdr ? "sdr" : "all";
   const [activePipe, setActivePipe] = useState<"sdr" | "closer" | "all">(defaultPipe);
   const [subTab, setSubTab] = useState("kanban");
-  const [filters, setFilters] = useState<FilterState>(defaultFilters);
+  const [filters, setFilters] = useState<FilterState>(() => {
+    try { const saved = sessionStorage.getItem("crm_filters"); return saved ? JSON.parse(saved) : defaultFilters; } catch { return defaultFilters; }
+  });
   const [pendingHandoff, setPendingHandoff] = useState<{ cardId: string; targetStage: Stage } | null>(null);
   const [showNewLead, setShowNewLead] = useState(false);
   const [newLeadName, setNewLeadName] = useState("");
