@@ -226,6 +226,38 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                 </div>
                 <Separator className="my-1" />
 
+                {/* Labels */}
+                {labels.length > 0 && (
+                  <div className="py-2">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Tag size={14} className="text-muted-foreground" />
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Etiquetas</p>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {labels.map(label => {
+                        const isAssigned = cardLabels.some(cl => cl.id === label.id);
+                        return (
+                          <button
+                            key={label.id}
+                            onClick={() => {
+                              if (isAssigned) onRemoveLabel?.(card.id, label.id);
+                              else onAddLabel?.(card.id, label.id);
+                            }}
+                            className={cn(
+                              "text-[11px] px-2 py-1 rounded-full border transition-all font-medium",
+                              isAssigned ? "border-transparent" : "border-border opacity-40 hover:opacity-100"
+                            )}
+                            style={isAssigned ? { backgroundColor: label.color + "25", color: label.color, borderColor: label.color + "50" } : {}}
+                          >
+                            {label.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                <Separator className="my-1" />
+
                 {/* Dates */}
                 <div className="flex items-center gap-3 py-2">
                   <Clock size={16} className="text-muted-foreground flex-shrink-0" />
