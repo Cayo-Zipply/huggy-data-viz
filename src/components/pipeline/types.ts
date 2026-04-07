@@ -6,6 +6,8 @@ export type CloserStage = "reuniao_agendada" | "no_show" | "reuniao_realizada" |
 export type Stage = SdrStage | CloserStage;
 export type LeadStatus = "aberto" | "ganho" | "perdido";
 export type LossCategory = "preco" | "timing" | "concorrente" | "sem_budget" | "sem_resposta" | "outro";
+export type ContractType = "tributario_cnpj" | "tributario_cpf" | "empresarial_completo";
+export type ContractStatus = "pendente" | "gerado" | "enviado" | "assinado" | "recusado";
 
 export interface StageChange {
   from: string | null;
@@ -44,6 +46,27 @@ export interface PipelineCard {
   duracao_reuniao: string | null;
   participantes_reuniao: string | null;
   data_no_show: string | null;
+  // Contract fields
+  contrato_status: ContractStatus | null;
+  contrato_file_url: string | null;
+  contrato_preparado_em: string | null;
+  contrato_preparado_por: string | null;
+  tipo_contrato: ContractType | null;
+  representante_nome: string | null;
+  representante_cpf: string | null;
+  valor_mensalidade: number | null;
+  qtd_salarios_minimos: string | null;
+  porcentagem_exito: string | null;
+  data_primeiro_pagamento: string | null;
+  dia_demais_pagamentos: string | null;
+  prazo_entrega_relatorios: number | null;
+  prazo_contrato: string | null;
+  valor_proposta: number | null;
+  endereco: string | null;
+  cidade: string | null;
+  estado: string | null;
+  cep: string | null;
+  zapsign_signed_at: string | null;
 }
 
 export interface PipelineTask {
