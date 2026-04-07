@@ -254,7 +254,7 @@ export function usePipelineData(actorName: string) {
     const card: PipelineCard = {
       id, nome: data.nome, telefone: data.telefone || null, email: null, cnpj: null, valor_divida: null,
       pipe: STAGE_CONFIG[stage].pipe as PipeType, stage, origem: data.origem || null, anotacoes: data.anotacoes || null,
-      contract_url: null, created_at: data.created_at || now, updated_at: now, owner: data.owner || activeUser,
+      contract_url: null, created_at: data.created_at || now, updated_at: now, owner: data.owner || actorName,
       deal_value: data.deal_value || DEFAULT_DEAL_VALUE, lead_status: "aberto", loss_reason: null, loss_category: null,
       last_stage: null, stage_changed_at: now,
       history: [{ from: null, to: stage, at: now, by: actorName, duration_days: null }],
