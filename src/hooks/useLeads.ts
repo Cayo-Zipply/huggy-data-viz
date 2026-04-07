@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseExt } from "@/lib/supabaseExternal";
 import { useAuth } from "@/contexts/AuthContext";
 
 export interface Lead {
@@ -20,7 +20,7 @@ export interface Lead {
   valor_divida: number | null;
 }
 
-const db = supabase as any;
+const db = supabaseExt as any;
 
 export function useLeads() {
   const { profile, isCloser } = useAuth();
