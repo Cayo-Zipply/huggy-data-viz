@@ -337,7 +337,11 @@ Deno.serve(async (req) => {
     let fileUrl: string;
     if (uploadError) {
       console.error("Upload error:", uploadError.message);
-      const b64 = btoa(String.fromCharCode(...docxBytes));
+      let bin = "";
+      for (let i = 0; i < docxBytes.length; i += 8192) {
+        bin += String.fromCharCode(...docxBytes.subarray(i, i + 8192));
+      }
+      const b64 = btoa(bin);
       fileUrl = `data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,${b64}`;
     } else {
       const { data: urlData } = sbInternal.storage.from("contracts").getPublicUrl(fileName);
