@@ -76,6 +76,27 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     duracao_reuniao: row.duracao_reuniao || null,
     participantes_reuniao: row.participantes_reuniao || null,
     data_no_show: row.data_no_show || null,
+    // Contract fields
+    contrato_status: row.contrato_status || null,
+    contrato_file_url: row.contrato_file_url || null,
+    contrato_preparado_em: row.contrato_preparado_em || null,
+    contrato_preparado_por: row.contrato_preparado_por || null,
+    tipo_contrato: row.tipo_contrato || null,
+    representante_nome: row.representante_nome || null,
+    representante_cpf: row.representante_cpf || null,
+    valor_mensalidade: row.valor_mensalidade != null ? Number(row.valor_mensalidade) : null,
+    qtd_salarios_minimos: row.qtd_salarios_minimos || null,
+    porcentagem_exito: row.porcentagem_exito || null,
+    data_primeiro_pagamento: row.data_primeiro_pagamento || null,
+    dia_demais_pagamentos: row.dia_demais_pagamentos || null,
+    prazo_entrega_relatorios: row.prazo_entrega_relatorios != null ? Number(row.prazo_entrega_relatorios) : null,
+    prazo_contrato: row.prazo_contrato || null,
+    valor_proposta: row.valor_proposta != null ? Number(row.valor_proposta) : null,
+    endereco: row.endereco || null,
+    cidade: row.cidade || null,
+    estado: row.estado || null,
+    cep: row.cep || null,
+    zapsign_signed_at: row.zapsign_signed_at || null,
   };
 }
 
