@@ -472,6 +472,7 @@ export function PipelinePanel() {
         onMarkLost={markLost}
         onCreateTask={createTask}
         onToggleTask={toggleTask}
+        onSaveObservation={saveObservation}
         labels={labels}
         cardLabels={selectedCard ? getCardLabels(selectedCard.id) : []}
         onAddLabel={addLabelToCard}
