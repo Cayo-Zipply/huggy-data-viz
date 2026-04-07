@@ -196,7 +196,13 @@ async function generateFromTemplate(sbInternal: any, lead: any): Promise<Uint8Ar
   );
 
   for (const xmlFile of xmlFiles) {
-    const xmlContent = decoder.decode(unzipped[xmlFile]);
+    let xmlContent = decoder.decode(unzipped[xmlFile]);
+    // Remove yellow highlighting/shading from runs
+    xmlContent = xmlContent.replace(/<w:highlight\s+w:val="yellow"\s*\/>/g, "");
+    xmlContent = xmlContent.replace(/<w:shd[^>]*w:fill="FFFF00"[^>]*\/>/g, "");
+    xmlContent = xmlContent.replace(/<w:shd[^>]*w:fill="FFD966"[^>]*\/>/g, "");
+    xmlContent = xmlContent.replace(/<w:shd[^>]*w:fill="FFF2CC"[^>]*\/>/g, "");
+    // Do placeholder replacements
     const replacedXml = replaceInXml(xmlContent, replacements);
     unzipped[xmlFile] = encoder.encode(replacedXml);
   }
@@ -215,7 +221,14 @@ async function sendToZapSign(
   signerEmail: string,
   signerPhone: string | null,
 ): Promise<{ doc_token: string; signer_token: string; sign_url: string }> {
-  const b64 = btoa(String.fromCharCode(...docxBytes));
+  // Chunked base64 encoding to avoid stack overflow with large files
+  let binary = "";
+  const chunkSize = 8192;
+  for (let i = 0; i < docxBytes.length; i += chunkSize) {
+    const chunk = docxBytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  const b64 = btoa(binary);
 
   const body: any = {
     name: docName,
@@ -324,7 +337,11 @@ Deno.serve(async (req) => {
     let fileUrl: string;
     if (uploadError) {
       console.error("Upload error:", uploadError.message);
-      const b64 = btoa(String.fromCharCode(...docxBytes));
+      let bin = "";
+      for (let i = 0; i < docxBytes.length; i += 8192) {
+        bin += String.fromCharCode(...docxBytes.subarray(i, i + 8192));
+      }
+      const b64 = btoa(bin);
       fileUrl = `data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,${b64}`;
     } else {
       const { data: urlData } = sbInternal.storage.from("contracts").getPublicUrl(fileName);
