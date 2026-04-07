@@ -32,6 +32,7 @@ interface Props {
 type Section = "dados" | "origem" | "historico" | "tarefas" | "acoes";
 
 export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, labels = [], cardLabels = [], onAddLabel, onRemoveLabel }: Props) {
+  type Section = "dados" | "origem" | "historico" | "tarefas" | "anexo" | "acoes";
   const [activeSection, setActiveSection] = useState<Section>("dados");
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -95,11 +96,14 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
     setNtTitle(""); setShowTaskForm(false);
   };
 
+  const hasMeetingData = !!(card.resumo_reuniao || card.transcricao_reuniao || card.data_reuniao);
+
   const sections: { key: Section; label: string; icon: any }[] = [
     { key: "dados", label: "Dados", icon: Info },
     { key: "origem", label: "Origem", icon: Megaphone },
     { key: "historico", label: "Histórico", icon: History },
     { key: "tarefas", label: "Tarefas", icon: ListChecks },
+    { key: "anexo", label: "Anexo", icon: Paperclip },
     { key: "acoes", label: "Ações", icon: Zap },
   ];
 
