@@ -85,7 +85,12 @@ export function PipelinePanel() {
   const visibleCards = useMemo(() => {
     let filtered = cards;
     if (!isAdmin) {
-      filtered = filtered.filter((card) => card.owner === currentUserName || !card.owner);
+      // SDR users see their own cards + ALL no_show cards (mirroring from closer pipe)
+      if (isSdr) {
+        filtered = filtered.filter((card) => card.owner === currentUserName || !card.owner || card.stage === "no_show");
+      } else {
+        filtered = filtered.filter((card) => card.owner === currentUserName || !card.owner);
+      }
     } else if (!showAllOwners) {
       filtered = filtered.filter((card) => card.owner === activeUser);
     }
