@@ -32,7 +32,7 @@ export function PipelinePanel() {
     return raw || "Usuário";
   }, [profile?.email, profile?.nome]);
 
-  const { cards, tasks, goals, createCard, updateCard, moveCard, markWon, markLost, createTask, toggleTask, rescheduleTask, upsertGoal, importCSV, deleteCard } = usePipelineData(currentUserName);
+  const { cards, tasks, goals, createCard, updateCard, moveCard, markWon, markLost, createTask, toggleTask, rescheduleTask, upsertGoal, importCSV, deleteCard, saveObservation } = usePipelineData(currentUserName);
   const defaultPipe = isCloser ? "closer" : isSdr ? "sdr" : "all";
   const [activePipe, setActivePipe] = useState<"sdr" | "closer" | "all">(defaultPipe);
   const [subTab, setSubTab] = useState("kanban");
