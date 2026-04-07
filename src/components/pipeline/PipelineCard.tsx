@@ -2,14 +2,17 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
-  ChevronDown, ChevronUp, Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap
+  ChevronDown, ChevronUp, Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap,
+  AlertTriangle
 } from "lucide-react";
 import type { PipelineCard as CardType, PipelineTask, PipeType, LossCategory } from "./types";
 import { CLOSERS, LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
+import type { PipelineLabel } from "@/hooks/useLabels";
 
 interface Props {
   card: CardType;
   tasks: PipelineTask[];
+  cardLabels?: PipelineLabel[];
   onUpdate: (id: string, u: Partial<CardType>) => void;
   onMarkWon: (id: string) => void;
   onMarkLost: (id: string, cat: string, reason: string) => void;
@@ -20,7 +23,7 @@ interface Props {
 
 type Tab = "info" | "historico" | "tarefas" | "acoes";
 
-export function PipelineCardItem({ card, tasks, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick }: Props) {
+export function PipelineCardItem({ card, tasks, cardLabels = [], onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [tab, setTab] = useState<Tab>("info");
   const [editing, setEditing] = useState<string | null>(null);
