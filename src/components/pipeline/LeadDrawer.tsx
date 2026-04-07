@@ -633,6 +633,11 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
               </div>
             )}
 
+            {/* CONTRATO */}
+            {activeSection === "contrato" && (
+              <ContractTab card={card} onUpdate={onUpdate} />
+            )}
+
             {/* ANEXO */}
             {activeSection === "anexo" && (
               <div className="space-y-4">
