@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { Search, UserCircle, LayoutGrid, ListChecks, BarChart3, Target, Upload, Plus, ChevronDown } from "lucide-react";
+import { Search, UserCircle, LayoutGrid, ListChecks, BarChart3, Target, Upload, Plus, ChevronDown, AlertTriangle } from "lucide-react";
 import { usePipelineData } from "./pipeline/usePipelineData";
 import { StageColumn } from "./pipeline/StageColumn";
 import { PipelineFiltersBar, applyFilters, exportCSV, defaultFilters, type FilterState } from "./pipeline/PipelineFilters";
@@ -13,6 +13,7 @@ import { CLOSERS, SDR_STAGES, CLOSER_STAGES, STAGE_CONFIG, STAGE_ORDER } from ".
 import type { PipelineCard, Stage } from "./pipeline/types";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLabels } from "@/hooks/useLabels";
 
 const SUB_TABS = [
   { key: "kanban", label: "Kanban", icon: LayoutGrid },
