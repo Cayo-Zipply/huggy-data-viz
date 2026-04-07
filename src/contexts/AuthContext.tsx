@@ -41,6 +41,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = useCallback(async (userId: string, email: string) => {
     try {
       const normalizedEmail = email.toLowerCase().trim();
+      const fallbackName = normalizedEmail
+        .split("@")[0]
+        .split(/[._-]+/)
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ");
 
       // Try by user_id first
       let { data, error } = await (supabase as any)
@@ -86,8 +92,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (retry.data) {
           setProfile(retry.data as UserProfile);
         } else {
-          console.warn("Perfil não encontrado para:", normalizedEmail);
-          setProfile(null);
+          const created = await (supabase as any)
+            .from("user_profiles")
+            .insert({
+              user_id: userId,
+              email: normalizedEmail,
+              nome: fallbackName || "Usuário",
+              role: null,
+            })
+            .select("*")
+            .maybeSingle();
+
+          if (created.data) {
+            setProfile(created.data as UserProfile);
+          } else {
+            console.warn("Perfil não encontrado para:", normalizedEmail, created.error?.message);
+            setProfile(null);
+          }
         }
         return;
       }
@@ -105,9 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(s);
         setUser(s.user);
         if (s.user.email) {
-          queueMicrotask(() => {
-            void fetchProfile(s.user!.id, s.user!.email!);
-          });
+          await fetchProfile(s.user.id, s.user.email);
         }
       } else {
         setSession(null);

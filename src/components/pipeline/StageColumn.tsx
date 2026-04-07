@@ -30,14 +30,14 @@ export function StageColumn({ stageKey, cards, tasks, onUpdate, onDrop, onMarkWo
   return (
     <div
       className={cn(
-        "flex-1 min-w-[240px] max-w-[300px] flex flex-col rounded-xl border transition-all",
-        dragOver ? "border-primary/50 bg-primary/5" : "border-border bg-card/30"
+        "flex w-[320px] min-w-[320px] max-w-[320px] flex-col rounded-2xl border shadow-sm transition-all",
+        dragOver ? "border-primary/60 bg-primary/5" : "border-border bg-card"
       )}
       onDragOver={e => { e.preventDefault(); setDragOver(true); }}
       onDragLeave={() => setDragOver(false)}
       onDrop={e => { e.preventDefault(); setDragOver(false); const id = e.dataTransfer.getData("cardId"); if (id) onDrop(id, stageKey); }}
     >
-      <div className="p-3 border-b border-border">
+      <div className="sticky top-0 z-10 rounded-t-2xl border-b border-border bg-card/95 p-3 backdrop-blur">
         <div className="flex items-center gap-2">
           <div className={cn("w-6 h-6 rounded-md flex items-center justify-center", cfg.bg.split(" ")[0])}>
             <Icon size={12} className={cfg.color} />
@@ -61,7 +61,7 @@ export function StageColumn({ stageKey, cards, tasks, onUpdate, onDrop, onMarkWo
           </div>
         )}
       </div>
-      <div className="p-2 space-y-2 flex-1 overflow-y-auto max-h-[55vh]">
+      <div className="flex-1 space-y-2 overflow-y-auto bg-muted/20 p-2.5 max-h-[62vh]">
         {cards.map(card => (
           <div
             key={card.id}

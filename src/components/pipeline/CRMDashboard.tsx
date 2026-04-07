@@ -3,10 +3,14 @@ import { cn } from "@/lib/utils";
 import { Users, Trophy, XCircle, TrendingUp, DollarSign, Clock, Target } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import type { PipelineCard } from "./types";
-import { CLOSERS, STAGE_ORDER, STAGE_CONFIG, LOSS_CATEGORIES, formatBRL, cardsReachedStage, daysDiff } from "./types";
-import type { Stage } from "./types";
+import { STAGE_ORDER, STAGE_CONFIG, LOSS_CATEGORIES, formatBRL, cardsReachedStage, daysDiff } from "./types";
 
-interface Props { cards: PipelineCard[]; activeUser: string; }
+interface Props {
+  cards: PipelineCard[];
+  activeUser: string;
+  canViewAll: boolean;
+  owners: string[];
+}
 
 function MetricBox({ label, value, sub, icon: Icon, color }: { label: string; value: string; sub?: string; icon: any; color: string }) {
   return (
@@ -21,9 +25,9 @@ function MetricBox({ label, value, sub, icon: Icon, color }: { label: string; va
   );
 }
 
-export function CRMDashboard({ cards, activeUser }: Props) {
-  const isAdmin = activeUser === "Cayo";
-  const vis = isAdmin ? cards : cards.filter(c => c.owner === activeUser);
+export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
+  const showAll = canViewAll && activeUser === "all";
+  const vis = showAll ? cards : cards.filter(c => c.owner === activeUser);
 
   const ativos = vis.filter(c => c.lead_status === "aberto");
   const ganhos = vis.filter(c => c.lead_status === "ganho");
@@ -69,7 +73,7 @@ export function CRMDashboard({ cards, activeUser }: Props) {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-bold text-foreground">Dashboard CRM</h3>
-        <p className="text-xs text-muted-foreground mt-0.5">Visão {isAdmin ? "geral" : `de ${activeUser}`}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">Visão {showAll ? "geral" : `de ${activeUser}`}</p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
@@ -140,10 +144,10 @@ export function CRMDashboard({ cards, activeUser }: Props) {
       </div>
 
       {/* Per closer (admin) */}
-      {isAdmin && (
+      {showAll && (
         <div className="space-y-3">
           <h4 className="text-sm font-medium text-foreground">Por Closer</h4>
-          {CLOSERS.map(closer => {
+          {owners.map(closer => {
             const cc = cards.filter(c => c.owner === closer);
             const a = cc.filter(c => c.lead_status === "aberto").length;
             const g = cc.filter(c => c.lead_status === "ganho");

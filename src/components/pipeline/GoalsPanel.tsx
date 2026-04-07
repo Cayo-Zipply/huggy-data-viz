@@ -2,12 +2,14 @@ import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Target, CheckCircle, AlertTriangle, TrendingDown } from "lucide-react";
 import type { PipelineCard, PipelineGoal } from "./types";
-import { CLOSERS, formatBRL, getBusinessDays, getBusinessDaysPassed, cardsReachedStage } from "./types";
+import { formatBRL, getBusinessDays, getBusinessDaysPassed, cardsReachedStage } from "./types";
 
 interface Props {
   cards: PipelineCard[];
   goals: PipelineGoal[];
   activeUser: string;
+  canViewAll: boolean;
+  owners: string[];
   onSave: (g: PipelineGoal) => void;
 }
 
@@ -111,8 +113,9 @@ function CloserGoals({ cards, goals, closer, onSave }: { cards: PipelineCard[]; 
   );
 }
 
-export function GoalsPanel({ cards, goals, activeUser, onSave }: Props) {
-  const isAdmin = activeUser === "Cayo";
+export function GoalsPanel({ cards, goals, activeUser, canViewAll, owners, onSave }: Props) {
+  const showAll = canViewAll && activeUser === "all";
+
   return (
     <div className="space-y-6">
       <div>
@@ -120,7 +123,7 @@ export function GoalsPanel({ cards, goals, activeUser, onSave }: Props) {
         <p className="text-xs text-muted-foreground mt-0.5">{new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}</p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {isAdmin ? CLOSERS.map(c => <CloserGoals key={c} cards={cards} goals={goals} closer={c} onSave={onSave} />) :
+        {showAll ? owners.map(c => <CloserGoals key={c} cards={cards} goals={goals} closer={c} onSave={onSave} />) :
           <CloserGoals cards={cards} goals={goals} closer={activeUser} onSave={onSave} />}
       </div>
     </div>

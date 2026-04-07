@@ -8,12 +8,13 @@ interface UserRow {
   id: string;
   email: string;
   nome: string;
-  role: string;
+  role: string | null;
   user_id: string | null;
   created_at: string;
 }
 
 const ROLES = [
+  { value: "", label: "Sem papel", color: "text-muted-foreground" },
   { value: "admin", label: "Admin", icon: Shield, color: "text-red-500" },
   { value: "sdr", label: "SDR", icon: Users, color: "text-blue-500" },
   { value: "closer", label: "Closer", icon: UserCheck, color: "text-green-500" },
@@ -42,7 +43,7 @@ export default function UserManagement() {
     setUpdating(userId);
     await (supabase as any)
       .from("user_profiles")
-      .update({ role: newRole, updated_at: new Date().toISOString() })
+      .update({ role: newRole || null, updated_at: new Date().toISOString() })
       .eq("id", userId);
     await fetchUsers();
     setUpdating(null);
@@ -92,7 +93,7 @@ export default function UserManagement() {
                   </td>
                   <td className="px-4 py-3">
                     <select
-                      value={u.role}
+                      value={u.role ?? ""}
                       onChange={(e) => updateRole(u.id, e.target.value)}
                       disabled={updating === u.id}
                       className="text-sm border border-border rounded-lg px-2 py-1.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
