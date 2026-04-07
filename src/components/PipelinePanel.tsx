@@ -331,6 +331,7 @@ export function PipelinePanel() {
           <div className="flex gap-3 overflow-x-auto rounded-2xl border border-border bg-muted/20 p-3 pb-4">
             {getStages().map(s => (
               <StageColumn key={s} stageKey={s} cards={getCardsForStage(s)} tasks={tasks}
+                getCardLabels={getCardLabels}
                 onUpdate={updateCard} onDrop={handleDrop} onMarkWon={markWon} onMarkLost={markLost}
                 onCreateTask={createTask} onToggleTask={toggleTask} onCardClick={handleCardClick} />
             ))}
