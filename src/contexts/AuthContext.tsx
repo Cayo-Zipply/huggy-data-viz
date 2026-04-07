@@ -7,7 +7,6 @@ import {
   type ReactNode,
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import type { User, Session } from "@supabase/supabase-js";
 
 interface UserProfile {
@@ -26,8 +25,8 @@ interface AuthContextType {
   isAdmin: boolean;
   isSdr: boolean;
   isCloser: boolean;
-  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -76,8 +75,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (!data) {
-        console.warn("Perfil não encontrado para:", normalizedEmail);
-        setProfile(null);
+        // Profile should have been auto-created by trigger, wait a moment and retry
+        await new Promise((r) => setTimeout(r, 1000));
+        const retry = await (supabase as any)
+          .from("user_profiles")
+          .select("*")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (retry.data) {
+          setProfile(retry.data as UserProfile);
+        } else {
+          console.warn("Perfil não encontrado para:", normalizedEmail);
+          setProfile(null);
+        }
         return;
       }
 
@@ -108,12 +118,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // 1) Register listener FIRST
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       if (!mounted) return;
-      console.log("[Auth]", _event, newSession?.user?.email ?? "no user");
 
       if (_event === "SIGNED_OUT") {
         setSession(null);
@@ -127,7 +135,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (mounted) setLoading(false);
     });
 
-    // 2) Then get initial session (processes ?code= from OAuth callback)
     supabase.auth.getSession().then(async ({ data: { session: restored } }) => {
       if (!mounted) return;
       await applySession(restored);
@@ -140,22 +147,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [applySession]);
 
-  const signInWithGoogle = useCallback(async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-      extraParams: {
-        prompt: "select_account",
-        hd: "penaquadros.com",
-      },
-    });
-
-    if (result.redirected) return;
-
-    if (result.error) {
-      console.error("Erro no login:", result.error.message);
-    }
-  }, []);
-
   const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
@@ -166,6 +157,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setProfile(null);
   }, []);
+
+  const refreshProfile = useCallback(async () => {
+    if (user?.email) {
+      await fetchProfile(user.id, user.email);
+    }
+  }, [user, fetchProfile]);
 
   const isAdmin = profile?.role === "admin";
   const isSdr = profile?.role === "sdr";
@@ -181,8 +178,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin,
         isSdr,
         isCloser,
-        signInWithGoogle,
         signOut,
+        refreshProfile,
       }}
     >
       {children}

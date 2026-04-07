@@ -1,113 +1,127 @@
-// src/pages/Login.tsx
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 
 export default function Login() {
-  const { user, profile, loading, signInWithGoogle } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [nome, setNome] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
 
-  // Se já está autenticado, redireciona para pipeline
-  if (!loading && user) {
+  if (!authLoading && user) {
     return <Navigate to="/pipeline" replace />;
   }
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { full_name: nome },
+            emailRedirectTo: window.location.origin,
+          },
+        });
+        if (error) throw error;
+        setMessage({ type: "success", text: "Conta criada! Verifique seu e-mail para confirmar." });
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      }
+    } catch (err: any) {
+      setMessage({ type: "error", text: err.message || "Erro ao autenticar" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-      fontFamily: "'Inter', 'Segoe UI', sans-serif",
-    }}>
-      <div style={{
-        background: '#ffffff',
-        borderRadius: '16px',
-        padding: '48px 40px',
-        maxWidth: '420px',
-        width: '100%',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-        textAlign: 'center' as const,
-      }}>
-        {/* Logo / Brand */}
-        <div style={{
-          width: '64px',
-          height: '64px',
-          background: 'linear-gradient(135deg, #0f3460, #e94560)',
-          borderRadius: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          margin: '0 auto 24px',
-          fontSize: '28px',
-          fontWeight: 'bold',
-          color: '#fff',
-        }}>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(var(--primary)/0.1)] to-background">
+      <div className="bg-card border border-border rounded-2xl p-10 max-w-[420px] w-full mx-4 shadow-xl">
+        {/* Brand */}
+        <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-6 text-primary-foreground text-2xl font-bold">
           PQ
         </div>
 
-        <h1 style={{
-          fontSize: '24px',
-          fontWeight: '700',
-          color: '#1a1a2e',
-          margin: '0 0 8px',
-        }}>
+        <h1 className="text-2xl font-bold text-foreground text-center mb-1">
           Pena Quadros CRM
         </h1>
-
-        <p style={{
-          fontSize: '14px',
-          color: '#6b7280',
-          margin: '0 0 32px',
-        }}>
-          Acesse o painel com sua conta Google corporativa
+        <p className="text-sm text-muted-foreground text-center mb-8">
+          {isSignUp ? "Crie sua conta para acessar o painel" : "Acesse o painel com suas credenciais"}
         </p>
 
-        <button
-          onClick={signInWithGoogle}
-          disabled={loading}
-          style={{
-            width: '100%',
-            padding: '14px 24px',
-            fontSize: '15px',
-            fontWeight: '600',
-            color: '#1a1a2e',
-            background: '#ffffff',
-            border: '2px solid #e5e7eb',
-            borderRadius: '12px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '12px',
-            transition: 'all 0.2s',
-            opacity: loading ? 0.6 : 1,
-          }}
-          onMouseEnter={(e) => {
-            if (!loading) {
-              e.currentTarget.style.borderColor = '#0f3460';
-              e.currentTarget.style.background = '#f8fafc';
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#e5e7eb';
-            e.currentTarget.style.background = '#ffffff';
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-          </svg>
-          {loading ? 'Carregando...' : 'Entrar com Google'}
-        </button>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {isSignUp && (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Nome</label>
+              <input
+                type="text"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                required
+                className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                placeholder="Seu nome completo"
+              />
+            </div>
+          )}
 
-        <p style={{
-          fontSize: '12px',
-          color: '#9ca3af',
-          margin: '24px 0 0',
-        }}>
-          Acesso restrito a contas @penaquadros.com
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">E-mail</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              placeholder="seu@email.com"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">Senha</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              placeholder="Mínimo 6 caracteres"
+            />
+          </div>
+
+          {message && (
+            <p className={`text-sm text-center ${message.type === "error" ? "text-destructive" : "text-green-600"}`}>
+              {message.text}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+          >
+            {loading ? "Carregando..." : isSignUp ? "Criar conta" : "Entrar"}
+          </button>
+        </form>
+
+        <p className="text-sm text-muted-foreground text-center mt-6">
+          {isSignUp ? "Já tem conta?" : "Não tem conta?"}{" "}
+          <button
+            onClick={() => { setIsSignUp(!isSignUp); setMessage(null); }}
+            className="text-primary hover:underline font-medium"
+          >
+            {isSignUp ? "Fazer login" : "Criar conta"}
+          </button>
         </p>
       </div>
     </div>

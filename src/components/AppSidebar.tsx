@@ -10,6 +10,7 @@ import {
   Kanban,
   LogOut,
   HelpCircle,
+  UsersRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -21,6 +22,7 @@ const NAV_ITEMS = [
   { key: "/comparativo", label: "Comparativo", icon: GitCompare, roles: ["admin", "sdr", "closer"] },
   { key: "/rentabilidade", label: "Rentabilidade", icon: DollarSign, roles: ["admin"] },
   { key: "/consolidado", label: "Consolidado", icon: PieChart, roles: ["admin"] },
+  { key: "/usuarios", label: "Usuários", icon: UsersRound, roles: ["admin"] },
   { key: "/ajuda", label: "Ajuda", icon: HelpCircle, roles: ["admin", "sdr", "closer"] },
 ];
 
