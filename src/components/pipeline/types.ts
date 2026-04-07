@@ -37,6 +37,11 @@ export interface PipelineCard {
   last_stage: string | null;
   stage_changed_at: string;
   history: StageChange[];
+  resumo_reuniao: string | null;
+  transcricao_reuniao: string | null;
+  data_reuniao: string | null;
+  duracao_reuniao: string | null;
+  participantes_reuniao: string | null;
 }
 
 export interface PipelineTask {
