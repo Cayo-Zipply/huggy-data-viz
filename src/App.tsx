@@ -214,6 +214,17 @@ const App = () => (
               }
             />
 
+            <Route
+              path="/configuracoes"
+              element={
+                <AuthGuard>
+                  <RoleGuard roles={["admin"]}>
+                    <Settings />
+                  </RoleGuard>
+                </AuthGuard>
+              }
+            />
+
             <Route path="/" element={<Navigate to="/pipeline" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
