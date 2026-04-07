@@ -105,7 +105,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(s);
         setUser(s.user);
         if (s.user.email) {
-          await fetchProfile(s.user.id, s.user.email);
+          queueMicrotask(() => {
+            void fetchProfile(s.user!.id, s.user!.email!);
+          });
         }
       } else {
         setSession(null);
