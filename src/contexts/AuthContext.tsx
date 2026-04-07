@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import type { User, Session } from "@supabase/supabase-js";
 
 interface UserProfile {
@@ -140,19 +141,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [applySession]);
 
   const signInWithGoogle = useCallback(async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: window.location.origin,
-        queryParams: {
-          access_type: "offline",
-          prompt: "select_account",
-          hd: "penaquadros.com",
-        },
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+      extraParams: {
+        prompt: "select_account",
+        hd: "penaquadros.com",
       },
     });
-    if (error) {
-      console.error("Erro no login:", error.message);
+
+    if (result.redirected) return;
+
+    if (result.error) {
+      console.error("Erro no login:", result.error.message);
     }
   }, []);
 
