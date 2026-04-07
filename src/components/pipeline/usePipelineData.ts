@@ -326,7 +326,27 @@ export function usePipelineData(actorName: string) {
     if (updates.loss_category !== undefined) dbUpdates.motivo_perda = updates.loss_category;
     if (updates.last_stage !== undefined) dbUpdates.ultima_etapa = updates.last_stage;
     if (updates.contract_url !== undefined) dbUpdates.contract_url = updates.contract_url;
-    if ((updates as any).data_no_show !== undefined) dbUpdates.data_no_show = (updates as any).data_no_show;
+    if (updates.data_no_show !== undefined) dbUpdates.data_no_show = updates.data_no_show;
+    // Contract fields
+    if (updates.contrato_status !== undefined) dbUpdates.contrato_status = updates.contrato_status;
+    if (updates.contrato_file_url !== undefined) dbUpdates.contrato_file_url = updates.contrato_file_url;
+    if (updates.contrato_preparado_em !== undefined) dbUpdates.contrato_preparado_em = updates.contrato_preparado_em;
+    if (updates.contrato_preparado_por !== undefined) dbUpdates.contrato_preparado_por = updates.contrato_preparado_por;
+    if (updates.tipo_contrato !== undefined) dbUpdates.tipo_contrato = updates.tipo_contrato;
+    if (updates.representante_nome !== undefined) dbUpdates.representante_nome = updates.representante_nome;
+    if (updates.representante_cpf !== undefined) dbUpdates.representante_cpf = updates.representante_cpf;
+    if (updates.valor_mensalidade !== undefined) dbUpdates.valor_mensalidade = updates.valor_mensalidade;
+    if (updates.qtd_salarios_minimos !== undefined) dbUpdates.qtd_salarios_minimos = updates.qtd_salarios_minimos;
+    if (updates.porcentagem_exito !== undefined) dbUpdates.porcentagem_exito = updates.porcentagem_exito;
+    if (updates.data_primeiro_pagamento !== undefined) dbUpdates.data_primeiro_pagamento = updates.data_primeiro_pagamento;
+    if (updates.dia_demais_pagamentos !== undefined) dbUpdates.dia_demais_pagamentos = updates.dia_demais_pagamentos;
+    if (updates.prazo_entrega_relatorios !== undefined) dbUpdates.prazo_entrega_relatorios = updates.prazo_entrega_relatorios;
+    if (updates.prazo_contrato !== undefined) dbUpdates.prazo_contrato = updates.prazo_contrato;
+    if (updates.valor_proposta !== undefined) dbUpdates.valor_proposta = updates.valor_proposta;
+    if (updates.endereco !== undefined) dbUpdates.endereco = updates.endereco;
+    if (updates.cidade !== undefined) dbUpdates.cidade = updates.cidade;
+    if (updates.estado !== undefined) dbUpdates.estado = updates.estado;
+    if (updates.cep !== undefined) dbUpdates.cep = updates.cep;
 
     if (Object.keys(dbUpdates).length) {
       const { error } = await sbExt.from("leads").update(dbUpdates).eq("id", id);
