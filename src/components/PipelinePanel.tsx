@@ -50,6 +50,7 @@ export function PipelinePanel() {
   const [newLeadPhone, setNewLeadPhone] = useState("");
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [noShowPending, setNoShowPending] = useState<{ cardId: string; date: Date | undefined } | null>(null);
   const { toast } = useToast();
 
   // Bulk selection state (admin only)
