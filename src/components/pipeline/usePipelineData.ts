@@ -259,13 +259,14 @@ export function usePipelineData(actorName: string) {
 
     // auto tasks
     const card: PipelineCard = {
-      id, nome: data.nome, telefone: data.telefone || null, email: null, cnpj: null, valor_divida: null,
+      id, nome: data.nome, empresa: null, telefone: data.telefone || null, email: null, cnpj: null, valor_divida: null,
       pipe: STAGE_CONFIG[stage].pipe as PipeType, stage, origem: data.origem || null, anotacoes: data.anotacoes || null,
       contract_url: null, created_at: data.created_at || now, updated_at: now, owner: data.owner || actorName,
       deal_value: data.deal_value || DEFAULT_DEAL_VALUE, lead_status: "aberto", loss_reason: null, loss_category: null,
       last_stage: null, stage_changed_at: now,
       history: [{ from: null, to: stage, at: now, by: actorName, duration_days: null }],
       resumo_reuniao: null, transcricao_reuniao: null, data_reuniao: null, duracao_reuniao: null, participantes_reuniao: null,
+      data_no_show: null,
     };
 
     const firstTask = {
