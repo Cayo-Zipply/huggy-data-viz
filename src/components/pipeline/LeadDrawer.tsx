@@ -39,6 +39,12 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const [ntResp, setNtResp] = useState("");
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => {
+    if (card) {
+      setNtResp(card.owner || "");
+    }
+  }, [card?.id, card?.owner]);
+
   if (!card) return null;
 
   const stale = isStale(card);
@@ -50,10 +56,6 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const staleDays = daysDiff(card.stage_changed_at);
   const stageConf = STAGE_CONFIG[card.stage];
   const ownerOptions = Array.from(new Set([card.owner, ...CLOSERS, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
-
-  useEffect(() => {
-    setNtResp(card.owner || ownerOptions[0] || "");
-  }, [card.id, card.owner, ownerOptions]);
 
   const startEdit = (f: string, v: string) => { setEditing(f); setEditValue(v || ""); };
   const saveEdit = async (f: string) => {
