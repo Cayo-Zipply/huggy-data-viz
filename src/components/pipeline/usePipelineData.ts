@@ -446,9 +446,30 @@ export function usePipelineData(actorName: string) {
     setTasks(prev => prev.filter(t => t.card_id !== id));
   }, []);
 
+  /* ── save observation as history entry ── */
+  const saveObservation = useCallback(async (cardId: string, text: string) => {
+    const now = new Date().toISOString();
+    await sbExt.from("lead_historico").insert({
+      lead_id: cardId,
+      etapa_de: "__obs__",
+      etapa_para: text,
+      evento: "observação",
+      closer: actorName,
+    });
+
+    // Optimistic update
+    setCards(prev => prev.map(c => {
+      if (c.id !== cardId) return c;
+      return {
+        ...c,
+        history: [...c.history, { from: "__obs__", to: text, at: now, by: actorName, duration_days: null }],
+      };
+    }));
+  }, [actorName]);
+
   return {
     cards, tasks, goals,
     createCard, updateCard, moveCard, markWon, markLost,
-    createTask, toggleTask, rescheduleTask, upsertGoal, importCSV, deleteCard,
+    createTask, toggleTask, rescheduleTask, upsertGoal, importCSV, deleteCard, saveObservation,
   };
 }

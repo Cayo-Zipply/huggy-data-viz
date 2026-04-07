@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
   Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap,
   X, Copy, ExternalLink, MapPin, Megaphone, MessageSquare, Save, Loader2,
-  AlertTriangle, Tag
+  AlertTriangle, Tag, StickyNote
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,6 +12,45 @@ import { Separator } from "@/components/ui/separator";
 import type { PipelineCard as CardType, PipelineTask, LossCategory } from "./types";
 import { CLOSERS, LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
 import type { PipelineLabel } from "@/hooks/useLabels";
+
+/* ── Draft helpers (localStorage) ── */
+const DRAFT_PREFIX = "crm_draft_";
+function saveDraft(cardId: string, field: string, value: string) {
+  try { localStorage.setItem(`${DRAFT_PREFIX}${cardId}_${field}`, value); } catch {}
+}
+function loadDraft(cardId: string, field: string): string | null {
+  try { return localStorage.getItem(`${DRAFT_PREFIX}${cardId}_${field}`); } catch { return null; }
+}
+function clearDraft(cardId: string, field: string) {
+  try { localStorage.removeItem(`${DRAFT_PREFIX}${cardId}_${field}`); } catch {}
+}
+function clearAllDrafts(cardId: string) {
+  try {
+    const prefix = `${DRAFT_PREFIX}${cardId}_`;
+    Object.keys(localStorage).filter(k => k.startsWith(prefix)).forEach(k => localStorage.removeItem(k));
+  } catch {}
+}
+
+/* ── Contract storage (base64 in localStorage) ── */
+const CONTRACT_PREFIX = "crm_contract_";
+function saveContract(cardId: string, base64: string, name: string) {
+  try { localStorage.setItem(`${CONTRACT_PREFIX}${cardId}`, JSON.stringify({ data: base64, name })); } catch {}
+}
+function loadContract(cardId: string): { data: string; name: string } | null {
+  try {
+    const v = localStorage.getItem(`${CONTRACT_PREFIX}${cardId}`);
+    return v ? JSON.parse(v) : null;
+  } catch { return null; }
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 interface Props {
   card: CardType | null;
@@ -23,17 +62,17 @@ interface Props {
   onMarkLost: (id: string, cat: string, reason: string) => void;
   onCreateTask: (task: Omit<PipelineTask, "id" | "created_at">) => void;
   onToggleTask: (id: string) => void;
+  onSaveObservation?: (cardId: string, text: string) => void;
   labels?: PipelineLabel[];
   cardLabels?: PipelineLabel[];
   onAddLabel?: (cardId: string, labelId: string) => void;
   onRemoveLabel?: (cardId: string, labelId: string) => void;
 }
 
-type Section = "dados" | "origem" | "historico" | "tarefas" | "acoes";
+type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "anexo" | "acoes";
 
-export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, labels = [], cardLabels = [], onAddLabel, onRemoveLabel }: Props) {
-  type Section = "dados" | "origem" | "historico" | "tarefas" | "anexo" | "acoes";
-  const [activeSection, setActiveSection] = useState<Section>("dados");
+export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onSaveObservation, labels = [], cardLabels = [], onAddLabel, onRemoveLabel }: Props) {
+  const [activeSection, setActiveSection] = useState<SectionKey>("dados");
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [saving, setSaving] = useState(false);
@@ -45,12 +84,61 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const [ntDate, setNtDate] = useState(new Date().toISOString().split("T")[0]);
   const [ntResp, setNtResp] = useState("");
   const [copied, setCopied] = useState(false);
+  const [contractFile, setContractFile] = useState<{ data: string; name: string } | null>(null);
+  const [obsText, setObsText] = useState("");
+  const [savingObs, setSavingObs] = useState(false);
 
+  // Load drafts and contract when card changes
   useEffect(() => {
     if (card) {
       setNtResp(card.owner || "");
+      const cf = loadContract(card.id);
+      setContractFile(cf);
+      // Load observation draft
+      const obsDraft = loadDraft(card.id, "obs_new");
+      setObsText(obsDraft || "");
     }
   }, [card?.id, card?.owner]);
+
+  // When starting to edit, check for draft first
+  const startEdit = useCallback((f: string, v: string) => {
+    if (!card) return;
+    const draft = loadDraft(card.id, f);
+    setEditing(f);
+    setEditValue(draft !== null ? draft : (v || ""));
+  }, [card]);
+
+  const saveEdit = async (f: string) => {
+    if (!card) return;
+    setSaving(true);
+    let val: any = editValue || null;
+    if (f === "deal_value" || f === "valor_divida") val = editValue ? parseFloat(editValue.replace(/[^\d.,]/g, "").replace(",", ".")) : null;
+    if (f === "deal_value" && !val) val = 1621;
+    onUpdate(card.id, { [f]: val } as any);
+    clearDraft(card.id, f);
+    setEditing(null);
+    setTimeout(() => setSaving(false), 300);
+  };
+
+  // Save draft on every keystroke
+  const handleEditChange = (value: string, field: string) => {
+    setEditValue(value);
+    if (card) saveDraft(card.id, field, value);
+  };
+
+  const handleObsChange = (value: string) => {
+    setObsText(value);
+    if (card) saveDraft(card.id, "obs_new", value);
+  };
+
+  const submitObservation = async () => {
+    if (!card || !obsText.trim()) return;
+    setSavingObs(true);
+    onSaveObservation?.(card.id, obsText.trim());
+    clearDraft(card.id, "obs_new");
+    setObsText("");
+    setSavingObs(false);
+  };
 
   if (!card) return null;
 
@@ -63,17 +151,6 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const staleDays = daysDiff(card.stage_changed_at);
   const stageConf = STAGE_CONFIG[card.stage];
   const ownerOptions = Array.from(new Set([card.owner, ...CLOSERS, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
-
-  const startEdit = (f: string, v: string) => { setEditing(f); setEditValue(v || ""); };
-  const saveEdit = async (f: string) => {
-    setSaving(true);
-    let val: any = editValue || null;
-    if (f === "deal_value" || f === "valor_divida") val = editValue ? parseFloat(editValue.replace(/[^\d.,]/g, "").replace(",", ".")) : null;
-    if (f === "deal_value" && !val) val = 1621;
-    onUpdate(card.id, { [f]: val } as any);
-    setEditing(null);
-    setTimeout(() => setSaving(false), 300);
-  };
 
   const copyPhone = () => {
     if (card.telefone) {
@@ -96,9 +173,30 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
     setNtTitle(""); setShowTaskForm(false);
   };
 
+  const handleContractUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const b64 = await fileToBase64(f);
+    saveContract(card.id, b64, f.name);
+    setContractFile({ data: b64, name: f.name });
+  };
+
+  const openContract = () => {
+    if (contractFile) {
+      const w = window.open();
+      if (w) {
+        w.document.write(`<iframe src="${contractFile.data}" style="width:100%;height:100%;border:none;" />`);
+      }
+    }
+  };
+
   const hasMeetingData = !!(card.resumo_reuniao || card.transcricao_reuniao || card.data_reuniao);
 
-  const sections: { key: Section; label: string; icon: any }[] = [
+  // Separate observations from stage changes in history
+  const observations = card.history.filter(h => h.from === "__obs__");
+  const stageHistory = card.history.filter(h => h.from !== "__obs__");
+
+  const sections: { key: SectionKey; label: string; icon: any }[] = [
     { key: "dados", label: "Dados", icon: Info },
     { key: "origem", label: "Origem", icon: Megaphone },
     { key: "historico", label: "Histórico", icon: History },
@@ -114,19 +212,25 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
         <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">{label}</p>
         {editing === field ? (
           <div className="flex gap-1.5">
-            <input value={editValue} onChange={e => setEditValue(e.target.value)} type={type}
+            <input value={editValue} onChange={e => handleEditChange(e.target.value, field)} type={type}
               className="flex-1 text-sm bg-muted/50 border border-border rounded-md px-2.5 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               autoFocus onKeyDown={e => e.key === "Enter" && saveEdit(field)} />
             <button onClick={() => saveEdit(field)} className="text-xs px-2.5 py-1.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 flex items-center gap-1">
               {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
             </button>
-            <button onClick={() => setEditing(null)} className="text-xs px-2 py-1.5 bg-muted text-muted-foreground rounded-md hover:bg-muted/80">
+            <button onClick={() => { setEditing(null); }} className="text-xs px-2 py-1.5 bg-muted text-muted-foreground rounded-md hover:bg-muted/80">
               <X size={12} />
             </button>
           </div>
         ) : (
           <button onClick={() => startEdit(field, currentValue?.toString() || "")} className="text-sm text-foreground hover:text-primary transition-colors text-left w-full truncate">
-            {currentValue || <span className="text-muted-foreground italic">Adicionar...</span>}
+            {(() => {
+              const draft = loadDraft(card.id, field);
+              if (draft !== null && draft !== (currentValue?.toString() || "")) {
+                return <span className="text-amber-400">{draft} <span className="text-[10px] italic">(rascunho)</span></span>;
+              }
+              return currentValue || <span className="text-muted-foreground italic">Adicionar...</span>;
+            })()}
           </button>
         )}
       </div>
@@ -143,7 +247,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
               <div className="flex-1 min-w-0">
                 {editing === "nome" ? (
                   <div className="flex gap-1.5">
-                    <input value={editValue} onChange={e => setEditValue(e.target.value)}
+                    <input value={editValue} onChange={e => handleEditChange(e.target.value, "nome")}
                       className="flex-1 text-lg font-bold bg-muted/50 border border-border rounded-md px-2 py-1 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                       autoFocus onKeyDown={e => e.key === "Enter" && saveEdit("nome")} />
                     <button onClick={() => saveEdit("nome")} className="px-2 py-1 bg-primary text-primary-foreground rounded-md text-xs">OK</button>
@@ -292,42 +396,53 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                   <Paperclip size={16} className="text-muted-foreground flex-shrink-0" />
                   <div className="flex-1">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Contrato</p>
-                    {card.contract_url ? (
+                    {contractFile ? (
+                      <div className="flex items-center gap-2">
+                        <button onClick={openContract} className="text-sm text-primary hover:underline flex items-center gap-1">
+                          <FileText size={14} />{contractFile.name} <ExternalLink size={10} />
+                        </button>
+                        <button onClick={() => { localStorage.removeItem(`${CONTRACT_PREFIX}${card.id}`); setContractFile(null); }}
+                          className="text-xs text-muted-foreground hover:text-destructive"><X size={12} /></button>
+                      </div>
+                    ) : card.contract_url ? (
                       <a href={card.contract_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1">
                         <FileText size={14} />Ver contrato <ExternalLink size={10} />
                       </a>
                     ) : (
                       <label className="text-sm text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-1">
                         <Upload size={14} />Anexar contrato (PDF)
-                        <input type="file" accept=".pdf" className="hidden" onChange={e => {
-                          const f = e.target.files?.[0];
-                          if (f) { const url = URL.createObjectURL(f); onUpdate(card.id, { contract_url: url }); }
-                        }} />
+                        <input type="file" accept=".pdf" className="hidden" onChange={handleContractUpload} />
                       </label>
                     )}
                   </div>
                 </div>
                 <Separator className="my-1" />
 
-                {/* Notes */}
+                {/* Notes / Observations */}
                 <div className="py-2">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5">Notas / Observações</p>
-                  {editing === "anotacoes" ? (
-                    <div className="space-y-2">
-                      <textarea value={editValue} onChange={e => setEditValue(e.target.value)}
-                        className="w-full text-sm bg-muted/50 border border-border rounded-lg p-3 resize-none text-foreground focus:outline-none focus:ring-1 focus:ring-primary" rows={4} autoFocus />
-                      <div className="flex gap-2">
-                        <button onClick={() => saveEdit("anotacoes")} className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 flex items-center gap-1">
-                          {saving ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}Salvar
-                        </button>
-                        <button onClick={() => setEditing(null)} className="text-xs px-3 py-1.5 bg-muted text-muted-foreground rounded-md hover:bg-muted/80">Cancelar</button>
-                      </div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <StickyNote size={14} className="text-muted-foreground" />
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Nova Observação</p>
+                  </div>
+                  <textarea
+                    value={obsText}
+                    onChange={e => handleObsChange(e.target.value)}
+                    placeholder="Escreva uma observação sobre este lead..."
+                    className="w-full text-sm bg-muted/50 border border-border rounded-lg p-3 resize-none text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    rows={3}
+                  />
+                  {obsText.trim() && (
+                    <div className="flex gap-2 mt-2">
+                      <button onClick={submitObservation} disabled={savingObs}
+                        className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 flex items-center gap-1">
+                        {savingObs ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}Salvar observação
+                      </button>
+                      <button onClick={() => { setObsText(""); clearDraft(card.id, "obs_new"); }}
+                        className="text-xs px-3 py-1.5 bg-muted text-muted-foreground rounded-md hover:bg-muted/80">Limpar</button>
                     </div>
-                  ) : (
-                    <button onClick={() => startEdit("anotacoes", card.anotacoes || "")}
-                      className="w-full text-left text-sm p-3 rounded-lg bg-muted/30 border border-border/50 hover:bg-muted/60 text-foreground min-h-[60px]">
-                      {card.anotacoes || <span className="text-muted-foreground italic">Adicionar anotação...</span>}
-                    </button>
+                  )}
+                  {obsText.trim() && (
+                    <p className="text-[10px] text-amber-400 mt-1 italic">Rascunho salvo automaticamente</p>
                   )}
                 </div>
               </div>
@@ -367,15 +482,41 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
             {/* HISTÓRICO */}
             {activeSection === "historico" && (
               <div>
-                {card.history.length === 0 ? (
+                {/* Observations section */}
+                {observations.length > 0 && (
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <StickyNote size={14} className="text-primary" />
+                      <p className="text-xs font-medium text-foreground uppercase tracking-wider">Observações</p>
+                    </div>
+                    <div className="space-y-2">
+                      {[...observations].reverse().map((obs, i) => (
+                        <div key={`obs-${i}`} className="bg-muted/30 rounded-lg p-3 border border-border/50">
+                          <p className="text-sm text-foreground whitespace-pre-wrap">{obs.to}</p>
+                          <p className="text-[10px] text-muted-foreground mt-2">
+                            {new Date(obs.at).toLocaleString("pt-BR")} · por {obs.by}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                    <Separator className="my-4" />
+                  </div>
+                )}
+
+                {/* Stage changes */}
+                <div className="flex items-center gap-2 mb-3">
+                  <History size={14} className="text-primary" />
+                  <p className="text-xs font-medium text-foreground uppercase tracking-wider">Movimentações</p>
+                </div>
+                {stageHistory.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-8">Sem movimentações registradas</p>
                 ) : (
                   <div className="space-y-0">
-                    {[...card.history].reverse().map((h, i) => (
+                    {[...stageHistory].reverse().map((h, i) => (
                       <div key={i} className="flex gap-3">
                         <div className="flex flex-col items-center">
                           <div className="w-2.5 h-2.5 rounded-full bg-primary mt-1.5 flex-shrink-0 ring-2 ring-primary/20" />
-                          {i < card.history.length - 1 && <div className="w-0.5 flex-1 bg-border min-h-[20px]" />}
+                          {i < stageHistory.length - 1 && <div className="w-0.5 flex-1 bg-border min-h-[20px]" />}
                         </div>
                         <div className="pb-4">
                           <p className="text-sm text-foreground">
