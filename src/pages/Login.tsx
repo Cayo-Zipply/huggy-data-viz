@@ -29,7 +29,7 @@ export default function Login() {
 
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({
-          email,
+          email: normalizedEmail,
           password,
           options: {
             data: { full_name: nome },
@@ -39,7 +39,7 @@ export default function Login() {
         if (error) throw error;
         // Auto-confirm is enabled, user will be logged in automatically
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
         if (error) throw error;
       }
     } catch (err: any) {
