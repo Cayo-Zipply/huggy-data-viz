@@ -3,13 +3,15 @@ import { cn } from "@/lib/utils";
 import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
   Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap,
-  X, Copy, ExternalLink, MapPin, Megaphone, MessageSquare, Save, Loader2
+  X, Copy, ExternalLink, MapPin, Megaphone, MessageSquare, Save, Loader2,
+  AlertTriangle, Tag
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import type { PipelineCard as CardType, PipelineTask, LossCategory } from "./types";
 import { CLOSERS, LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
+import type { PipelineLabel } from "@/hooks/useLabels";
 
 interface Props {
   card: CardType | null;
@@ -21,11 +23,15 @@ interface Props {
   onMarkLost: (id: string, cat: string, reason: string) => void;
   onCreateTask: (task: Omit<PipelineTask, "id" | "created_at">) => void;
   onToggleTask: (id: string) => void;
+  labels?: PipelineLabel[];
+  cardLabels?: PipelineLabel[];
+  onAddLabel?: (cardId: string, labelId: string) => void;
+  onRemoveLabel?: (cardId: string, labelId: string) => void;
 }
 
 type Section = "dados" | "origem" | "historico" | "tarefas" | "acoes";
 
-export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask }: Props) {
+export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, labels = [], cardLabels = [], onAddLabel, onRemoveLabel }: Props) {
   const [activeSection, setActiveSection] = useState<Section>("dados");
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
