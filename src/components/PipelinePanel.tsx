@@ -353,6 +353,10 @@ export function PipelinePanel() {
         onMarkLost={markLost}
         onCreateTask={createTask}
         onToggleTask={toggleTask}
+        labels={labels}
+        cardLabels={selectedCard ? getCardLabels(selectedCard.id) : []}
+        onAddLabel={addLabelToCard}
+        onRemoveLabel={removeLabelFromCard}
       />
     </div>
   );
