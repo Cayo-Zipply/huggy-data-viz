@@ -271,13 +271,16 @@ export function PipelinePanel() {
 
             <div className="flex flex-wrap gap-2">
               {([
-                { key: "all", label: "Todos", count: visibleCards.length },
-                { key: "sdr", label: "SDR", count: sdrCount },
-                { key: "closer", label: "Closer", count: closerCount },
-              ] as const).map((pipe) => (
+                { key: "all", label: "Todos", count: visibleCards.length, roles: ["admin"] },
+                { key: "sdr", label: "SDR", count: sdrCount, roles: ["admin", "sdr"] },
+                { key: "closer", label: "Closer", count: closerCount, roles: ["admin", "closer"] },
+              ] as const).filter(pipe => {
+                const role = profile?.role || "closer";
+                return (pipe.roles as readonly string[]).includes(role);
+              }).map((pipe) => (
                 <button
                   key={pipe.key}
-                  onClick={() => setActivePipe(pipe.key)}
+                  onClick={() => setActivePipe(pipe.key as any)}
                   className={cn(
                     "rounded-xl border px-4 py-2 text-sm font-medium transition-all",
                     activePipe === pipe.key
