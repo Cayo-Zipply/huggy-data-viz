@@ -239,7 +239,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-lg p-0 flex flex-col">
+      <SheetContent side="right" className="w-full sm:max-w-[50vw] p-0 flex flex-col">
         {/* Header */}
         <div className="p-5 pb-3 border-b border-border">
           <SheetHeader className="mb-3">
@@ -316,6 +316,8 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
             {activeSection === "dados" && (
               <div className="space-y-1">
                 {renderEditableField("nome", "Nome", <UserCircle size={16} />, card.nome)}
+                <Separator className="my-1" />
+                {renderEditableField("empresa", "Empresa", <Building2 size={16} />, card.empresa)}
                 <Separator className="my-1" />
                 {renderEditableField("telefone", "Telefone", <Phone size={16} />, card.telefone)}
                 <Separator className="my-1" />
@@ -430,7 +432,36 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     placeholder="Escreva uma observação sobre este lead..."
                     className="w-full text-sm bg-muted/50 border border-border rounded-lg p-3 resize-none text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                     rows={3}
+                    onPaste={async (e) => {
+                      const items = e.clipboardData?.items;
+                      if (!items) return;
+                      for (const item of Array.from(items)) {
+                        if (item.type.startsWith("image/")) {
+                          e.preventDefault();
+                          const file = item.getAsFile();
+                          if (!file) return;
+                          const b64 = await fileToBase64(file);
+                          setObsText(prev => prev + `\n![print](${b64})\n`);
+                          if (card) saveDraft(card.id, "obs_new", obsText + `\n![print](${b64})\n`);
+                        }
+                      }
+                    }}
                   />
+                  {/* Image upload button */}
+                  <div className="flex items-center gap-2 mt-2">
+                    <label className="text-xs text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-1 bg-muted/50 px-2 py-1 rounded-md border border-border">
+                      <Upload size={12} />Anexar imagem
+                      <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const b64 = await fileToBase64(file);
+                        setObsText(prev => prev + `\n![print](${b64})\n`);
+                        if (card) saveDraft(card.id, "obs_new", obsText + `\n![print](${b64})\n`);
+                        e.target.value = "";
+                      }} />
+                    </label>
+                    <span className="text-[10px] text-muted-foreground">ou cole um print (Ctrl+V)</span>
+                  </div>
                   {obsText.trim() && (
                     <div className="flex gap-2 mt-2">
                       <button onClick={submitObservation} disabled={savingObs}
@@ -443,6 +474,15 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                   )}
                   {obsText.trim() && (
                     <p className="text-[10px] text-amber-400 mt-1 italic">Rascunho salvo automaticamente</p>
+                  )}
+                  {/* Preview inline images */}
+                  {obsText.includes("![print]") && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {obsText.match(/!\[print\]\((data:image\/[^)]+)\)/g)?.map((match, i) => {
+                        const src = match.match(/\(([^)]+)\)/)?.[1];
+                        return src ? <img key={i} src={src} alt="preview" className="max-h-20 rounded-md border border-border" /> : null;
+                      })}
+                    </div>
                   )}
                 </div>
               </div>
@@ -492,7 +532,19 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     <div className="space-y-2">
                       {[...observations].reverse().map((obs, i) => (
                         <div key={`obs-${i}`} className="bg-muted/30 rounded-lg p-3 border border-border/50">
-                          <p className="text-sm text-foreground whitespace-pre-wrap">{obs.to}</p>
+                          {obs.to.includes("![print]") ? (
+                            <div className="space-y-2">
+                              {obs.to.split(/!\[print\]\([^)]+\)/).map((text, ti) => (
+                                <span key={`t-${ti}`} className="text-sm text-foreground whitespace-pre-wrap">{text}</span>
+                              ))}
+                              {obs.to.match(/!\[print\]\((data:image\/[^)]+)\)/g)?.map((match, mi) => {
+                                const src = match.match(/\(([^)]+)\)/)?.[1];
+                                return src ? <img key={`img-${mi}`} src={src} alt="anexo" className="max-h-40 rounded-md border border-border mt-1" /> : null;
+                              })}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-foreground whitespace-pre-wrap">{obs.to}</p>
+                          )}
                           <p className="text-[10px] text-muted-foreground mt-2">
                             {new Date(obs.at).toLocaleString("pt-BR")} · por {obs.by}
                           </p>

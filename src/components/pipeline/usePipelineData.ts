@@ -50,15 +50,16 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
   return {
     id: row.id,
     nome: row.nome || "",
+    empresa: row.empresa || null,
     telefone: row.telefone || null,
-    email: null,
-    cnpj: null,
-    valor_divida: null,
+    email: row.email || null,
+    cnpj: row.cnpj || null,
+    valor_divida: row.valor_divida != null ? Number(row.valor_divida) : null,
     pipe: STAGE_CONFIG[stage].pipe as PipeType,
     stage,
     origem: row.origem || null,
     anotacoes: row.anotacoes || null,
-    contract_url: null,
+    contract_url: row.contract_url || null,
     created_at: row.data_entrada || row.created_at || new Date().toISOString(),
     updated_at: row.data_ultima_mudanca_etapa || new Date().toISOString(),
     owner: row.closer || null,
@@ -74,6 +75,7 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     data_reuniao: row.data_reuniao || null,
     duracao_reuniao: row.duracao_reuniao || null,
     participantes_reuniao: row.participantes_reuniao || null,
+    data_no_show: row.data_no_show || null,
   };
 }
 
@@ -257,13 +259,14 @@ export function usePipelineData(actorName: string) {
 
     // auto tasks
     const card: PipelineCard = {
-      id, nome: data.nome, telefone: data.telefone || null, email: null, cnpj: null, valor_divida: null,
+      id, nome: data.nome, empresa: null, telefone: data.telefone || null, email: null, cnpj: null, valor_divida: null,
       pipe: STAGE_CONFIG[stage].pipe as PipeType, stage, origem: data.origem || null, anotacoes: data.anotacoes || null,
       contract_url: null, created_at: data.created_at || now, updated_at: now, owner: data.owner || actorName,
       deal_value: data.deal_value || DEFAULT_DEAL_VALUE, lead_status: "aberto", loss_reason: null, loss_category: null,
       last_stage: null, stage_changed_at: now,
       history: [{ from: null, to: stage, at: now, by: actorName, duration_days: null }],
       resumo_reuniao: null, transcricao_reuniao: null, data_reuniao: null, duracao_reuniao: null, participantes_reuniao: null,
+      data_no_show: null,
     };
 
     const firstTask = {
@@ -283,7 +286,11 @@ export function usePipelineData(actorName: string) {
   const updateCard = useCallback(async (id: string, updates: Partial<PipelineCard>) => {
     const dbUpdates: any = {};
     if (updates.nome !== undefined) dbUpdates.nome = updates.nome;
+    if (updates.empresa !== undefined) dbUpdates.empresa = updates.empresa;
     if (updates.telefone !== undefined) dbUpdates.telefone = updates.telefone;
+    if (updates.email !== undefined) dbUpdates.email = updates.email;
+    if (updates.cnpj !== undefined) dbUpdates.cnpj = updates.cnpj;
+    if (updates.valor_divida !== undefined) dbUpdates.valor_divida = updates.valor_divida;
     if (updates.origem !== undefined) dbUpdates.origem = updates.origem;
     if (updates.anotacoes !== undefined) dbUpdates.anotacoes = updates.anotacoes;
     if (updates.deal_value !== undefined) dbUpdates.valor_negocio = updates.deal_value;
@@ -292,9 +299,12 @@ export function usePipelineData(actorName: string) {
     if (updates.loss_reason !== undefined) dbUpdates.motivo_perda_detalhe = updates.loss_reason;
     if (updates.loss_category !== undefined) dbUpdates.motivo_perda = updates.loss_category;
     if (updates.last_stage !== undefined) dbUpdates.ultima_etapa = updates.last_stage;
+    if (updates.contract_url !== undefined) dbUpdates.contract_url = updates.contract_url;
+    if ((updates as any).data_no_show !== undefined) dbUpdates.data_no_show = (updates as any).data_no_show;
 
     if (Object.keys(dbUpdates).length) {
-      await sbExt.from("leads").update(dbUpdates).eq("id", id);
+      const { error } = await sbExt.from("leads").update(dbUpdates).eq("id", id);
+      if (error) console.error("Update lead error:", error);
     }
 
     // optimistic

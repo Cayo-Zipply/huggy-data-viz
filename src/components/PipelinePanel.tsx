@@ -1,6 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { Search, UserCircle, LayoutGrid, ListChecks, BarChart3, Target, Upload, Plus, ChevronDown, Trash2, ArrowRightLeft, UserPlus, CheckSquare, X } from "lucide-react";
+import { Search, UserCircle, LayoutGrid, ListChecks, BarChart3, Target, Upload, Plus, ChevronDown, Trash2, ArrowRightLeft, UserPlus, CheckSquare, X, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import { usePipelineData } from "./pipeline/usePipelineData";
 import { StageColumn } from "./pipeline/StageColumn";
 import { PipelineFiltersBar, applyFilters, exportCSV, defaultFilters, type FilterState } from "./pipeline/PipelineFilters";
@@ -23,7 +28,7 @@ const SUB_TABS = [
 ];
 
 export function PipelinePanel() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => sessionStorage.getItem("crm_search") || "");
   const [activeUser, setActiveUser] = useState<string>("all");
   const { profile, isAdmin, isSdr, isCloser } = useAuth();
   const { labels, getCardLabels, addLabelToCard, removeLabelFromCard } = useLabels();
@@ -36,13 +41,16 @@ export function PipelinePanel() {
   const defaultPipe = isCloser ? "closer" : isSdr ? "sdr" : "all";
   const [activePipe, setActivePipe] = useState<"sdr" | "closer" | "all">(defaultPipe);
   const [subTab, setSubTab] = useState("kanban");
-  const [filters, setFilters] = useState<FilterState>(defaultFilters);
+  const [filters, setFilters] = useState<FilterState>(() => {
+    try { const saved = sessionStorage.getItem("crm_filters"); return saved ? JSON.parse(saved) : defaultFilters; } catch { return defaultFilters; }
+  });
   const [pendingHandoff, setPendingHandoff] = useState<{ cardId: string; targetStage: Stage } | null>(null);
   const [showNewLead, setShowNewLead] = useState(false);
   const [newLeadName, setNewLeadName] = useState("");
   const [newLeadPhone, setNewLeadPhone] = useState("");
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [noShowPending, setNoShowPending] = useState<{ cardId: string; date: Date | undefined } | null>(null);
   const { toast } = useToast();
 
   // Bulk selection state (admin only)
@@ -68,6 +76,10 @@ export function PipelinePanel() {
     }
     localStorage.removeItem("crm_active_user");
   }, [activeUser, isAdmin]);
+
+  // Persist search & filters to sessionStorage
+  useEffect(() => { sessionStorage.setItem("crm_search", searchQuery); }, [searchQuery]);
+  useEffect(() => { sessionStorage.setItem("crm_filters", JSON.stringify(filters)); }, [filters]);
 
   const ownerOptions = useMemo(() => {
     const pool = new Set<string>([
@@ -124,11 +136,22 @@ export function PipelinePanel() {
   const handleDrop = (cardId: string, targetStage: string) => {
     const card = cards.find(c => c.id === cardId);
     if (!card || card.stage === targetStage) return;
+    if (targetStage === "no_show") {
+      setNoShowPending({ cardId, date: undefined });
+      return;
+    }
     if (card.pipe === "sdr" && STAGE_CONFIG[targetStage as Stage]?.pipe === "closer") {
       setPendingHandoff({ cardId, targetStage: targetStage as Stage });
       return;
     }
     moveCard(cardId, targetStage as Stage);
+  };
+
+  const confirmNoShow = () => {
+    if (!noShowPending?.date) return;
+    updateCard(noShowPending.cardId, { data_no_show: noShowPending.date.toISOString() } as any);
+    moveCard(noShowPending.cardId, "no_show" as Stage);
+    setNoShowPending(null);
   };
 
   const confirmHandoff = () => {
@@ -478,6 +501,37 @@ export function PipelinePanel() {
         onAddLabel={addLabelToCard}
         onRemoveLabel={removeLabelFromCard}
       />
+
+      {/* No Show date popup */}
+      <Dialog open={!!noShowPending} onOpenChange={(open) => { if (!open) setNoShowPending(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Data do No Show</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Selecione a data do no-show para mover este lead.</p>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !noShowPending?.date && "text-muted-foreground")}>
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {noShowPending?.date ? format(noShowPending.date, "dd/MM/yyyy") : "Selecione a data"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={noShowPending?.date}
+                onSelect={(date) => setNoShowPending(prev => prev ? { ...prev, date } : null)}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNoShowPending(null)}>Cancelar</Button>
+            <Button onClick={confirmNoShow} disabled={!noShowPending?.date}>Confirmar No Show</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
