@@ -128,7 +128,11 @@ export function PipelinePanel() {
   };
 
   const confirmHandoff = () => {
-    if (pendingHandoff) moveCard(pendingHandoff.cardId, pendingHandoff.targetStage);
+    if (pendingHandoff) {
+      // When moving to closer pipe, set owner to "SDR" so closer must reassign manually
+      updateCard(pendingHandoff.cardId, { owner: "SDR" });
+      moveCard(pendingHandoff.cardId, pendingHandoff.targetStage);
+    }
     setPendingHandoff(null);
   };
 
