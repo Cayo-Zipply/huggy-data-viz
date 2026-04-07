@@ -69,6 +69,11 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     last_stage: row.ultima_etapa || null,
     stage_changed_at: row.data_ultima_mudanca_etapa || row.data_entrada || new Date().toISOString(),
     history,
+    resumo_reuniao: row.resumo_reuniao || null,
+    transcricao_reuniao: row.transcricao_reuniao || null,
+    data_reuniao: row.data_reuniao || null,
+    duracao_reuniao: row.duracao_reuniao || null,
+    participantes_reuniao: row.participantes_reuniao || null,
   };
 }
 
@@ -258,6 +263,7 @@ export function usePipelineData(actorName: string) {
       deal_value: data.deal_value || DEFAULT_DEAL_VALUE, lead_status: "aberto", loss_reason: null, loss_category: null,
       last_stage: null, stage_changed_at: now,
       history: [{ from: null, to: stage, at: now, by: actorName, duration_days: null }],
+      resumo_reuniao: null, transcricao_reuniao: null, data_reuniao: null, duracao_reuniao: null, participantes_reuniao: null,
     };
 
     const firstTask = {

@@ -32,6 +32,7 @@ interface Props {
 type Section = "dados" | "origem" | "historico" | "tarefas" | "acoes";
 
 export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, labels = [], cardLabels = [], onAddLabel, onRemoveLabel }: Props) {
+  type Section = "dados" | "origem" | "historico" | "tarefas" | "anexo" | "acoes";
   const [activeSection, setActiveSection] = useState<Section>("dados");
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -95,11 +96,14 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
     setNtTitle(""); setShowTaskForm(false);
   };
 
+  const hasMeetingData = !!(card.resumo_reuniao || card.transcricao_reuniao || card.data_reuniao);
+
   const sections: { key: Section; label: string; icon: any }[] = [
     { key: "dados", label: "Dados", icon: Info },
     { key: "origem", label: "Origem", icon: Megaphone },
     { key: "historico", label: "Histórico", icon: History },
     { key: "tarefas", label: "Tarefas", icon: ListChecks },
+    { key: "anexo", label: "Anexo", icon: Paperclip },
     { key: "acoes", label: "Ações", icon: Zap },
   ];
 
@@ -431,6 +435,71 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* ANEXO */}
+            {activeSection === "anexo" && (
+              <div className="space-y-4">
+                {hasMeetingData ? (
+                  <>
+                    {card.data_reuniao && (
+                      <div className="flex items-center gap-3 py-2">
+                        <div className="text-muted-foreground"><Clock size={16} /></div>
+                        <div className="flex-1">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Data da Reunião</p>
+                          <p className="text-sm text-foreground">{new Date(card.data_reuniao).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                        </div>
+                      </div>
+                    )}
+                    {card.duracao_reuniao && (
+                      <div className="flex items-center gap-3 py-2">
+                        <div className="text-muted-foreground"><Clock size={16} /></div>
+                        <div className="flex-1">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Duração</p>
+                          <p className="text-sm text-foreground">{card.duracao_reuniao}</p>
+                        </div>
+                      </div>
+                    )}
+                    {card.participantes_reuniao && (
+                      <div className="flex items-center gap-3 py-2">
+                        <div className="text-muted-foreground"><UserCircle size={16} /></div>
+                        <div className="flex-1">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Participantes</p>
+                          <p className="text-sm text-foreground">{card.participantes_reuniao}</p>
+                        </div>
+                      </div>
+                    )}
+                    {card.resumo_reuniao && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText size={14} className="text-primary" />
+                          <p className="text-xs font-medium text-foreground">Resumo da Reunião</p>
+                        </div>
+                        <div className="bg-muted/30 rounded-xl p-4 border border-border/50">
+                          <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{card.resumo_reuniao}</p>
+                        </div>
+                      </div>
+                    )}
+                    {card.transcricao_reuniao && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <MessageSquare size={14} className="text-primary" />
+                          <p className="text-xs font-medium text-foreground">Transcrição Completa</p>
+                        </div>
+                        <div className="bg-muted/30 rounded-xl p-4 border border-border/50 max-h-[400px] overflow-y-auto">
+                          <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">{card.transcricao_reuniao}</p>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <Paperclip size={24} className="mx-auto text-muted-foreground/50 mb-2" />
+                    <p className="text-xs text-muted-foreground">Nenhum anexo de reunião disponível</p>
+                    <p className="text-[10px] text-muted-foreground/70 mt-1">Os dados aparecerão automaticamente após a reunião ser realizada</p>
+                  </div>
+                )}
               </div>
             )}
 

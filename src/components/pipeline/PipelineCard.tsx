@@ -91,6 +91,7 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], onUpdate, onMar
               {isWon && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">Ganho</span>}
               {isLost && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-destructive/20 text-red-400 font-medium">Perdido</span>}
               {stale && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400">{staleDays}d parado</span>}
+              {(card.resumo_reuniao || card.transcricao_reuniao) && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-medium">📎 Anexo</span>}
             </div>
             {card.telefone && (
               <a href={wa || "#"} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-400 hover:underline flex items-center gap-1 mt-0.5">
