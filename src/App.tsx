@@ -8,6 +8,7 @@ import Login from "@/pages/Login";
 import Index from "@/pages/Index";
 import NotFound from "@/pages/NotFound";
 import UserManagement from "@/pages/UserManagement";
+import Settings from "@/pages/Settings";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useState } from "react";
 import { Users, UserCheck } from "lucide-react";
@@ -142,7 +143,9 @@ const App = () => (
               path="/marketing"
               element={
                 <AuthGuard>
-                  <Index initialTab="marketing" />
+                  <RoleGuard roles={["admin"]}>
+                    <Index initialTab="marketing" />
+                  </RoleGuard>
                 </AuthGuard>
               }
             />
@@ -151,7 +154,9 @@ const App = () => (
               path="/comercial"
               element={
                 <AuthGuard>
-                  <Index initialTab="comercial" />
+                  <RoleGuard roles={["admin"]}>
+                    <Index initialTab="comercial" />
+                  </RoleGuard>
                 </AuthGuard>
               }
             />
@@ -160,7 +165,9 @@ const App = () => (
               path="/comparativo"
               element={
                 <AuthGuard>
-                  <Index initialTab="comparativo" />
+                  <RoleGuard roles={["admin"]}>
+                    <Index initialTab="comparativo" />
+                  </RoleGuard>
                 </AuthGuard>
               }
             />
