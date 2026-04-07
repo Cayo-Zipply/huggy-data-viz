@@ -18,6 +18,7 @@ export interface StageChange {
 export interface PipelineCard {
   id: string;
   nome: string;
+  empresa: string | null;
   telefone: string | null;
   email: string | null;
   cnpj: string | null;
@@ -42,6 +43,7 @@ export interface PipelineCard {
   data_reuniao: string | null;
   duracao_reuniao: string | null;
   participantes_reuniao: string | null;
+  data_no_show: string | null;
 }
 
 export interface PipelineTask {
