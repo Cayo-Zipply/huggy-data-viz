@@ -101,7 +101,7 @@ function dbRowToGoal(row: any): PipelineGoal {
 function loadLS<T>(k: string, d: T): T { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }
 
 /* ── main hook ── */
-export function usePipelineData(activeUser: string) {
+export function usePipelineData(actorName: string) {
   const [cards, setCards] = useState<PipelineCard[]>([]);
   const [tasks, setTasks] = useState<PipelineTask[]>([]);
   const [goals, setGoals] = useState<PipelineGoal[]>([]);
@@ -233,7 +233,7 @@ export function usePipelineData(activeUser: string) {
       origem: data.origem || null,
       etapa_atual: stageToEtapa(stage),
       status: "aberto",
-      closer: data.owner || activeUser,
+      closer: data.owner || actorName,
       valor_negocio: data.deal_value || DEFAULT_DEAL_VALUE,
       data_entrada: data.created_at || now,
       data_ultima_mudanca_etapa: now,
@@ -247,22 +247,22 @@ export function usePipelineData(activeUser: string) {
       etapa_de: null,
       etapa_para: stageToEtapa(stage),
       evento: "criado",
-      closer: data.owner || activeUser,
+      closer: data.owner || actorName,
     });
 
     // auto tasks
     const card: PipelineCard = {
       id, nome: data.nome, telefone: data.telefone || null, email: null, cnpj: null, valor_divida: null,
       pipe: STAGE_CONFIG[stage].pipe as PipeType, stage, origem: data.origem || null, anotacoes: data.anotacoes || null,
-      contract_url: null, created_at: data.created_at || now, updated_at: now, owner: data.owner || activeUser,
+      contract_url: null, created_at: data.created_at || now, updated_at: now, owner: data.owner || actorName,
       deal_value: data.deal_value || DEFAULT_DEAL_VALUE, lead_status: "aberto", loss_reason: null, loss_category: null,
       last_stage: null, stage_changed_at: now,
-      history: [{ from: null, to: stage, at: now, by: activeUser, duration_days: null }],
+      history: [{ from: null, to: stage, at: now, by: actorName, duration_days: null }],
     };
 
     const firstTask = {
       id: crypto.randomUUID(), lead_id: id, titulo: `Primeiro contato — ${data.nome}`,
-      data_tarefa: addDays(now, 1), status: "pendente", pipeline: "sdr", closer: data.owner || activeUser, auto: true,
+      data_tarefa: addDays(now, 1), status: "pendente", pipeline: "sdr", closer: data.owner || actorName, auto: true,
     };
     const stageTasks = genAutoTasks(card, stage).map(t => ({
       id: t.id, lead_id: t.card_id, titulo: t.title, data_tarefa: t.due_date,
@@ -271,7 +271,7 @@ export function usePipelineData(activeUser: string) {
     await sbExt.from("tarefas").insert([firstTask, ...stageTasks]);
 
     return card;
-  }, [activeUser, genAutoTasks]);
+  }, [actorName, genAutoTasks]);
 
   /* ── update card ── */
   const updateCard = useCallback(async (id: string, updates: Partial<PipelineCard>) => {
@@ -315,14 +315,14 @@ export function usePipelineData(activeUser: string) {
       etapa_de: stageToEtapa(card.stage),
       etapa_para: stageToEtapa(targetStage),
       evento: "mudança de etapa",
-      closer: activeUser,
+      closer: actorName,
     });
 
     // auto tasks
     const updated: PipelineCard = {
       ...card, stage: targetStage, pipe: STAGE_CONFIG[targetStage].pipe as PipeType,
       stage_changed_at: now, updated_at: now,
-      history: [...card.history, { from: card.stage, to: targetStage, at: now, by: activeUser, duration_days: dur }],
+      history: [...card.history, { from: card.stage, to: targetStage, at: now, by: actorName, duration_days: dur }],
     };
     const newTasks = genAutoTasks(updated, targetStage);
     if (newTasks.length) {
@@ -334,7 +334,7 @@ export function usePipelineData(activeUser: string) {
 
     // optimistic
     setCards(prev => prev.map(c => c.id === cardId ? updated : c));
-  }, [cards, activeUser, genAutoTasks]);
+  }, [cards, actorName, genAutoTasks]);
 
   /* ── mark won/lost ── */
   const markWon = useCallback(async (id: string) => {
@@ -420,7 +420,7 @@ export function usePipelineData(activeUser: string) {
         origem: oi >= 0 ? row[oi] : null,
         etapa_atual: "conectado",
         status: "aberto",
-        closer: activeUser,
+        closer: actorName,
         valor_negocio: DEFAULT_DEAL_VALUE,
         data_entrada: di >= 0 && row[di] ? new Date(row[di]).toISOString() : new Date().toISOString(),
         data_ultima_mudanca_etapa: new Date().toISOString(),
@@ -432,7 +432,7 @@ export function usePipelineData(activeUser: string) {
       if (error) console.error("CSV import error:", error);
     }
     return rows.length;
-  }, [activeUser]);
+  }, [actorName]);
 
   return {
     cards, tasks, goals,

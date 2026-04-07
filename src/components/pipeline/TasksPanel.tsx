@@ -8,17 +8,18 @@ interface Props {
   tasks: PipelineTask[];
   cards: PipelineCard[];
   activeUser: string;
+  canViewAll?: boolean;
   onToggle: (id: string) => void;
   onReschedule: (id: string, date: string) => void;
   onScrollToCard?: (cardId: string) => void;
 }
 
-export function TasksPanel({ tasks, cards, activeUser, onToggle, onReschedule }: Props) {
+export function TasksPanel({ tasks, cards, activeUser, canViewAll = false, onToggle, onReschedule }: Props) {
   const today = new Date().toISOString().split("T")[0];
   const in3days = new Date(Date.now() + 3 * 86400000).toISOString().split("T")[0];
-  const isAdmin = activeUser === "Cayo";
+  const showAll = canViewAll && activeUser === "all";
 
-  const userTasks = tasks.filter(t => isAdmin || t.responsible === activeUser);
+  const userTasks = tasks.filter(t => showAll || t.responsible === activeUser);
   const overdue = userTasks.filter(t => t.due_date < today && t.status === "pendente");
   const todayTasks = userTasks.filter(t => t.due_date === today && t.status === "pendente");
   const upcoming = userTasks.filter(t => t.due_date > today && t.due_date <= in3days && t.status === "pendente");

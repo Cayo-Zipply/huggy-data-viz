@@ -172,7 +172,7 @@ export type Database = {
           email: string
           id: string
           nome: string
-          role: string
+          role: string | null
           updated_at: string
           user_id: string | null
         }
@@ -181,7 +181,7 @@ export type Database = {
           email: string
           id?: string
           nome: string
-          role: string
+          role?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -190,7 +190,7 @@ export type Database = {
           email?: string
           id?: string
           nome?: string
-          role?: string
+          role?: string | null
           updated_at?: string
           user_id?: string | null
         }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
@@ -36,7 +36,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [ntTitle, setNtTitle] = useState("");
   const [ntDate, setNtDate] = useState(new Date().toISOString().split("T")[0]);
-  const [ntResp, setNtResp] = useState("Cayo");
+  const [ntResp, setNtResp] = useState("");
   const [copied, setCopied] = useState(false);
 
   if (!card) return null;
@@ -49,6 +49,11 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const pendingCount = cardTasks.filter(t => t.status === "pendente").length;
   const staleDays = daysDiff(card.stage_changed_at);
   const stageConf = STAGE_CONFIG[card.stage];
+  const ownerOptions = Array.from(new Set([card.owner, ...CLOSERS, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
+
+  useEffect(() => {
+    setNtResp(card.owner || ownerOptions[0] || "");
+  }, [card.id, card.owner, ownerOptions]);
 
   const startEdit = (f: string, v: string) => { setEditing(f); setEditValue(v || ""); };
   const saveEdit = async (f: string) => {
@@ -207,7 +212,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     <select value={card.owner || ""} onChange={e => onUpdate(card.id, { owner: e.target.value || null })}
                       className="w-full text-sm bg-muted/50 border border-border rounded-md px-2.5 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
                       <option value="">Sem dono</option>
-                      {CLOSERS.map(c => <option key={c} value={c}>{c}</option>)}
+                      {ownerOptions.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                 </div>
@@ -355,7 +360,8 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                         className="flex-1 text-sm bg-muted/50 border border-border rounded-md px-2.5 py-1.5 text-foreground" />
                       <select value={ntResp} onChange={e => setNtResp(e.target.value)}
                         className="text-sm bg-muted/50 border border-border rounded-md px-2.5 py-1.5 text-foreground">
-                        {CLOSERS.map(c => <option key={c}>{c}</option>)}
+                        <option value="">Sem responsável</option>
+                        {ownerOptions.map(c => <option key={c}>{c}</option>)}
                       </select>
                     </div>
                     <button onClick={submitTask} className="text-sm px-4 py-1.5 bg-primary text-primary-foreground rounded-md w-full hover:bg-primary/90">Criar tarefa</button>

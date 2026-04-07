@@ -31,7 +31,7 @@ export function PipelineCardItem({ card, tasks, onUpdate, onMarkWon, onMarkLost,
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [ntTitle, setNtTitle] = useState("");
   const [ntDate, setNtDate] = useState(new Date().toISOString().split("T")[0]);
-  const [ntResp, setNtResp] = useState(card.owner || "Cayo");
+  const [ntResp, setNtResp] = useState(card.owner || "");
 
   const stale = isStale(card);
   const isLost = card.lead_status === "perdido";
@@ -40,6 +40,7 @@ export function PipelineCardItem({ card, tasks, onUpdate, onMarkWon, onMarkLost,
   const cardTasks = tasks.filter(t => t.card_id === card.id);
   const pendingCount = cardTasks.filter(t => t.status === "pendente").length;
   const staleDays = daysDiff(card.stage_changed_at);
+  const ownerOptions = Array.from(new Set([card.owner, ...CLOSERS, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
 
   const startEdit = (f: string, v: string) => { setEditing(f); setEditValue(v || ""); };
   const saveEdit = (f: string) => {
@@ -72,11 +73,11 @@ export function PipelineCardItem({ card, tasks, onUpdate, onMarkWon, onMarkLost,
 
   return (
     <div className={cn(
-      "bg-card border rounded-xl overflow-hidden transition-all group",
+      "group overflow-hidden rounded-2xl border bg-background shadow-sm transition-all",
       stale && "border-red-500/60",
       isLost && "opacity-50 border-destructive/40",
       isWon && "border-green-500/40",
-      !stale && !isLost && !isWon && "border-border hover:border-primary/30"
+      !stale && !isLost && !isWon && "border-border hover:border-primary/30 hover:shadow-md"
     )}>
       <div className="p-3">
         {/* Header */}
@@ -141,10 +142,10 @@ export function PipelineCardItem({ card, tasks, onUpdate, onMarkWon, onMarkLost,
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <UserCircle size={12} className="text-muted-foreground flex-shrink-0" />
-                  <select value={card.owner || ""} onChange={e => onUpdate(card.id, { owner: e.target.value || null })}
+                    <select value={card.owner || ""} onChange={e => onUpdate(card.id, { owner: e.target.value || null })}
                     className="flex-1 text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground">
                     <option value="">Sem dono</option>
-                    {CLOSERS.map(c => <option key={c} value={c}>{c}</option>)}
+                      {ownerOptions.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 {([
@@ -245,7 +246,8 @@ export function PipelineCardItem({ card, tasks, onUpdate, onMarkWon, onMarkLost,
                         className="flex-1 text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground" />
                       <select value={ntResp} onChange={e => setNtResp(e.target.value)}
                         className="text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground">
-                        {CLOSERS.map(c => <option key={c}>{c}</option>)}
+                        <option value="">Sem responsável</option>
+                        {ownerOptions.map(c => <option key={c}>{c}</option>)}
                       </select>
                     </div>
                     <button onClick={submitTask} className="text-xs px-3 py-1 bg-primary/20 text-primary rounded w-full">Criar</button>
