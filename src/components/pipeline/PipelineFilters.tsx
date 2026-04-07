@@ -1,8 +1,12 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Filter, X, Download } from "lucide-react";
+import { Filter, X, Download, CalendarIcon, ChevronDown } from "lucide-react";
+import { format, startOfMonth, endOfMonth, subMonths, startOfDay, endOfDay } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import type { PipelineCard, PipelineTask, LeadStatus, Stage } from "./types";
 import { CLOSERS, STAGE_ORDER, STAGE_CONFIG, formatBRL, daysDiff } from "./types";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 export interface FilterState {
   dateFrom: string;
@@ -56,6 +60,33 @@ export function exportCSV(cards: PipelineCard[], tasks: PipelineTask[]) {
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "pipeline_export.csv"; a.click();
 }
 
+type DatePreset = "todos" | "hoje" | "este_mes" | "mes_passado" | "personalizado";
+
+function getPresetLabel(preset: DatePreset): string {
+  switch (preset) {
+    case "todos": return "Todas as datas";
+    case "hoje": return "Hoje";
+    case "este_mes": return "Este mês";
+    case "mes_passado": return "Mês passado";
+    case "personalizado": return "Personalizado";
+  }
+}
+
+function detectPreset(f: FilterState): DatePreset {
+  if (!f.dateFrom && !f.dateTo) return "todos";
+  const now = new Date();
+  const todayStr = format(now, "yyyy-MM-dd");
+  const monthStart = format(startOfMonth(now), "yyyy-MM-dd");
+  const monthEnd = format(endOfMonth(now), "yyyy-MM-dd");
+  const lastMonthStart = format(startOfMonth(subMonths(now, 1)), "yyyy-MM-dd");
+  const lastMonthEnd = format(endOfMonth(subMonths(now, 1)), "yyyy-MM-dd");
+
+  if (f.dateFrom === todayStr && f.dateTo === todayStr) return "hoje";
+  if (f.dateFrom === monthStart && f.dateTo === monthEnd) return "este_mes";
+  if (f.dateFrom === lastMonthStart && f.dateTo === lastMonthEnd) return "mes_passado";
+  return "personalizado";
+}
+
 interface Props {
   filters: FilterState;
   onChange: (f: FilterState) => void;
@@ -64,7 +95,64 @@ interface Props {
 
 export function PipelineFiltersBar({ filters, onChange, onExport }: Props) {
   const [open, setOpen] = useState(false);
+  const [presetOpen, setPresetOpen] = useState(false);
+  const [calFromOpen, setCalFromOpen] = useState(false);
+  const [calToOpen, setCalToOpen] = useState(false);
+
   const hasF = filters.dateFrom || filters.dateTo || filters.closers.length || filters.status !== "todos" || filters.stages.length || filters.staleDays != null;
+  const currentPreset = detectPreset(filters);
+
+  const applyPreset = (preset: DatePreset) => {
+    const now = new Date();
+    let dateFrom = "";
+    let dateTo = "";
+
+    switch (preset) {
+      case "hoje":
+        dateFrom = dateTo = format(now, "yyyy-MM-dd");
+        break;
+      case "este_mes":
+        dateFrom = format(startOfMonth(now), "yyyy-MM-dd");
+        dateTo = format(endOfMonth(now), "yyyy-MM-dd");
+        break;
+      case "mes_passado":
+        dateFrom = format(startOfMonth(subMonths(now, 1)), "yyyy-MM-dd");
+        dateTo = format(endOfMonth(subMonths(now, 1)), "yyyy-MM-dd");
+        break;
+      case "todos":
+        dateFrom = "";
+        dateTo = "";
+        break;
+      case "personalizado":
+        // keep current, just open filters
+        setOpen(true);
+        setPresetOpen(false);
+        return;
+    }
+
+    onChange({ ...filters, dateFrom, dateTo });
+    setPresetOpen(false);
+  };
+
+  const handleCalFromSelect = (date: Date | undefined) => {
+    if (date) {
+      onChange({ ...filters, dateFrom: format(date, "yyyy-MM-dd") });
+    }
+    setCalFromOpen(false);
+  };
+
+  const handleCalToSelect = (date: Date | undefined) => {
+    if (date) {
+      onChange({ ...filters, dateTo: format(date, "yyyy-MM-dd") });
+    }
+    setCalToOpen(false);
+  };
+
+  const dateLabel = currentPreset !== "todos" && currentPreset !== "personalizado"
+    ? getPresetLabel(currentPreset)
+    : filters.dateFrom || filters.dateTo
+      ? `${filters.dateFrom ? format(new Date(filters.dateFrom + "T12:00:00"), "dd/MM", { locale: ptBR }) : "..."} – ${filters.dateTo ? format(new Date(filters.dateTo + "T12:00:00"), "dd/MM", { locale: ptBR }) : "..."}`
+      : null;
 
   return (
     <div className="space-y-2">
@@ -77,7 +165,80 @@ export function PipelineFiltersBar({ filters, onChange, onExport }: Props) {
             {s === "todos" ? "Todos" : s.charAt(0).toUpperCase() + s.slice(1) + "s"}
           </button>
         ))}
+
         <div className="flex-1" />
+
+        {/* Date preset dropdown + calendar */}
+        <div className="relative">
+          <Popover open={presetOpen} onOpenChange={setPresetOpen}>
+            <PopoverTrigger asChild>
+              <button className={cn(
+                "flex items-center gap-1.5 text-xs border rounded-lg px-3 py-1.5 transition-all",
+                dateLabel ? "border-primary/40 text-primary bg-primary/10" : "border-border text-muted-foreground hover:text-foreground"
+              )}>
+                <CalendarIcon size={12} />
+                {dateLabel || "Data"}
+                <ChevronDown size={10} />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-1" align="end">
+              <div className="flex flex-col min-w-[160px]">
+                {(["todos", "hoje", "este_mes", "mes_passado", "personalizado"] as DatePreset[]).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => applyPreset(p)}
+                    className={cn(
+                      "text-left text-xs px-3 py-2 rounded hover:bg-accent transition-colors",
+                      currentPreset === p ? "bg-primary/10 text-primary font-medium" : "text-foreground"
+                    )}
+                  >
+                    {getPresetLabel(p)}
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Custom date range pickers (shown when date filter is active) */}
+        {(filters.dateFrom || filters.dateTo || currentPreset === "personalizado") && (
+          <div className="flex items-center gap-1">
+            <Popover open={calFromOpen} onOpenChange={setCalFromOpen}>
+              <PopoverTrigger asChild>
+                <button className="text-[10px] px-2 py-1 border border-border rounded hover:border-primary/40 text-muted-foreground hover:text-foreground transition-all">
+                  {filters.dateFrom ? format(new Date(filters.dateFrom + "T12:00:00"), "dd/MM/yyyy") : "De..."}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={filters.dateFrom ? new Date(filters.dateFrom + "T12:00:00") : undefined}
+                  onSelect={handleCalFromSelect}
+                  locale={ptBR}
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            <span className="text-[10px] text-muted-foreground">–</span>
+            <Popover open={calToOpen} onOpenChange={setCalToOpen}>
+              <PopoverTrigger asChild>
+                <button className="text-[10px] px-2 py-1 border border-border rounded hover:border-primary/40 text-muted-foreground hover:text-foreground transition-all">
+                  {filters.dateTo ? format(new Date(filters.dateTo + "T12:00:00"), "dd/MM/yyyy") : "Até..."}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={filters.dateTo ? new Date(filters.dateTo + "T12:00:00") : undefined}
+                  onSelect={handleCalToSelect}
+                  locale={ptBR}
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        )}
+
         <button onClick={() => setOpen(!open)}
           className={cn("flex items-center gap-1.5 text-xs border rounded-lg px-3 py-1.5 transition-all",
             hasF ? "border-primary/40 text-primary bg-primary/10" : "border-border text-muted-foreground hover:text-foreground")}>
@@ -90,16 +251,6 @@ export function PipelineFiltersBar({ filters, onChange, onExport }: Props) {
       </div>
       {open && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 bg-card/50 border border-border rounded-xl p-3">
-          <div>
-            <label className="text-[10px] text-muted-foreground block mb-1">Entrada (de)</label>
-            <input type="date" value={filters.dateFrom} onChange={e => onChange({ ...filters, dateFrom: e.target.value })}
-              className="w-full text-xs bg-muted/50 border border-border rounded px-2 py-1.5 text-foreground" />
-          </div>
-          <div>
-            <label className="text-[10px] text-muted-foreground block mb-1">Entrada (até)</label>
-            <input type="date" value={filters.dateTo} onChange={e => onChange({ ...filters, dateTo: e.target.value })}
-              className="w-full text-xs bg-muted/50 border border-border rounded px-2 py-1.5 text-foreground" />
-          </div>
           <div>
             <label className="text-[10px] text-muted-foreground block mb-1">Closer</label>
             <div className="flex gap-1 flex-wrap">

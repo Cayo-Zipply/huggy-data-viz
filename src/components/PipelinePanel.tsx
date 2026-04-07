@@ -94,6 +94,8 @@ export function PipelinePanel() {
         (c.origem || '').toLowerCase().includes(q)
       );
     }
+    // Sort newest first
+    filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     return filtered;
   }, [cards, isAdmin, currentUserName, showAllOwners, activeUser, filters, searchQuery]);
 
