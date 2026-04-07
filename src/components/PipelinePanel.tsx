@@ -136,11 +136,22 @@ export function PipelinePanel() {
   const handleDrop = (cardId: string, targetStage: string) => {
     const card = cards.find(c => c.id === cardId);
     if (!card || card.stage === targetStage) return;
+    if (targetStage === "no_show") {
+      setNoShowPending({ cardId, date: undefined });
+      return;
+    }
     if (card.pipe === "sdr" && STAGE_CONFIG[targetStage as Stage]?.pipe === "closer") {
       setPendingHandoff({ cardId, targetStage: targetStage as Stage });
       return;
     }
     moveCard(cardId, targetStage as Stage);
+  };
+
+  const confirmNoShow = () => {
+    if (!noShowPending?.date) return;
+    updateCard(noShowPending.cardId, { data_no_show: noShowPending.date.toISOString() } as any);
+    moveCard(noShowPending.cardId, "no_show" as Stage);
+    setNoShowPending(null);
   };
 
   const confirmHandoff = () => {
