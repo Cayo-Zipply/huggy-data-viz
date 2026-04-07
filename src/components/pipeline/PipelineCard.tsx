@@ -118,12 +118,23 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], onUpdate, onMar
               {formatBRL(card.deal_value || 1621)}
             </button>
           )}
-          {card.owner && <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 rounded text-primary flex items-center gap-0.5"><UserCircle size={8} />{card.owner}</span>}
+          {card.owner && card.owner === "SDR" ? (
+            <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 rounded text-amber-500 flex items-center gap-0.5 font-medium">
+              <AlertTriangle size={9} />Atribuir responsável
+            </span>
+          ) : card.owner ? (
+            <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 rounded text-primary flex items-center gap-0.5"><UserCircle size={8} />{card.owner}</span>
+          ) : null}
           {card.origem && <span className="text-[10px] px-1.5 py-0.5 bg-muted/50 rounded text-muted-foreground">{card.origem}</span>}
           <span className="text-[10px] px-1.5 py-0.5 bg-muted/50 rounded text-muted-foreground flex items-center gap-0.5">
             <Clock size={8} />{new Date(card.created_at).toLocaleDateString("pt-BR")}
           </span>
           {pendingCount > 0 && <span className="text-[10px] px-1.5 py-0.5 bg-yellow-400/10 rounded text-yellow-400">{pendingCount} tarefa(s)</span>}
+          {cardLabels.map(label => (
+            <span key={label.id} className="text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: label.color + "20", color: label.color }}>
+              {label.name}
+            </span>
+          ))}
         </div>
 
         {/* Expanded */}
