@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { supabaseExt } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 export interface Lead {
@@ -20,13 +20,15 @@ export interface Lead {
   valor_divida: number | null;
 }
 
+const db = supabase as any;
+
 export function useLeads() {
   const { profile, isCloser } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchLeads = useCallback(async () => {
-    let query = supabaseExt.from("leads").select("*").order("created_at", { ascending: false });
+    let query = db.from("leads").select("*").order("created_at", { ascending: false });
 
     if (isCloser && profile?.email) {
       query = query.eq("closer", profile.email);
@@ -45,18 +47,18 @@ export function useLeads() {
 
   useEffect(() => {
     const channelId = `leads-rt-${Date.now()}`;
-    const channel = supabaseExt
+    const channel = db
       .channel(channelId)
       .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, () => {
         fetchLeads();
       })
       .subscribe();
 
-    return () => { supabaseExt.removeChannel(channel); };
+    return () => { db.removeChannel(channel); };
   }, [fetchLeads]);
 
   const updateLead = async (id: string, updates: Partial<Lead>) => {
-    const { error } = await supabaseExt.from("leads").update(updates).eq("id", id);
+    const { error } = await db.from("leads").update(updates).eq("id", id);
     if (!error) {
       setLeads(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
     }

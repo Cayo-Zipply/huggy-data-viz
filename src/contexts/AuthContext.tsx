@@ -1,4 +1,3 @@
-// src/contexts/AuthContext.tsx
 import {
   createContext,
   useContext,
@@ -38,13 +37,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (email: string) => {
+  const fetchProfile = useCallback(async (userId: string, email: string) => {
     try {
-      const { data, error } = await supabase
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // Try by user_id first
+      let { data, error } = await (supabase as any)
         .from("user_profiles")
         .select("*")
-        .eq("email", email)
+        .eq("user_id", userId)
         .maybeSingle();
+
+      // Fallback: try by email
+      if (!data && !error) {
+        const res = await (supabase as any)
+          .from("user_profiles")
+          .select("*")
+          .eq("email", normalizedEmail)
+          .maybeSingle();
+        data = res.data;
+        error = res.error;
+
+        // Auto-link user_id if found by email
+        if (data && data.user_id !== userId) {
+          await (supabase as any)
+            .from("user_profiles")
+            .update({ user_id: userId })
+            .eq("id", data.id);
+          data = { ...data, user_id: userId };
+        }
+      }
 
       if (error) {
         console.error("Erro ao buscar perfil:", error.message);
@@ -53,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (!data) {
-        console.warn("Perfil não encontrado para:", email);
+        console.warn("Perfil não encontrado para:", normalizedEmail);
         setProfile(null);
         return;
       }
@@ -65,57 +87,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  useEffect(() => {
-    let mounted = true;
-
-    // 1) Buscar sessão inicial (inclui troca PKCE do ?code= se presente)
-    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
-      if (!mounted) return;
-      setSession(initialSession);
-      setUser(initialSession?.user ?? null);
-      if (initialSession?.user?.email) {
-        fetchProfile(initialSession.user.email).then(() => {
-          if (mounted) setLoading(false);
-        });
-      } else {
-        setLoading(false);
-      }
-    });
-
-    // 2) Escutar mudanças de auth (login, logout, refresh)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      if (!mounted) return;
-
-      console.log("[Auth]", event, newSession?.user?.email ?? "no user");
-
-      if (
-        event === "SIGNED_IN" ||
-        event === "TOKEN_REFRESHED" ||
-        event === "INITIAL_SESSION"
-      ) {
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        if (newSession?.user?.email) {
-          await fetchProfile(newSession.user.email);
+  const applySession = useCallback(
+    async (s: Session | null) => {
+      if (s?.user) {
+        setSession(s);
+        setUser(s.user);
+        if (s.user.email) {
+          await fetchProfile(s.user.id, s.user.email);
         }
-        if (mounted) setLoading(false);
-      }
-
-      if (event === "SIGNED_OUT") {
+      } else {
         setSession(null);
         setUser(null);
         setProfile(null);
-        if (mounted) setLoading(false);
       }
+    },
+    [fetchProfile]
+  );
+
+  useEffect(() => {
+    let mounted = true;
+
+    // 1) Register listener FIRST
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      if (!mounted) return;
+      console.log("[Auth]", _event, newSession?.user?.email ?? "no user");
+
+      if (_event === "SIGNED_OUT") {
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+
+      await applySession(newSession);
+      if (mounted) setLoading(false);
+    });
+
+    // 2) Then get initial session (processes ?code= from OAuth callback)
+    supabase.auth.getSession().then(async ({ data: { session: restored } }) => {
+      if (!mounted) return;
+      await applySession(restored);
+      if (mounted) setLoading(false);
     });
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [fetchProfile]);
+  }, [applySession]);
 
   const signInWithGoogle = useCallback(async () => {
     const { error } = await supabase.auth.signInWithOAuth({
