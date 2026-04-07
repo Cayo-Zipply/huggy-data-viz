@@ -9,11 +9,14 @@ import Index from "@/pages/Index";
 import NotFound from "@/pages/NotFound";
 import UserManagement from "@/pages/UserManagement";
 import { AppSidebar } from "@/components/AppSidebar";
+import { useState } from "react";
+import { Users, UserCheck } from "lucide-react";
 
 const queryClient = new QueryClient();
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading, signOut } = useAuth();
+  const { user, profile, loading, signOut, setRole } = useAuth();
+  const [selecting, setSelecting] = useState(false);
 
   if (loading) {
     return (
@@ -25,7 +28,57 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  if (!profile) {
+  if (!profile || profile.role === null) {
+    // Profile exists but no role yet — show role picker
+    if (profile && profile.role === null) {
+      const handleSelect = async (role: "sdr" | "closer") => {
+        setSelecting(true);
+        await setRole(role);
+        setSelecting(false);
+      };
+
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full mx-4 text-center space-y-6">
+            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto text-primary-foreground text-2xl font-bold">
+              PQ
+            </div>
+            <h1 className="text-xl font-bold text-foreground">Bem-vindo ao CRM!</h1>
+            <p className="text-muted-foreground text-sm">
+              Selecione seu papel para continuar:
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => handleSelect("sdr")}
+                disabled={selecting}
+                className="flex flex-col items-center gap-3 p-6 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all disabled:opacity-50"
+              >
+                <Users className="h-8 w-8 text-blue-500" />
+                <span className="text-sm font-semibold text-foreground">SDR</span>
+                <span className="text-xs text-muted-foreground">Pré-vendas</span>
+              </button>
+              <button
+                onClick={() => handleSelect("closer")}
+                disabled={selecting}
+                className="flex flex-col items-center gap-3 p-6 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all disabled:opacity-50"
+              >
+                <UserCheck className="h-8 w-8 text-green-500" />
+                <span className="text-sm font-semibold text-foreground">Closer</span>
+                <span className="text-xs text-muted-foreground">Fechamento</span>
+              </button>
+            </div>
+            <button
+              onClick={() => signOut()}
+              className="text-xs text-muted-foreground hover:underline"
+            >
+              Sair
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // No profile at all
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full mx-4 text-center space-y-4">

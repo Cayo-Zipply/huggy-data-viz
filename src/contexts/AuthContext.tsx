@@ -13,7 +13,7 @@ interface UserProfile {
   id: string;
   email: string;
   nome: string;
-  role: "admin" | "sdr" | "closer";
+  role: "admin" | "sdr" | "closer" | null;
   user_id: string | null;
 }
 
@@ -27,6 +27,7 @@ interface AuthContextType {
   isCloser: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  setRole: (role: "sdr" | "closer") => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -168,6 +169,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isSdr = profile?.role === "sdr";
   const isCloser = profile?.role === "closer";
 
+  const setRole = useCallback(async (role: "sdr" | "closer") => {
+    if (!profile) return false;
+    const { error } = await (supabase as any)
+      .from("user_profiles")
+      .update({ role, updated_at: new Date().toISOString() })
+      .eq("id", profile.id);
+    if (error) {
+      console.error("Erro ao definir papel:", error.message);
+      return false;
+    }
+    setProfile({ ...profile, role });
+    return true;
+  }, [profile]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -180,6 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isCloser,
         signOut,
         refreshProfile,
+        setRole,
       }}
     >
       {children}
