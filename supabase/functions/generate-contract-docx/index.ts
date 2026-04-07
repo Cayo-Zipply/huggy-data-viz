@@ -176,17 +176,16 @@ async function generateFromTemplate(sbInternal: any, lead: any): Promise<Uint8Ar
   // Download template
   const templateBytes = await downloadTemplate(sbInternal, templatePath);
 
-  // Unzip
-  const { unzipSync, zipSync } = await import("https://esm.sh/fflate@0.8.2");
-  const unzipped = unzipSync(templateBytes);
+  const fflate = await import("https://esm.sh/fflate@0.8.2");
+  const unzipped = fflate.unzipSync(templateBytes);
 
   // Build replacements
   const replacements = buildReplacements(lead);
 
-  // Process XML files (document.xml, header*.xml, footer*.xml)
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
 
+  // Identify XML files to process
   const xmlFiles = Object.keys(unzipped).filter(
     (name) =>
       name.endsWith(".xml") &&
@@ -195,20 +194,29 @@ async function generateFromTemplate(sbInternal: any, lead: any): Promise<Uint8Ar
         name.includes("word/footer"))
   );
 
-  for (const xmlFile of xmlFiles) {
-    let xmlContent = decoder.decode(unzipped[xmlFile]);
-    // Remove yellow highlighting/shading from runs
-    xmlContent = xmlContent.replace(/<w:highlight\s+w:val="yellow"\s*\/>/g, "");
-    xmlContent = xmlContent.replace(/<w:shd[^>]*w:fill="FFFF00"[^>]*\/>/g, "");
-    xmlContent = xmlContent.replace(/<w:shd[^>]*w:fill="FFD966"[^>]*\/>/g, "");
-    xmlContent = xmlContent.replace(/<w:shd[^>]*w:fill="FFF2CC"[^>]*\/>/g, "");
-    // Do placeholder replacements
-    const replacedXml = replaceInXml(xmlContent, replacements);
-    unzipped[xmlFile] = encoder.encode(replacedXml);
+  // Build output with proper compression options per entry
+  const zipInput: Record<string, fflate.ZipInputWithoutMeta> = {};
+
+  for (const [name, data] of Object.entries(unzipped)) {
+    if (xmlFiles.includes(name)) {
+      let xmlContent = decoder.decode(data as Uint8Array);
+      // Remove yellow highlighting/shading
+      xmlContent = xmlContent.replace(/<w:highlight\s+w:val="yellow"\s*\/>/g, "");
+      xmlContent = xmlContent.replace(/<w:shd[^>]*w:fill="FFFF00"[^>]*\/>/g, "");
+      xmlContent = xmlContent.replace(/<w:shd[^>]*w:fill="FFD966"[^>]*\/>/g, "");
+      xmlContent = xmlContent.replace(/<w:shd[^>]*w:fill="FFF2CC"[^>]*\/>/g, "");
+      // Do placeholder replacements
+      const replacedXml = replaceInXml(xmlContent, replacements);
+      zipInput[name] = [encoder.encode(replacedXml), { level: 6 }];
+    } else if (name.endsWith(".xml") || name.endsWith(".rels")) {
+      zipInput[name] = [data as Uint8Array, { level: 6 }];
+    } else {
+      // Binary files (images, etc.) - store without compression
+      zipInput[name] = [data as Uint8Array, { level: 0 }];
+    }
   }
 
-  // Rezip
-  return zipSync(unzipped);
+  return fflate.zipSync(zipInput);
 }
 
 // ── ZapSign integration ──
