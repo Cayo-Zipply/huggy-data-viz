@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Login from "@/pages/Login";
 import Index from "@/pages/Index";
 import NotFound from "@/pages/NotFound";
+import UserManagement from "@/pages/UserManagement";
 import { AppSidebar } from "@/components/AppSidebar";
 
 const queryClient = new QueryClient();
@@ -138,6 +139,17 @@ const App = () => (
               element={
                 <AuthGuard>
                   <Index initialTab="ajuda" />
+                </AuthGuard>
+              }
+            />
+
+            <Route
+              path="/usuarios"
+              element={
+                <AuthGuard>
+                  <RoleGuard roles={["admin"]}>
+                    <UserManagement />
+                  </RoleGuard>
                 </AuthGuard>
               }
             />
