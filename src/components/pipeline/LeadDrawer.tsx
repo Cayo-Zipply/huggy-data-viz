@@ -162,6 +162,14 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
             {isLost && <span className="text-xs px-2 py-1 rounded-full bg-destructive/20 text-red-400 font-medium">❌ Perdido</span>}
             {stale && <span className="text-xs px-2 py-1 rounded-full bg-red-500/20 text-red-400">{staleDays}d parado</span>}
             {pendingCount > 0 && <span className="text-xs px-2 py-1 rounded-full bg-yellow-400/10 text-yellow-400">{pendingCount} tarefa(s)</span>}
+            {card.owner === "SDR" && (
+              <span className="text-xs px-2 py-1 rounded-full bg-amber-500/20 text-amber-500 font-medium flex items-center gap-1">
+                <AlertTriangle size={12} />Atribuir responsável
+              </span>
+            )}
+            {cardLabels.map(cl => (
+              <span key={cl.id} className="text-xs px-2 py-1 rounded-full font-medium" style={{ backgroundColor: cl.color + "20", color: cl.color }}>{cl.name}</span>
+            ))}
           </div>
 
           {/* Quick actions */}
