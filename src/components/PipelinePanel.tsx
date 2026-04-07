@@ -501,6 +501,37 @@ export function PipelinePanel() {
         onAddLabel={addLabelToCard}
         onRemoveLabel={removeLabelFromCard}
       />
+
+      {/* No Show date popup */}
+      <Dialog open={!!noShowPending} onOpenChange={(open) => { if (!open) setNoShowPending(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Data do No Show</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Selecione a data do no-show para mover este lead.</p>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !noShowPending?.date && "text-muted-foreground")}>
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {noShowPending?.date ? format(noShowPending.date, "dd/MM/yyyy") : "Selecione a data"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={noShowPending?.date}
+                onSelect={(date) => setNoShowPending(prev => prev ? { ...prev, date } : null)}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNoShowPending(null)}>Cancelar</Button>
+            <Button onClick={confirmNoShow} disabled={!noShowPending?.date}>Confirmar No Show</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
