@@ -288,6 +288,11 @@ export function usePipelineData(actorName: string) {
       history: [{ from: null, to: stage, at: now, by: actorName, duration_days: null }],
       resumo_reuniao: null, transcricao_reuniao: null, data_reuniao: null, duracao_reuniao: null, participantes_reuniao: null,
       data_no_show: null,
+      contrato_status: null, contrato_file_url: null, contrato_preparado_em: null, contrato_preparado_por: null,
+      tipo_contrato: null, representante_nome: null, representante_cpf: null, valor_mensalidade: null,
+      qtd_salarios_minimos: null, porcentagem_exito: null, data_primeiro_pagamento: null, dia_demais_pagamentos: null,
+      prazo_entrega_relatorios: null, prazo_contrato: null, valor_proposta: null, endereco: null, cidade: null,
+      estado: null, cep: null, zapsign_signed_at: null,
     };
 
     const firstTask = {
