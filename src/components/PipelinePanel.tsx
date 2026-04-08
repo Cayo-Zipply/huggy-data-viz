@@ -272,9 +272,6 @@ export function PipelinePanel() {
         <div className="flex flex-col gap-4 p-4 sm:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
-              <span className="inline-flex w-fit items-center rounded-full bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">
-                Pipeline estilo CRM
-              </span>
               <div>
                 <h2 className="text-xl font-bold tracking-tight text-foreground">Pipeline de Vendas</h2>
                 <p className="text-sm text-muted-foreground">

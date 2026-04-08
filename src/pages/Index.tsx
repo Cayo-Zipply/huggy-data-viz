@@ -26,7 +26,14 @@ import { usePipelineData } from "@/components/pipeline/usePipelineData";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = ({ initialTab }: { initialTab?: string }) => {
-  const [selectedMonth, setSelectedMonth] = useState<string>("fevereiro");
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const now = new Date();
+    const monthNames = ["janeiro", "fevereiro", "marco", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+    const key = monthNames[now.getMonth()];
+    // If the current month exists in marketingData, use it; otherwise use the last available
+    const available = Object.keys(marketingData);
+    return available.includes(key) ? key : available[available.length - 1];
+  });
   const { profile } = useAuth();
   const pipelineName = profile?.nome ?? "Admin";
   const { cards, goals } = usePipelineData(pipelineName);
