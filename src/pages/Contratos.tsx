@@ -146,8 +146,9 @@ export default function Contratos() {
 
   const handleDeleteSelected = async () => {
     if (!confirm(`Excluir ${selectedIds.size} contrato(s)?`)) return;
-    for (const id of selectedIds) {
-      await deleteCard(id);
+    const ids = Array.from(selectedIds);
+    for (let i = 0; i < ids.length; i++) {
+      await deleteCard(ids[i]);
     }
     setSelectedIds(new Set());
     toast.success(`${selectedIds.size} contrato(s) excluído(s)`);
