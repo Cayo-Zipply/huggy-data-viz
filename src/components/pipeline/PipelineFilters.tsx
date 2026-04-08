@@ -17,11 +17,12 @@ export interface FilterState {
   status: LeadStatus | "todos";
   stages: string[];
   staleDays: number | null;
+  slaFilter: "todos" | "dentro" | "proximo" | "estourado";
 }
 
 export const defaultFilters: FilterState = {
   dateFrom: "", dateTo: "", stageChangedFrom: "", stageChangedTo: "",
-  closers: [], status: "todos", stages: [], staleDays: null,
+  closers: [], status: "todos", stages: [], staleDays: null, slaFilter: "todos",
 };
 
 export function applyFilters(cards: PipelineCard[], f: FilterState): PipelineCard[] {
@@ -99,7 +100,7 @@ export function PipelineFiltersBar({ filters, onChange, onExport }: Props) {
   const [calFromOpen, setCalFromOpen] = useState(false);
   const [calToOpen, setCalToOpen] = useState(false);
 
-  const hasF = filters.dateFrom || filters.dateTo || filters.closers.length || filters.status !== "todos" || filters.stages.length || filters.staleDays != null;
+  const hasF = filters.dateFrom || filters.dateTo || filters.closers.length || filters.status !== "todos" || filters.stages.length || filters.staleDays != null || filters.slaFilter !== "todos";
   const currentPreset = detectPreset(filters);
 
   const applyPreset = (preset: DatePreset) => {
