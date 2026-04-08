@@ -100,7 +100,7 @@ export function ContractTab({ card, onUpdate }: Props) {
     return errs;
   };
 
-  const saveFields = () => {
+  const saveFields = async () => {
     const updates: Partial<CardType> = {
       tipo_contrato: tipo as ContractType || null,
       empresa: form.empresa || null,
@@ -123,7 +123,7 @@ export function ContractTab({ card, onUpdate }: Props) {
       prazo_entrega_relatorios: form.prazo_entrega_relatorios ? parseInt(form.prazo_entrega_relatorios) : null,
       prazo_contrato: form.prazo_contrato || null,
     };
-    onUpdate(card.id, updates);
+    await onUpdate(card.id, updates);
   };
 
   const handleGenerate = async () => {
@@ -134,10 +134,14 @@ export function ContractTab({ card, onUpdate }: Props) {
       return;
     }
     setErrors([]);
-    saveFields();
     setGenerating(true);
 
     try {
+      // Save fields first and wait for DB to persist
+      await saveFields();
+      // Small delay to ensure DB write completes
+      await new Promise(r => setTimeout(r, 500));
+
       const { data, error } = await supabase.functions.invoke("generate-contract-docx", {
         body: { lead_id: card.id },
       });
@@ -168,6 +172,23 @@ export function ContractTab({ card, onUpdate }: Props) {
       toast.error(e.message || "Erro ao gerar contrato");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleDownload = async (url: string, fileName: string) => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open(url, "_blank");
     }
   };
 
