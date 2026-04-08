@@ -126,18 +126,13 @@ function RoleGuard({
 const TAB_ROUTES = ["/pipeline", "/marketing", "/comercial", "/comparativo", "/rentabilidade", "/consolidado", "/ajuda", "/farol"];
 const ADMIN_TABS = ["/marketing", "/comercial", "/comparativo", "/rentabilidade", "/consolidado", "/farol"];
 
-const pathToTab = (p: string) => p.replace("/", "") || "pipeline";
-
-function IndexLayout() {
+function TabGuard() {
   const location = useLocation();
   const { profile } = useAuth();
-  const tab = pathToTab(location.pathname);
-
   if (ADMIN_TABS.includes(location.pathname) && profile?.role !== "admin") {
     return <Navigate to="/pipeline" replace />;
   }
-
-  return <Index initialTab={tab} />;
+  return <Index />;
 }
 
 const App = () => (
@@ -189,7 +184,7 @@ const App = () => (
                 path={path}
                 element={
                   <AuthGuard>
-                    <IndexLayout />
+                    <TabGuard />
                   </AuthGuard>
                 }
               />
