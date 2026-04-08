@@ -373,6 +373,14 @@ export function PipelinePanel() {
                 <Upload size={12} />Importar CSV
                 <input type="file" accept=".csv,.txt" className="hidden" onChange={handleCSV} />
               </label>
+
+              <button
+                onClick={async () => { setRefreshing(true); await refresh(); setRefreshing(false); }}
+                title="Atualizar pipeline"
+                className="flex items-center justify-center rounded-xl border border-border bg-background p-2 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+              >
+                <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+              </button>
             </div>
           </div>
 
