@@ -20,10 +20,17 @@ import { RevenuePanel } from "@/components/RevenuePanel";
 import { ConsolidatedPanel } from "@/components/ConsolidatedPanel";
 import { PipelinePanel } from "@/components/PipelinePanel";
 import { HelpPanel } from "@/components/HelpPanel";
+import { FarolPanel } from "@/components/FarolPanel";
 import { SalesPieChart } from "@/components/SalesPieChart";
+import { usePipelineData } from "@/components/pipeline/usePipelineData";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = ({ initialTab }: { initialTab?: string }) => {
   const [selectedMonth, setSelectedMonth] = useState<string>("fevereiro");
+  const { profile } = useAuth();
+  const pipelineName = profile?.nome ?? "Admin";
+  const { cards, goals } = usePipelineData(pipelineName);
+  const pipelineOwners = [...new Set(cards.map(c => c.owner).filter(Boolean))] as string[];
 
   // O tab ativo agora vem direto da rota via initialTab (controlado pelo AppSidebar)
   const activeTab = initialTab || "pipeline";
@@ -135,6 +142,9 @@ const Index = ({ initialTab }: { initialTab?: string }) => {
 
           {/* Pipeline Tab */}
           {activeTab === "pipeline" && <PipelinePanel />}
+
+          {/* Farol Tab */}
+          {activeTab === "farol" && <FarolPanel cards={cards} goals={goals} owners={pipelineOwners} />}
 
           {/* Ajuda Tab */}
           {activeTab === "ajuda" && <HelpPanel />}

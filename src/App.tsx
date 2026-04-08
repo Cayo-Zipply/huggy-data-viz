@@ -9,6 +9,7 @@ import Index from "@/pages/Index";
 import NotFound from "@/pages/NotFound";
 import UserManagement from "@/pages/UserManagement";
 import Settings from "@/pages/Settings";
+import Contratos from "@/pages/Contratos";
 import { AppSidebar } from "@/components/AppSidebar";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { useState } from "react";
@@ -211,6 +212,28 @@ const App = () => (
                 <AuthGuard>
                   <RoleGuard roles={["admin"]}>
                     <UserManagement />
+                  </RoleGuard>
+                </AuthGuard>
+              }
+            />
+
+            <Route
+              path="/contratos"
+              element={
+                <AuthGuard>
+                  <RoleGuard roles={["admin"]}>
+                    <Contratos />
+                  </RoleGuard>
+                </AuthGuard>
+              }
+            />
+
+            <Route
+              path="/farol"
+              element={
+                <AuthGuard>
+                  <RoleGuard roles={["admin"]}>
+                    <Index initialTab="farol" />
                   </RoleGuard>
                 </AuthGuard>
               }
