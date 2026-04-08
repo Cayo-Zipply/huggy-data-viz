@@ -36,6 +36,8 @@ export function PipelinePanel() {
   const { profile, isAdmin, isSdr, isCloser } = useAuth();
   const { labels, getCardLabels, addLabelToCard, removeLabelFromCard } = useLabels();
   const { rules: slaRules, getRuleForStage } = useSlaRules();
+  const { activeMotivos } = useMotivosPerda();
+  const { addEntry: addHistoryEntry } = useLeadHistory();
   const currentUserName = useMemo(() => {
     const raw = (profile?.nome ?? profile?.email?.split("@")[0] ?? "Usuário").trim();
     return raw || "Usuário";
@@ -55,6 +57,7 @@ export function PipelinePanel() {
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [noShowPending, setNoShowPending] = useState<{ cardId: string; date: Date | undefined } | null>(null);
+  const [lossPending, setLossPending] = useState<{ cardId: string; motivoId: string; observacao: string } | null>(null);
   const { toast } = useToast();
 
   // Bulk selection state (admin only)
