@@ -250,7 +250,7 @@ async function sendToZapSign(
         ...(signerPhone ? { phone_country: "55", phone_number: signerPhone.replace(/\D/g, "") } : {}),
       },
     ],
-    base64_pdf: b64,
+    base64_docx: b64,
   };
 
   const res = await fetch("https://api.zapsign.com.br/api/v1/docs/", {
