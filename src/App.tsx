@@ -123,25 +123,17 @@ function RoleGuard({
   return <>{children}</>;
 }
 
-const TAB_ROUTES: Record<string, string> = {
-  "/pipeline": "pipeline",
-  "/marketing": "marketing",
-  "/comercial": "comercial",
-  "/comparativo": "comparativo",
-  "/rentabilidade": "rentabilidade",
-  "/consolidado": "consolidado",
-  "/ajuda": "ajuda",
-  "/farol": "farol",
-};
+const TAB_ROUTES = ["/pipeline", "/marketing", "/comercial", "/comparativo", "/rentabilidade", "/consolidado", "/ajuda", "/farol"];
+const ADMIN_TABS = ["/marketing", "/comercial", "/comparativo", "/rentabilidade", "/consolidado", "/farol"];
 
-const ADMIN_TABS = ["marketing", "comercial", "comparativo", "rentabilidade", "consolidado", "farol"];
+const pathToTab = (p: string) => p.replace("/", "") || "pipeline";
 
-function IndexRouter() {
+function IndexLayout() {
   const location = useLocation();
   const { profile } = useAuth();
-  const tab = TAB_ROUTES[location.pathname] || "pipeline";
+  const tab = pathToTab(location.pathname);
 
-  if (ADMIN_TABS.includes(tab) && profile?.role !== "admin") {
+  if (ADMIN_TABS.includes(location.pathname) && profile?.role !== "admin") {
     return <Navigate to="/pipeline" replace />;
   }
 
@@ -191,13 +183,13 @@ const App = () => (
               }
             />
 
-            {Object.keys(TAB_ROUTES).map((path) => (
+            {TAB_ROUTES.map((path) => (
               <Route
                 key={path}
                 path={path}
                 element={
                   <AuthGuard>
-                    <IndexRouter />
+                    <IndexLayout />
                   </AuthGuard>
                 }
               />
