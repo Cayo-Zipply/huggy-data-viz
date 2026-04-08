@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { MetricCard } from "@/components/MetricCard";
 import { TrafficFunnel } from "@/components/TrafficFunnel";
 import { ROICard } from "@/components/ROICard";
@@ -26,6 +26,10 @@ import { usePipelineData } from "@/components/pipeline/usePipelineData";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = ({ initialTab }: { initialTab?: string }) => {
+  // Prevent re-render flash: memo the initialTab on first mount
+  const stableTab = useRef(initialTab || "pipeline");
+  // Update ref when prop changes without remounting
+  stableTab.current = initialTab || "pipeline";
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const now = new Date();
     const monthNames = ["janeiro", "fevereiro", "marco", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
