@@ -290,14 +290,19 @@ export function usePipelineData(actorName: string) {
     });
     if (error) { console.error("Insert lead error:", error); return null; }
 
-    // insert history
+    // insert legacy history
     await sbExt.from("lead_historico").insert({
-      lead_id: id,
-      etapa_de: null,
-      etapa_para: stageToEtapa(stage),
-      evento: "criado",
-      closer: data.owner || actorName,
+      lead_id: id, etapa_de: null, etapa_para: stageToEtapa(stage), evento: "criado", closer: data.owner || actorName,
     });
+
+    // insert structured history
+    try {
+      await supabase.from("lead_history").insert({
+        lead_id: id, tipo: "criacao",
+        descricao: `Lead criado${data.origem ? ` via ${data.origem}` : ""} por ${data.owner || actorName}`,
+        valor_anterior: null, valor_novo: stageToEtapa(stage), usuario_nome: data.owner || actorName,
+      } as any);
+    } catch (e) { console.warn("lead_history insert error:", e); }
 
     // auto tasks
     const card: PipelineCard = {
