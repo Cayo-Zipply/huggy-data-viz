@@ -181,13 +181,21 @@ export function PipelinePanel() {
     e.target.value = "";
   };
 
-  const addLead = () => {
+  const addLead = async () => {
     if (!newLeadName.trim()) return;
-    createCard({
+    const result = await createCard({
       nome: newLeadName,
       telefone: newLeadPhone || null,
       owner: showAllOwners ? currentUserName : activeUser,
     });
+    if (result?.duplicate) {
+      toast({
+        title: "Lead duplicado!",
+        description: `Já existe um lead com este telefone: ${result.existingCard.nome} — ${STAGE_CONFIG[result.existingCard.stage]?.label || result.existingCard.stage}`,
+        variant: "destructive",
+      });
+      return;
+    }
     setNewLeadName(""); setNewLeadPhone(""); setShowNewLead(false);
     toast({ title: "Lead criado!" });
   };
