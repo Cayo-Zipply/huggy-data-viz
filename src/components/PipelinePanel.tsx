@@ -30,8 +30,17 @@ const SUB_TABS = [
   { key: "metas", label: "Metas", icon: Target },
 ];
 
+const PIPELINE_UI_KEYS = {
+  search: "crm_search",
+  filters: "crm_filters",
+  subTab: "crm_sub_tab",
+  activePipe: "crm_active_pipe",
+  selectedCardId: "crm_selected_card_id",
+  drawerOpen: "crm_drawer_open",
+} as const;
+
 export function PipelinePanel() {
-  const [searchQuery, setSearchQuery] = useState(() => sessionStorage.getItem("crm_search") || "");
+  const [searchQuery, setSearchQuery] = useState(() => sessionStorage.getItem(PIPELINE_UI_KEYS.search) || "");
   const [activeUser, setActiveUser] = useState<string>("all");
   const { profile, isAdmin, isSdr, isCloser } = useAuth();
   const { labels, getCardLabels, addLabelToCard, removeLabelFromCard } = useLabels();
@@ -46,17 +55,20 @@ export function PipelinePanel() {
   const { cards, tasks, goals, createCard, updateCard, moveCard, markWon, markLost, createTask, toggleTask, rescheduleTask, upsertGoal, importCSV, deleteCard, saveObservation, refresh } = usePipelineData(currentUserName);
   const [refreshing, setRefreshing] = useState(false);
   const defaultPipe = isCloser ? "closer" : isSdr ? "sdr" : "all";
-  const [activePipe, setActivePipe] = useState<"sdr" | "closer" | "all">(defaultPipe);
-  const [subTab, setSubTab] = useState("kanban");
+  const [activePipe, setActivePipe] = useState<"sdr" | "closer" | "all">(() => {
+    const saved = sessionStorage.getItem(PIPELINE_UI_KEYS.activePipe);
+    return saved === "sdr" || saved === "closer" || saved === "all" ? saved : defaultPipe;
+  });
+  const [subTab, setSubTab] = useState(() => sessionStorage.getItem(PIPELINE_UI_KEYS.subTab) || "kanban");
   const [filters, setFilters] = useState<FilterState>(() => {
-    try { const saved = sessionStorage.getItem("crm_filters"); return saved ? JSON.parse(saved) : defaultFilters; } catch { return defaultFilters; }
+    try { const saved = sessionStorage.getItem(PIPELINE_UI_KEYS.filters); return saved ? JSON.parse(saved) : defaultFilters; } catch { return defaultFilters; }
   });
   const [pendingHandoff, setPendingHandoff] = useState<{ cardId: string; targetStage: Stage } | null>(null);
   const [showNewLead, setShowNewLead] = useState(false);
   const [newLeadName, setNewLeadName] = useState("");
   const [newLeadPhone, setNewLeadPhone] = useState("");
-  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(() => sessionStorage.getItem(PIPELINE_UI_KEYS.selectedCardId) || null);
+  const [drawerOpen, setDrawerOpen] = useState(() => sessionStorage.getItem(PIPELINE_UI_KEYS.drawerOpen) === "true");
   const [noShowPending, setNoShowPending] = useState<{ cardId: string; date: Date | undefined } | null>(null);
   const [lossPending, setLossPending] = useState<{ cardId: string; motivoId: string; observacao: string } | null>(null);
   const { toast } = useToast();
@@ -85,9 +97,25 @@ export function PipelinePanel() {
     localStorage.removeItem("crm_active_user");
   }, [activeUser, isAdmin]);
 
+  useEffect(() => {
+    if (!isAdmin) {
+      setActivePipe(defaultPipe);
+    }
+  }, [defaultPipe, isAdmin]);
+
   // Persist search & filters to sessionStorage
-  useEffect(() => { sessionStorage.setItem("crm_search", searchQuery); }, [searchQuery]);
-  useEffect(() => { sessionStorage.setItem("crm_filters", JSON.stringify(filters)); }, [filters]);
+  useEffect(() => { sessionStorage.setItem(PIPELINE_UI_KEYS.search, searchQuery); }, [searchQuery]);
+  useEffect(() => { sessionStorage.setItem(PIPELINE_UI_KEYS.filters, JSON.stringify(filters)); }, [filters]);
+  useEffect(() => { sessionStorage.setItem(PIPELINE_UI_KEYS.subTab, subTab); }, [subTab]);
+  useEffect(() => { sessionStorage.setItem(PIPELINE_UI_KEYS.activePipe, activePipe); }, [activePipe]);
+  useEffect(() => {
+    if (selectedCardId) {
+      sessionStorage.setItem(PIPELINE_UI_KEYS.selectedCardId, selectedCardId);
+    } else {
+      sessionStorage.removeItem(PIPELINE_UI_KEYS.selectedCardId);
+    }
+    sessionStorage.setItem(PIPELINE_UI_KEYS.drawerOpen, String(drawerOpen));
+  }, [drawerOpen, selectedCardId]);
 
   const ownerOptions = useMemo(() => {
     const pool = new Set<string>([
