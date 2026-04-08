@@ -390,7 +390,7 @@ export function usePipelineData(actorName: string) {
       data_ultima_mudanca_etapa: now,
     }).eq("id", cardId);
 
-    // insert history
+    // insert legacy history
     await sbExt.from("lead_historico").insert({
       lead_id: cardId,
       etapa_de: stageToEtapa(card.stage),
@@ -398,6 +398,20 @@ export function usePipelineData(actorName: string) {
       evento: "mudança de etapa",
       closer: actorName,
     });
+
+    // insert structured history
+    try {
+      const fromLabel = STAGE_CONFIG[card.stage]?.label || card.stage;
+      const toLabel = STAGE_CONFIG[targetStage]?.label || targetStage;
+      await supabase.from("lead_history").insert({
+        lead_id: cardId,
+        tipo: "etapa",
+        descricao: `Lead movido de ${fromLabel} para ${toLabel} por ${actorName}`,
+        valor_anterior: card.stage,
+        valor_novo: targetStage,
+        usuario_nome: actorName,
+      } as any);
+    } catch (e) { console.warn("lead_history insert error:", e); }
 
     // auto tasks
     const updated: PipelineCard = {
@@ -421,7 +435,14 @@ export function usePipelineData(actorName: string) {
   const markWon = useCallback(async (id: string) => {
     await sbExt.from("leads").update({ status: "ganho" }).eq("id", id);
     setCards(prev => prev.map(c => c.id === id ? { ...c, lead_status: "ganho", updated_at: new Date().toISOString() } : c));
-  }, []);
+    try {
+      await supabase.from("lead_history").insert({
+        lead_id: id, tipo: "etapa",
+        descricao: `Lead marcado como ganho por ${actorName}`,
+        valor_anterior: "aberto", valor_novo: "ganho", usuario_nome: actorName,
+      } as any);
+    } catch (e) { console.warn("lead_history insert error:", e); }
+  }, [actorName]);
 
   const markLost = useCallback(async (id: string, category: string, reason: string) => {
     const card = cards.find(c => c.id === id);
