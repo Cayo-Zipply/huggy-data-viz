@@ -19,6 +19,7 @@ import type { PipelineCard, Stage } from "./pipeline/types";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLabels } from "@/hooks/useLabels";
+import { useSlaRules } from "@/hooks/useSlaRules";
 
 const SUB_TABS = [
   { key: "kanban", label: "Kanban", icon: LayoutGrid },

@@ -112,7 +112,7 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
                 {selectedIds?.has(card.id) && "✓"}
               </div>
             )}
-            <PipelineCardItem card={card} tasks={tasks} cardLabels={getCardLabels?.(card.id) || []} onUpdate={onUpdate}
+            <PipelineCardItem card={card} tasks={tasks} cardLabels={getCardLabels?.(card.id) || []} slaHoras={slaRule?.sla_horas} onUpdate={onUpdate}
               onMarkWon={onMarkWon} onMarkLost={onMarkLost} onCreateTask={onCreateTask} onToggleTask={onToggleTask}
               onCardClick={onCardClick} />
           </div>
