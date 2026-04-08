@@ -33,6 +33,7 @@ export function PipelinePanel() {
   const [activeUser, setActiveUser] = useState<string>("all");
   const { profile, isAdmin, isSdr, isCloser } = useAuth();
   const { labels, getCardLabels, addLabelToCard, removeLabelFromCard } = useLabels();
+  const { rules: slaRules, getRuleForStage } = useSlaRules();
   const currentUserName = useMemo(() => {
     const raw = (profile?.nome ?? profile?.email?.split("@")[0] ?? "Usuário").trim();
     return raw || "Usuário";
@@ -472,6 +473,7 @@ export function PipelinePanel() {
                 bulkMode={bulkMode}
                 selectedIds={selectedIds}
                 onToggleSelect={toggleSelect}
+                slaRule={getRuleForStage(s)}
                 onUpdate={updateCard} onDrop={handleDrop} onMarkWon={markWon} onMarkLost={markLost}
                 onCreateTask={createTask} onToggleTask={toggleTask} onCardClick={handleCardClick} />
             ))}
