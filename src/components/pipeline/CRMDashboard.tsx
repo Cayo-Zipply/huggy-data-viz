@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Users, Trophy, XCircle, TrendingUp, DollarSign, Clock, Target, ChevronDown } from "lucide-react";
+import { Users, Trophy, XCircle, TrendingUp, DollarSign, Clock, Target, ChevronDown, Tag } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
 import type { PipelineCard } from "./types";
 import { STAGE_ORDER, STAGE_CONFIG, LOSS_CATEGORIES, formatBRL, cardsReachedStage, daysDiff } from "./types";
+import { useLabels } from "@/hooks/useLabels";
 
 interface Props {
   cards: PipelineCard[];
@@ -54,6 +55,7 @@ function filterByMonth(cards: PipelineCard[], date: Date): PipelineCard[] {
 export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
   const showAll = canViewAll && activeUser === "all";
   const vis = showAll ? cards : cards.filter(c => c.owner === activeUser);
+  const { labels, getCardLabels } = useLabels();
 
   const now = new Date();
   const [compareMonth, setCompareMonth] = useState(() => {
