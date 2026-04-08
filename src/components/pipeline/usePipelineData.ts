@@ -3,7 +3,6 @@ import type { PipelineCard, PipelineTask, PipelineGoal, Stage, PipeType, StageCh
 import { DEFAULT_DEAL_VALUE, STAGE_CONFIG, AUTO_TASKS, addDays } from "./types";
 import { sbExt as _sbExt } from "@/lib/supabaseExternal";
 import { supabase } from "@/integrations/supabase/client";
-import { sbExt as _sbExt } from "@/lib/supabaseExternal";
 
 const sbExt = _sbExt as any;
 

@@ -87,7 +87,8 @@ const Index = ({ initialTab }: { initialTab?: string }) => {
               activeTab === "rentabilidade" ||
               activeTab === "consolidado" ||
               activeTab === "pipeline" ||
-              activeTab === "ajuda"
+              activeTab === "ajuda" ||
+              activeTab === "farol"
             }
           />
 
