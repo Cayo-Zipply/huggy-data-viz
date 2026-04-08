@@ -46,6 +46,13 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, onUpd
   const staleDays = daysDiff(card.stage_changed_at);
   const ownerOptions = Array.from(new Set([card.owner, ...CLOSERS, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
 
+  // SLA status
+  const hoursInStage = staleDays * 24;
+  const slaStatus = slaHoras && card.lead_status === "aberto"
+    ? hoursInStage >= slaHoras ? "estourado" : hoursInStage >= slaHoras * 0.75 ? "proximo" : "dentro"
+    : "dentro";
+  const ownerOptions = Array.from(new Set([card.owner, ...CLOSERS, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
+
   const startEdit = (f: string, v: string) => { setEditing(f); setEditValue(v || ""); };
   const saveEdit = (f: string) => {
     let val: any = editValue || null;
@@ -78,12 +85,29 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, onUpd
   return (
     <div className={cn(
       "group overflow-hidden rounded-2xl border bg-background shadow-sm transition-all",
-      stale && "border-red-500/60",
+      slaStatus === "estourado" && "border-destructive ring-1 ring-destructive/30",
+      slaStatus === "proximo" && "border-yellow-500/60 ring-1 ring-yellow-500/20",
+      stale && slaStatus === "dentro" && "border-destructive/60",
       isLost && "opacity-50 border-destructive/40",
       isWon && "border-green-500/40",
-      !stale && !isLost && !isWon && "border-border hover:border-primary/30 hover:shadow-md"
+      !stale && !isLost && !isWon && slaStatus === "dentro" && "border-border hover:border-primary/30 hover:shadow-md"
     )}>
       <div className="p-3">
+        {/* SLA badge */}
+        {slaStatus === "estourado" && (
+          <div className="flex items-center gap-1 mb-1.5">
+            <span className="text-[9px] font-bold bg-destructive/20 text-destructive rounded px-1.5 py-0.5 flex items-center gap-0.5">
+              <Clock size={9} /> SLA
+            </span>
+          </div>
+        )}
+        {slaStatus === "proximo" && (
+          <div className="flex items-center gap-1 mb-1.5">
+            <span className="text-[9px] font-bold bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 rounded px-1.5 py-0.5 flex items-center gap-0.5">
+              <Clock size={9} /> SLA próximo
+            </span>
+          </div>
+        )}
         {/* Header */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onCardClick?.(card)}>
