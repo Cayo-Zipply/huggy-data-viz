@@ -56,9 +56,8 @@ Deno.serve(async (req) => {
 
     if (screenshot) {
       blocks.push({
-        type: "image",
-        image_url: screenshot,
-        alt_text: "Screenshot do feedback",
+        type: "context",
+        elements: [{ type: "mrkdwn", text: `📎 _Screenshot anexado pelo usuário (base64 — não exibível no Slack)_` }],
       });
     }
 
