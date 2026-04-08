@@ -13,6 +13,7 @@ interface Props {
   card: CardType;
   tasks: PipelineTask[];
   cardLabels?: PipelineLabel[];
+  slaHoras?: number;
   onUpdate: (id: string, u: Partial<CardType>) => void;
   onMarkWon: (id: string) => void;
   onMarkLost: (id: string, cat: string, reason: string) => void;
@@ -23,7 +24,7 @@ interface Props {
 
 type Tab = "info" | "historico" | "tarefas" | "acoes";
 
-export function PipelineCardItem({ card, tasks, cardLabels = [], onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick }: Props) {
+export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [tab, setTab] = useState<Tab>("info");
   const [editing, setEditing] = useState<string | null>(null);
