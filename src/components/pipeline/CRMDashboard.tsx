@@ -95,6 +95,7 @@ function TagConversion({ cards, labels, getCardLabels }: { cards: PipelineCard[]
   );
 }
 
+export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
 
   const showAll = canViewAll && activeUser === "all";
   const vis = showAll ? cards : cards.filter(c => c.owner === activeUser);
