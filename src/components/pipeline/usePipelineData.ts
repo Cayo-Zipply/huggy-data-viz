@@ -592,5 +592,6 @@ export function usePipelineData(actorName: string) {
     cards, tasks, goals,
     createCard, updateCard, moveCard, markWon, markLost,
     createTask, toggleTask, rescheduleTask, upsertGoal, importCSV, deleteCard, saveObservation,
+    refresh: fetchPipelineSnapshot,
   };
 }

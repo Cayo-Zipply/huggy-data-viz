@@ -148,8 +148,10 @@ const Index = ({ initialTab }: { initialTab?: string }) => {
           {/* Consolidado Tab */}
           {activeTab === "consolidado" && <ConsolidatedPanel />}
 
-          {/* Pipeline Tab */}
-          {activeTab === "pipeline" && <PipelinePanel />}
+          {/* Pipeline Tab — kept mounted to preserve state */}
+          <div className={activeTab === "pipeline" ? "" : "hidden"}>
+            <PipelinePanel />
+          </div>
 
           {/* Farol Tab */}
           {activeTab === "farol" && <FarolPanel cards={cards} goals={goals} owners={pipelineOwners} />}
