@@ -94,6 +94,14 @@ export function AppSidebar() {
               {role}
             </p>
           </div>
+          <ChangePasswordDialog>
+            <button
+              className="text-muted-foreground hover:text-primary transition-colors"
+              title="Alterar senha"
+            >
+              <KeyRound className="h-4 w-4" />
+            </button>
+          </ChangePasswordDialog>
           <button
             onClick={() => signOut()}
             className="text-muted-foreground hover:text-destructive transition-colors"
