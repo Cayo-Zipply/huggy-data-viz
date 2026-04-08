@@ -351,10 +351,11 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
       <div className="bg-card border border-border rounded-xl p-4">
         <h4 className="text-sm font-semibold text-foreground mb-4">Funil de Conversão por Etapa</h4>
         <div className="space-y-2">
-          {funnelData.map((d, i) => {
+        {funnelData.map((d, i) => {
             const pct = maxFunnel > 0 ? (d.count / maxFunnel) * 100 : 0;
-            const convRate = i > 0 && funnelData[i - 1].count > 0
-              ? ((d.count / funnelData[i - 1].count) * 100).toFixed(0) : null;
+            const prevCount = i > 0 ? funnelData[i - 1].count : 0;
+            const convRate = i > 0 && prevCount > 0
+              ? Math.min((d.count / prevCount) * 100, 100).toFixed(0) : (i > 0 ? "—" : null);
             return (
               <div key={d.stage} className="flex items-center gap-3">
                 <span className="text-xs w-28 sm:w-36 text-right text-muted-foreground truncate">{d.stage}</span>

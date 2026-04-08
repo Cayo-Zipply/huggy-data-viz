@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Info } from "lucide-react";
+import { Info, AlertTriangle } from "lucide-react";
 import type { PipelineCard, PipelineTask, Stage } from "./types";
-import { STAGE_CONFIG, formatBRL } from "./types";
+import { STAGE_CONFIG, formatBRL, daysDiff } from "./types";
 import { PipelineCardItem } from "./PipelineCard";
 import type { PipelineLabel } from "@/hooks/useLabels";
+import type { SlaRule } from "@/hooks/useSlaRules";
 
 interface Props {
   stageKey: Stage;
@@ -21,13 +22,22 @@ interface Props {
   onCreateTask: (task: Omit<PipelineTask, "id" | "created_at">) => void;
   onToggleTask: (id: string) => void;
   onCardClick?: (card: PipelineCard) => void;
+  slaRule?: SlaRule;
 }
 
-export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, selectedIds, onToggleSelect, onUpdate, onDrop, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick }: Props) {
+export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, selectedIds, onToggleSelect, onUpdate, onDrop, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick, slaRule }: Props) {
   const cfg = STAGE_CONFIG[stageKey];
   const Icon = cfg.icon;
   const [dragOver, setDragOver] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const slaHoras = slaRule?.sla_horas ?? 24;
+
+  // Count SLA breaches
+  const slaBreached = cards.filter(c => {
+    if (c.lead_status !== "aberto") return false;
+    const hoursInStage = daysDiff(c.stage_changed_at) * 24;
+    return hoursInStage >= slaHoras;
+  }).length;
 
   const totalBruto = cards.reduce((s, c) => s + (c.deal_value || 1621), 0);
   const totalPonderado = cards.reduce((s, c) => s + (c.deal_value || 1621) * cfg.probability, 0);
@@ -49,6 +59,11 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
           </div>
           <span className="text-sm font-medium text-foreground flex-1">{cfg.label}</span>
           <span className="text-xs text-muted-foreground bg-muted/50 rounded-full px-2 py-0.5">{cards.length}</span>
+          {slaBreached > 0 && (
+            <span className="text-[10px] font-bold bg-destructive/20 text-destructive rounded-full px-1.5 py-0.5 flex items-center gap-0.5">
+              <AlertTriangle size={10} />{slaBreached}
+            </span>
+          )}
           <button onClick={() => setShowTooltip(!showTooltip)} className="text-muted-foreground hover:text-foreground">
             <Info size={12} />
           </button>
@@ -97,7 +112,7 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
                 {selectedIds?.has(card.id) && "✓"}
               </div>
             )}
-            <PipelineCardItem card={card} tasks={tasks} cardLabels={getCardLabels?.(card.id) || []} onUpdate={onUpdate}
+            <PipelineCardItem card={card} tasks={tasks} cardLabels={getCardLabels?.(card.id) || []} slaHoras={slaRule?.sla_horas} onUpdate={onUpdate}
               onMarkWon={onMarkWon} onMarkLost={onMarkLost} onCreateTask={onCreateTask} onToggleTask={onToggleTask}
               onCardClick={onCardClick} />
           </div>

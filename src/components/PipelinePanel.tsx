@@ -19,6 +19,9 @@ import type { PipelineCard, Stage } from "./pipeline/types";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLabels } from "@/hooks/useLabels";
+import { useSlaRules } from "@/hooks/useSlaRules";
+import { useMotivosPerda } from "@/hooks/useMotivosPerda";
+import { useLeadHistory } from "@/hooks/useLeadHistory";
 
 const SUB_TABS = [
   { key: "kanban", label: "Kanban", icon: LayoutGrid },
@@ -32,6 +35,9 @@ export function PipelinePanel() {
   const [activeUser, setActiveUser] = useState<string>("all");
   const { profile, isAdmin, isSdr, isCloser } = useAuth();
   const { labels, getCardLabels, addLabelToCard, removeLabelFromCard } = useLabels();
+  const { rules: slaRules, getRuleForStage } = useSlaRules();
+  const { activeMotivos } = useMotivosPerda();
+  const { addEntry: addHistoryEntry } = useLeadHistory();
   const currentUserName = useMemo(() => {
     const raw = (profile?.nome ?? profile?.email?.split("@")[0] ?? "Usuário").trim();
     return raw || "Usuário";
@@ -51,6 +57,7 @@ export function PipelinePanel() {
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [noShowPending, setNoShowPending] = useState<{ cardId: string; date: Date | undefined } | null>(null);
+  const [lossPending, setLossPending] = useState<{ cardId: string; motivoId: string; observacao: string } | null>(null);
   const { toast } = useToast();
 
   // Bulk selection state (admin only)
@@ -174,13 +181,21 @@ export function PipelinePanel() {
     e.target.value = "";
   };
 
-  const addLead = () => {
+  const addLead = async () => {
     if (!newLeadName.trim()) return;
-    createCard({
+    const result = await createCard({
       nome: newLeadName,
       telefone: newLeadPhone || null,
       owner: showAllOwners ? currentUserName : activeUser,
     });
+    if (result?.duplicate) {
+      toast({
+        title: "Lead duplicado!",
+        description: `Já existe um lead com este telefone: ${result.existingCard.nome} — ${STAGE_CONFIG[result.existingCard.stage]?.label || result.existingCard.stage}`,
+        variant: "destructive",
+      });
+      return;
+    }
     setNewLeadName(""); setNewLeadPhone(""); setShowNewLead(false);
     toast({ title: "Lead criado!" });
   };
@@ -258,6 +273,39 @@ export function PipelinePanel() {
     exitBulk();
   };
 
+  // Loss modal interceptor
+  const handleLossRequest = (cardId: string, _cat: string, _reason: string) => {
+    setLossPending({ cardId, motivoId: "", observacao: "" });
+  };
+
+  const confirmLoss = async () => {
+    if (!lossPending?.motivoId) return;
+    const motivo = activeMotivos.find(m => m.id === lossPending.motivoId);
+    const reason = motivo?.nome || "Desconhecido";
+    const cat = motivo?.categoria || "Outros";
+    
+    // Mark as lost
+    markLost(lossPending.cardId, cat, reason);
+    
+    // Update pipeline_cards with loss details
+    await updateCard(lossPending.cardId, {
+      loss_reason: reason,
+      loss_category: cat.toLowerCase() as any,
+    } as any);
+    
+    // Add history entry
+    await addHistoryEntry({
+      lead_id: lossPending.cardId,
+      tipo: "perda",
+      descricao: `Lead marcado como perdido — Motivo: ${reason}${lossPending.observacao ? ` | Obs: ${lossPending.observacao}` : ""}`,
+      valor_anterior: null,
+      valor_novo: "perdido",
+      usuario_nome: currentUserName,
+    });
+    
+    setLossPending(null);
+  };
+
   return (
     <div className="space-y-4">
       {pendingHandoff && (
@@ -272,9 +320,6 @@ export function PipelinePanel() {
         <div className="flex flex-col gap-4 p-4 sm:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
-              <span className="inline-flex w-fit items-center rounded-full bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary">
-                Pipeline estilo CRM
-              </span>
               <div>
                 <h2 className="text-xl font-bold tracking-tight text-foreground">Pipeline de Vendas</h2>
                 <p className="text-sm text-muted-foreground">
@@ -474,7 +519,8 @@ export function PipelinePanel() {
                 bulkMode={bulkMode}
                 selectedIds={selectedIds}
                 onToggleSelect={toggleSelect}
-                onUpdate={updateCard} onDrop={handleDrop} onMarkWon={markWon} onMarkLost={markLost}
+                slaRule={getRuleForStage(s)}
+                onUpdate={updateCard} onDrop={handleDrop} onMarkWon={markWon} onMarkLost={handleLossRequest}
                 onCreateTask={createTask} onToggleTask={toggleTask} onCardClick={handleCardClick} />
             ))}
           </div>
@@ -492,7 +538,7 @@ export function PipelinePanel() {
         onOpenChange={handleDrawerOpenChange}
         onUpdate={updateCard}
         onMarkWon={markWon}
-        onMarkLost={markLost}
+        onMarkLost={handleLossRequest}
         onCreateTask={createTask}
         onToggleTask={toggleTask}
         onSaveObservation={saveObservation}
@@ -529,6 +575,39 @@ export function PipelinePanel() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setNoShowPending(null)}>Cancelar</Button>
             <Button onClick={confirmNoShow} disabled={!noShowPending?.date}>Confirmar No Show</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Loss Reason Modal */}
+      <Dialog open={!!lossPending} onOpenChange={(open) => { if (!open) setLossPending(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Motivo da Perda</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Selecione o motivo da perda deste lead.</p>
+          <select
+            value={lossPending?.motivoId || ""}
+            onChange={e => setLossPending(prev => prev ? { ...prev, motivoId: e.target.value } : null)}
+            className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground"
+          >
+            <option value="">Selecione um motivo...</option>
+            {activeMotivos.map(m => (
+              <option key={m.id} value={m.id}>{m.nome} ({m.categoria})</option>
+            ))}
+          </select>
+          <textarea
+            value={lossPending?.observacao || ""}
+            onChange={e => setLossPending(prev => prev ? { ...prev, observacao: e.target.value.slice(0, 500) } : null)}
+            placeholder="Observação adicional (opcional)"
+            maxLength={500}
+            rows={3}
+            className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground resize-none"
+          />
+          <p className="text-[10px] text-muted-foreground text-right">{lossPending?.observacao?.length || 0}/500</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLossPending(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmLoss} disabled={!lossPending?.motivoId}>Confirmar Perda</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

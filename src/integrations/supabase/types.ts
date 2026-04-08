@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      lead_history: {
+        Row: {
+          created_at: string | null
+          descricao: string
+          id: string
+          lead_id: string
+          tipo: string
+          usuario_nome: string | null
+          valor_anterior: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          descricao: string
+          id?: string
+          lead_id: string
+          tipo: string
+          usuario_nome?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string
+          id?: string
+          lead_id?: string
+          tipo?: string
+          usuario_nome?: string | null
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: []
+      }
+      motivos_perda: {
+        Row: {
+          ativo: boolean | null
+          categoria: string
+          created_at: string | null
+          id: string
+          nome: string
+          ordem: number | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria?: string
+          created_at?: string | null
+          id?: string
+          nome: string
+          ordem?: number | null
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria?: string
+          created_at?: string | null
+          id?: string
+          nome?: string
+          ordem?: number | null
+        }
+        Relationships: []
+      }
       pipeline_card_labels: {
         Row: {
           card_id: string
@@ -57,13 +117,16 @@ export type Database = {
           cnpj: string | null
           contract_url: string | null
           created_at: string
+          data_perda: string | null
           deal_value: number | null
           email: string | null
           id: string
           last_stage: string | null
           lead_status: string | null
           loss_reason: string | null
+          motivo_perda_id: string | null
           nome: string
+          observacao_perda: string | null
           origem: string | null
           owner: string | null
           pipe: Database["public"]["Enums"]["pipe_type"]
@@ -80,13 +143,16 @@ export type Database = {
           cnpj?: string | null
           contract_url?: string | null
           created_at?: string
+          data_perda?: string | null
           deal_value?: number | null
           email?: string | null
           id?: string
           last_stage?: string | null
           lead_status?: string | null
           loss_reason?: string | null
+          motivo_perda_id?: string | null
           nome: string
+          observacao_perda?: string | null
           origem?: string | null
           owner?: string | null
           pipe?: Database["public"]["Enums"]["pipe_type"]
@@ -103,13 +169,16 @@ export type Database = {
           cnpj?: string | null
           contract_url?: string | null
           created_at?: string
+          data_perda?: string | null
           deal_value?: number | null
           email?: string | null
           id?: string
           last_stage?: string | null
           lead_status?: string | null
           loss_reason?: string | null
+          motivo_perda_id?: string | null
           nome?: string
+          observacao_perda?: string | null
           origem?: string | null
           owner?: string | null
           pipe?: Database["public"]["Enums"]["pipe_type"]
@@ -176,6 +245,36 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      pipeline_sla_rules: {
+        Row: {
+          acao_ao_estourar: string | null
+          alerta_para: string[] | null
+          created_at: string | null
+          etapa: string
+          id: string
+          sla_horas: number
+          updated_at: string | null
+        }
+        Insert: {
+          acao_ao_estourar?: string | null
+          alerta_para?: string[] | null
+          created_at?: string | null
+          etapa: string
+          id?: string
+          sla_horas?: number
+          updated_at?: string | null
+        }
+        Update: {
+          acao_ao_estourar?: string | null
+          alerta_para?: string[] | null
+          created_at?: string | null
+          etapa?: string
+          id?: string
+          sla_horas?: number
+          updated_at?: string | null
         }
         Relationships: []
       }

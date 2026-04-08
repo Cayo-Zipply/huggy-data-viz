@@ -255,6 +255,26 @@ export function usePipelineData(actorName: string) {
     const stage = data.stage || "conectado";
     const id = crypto.randomUUID();
 
+    // Duplicate detection by phone
+    if (data.telefone) {
+      const digits = data.telefone.replace(/\D/g, "");
+      if (digits.length >= 8) {
+        const existing = cards.find(c => c.telefone && c.telefone.replace(/\D/g, "").endsWith(digits.slice(-8)));
+        if (existing) {
+          // Log duplicate attempt in history
+          try {
+            await supabase.from("lead_history").insert({
+              lead_id: existing.id, tipo: "campo",
+              descricao: `Tentativa de criação duplicada (telefone: ${data.telefone}) por ${actorName}`,
+              valor_anterior: null, valor_novo: data.nome, usuario_nome: actorName,
+            } as any);
+          } catch (e) { console.warn("Duplicate log error:", e); }
+          // Return null to signal duplicate — caller can show warning
+          return { duplicate: true, existingCard: existing } as any;
+        }
+      }
+    }
+
     const { error } = await sbExt.from("leads").insert({
       id,
       nome: data.nome,
@@ -270,14 +290,19 @@ export function usePipelineData(actorName: string) {
     });
     if (error) { console.error("Insert lead error:", error); return null; }
 
-    // insert history
+    // insert legacy history
     await sbExt.from("lead_historico").insert({
-      lead_id: id,
-      etapa_de: null,
-      etapa_para: stageToEtapa(stage),
-      evento: "criado",
-      closer: data.owner || actorName,
+      lead_id: id, etapa_de: null, etapa_para: stageToEtapa(stage), evento: "criado", closer: data.owner || actorName,
     });
+
+    // insert structured history
+    try {
+      await supabase.from("lead_history").insert({
+        lead_id: id, tipo: "criacao",
+        descricao: `Lead criado${data.origem ? ` via ${data.origem}` : ""} por ${data.owner || actorName}`,
+        valor_anterior: null, valor_novo: stageToEtapa(stage), usuario_nome: data.owner || actorName,
+      } as any);
+    } catch (e) { console.warn("lead_history insert error:", e); }
 
     // auto tasks
     const card: PipelineCard = {
@@ -390,7 +415,7 @@ export function usePipelineData(actorName: string) {
       data_ultima_mudanca_etapa: now,
     }).eq("id", cardId);
 
-    // insert history
+    // insert legacy history
     await sbExt.from("lead_historico").insert({
       lead_id: cardId,
       etapa_de: stageToEtapa(card.stage),
@@ -398,6 +423,20 @@ export function usePipelineData(actorName: string) {
       evento: "mudança de etapa",
       closer: actorName,
     });
+
+    // insert structured history
+    try {
+      const fromLabel = STAGE_CONFIG[card.stage]?.label || card.stage;
+      const toLabel = STAGE_CONFIG[targetStage]?.label || targetStage;
+      await supabase.from("lead_history").insert({
+        lead_id: cardId,
+        tipo: "etapa",
+        descricao: `Lead movido de ${fromLabel} para ${toLabel} por ${actorName}`,
+        valor_anterior: card.stage,
+        valor_novo: targetStage,
+        usuario_nome: actorName,
+      } as any);
+    } catch (e) { console.warn("lead_history insert error:", e); }
 
     // auto tasks
     const updated: PipelineCard = {
@@ -421,7 +460,14 @@ export function usePipelineData(actorName: string) {
   const markWon = useCallback(async (id: string) => {
     await sbExt.from("leads").update({ status: "ganho" }).eq("id", id);
     setCards(prev => prev.map(c => c.id === id ? { ...c, lead_status: "ganho", updated_at: new Date().toISOString() } : c));
-  }, []);
+    try {
+      await supabase.from("lead_history").insert({
+        lead_id: id, tipo: "etapa",
+        descricao: `Lead marcado como ganho por ${actorName}`,
+        valor_anterior: "aberto", valor_novo: "ganho", usuario_nome: actorName,
+      } as any);
+    } catch (e) { console.warn("lead_history insert error:", e); }
+  }, [actorName]);
 
   const markLost = useCallback(async (id: string, category: string, reason: string) => {
     const card = cards.find(c => c.id === id);
