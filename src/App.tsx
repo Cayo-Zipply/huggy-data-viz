@@ -123,6 +123,31 @@ function RoleGuard({
   return <>{children}</>;
 }
 
+const TAB_ROUTES: Record<string, string> = {
+  "/pipeline": "pipeline",
+  "/marketing": "marketing",
+  "/comercial": "comercial",
+  "/comparativo": "comparativo",
+  "/rentabilidade": "rentabilidade",
+  "/consolidado": "consolidado",
+  "/ajuda": "ajuda",
+  "/farol": "farol",
+};
+
+const ADMIN_TABS = ["marketing", "comercial", "comparativo", "rentabilidade", "consolidado", "farol"];
+
+function IndexRouter() {
+  const location = useLocation();
+  const { profile } = useAuth();
+  const tab = TAB_ROUTES[location.pathname] || "pipeline";
+
+  if (ADMIN_TABS.includes(tab) && profile?.role !== "admin") {
+    return <Navigate to="/pipeline" replace />;
+  }
+
+  return <Index initialTab={tab} />;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -132,79 +157,6 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
-
-            <Route
-              path="/pipeline"
-              element={
-                <AuthGuard>
-                  <Index initialTab="pipeline" />
-                </AuthGuard>
-              }
-            />
-
-            <Route
-              path="/marketing"
-              element={
-                <AuthGuard>
-                  <RoleGuard roles={["admin"]}>
-                    <Index initialTab="marketing" />
-                  </RoleGuard>
-                </AuthGuard>
-              }
-            />
-
-            <Route
-              path="/comercial"
-              element={
-                <AuthGuard>
-                  <RoleGuard roles={["admin"]}>
-                    <Index initialTab="comercial" />
-                  </RoleGuard>
-                </AuthGuard>
-              }
-            />
-
-            <Route
-              path="/comparativo"
-              element={
-                <AuthGuard>
-                  <RoleGuard roles={["admin"]}>
-                    <Index initialTab="comparativo" />
-                  </RoleGuard>
-                </AuthGuard>
-              }
-            />
-
-            <Route
-              path="/rentabilidade"
-              element={
-                <AuthGuard>
-                  <RoleGuard roles={["admin"]}>
-                    <Index initialTab="rentabilidade" />
-                  </RoleGuard>
-                </AuthGuard>
-              }
-            />
-
-            <Route
-              path="/consolidado"
-              element={
-                <AuthGuard>
-                  <RoleGuard roles={["admin"]}>
-                    <Index initialTab="consolidado" />
-                  </RoleGuard>
-                </AuthGuard>
-              }
-            />
-
-            <Route
-              path="/ajuda"
-              element={
-                <AuthGuard>
-                  <Index initialTab="ajuda" />
-                </AuthGuard>
-              }
-            />
 
             <Route
               path="/usuarios"
@@ -229,17 +181,6 @@ const App = () => (
             />
 
             <Route
-              path="/farol"
-              element={
-                <AuthGuard>
-                  <RoleGuard roles={["admin"]}>
-                    <Index initialTab="farol" />
-                  </RoleGuard>
-                </AuthGuard>
-              }
-            />
-
-            <Route
               path="/configuracoes"
               element={
                 <AuthGuard>
@@ -249,6 +190,18 @@ const App = () => (
                 </AuthGuard>
               }
             />
+
+            {Object.keys(TAB_ROUTES).map((path) => (
+              <Route
+                key={path}
+                path={path}
+                element={
+                  <AuthGuard>
+                    <IndexRouter />
+                  </AuthGuard>
+                }
+              />
+            ))}
 
             <Route path="/" element={<Navigate to="/pipeline" replace />} />
             <Route path="*" element={<NotFound />} />
