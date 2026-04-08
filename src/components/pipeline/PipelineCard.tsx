@@ -51,7 +51,6 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, onUpd
   const slaStatus = slaHoras && card.lead_status === "aberto"
     ? hoursInStage >= slaHoras ? "estourado" : hoursInStage >= slaHoras * 0.75 ? "proximo" : "dentro"
     : "dentro";
-  const ownerOptions = Array.from(new Set([card.owner, ...CLOSERS, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
 
   const startEdit = (f: string, v: string) => { setEditing(f); setEditValue(v || ""); };
   const saveEdit = (f: string) => {
