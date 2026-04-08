@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Login from "@/pages/Login";
 import Index from "@/pages/Index";
@@ -17,9 +17,13 @@ import { Users, UserCheck } from "lucide-react";
 
 const queryClient = new QueryClient();
 
-function AuthGuard({ children }: { children: React.ReactNode }) {
+const TAB_ROUTES = new Set(["pipeline", "marketing", "comercial", "comparativo", "rentabilidade", "consolidado", "ajuda", "farol"]);
+const ADMIN_TABS = new Set(["marketing", "comercial", "comparativo", "rentabilidade", "consolidado", "farol"]);
+
+function AuthLayout() {
   const { user, profile, loading, signOut, setRole } = useAuth();
   const [selecting, setSelecting] = useState(false);
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -32,7 +36,6 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   if (!user) return <Navigate to="/login" replace />;
 
   if (!profile || profile.role === null) {
-    // Profile exists but no role yet — show role picker
     if (profile && profile.role === null) {
       const handleSelect = async (role: "sdr" | "closer") => {
         setSelecting(true);
@@ -81,7 +84,6 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       );
     }
 
-    // No profile at all
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full mx-4 text-center space-y-4">
@@ -100,10 +102,25 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const currentTab = location.pathname.replace("/", "") || "pipeline";
+  const isTabRoute = TAB_ROUTES.has(currentTab);
+  const isAdminTab = ADMIN_TABS.has(currentTab);
+
+  if (isAdminTab && profile.role !== "admin") {
+    return <Navigate to="/pipeline" replace />;
+  }
+
   return (
     <div className="min-h-screen flex w-full">
       <AppSidebar />
-      <main className="flex-1 min-w-0">{children}</main>
+      <main className="flex-1 min-w-0">
+        {/* Index stays mounted — tabs switch via CSS visibility */}
+        <div className={isTabRoute ? "" : "hidden"}>
+          <Index />
+        </div>
+        {/* Non-tab pages render via Outlet */}
+        {!isTabRoute && <Outlet />}
+      </main>
       <FeedbackWidget />
     </div>
   );
@@ -133,122 +150,20 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<Login />} />
 
-            <Route
-              path="/pipeline"
-              element={
-                <AuthGuard>
-                  <Index initialTab="pipeline" />
-                </AuthGuard>
-              }
-            />
+            <Route element={<AuthLayout />}>
+              <Route path="/pipeline" element={null} />
+              <Route path="/marketing" element={null} />
+              <Route path="/comercial" element={null} />
+              <Route path="/comparativo" element={null} />
+              <Route path="/rentabilidade" element={null} />
+              <Route path="/consolidado" element={null} />
+              <Route path="/ajuda" element={null} />
+              <Route path="/farol" element={null} />
 
-            <Route
-              path="/marketing"
-              element={
-                <AuthGuard>
-                  <RoleGuard roles={["admin"]}>
-                    <Index initialTab="marketing" />
-                  </RoleGuard>
-                </AuthGuard>
-              }
-            />
-
-            <Route
-              path="/comercial"
-              element={
-                <AuthGuard>
-                  <RoleGuard roles={["admin"]}>
-                    <Index initialTab="comercial" />
-                  </RoleGuard>
-                </AuthGuard>
-              }
-            />
-
-            <Route
-              path="/comparativo"
-              element={
-                <AuthGuard>
-                  <RoleGuard roles={["admin"]}>
-                    <Index initialTab="comparativo" />
-                  </RoleGuard>
-                </AuthGuard>
-              }
-            />
-
-            <Route
-              path="/rentabilidade"
-              element={
-                <AuthGuard>
-                  <RoleGuard roles={["admin"]}>
-                    <Index initialTab="rentabilidade" />
-                  </RoleGuard>
-                </AuthGuard>
-              }
-            />
-
-            <Route
-              path="/consolidado"
-              element={
-                <AuthGuard>
-                  <RoleGuard roles={["admin"]}>
-                    <Index initialTab="consolidado" />
-                  </RoleGuard>
-                </AuthGuard>
-              }
-            />
-
-            <Route
-              path="/ajuda"
-              element={
-                <AuthGuard>
-                  <Index initialTab="ajuda" />
-                </AuthGuard>
-              }
-            />
-
-            <Route
-              path="/usuarios"
-              element={
-                <AuthGuard>
-                  <RoleGuard roles={["admin"]}>
-                    <UserManagement />
-                  </RoleGuard>
-                </AuthGuard>
-              }
-            />
-
-            <Route
-              path="/contratos"
-              element={
-                <AuthGuard>
-                  <RoleGuard roles={["admin"]}>
-                    <Contratos />
-                  </RoleGuard>
-                </AuthGuard>
-              }
-            />
-
-            <Route
-              path="/farol"
-              element={
-                <AuthGuard>
-                  <RoleGuard roles={["admin"]}>
-                    <Index initialTab="farol" />
-                  </RoleGuard>
-                </AuthGuard>
-              }
-            />
-
-            <Route
-              path="/configuracoes"
-              element={
-                <AuthGuard>
-                  <RoleGuard roles={["admin"]}>
-                    <Settings />
-                  </RoleGuard>
-                </AuthGuard>
-              }
-            />
+              <Route path="/usuarios" element={<RoleGuard roles={["admin"]}><UserManagement /></RoleGuard>} />
+              <Route path="/contratos" element={<RoleGuard roles={["admin"]}><Contratos /></RoleGuard>} />
+              <Route path="/configuracoes" element={<RoleGuard roles={["admin"]}><Settings /></RoleGuard>} />
+            </Route>
 
             <Route path="/" element={<Navigate to="/pipeline" replace />} />
             <Route path="*" element={<NotFound />} />

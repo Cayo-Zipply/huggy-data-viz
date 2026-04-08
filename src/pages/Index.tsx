@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { MetricCard } from "@/components/MetricCard";
 import { TrafficFunnel } from "@/components/TrafficFunnel";
 import { ROICard } from "@/components/ROICard";
@@ -25,12 +26,13 @@ import { SalesPieChart } from "@/components/SalesPieChart";
 import { usePipelineData } from "@/components/pipeline/usePipelineData";
 import { useAuth } from "@/contexts/AuthContext";
 
-const Index = ({ initialTab }: { initialTab?: string }) => {
+const Index = () => {
+  const location = useLocation();
+  const activeTab = location.pathname.replace("/", "") || "pipeline";
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const now = new Date();
     const monthNames = ["janeiro", "fevereiro", "marco", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
     const key = monthNames[now.getMonth()];
-    // If the current month exists in marketingData, use it; otherwise use the last available
     const available = Object.keys(marketingData);
     return available.includes(key) ? key : available[available.length - 1];
   });
@@ -38,9 +40,6 @@ const Index = ({ initialTab }: { initialTab?: string }) => {
   const pipelineName = profile?.nome ?? "Admin";
   const { cards, goals } = usePipelineData(pipelineName);
   const pipelineOwners = [...new Set(cards.map(c => c.owner).filter(Boolean))] as string[];
-
-  // O tab ativo agora vem direto da rota via initialTab (controlado pelo AppSidebar)
-  const activeTab = initialTab || "pipeline";
 
   const currentData = marketingData[selectedMonth];
   const prevKey = getPreviousMonth(selectedMonth);

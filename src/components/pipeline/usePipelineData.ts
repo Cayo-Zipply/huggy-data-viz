@@ -222,14 +222,7 @@ export function usePipelineData(actorName: string) {
     return () => { sbExt.removeChannel(channel); };
   }, [loaded, fetchPipelineSnapshot]);
 
-  /* ── fallback sync: garante atualização mesmo se realtime falhar ── */
-  useEffect(() => {
-    if (!loaded) return;
-    const intervalId = window.setInterval(() => {
-      void fetchPipelineSnapshot();
-    }, 8000);
-    return () => window.clearInterval(intervalId);
-  }, [loaded, fetchPipelineSnapshot]);
+  /* ── fallback sync removido — atualização agora é manual via botão ── */
 
   /* ── auto tasks generator ── */
   const genAutoTasks = useCallback((card: PipelineCard, stage: Stage) => {
