@@ -265,6 +265,39 @@ export function PipelinePanel() {
     exitBulk();
   };
 
+  // Loss modal interceptor
+  const handleLossRequest = (cardId: string, _cat: string, _reason: string) => {
+    setLossPending({ cardId, motivoId: "", observacao: "" });
+  };
+
+  const confirmLoss = async () => {
+    if (!lossPending?.motivoId) return;
+    const motivo = activeMotivos.find(m => m.id === lossPending.motivoId);
+    const reason = motivo?.nome || "Desconhecido";
+    const cat = motivo?.categoria || "Outros";
+    
+    // Mark as lost
+    markLost(lossPending.cardId, cat, reason);
+    
+    // Update pipeline_cards with loss details
+    await updateCard(lossPending.cardId, {
+      loss_reason: reason,
+      loss_category: cat.toLowerCase() as any,
+    } as any);
+    
+    // Add history entry
+    await addHistoryEntry({
+      lead_id: lossPending.cardId,
+      tipo: "perda",
+      descricao: `Lead marcado como perdido — Motivo: ${reason}${lossPending.observacao ? ` | Obs: ${lossPending.observacao}` : ""}`,
+      valor_anterior: null,
+      valor_novo: "perdido",
+      usuario_nome: currentUserName,
+    });
+    
+    setLossPending(null);
+  };
+
   return (
     <div className="space-y-4">
       {pendingHandoff && (
