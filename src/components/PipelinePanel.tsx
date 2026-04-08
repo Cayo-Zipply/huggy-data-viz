@@ -512,7 +512,7 @@ export function PipelinePanel() {
                 selectedIds={selectedIds}
                 onToggleSelect={toggleSelect}
                 slaRule={getRuleForStage(s)}
-                onUpdate={updateCard} onDrop={handleDrop} onMarkWon={markWon} onMarkLost={markLost}
+                onUpdate={updateCard} onDrop={handleDrop} onMarkWon={markWon} onMarkLost={handleLossRequest}
                 onCreateTask={createTask} onToggleTask={toggleTask} onCardClick={handleCardClick} />
             ))}
           </div>
@@ -530,7 +530,7 @@ export function PipelinePanel() {
         onOpenChange={handleDrawerOpenChange}
         onUpdate={updateCard}
         onMarkWon={markWon}
-        onMarkLost={markLost}
+        onMarkLost={handleLossRequest}
         onCreateTask={createTask}
         onToggleTask={toggleTask}
         onSaveObservation={saveObservation}
