@@ -1,137 +1,87 @@
 
-Objetivo
 
-Corrigir o login com Google para que o app não fique preso em loading e não volte para `/login` antes de processar o callback.
+## Plano de Implementacao - 3 Features
 
-Diagnóstico
+### 1. Tag "FS" automatica para leads de final de semana
 
-Do I know what the issue is? Sim.
+**O que faz:** Todo lead criado no sabado ou domingo recebe automaticamente a etiqueta "FS" (Final de Semana). Essa tag acompanha o lead em todas as etapas para analise posterior de conversao por tag.
 
-Hoje o problema não é só “o callback do Google”: o fluxo inteiro de auth está inconsistente.
+**Implementacao:**
+- Na funcao `createCard` em `usePipelineData.ts`, apos criar o lead, verificar se `new Date().getDay()` e 0 (domingo) ou 6 (sabado)
+- Se sim, buscar (ou criar) a label "FS" na tabela `pipeline_labels` e inserir a associacao em `pipeline_card_labels`
+- A label "FS" sera pre-criada via seed/migration ou criada on-demand no primeiro uso
+- No `CRMDashboard`, adicionar um grafico/metricas de conversao por tag: agrupar leads por labels e comparar taxa de conversao (ganhos/total) entre leads com tag "FS" vs sem tag
 
-1. `src/contexts/AuthContext.tsx` está na ordem errada:
-   - chama `getSession()` antes de registrar `onAuthStateChange`
-   - isso pode perder o evento que troca o `code` da URL pela sessão
+### 2. Aba "Contratos" (admin only)
 
-2. O contrato do contexto está quebrado:
-   - o contexto expõe `signIn`
-   - `src/pages/Login.tsx` usa `signInWithGoogle`
-   - `src/hooks/useLeads.ts` e `src/pages/Pipeline.tsx` usam `isCloser`/`isAdmin`, mas esses campos não existem no contexto atual
+**O que faz:** Nova aba no menu lateral visivel apenas para admins. Mostra uma tabela com todos os leads com status "ganho" ou `contrato_assinado`, listando: Empresa, CNPJ, Telefone, Email, Valor Mensalidade, % Exito, Estado (UF).
 
-3. O app está misturando dois clientes do backend:
-   - `src/lib/supabase.ts` usa o cliente gerado do projeto atual
-   - `src/lib/supabaseExternal.ts` usa outro backend para leads/pipeline
-   - isso pode autenticar em um lugar e buscar perfil/dados em outro
+**Implementacao:**
+- Adicionar item no `AppSidebar` com rota `/contratos` (roles: `["admin"]`)
+- Criar pagina `src/pages/Contratos.tsx` com:
+  - Tabela estilizada usando componentes `Table` existentes
+  - Filtros: data de criacao (range), data de fechamento (baseada em `zapsign_signed_at` ou `contrato_preparado_em`), e vendedor (owner/closer)
+  - Dados vem dos `pipeline_cards` filtrados por `lead_status === "ganho"` ou `stage === "contrato_assinado"`
+- Rota protegida com `RoleGuard roles={["admin"]}` em `App.tsx`
 
-4. O projeto nem está estável para validar auth:
-   - `src/components/AppSidebar.tsx` está quebrado em JSX
-   - `supabase/functions/webhook-zapier/index.ts` tem erro TS com `error` do tipo `unknown`
+### 3. Aba "Farol" - Painel de acompanhamento mensal de metas
 
-Plano de correção
+**O que faz:** Replica a planilha Google Sheets que voce compartilhou, mostrando o ritmo de metas do mes atual dividido em duas secoes: **Inbound** (closers) e **Pre-Vendas** (SDR). Atualiza automaticamente com base nos dados do pipeline.
 
-1. Estabilizar o build primeiro
-   - Corrigir `src/components/AppSidebar.tsx` para voltar a compilar
-   - Corrigir `supabase/functions/webhook-zapier/index.ts` usando narrowing seguro:
-     - `error instanceof Error ? error.message : "Erro desconhecido"`
+**Estrutura do Farol (baseada na planilha):**
 
-2. Unificar o cliente de autenticação/dados
-   - Padronizar `src/lib/supabase.ts` como único cliente usado pelo app
-   - Parar de misturar `supabaseExt` com `sbExt`
-   - Atualizar os consumidores para usar o mesmo cliente em auth, `user_profiles`, leads e realtime
-   - Isso elimina o cenário “login feito, mas perfil não encontrado no mesmo backend”
+```text
+INBOUND (Closers)
+┌──────────┬───────┬──────────┬──────────┬──────────┬───────┬──────────┬──────────┬──────┬──────┬─────────────┐
+│ Closer   │ Vendas│ Realizado│ Meta     │ Projecao │ Falta │ Diferenca│ Proj.Fat │ %Meta│ Conv%│ Ticket Medio│
+├──────────┼───────┼──────────┼──────────┼──────────┼───────┼──────────┼──────────┼──────┼──────┼─────────────┤
+│ Stephanie│   5   │ R$ 9.125 │ R$35.150 │ R$ 6.390 │   3   │-R$ 2.734 │R$ 50.191 │ 143% │ 26%  │  R$ 1.825   │
+│ Filipe   │   3   │ R$ 5.621 │ R$29.750 │ R$ 5.409 │   3   │  -R$ 211 │R$ 30.915 │ 104% │ 19%  │  R$ 1.873   │
+│ Total    │   8   │R$ 14.746 │ R$75.400 │R$ 13.709 │   8   │-R$ 1.037 │R$ 81.106 │ 108% │ 20%  │  R$ 1.843   │
+└──────────┴───────┴──────────┴──────────┴──────────┴───────┴──────────┴──────────┴──────┴──────┴─────────────┘
 
-3. Reescrever a inicialização do `AuthContext`
-   - Criar uma função central, por exemplo `applySession(session)`, para:
-     - setar `user`
-     - setar `session`
-     - buscar perfil
-     - limpar estado quando não houver sessão
-   - Registrar `onAuthStateChange` antes de qualquer leitura de sessão
-   - Só depois chamar `auth.getSession()`
-   - Manter `loading = true` até a primeira resolução completa
-   - Garantir que qualquer caminho finalize com `setLoading(false)`
-   - Evitar race condition com `mounted`/`cancelled` guard
+PRE-VENDAS (SDR)
+┌──────┬──────────┬───────────┬──────┬──────────┬───────┬──────────┬──────┬──────┬───────────┐
+│ SDR  │ Reunioes │ Realizadas│ Meta │ Projecao │ Falta │ Projetado│ %Meta│ Conv%│ No Shows  │
+│ Total│    35    │    24     │  142 │    26    │  -2   │   132    │  93% │  17% │    15     │
+│ Cayo │     0    │     0     │   28 │     5    │  -5   │     0    │   0% │   0% │     5     │
+└──────┴──────────┴───────────┴──────┴──────────┴───────┴──────────┴──────┴──────┴───────────┘
 
-4. Corrigir o contrato do `AuthContext`
-   - Expor exatamente o que a UI usa:
-     - `signInWithGoogle`
-     - `signOut`
-     - `loading`
-     - `user`
-     - `session`
-     - `profile`
-     - `isAdmin`
-     - `isSdr`
-     - `isCloser`
-   - Isso remove inconsistências entre `AuthContext`, `Login`, `useLeads` e páginas protegidas
++ Taxa de Show: 68,57%
++ Taxa de Conversao por vendedor
+```
 
-5. Ajustar a busca de perfil
-   - Buscar `user_profiles` por chave estável (`user_id`) em vez de depender só de email
-   - Se necessário, manter fallback por email para compatibilidade com dados antigos
-   - Normalizar email em lowercase
-   - Se o usuário existir mas o perfil não existir:
-     - parar o loading
-     - mostrar “Acesso negado / perfil não configurado”
-     - nunca deixar spinner infinito
+**Implementacao:**
+- Adicionar item no `AppSidebar`: `/farol` (roles: `["admin"]`)
+- Criar `src/components/FarolPanel.tsx`:
+  - Recebe os `cards` do pipeline e calcula tudo automaticamente:
+    - **Vendas**: cards com `lead_status === "ganho"` no mes atual, por closer
+    - **Realizado**: soma de `deal_value` dos ganhos
+    - **Meta**: vem da tabela `pipeline_goals` (ja existente)
+    - **Projecao**: `(realizado / dias_uteis_passados) * dias_uteis_totais`
+    - **Ticket Medio**: `realizado / vendas`
+    - **Conv%**: `vendas / reunioes_realizadas`
+    - **Taxa de Show**: `reunioes_realizadas / reunioes_marcadas`
+    - **No Shows**: cards que passaram por `no_show`
+  - Secao Inbound: agrupa por closer (Stephanie, Filipe, etc.)
+  - Secao Pre-Vendas: agrupa por SDR, conta reunioes marcadas vs realizadas
+  - Secao Farming (se houver dados)
+  - Seletor de mes para ver meses anteriores
+  - Indicadores visuais tipo semaforo (verde/amarelo/vermelho) baseado na projecao vs meta
+- Rota em `App.tsx` com `RoleGuard roles={["admin"]}`
+- Os dados se atualizam automaticamente conforme leads se movem no pipe
 
-6. Corrigir o fluxo de rota no `App.tsx`
-   - Não deixar a aplicação decidir redirect enquanto `loading === true`
-   - Criar um bootstrap de rota para `/` em vez de `Navigate` cego para `/pipeline`
-   - Fluxo final:
-     - app abre → spinner
-     - callback é processado
-     - sessão é aplicada
-     - perfil é buscado
-     - só então redireciona para área autenticada ou login
+### Detalhes tecnicos
 
-7. Corrigir o login da página `Login.tsx`
-   - Consumir `signInWithGoogle` real do contexto
-   - Enquanto `loading`, mostrar apenas estado de carregamento
-   - Se `user && profile`, navegar
-   - Se `user && !profile`, mostrar bloqueio de acesso
-   - Se `!user`, mostrar botão Google
+**Arquivos a criar:**
+- `src/pages/Contratos.tsx` - pagina de contratos
+- `src/components/FarolPanel.tsx` - painel farol
 
-8. Validar o restante da área autenticada
-   - Garantir que `useLeads.ts` só filtre por closer depois que `profile` estiver disponível
-   - Garantir que subscriptions realtime não dependam de um contexto quebrado
-   - Verificar se `Pipeline`/`Sidebar` não estão assumindo campos inexistentes
+**Arquivos a editar:**
+- `src/components/AppSidebar.tsx` - adicionar rotas Contratos e Farol
+- `src/App.tsx` - adicionar rotas
+- `src/components/pipeline/usePipelineData.ts` - logica auto-tag FS no createCard
+- `src/components/pipeline/CRMDashboard.tsx` - adicionar metricas de conversao por tag
+- `src/pages/Index.tsx` - adicionar renderizacao do FarolPanel
+- `src/hooks/useLabels.ts` - expor funcao para buscar/criar label por nome
 
-Arquivos que eu vou ajustar
-
-- `src/contexts/AuthContext.tsx`
-- `src/App.tsx`
-- `src/pages/Login.tsx`
-- `src/lib/supabase.ts`
-- `src/hooks/useLeads.ts`
-- `src/components/AppSidebar.tsx`
-- `supabase/functions/webhook-zapier/index.ts`
-
-Detalhes técnicos
-
-- Ordem correta do bootstrap:
-  1. `onAuthStateChange(...)`
-  2. `getSession()`
-  3. `applySession(...)`
-  4. `setLoading(false)`
-
-- Regra de redirect:
-  - nunca redirecionar para `/login` enquanto `loading` for `true`
-
-- Regra de perfil:
-  - ausência de perfil = acesso negado
-  - ausência de sessão = login
-  - nenhuma dessas situações pode deixar loading preso
-
-Resultado esperado
-
-Depois da correção, o fluxo ficará assim:
-
-- usuário clica em “Entrar com Google”
-- volta do Google para o app
-- o app mostra loading temporário
-- o callback é processado corretamente
-- a sessão é criada
-- o perfil é buscado
-- o usuário entra no app sem voltar indevidamente para `/login`
-
-Também vou deixar o projeto compilando de novo, porque hoje há erros paralelos que impedem validar a correção com segurança.
