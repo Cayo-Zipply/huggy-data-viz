@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import type { PipelineCard, PipelineTask, PipelineGoal, Stage, PipeType, StageChange } from "./types";
 import { DEFAULT_DEAL_VALUE, STAGE_CONFIG, AUTO_TASKS, addDays } from "./types";
 import { sbExt as _sbExt } from "@/lib/supabaseExternal";
+import { supabase } from "@/integrations/supabase/client";
 
 const sbExt = _sbExt as any;
 
@@ -304,6 +305,24 @@ export function usePipelineData(actorName: string) {
       status: "pendente", pipeline: t.pipe_context, closer: t.responsible, auto: true,
     }));
     await sbExt.from("tarefas").insert([firstTask, ...stageTasks]);
+
+    // Auto-tag FS for weekend leads
+    const createdDay = new Date(data.created_at || now).getDay();
+    if (createdDay === 0 || createdDay === 6) {
+      try {
+        // Find or create "FS" label
+        let { data: fsLabel } = await supabase.from("pipeline_labels").select("id").eq("name", "FS").single();
+        if (!fsLabel) {
+          const { data: newLabel } = await supabase.from("pipeline_labels").insert({ name: "FS", color: "#f59e0b" }).select("id").single();
+          fsLabel = newLabel;
+        }
+        if (fsLabel) {
+          await supabase.from("pipeline_card_labels").insert({ card_id: id, label_id: fsLabel.id });
+        }
+      } catch (e) {
+        console.warn("Auto-tag FS error:", e);
+      }
+    }
 
     return card;
   }, [actorName, genAutoTasks]);

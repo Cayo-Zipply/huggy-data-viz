@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Users, Trophy, XCircle, TrendingUp, DollarSign, Clock, Target, ChevronDown } from "lucide-react";
+import { Users, Trophy, XCircle, TrendingUp, DollarSign, Clock, Target, ChevronDown, Tag } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
 import type { PipelineCard } from "./types";
 import { STAGE_ORDER, STAGE_CONFIG, LOSS_CATEGORIES, formatBRL, cardsReachedStage, daysDiff } from "./types";
+import { useLabels } from "@/hooks/useLabels";
 
 interface Props {
   cards: PipelineCard[];
@@ -51,9 +52,53 @@ function filterByMonth(cards: PipelineCard[], date: Date): PipelineCard[] {
   });
 }
 
-export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
+function TagConversion({ cards, labels, getCardLabels }: { cards: PipelineCard[]; labels: any[]; getCardLabels: (id: string) => any[] }) {
+  const data = useMemo(() => {
+    return labels.map(label => {
+      const tagged = cards.filter(c => getCardLabels(c.id).some((l: any) => l.id === label.id));
+      const total = tagged.length;
+      const ganhos = tagged.filter(c => c.lead_status === "ganho").length;
+      const conv = total > 0 ? Math.round((ganhos / total) * 100) : 0;
+      return { name: label.name, total, ganhos, conv, color: label.color };
+    }).filter(d => d.total > 0);
+  }, [cards, labels, getCardLabels]);
+
+  // Also show "Sem tag"
+  const untagged = cards.filter(c => getCardLabels(c.id).length === 0);
+  const untaggedGanhos = untagged.filter(c => c.lead_status === "ganho").length;
+  const allData = [
+    ...data,
+    { name: "Sem tag", total: untagged.length, ganhos: untaggedGanhos, conv: untagged.length > 0 ? Math.round((untaggedGanhos / untagged.length) * 100) : 0, color: "hsl(215,20%,55%)" },
+  ].filter(d => d.total > 0);
+
+  if (allData.length === 0) return null;
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Tag size={14} className="text-muted-foreground" />
+        <h4 className="text-sm font-semibold text-foreground">Conversão por Etiqueta</h4>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {allData.map(d => (
+          <div key={d.name} className="bg-muted/20 rounded-lg p-3 border border-border">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-3 h-3 rounded-full" style={{ background: d.color }} />
+              <span className="text-xs font-medium text-foreground">{d.name}</span>
+            </div>
+            <p className="text-lg font-bold text-foreground">{d.conv}%</p>
+            <p className="text-[10px] text-muted-foreground">{d.ganhos}/{d.total} leads</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
   const showAll = canViewAll && activeUser === "all";
   const vis = showAll ? cards : cards.filter(c => c.owner === activeUser);
+  const { labels, getCardLabels } = useLabels();
 
   const now = new Date();
   const [compareMonth, setCompareMonth] = useState(() => {
@@ -322,7 +367,12 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
               </div>
             );
           })}
-        </div>
+      </div>
+
+      {/* Tag conversion */}
+      {labels.length > 0 && (
+        <TagConversion cards={vis} labels={labels} getCardLabels={getCardLabels} />
+      )}
       </div>
 
       {showAll && (

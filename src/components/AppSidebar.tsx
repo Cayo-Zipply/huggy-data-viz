@@ -12,6 +12,8 @@ import {
   HelpCircle,
   UsersRound,
   Settings,
+  FileText,
+  Gauge,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -23,6 +25,8 @@ const NAV_ITEMS = [
   { key: "/comparativo", label: "Comparativo", icon: GitCompare, roles: ["admin"] },
   { key: "/rentabilidade", label: "Rentabilidade", icon: DollarSign, roles: ["admin"] },
   { key: "/consolidado", label: "Consolidado", icon: PieChart, roles: ["admin"] },
+  { key: "/contratos", label: "Contratos", icon: FileText, roles: ["admin"] },
+  { key: "/farol", label: "Farol", icon: Gauge, roles: ["admin"] },
   { key: "/usuarios", label: "Usuários", icon: UsersRound, roles: ["admin"] },
   { key: "/configuracoes", label: "Configurações", icon: Settings, roles: ["admin"] },
   { key: "/ajuda", label: "Ajuda", icon: HelpCircle, roles: ["admin", "sdr", "closer"] },
