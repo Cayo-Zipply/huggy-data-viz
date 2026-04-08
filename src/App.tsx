@@ -10,6 +10,7 @@ import NotFound from "@/pages/NotFound";
 import UserManagement from "@/pages/UserManagement";
 import Settings from "@/pages/Settings";
 import { AppSidebar } from "@/components/AppSidebar";
+import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { useState } from "react";
 import { Users, UserCheck } from "lucide-react";
 
@@ -102,6 +103,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex w-full">
       <AppSidebar />
       <main className="flex-1 min-w-0">{children}</main>
+      <FeedbackWidget />
     </div>
   );
 }
