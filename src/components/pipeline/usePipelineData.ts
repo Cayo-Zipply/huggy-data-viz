@@ -255,6 +255,26 @@ export function usePipelineData(actorName: string) {
     const stage = data.stage || "conectado";
     const id = crypto.randomUUID();
 
+    // Duplicate detection by phone
+    if (data.telefone) {
+      const digits = data.telefone.replace(/\D/g, "");
+      if (digits.length >= 8) {
+        const existing = cards.find(c => c.telefone && c.telefone.replace(/\D/g, "").endsWith(digits.slice(-8)));
+        if (existing) {
+          // Log duplicate attempt in history
+          try {
+            await supabase.from("lead_history").insert({
+              lead_id: existing.id, tipo: "campo",
+              descricao: `Tentativa de criação duplicada (telefone: ${data.telefone}) por ${actorName}`,
+              valor_anterior: null, valor_novo: data.nome, usuario_nome: actorName,
+            } as any);
+          } catch (e) { console.warn("Duplicate log error:", e); }
+          // Return null to signal duplicate — caller can show warning
+          return { duplicate: true, existingCard: existing } as any;
+        }
+      }
+    }
+
     const { error } = await sbExt.from("leads").insert({
       id,
       nome: data.nome,
