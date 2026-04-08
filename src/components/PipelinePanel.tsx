@@ -570,6 +570,39 @@ export function PipelinePanel() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Loss Reason Modal */}
+      <Dialog open={!!lossPending} onOpenChange={(open) => { if (!open) setLossPending(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Motivo da Perda</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Selecione o motivo da perda deste lead.</p>
+          <select
+            value={lossPending?.motivoId || ""}
+            onChange={e => setLossPending(prev => prev ? { ...prev, motivoId: e.target.value } : null)}
+            className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground"
+          >
+            <option value="">Selecione um motivo...</option>
+            {activeMotivos.map(m => (
+              <option key={m.id} value={m.id}>{m.nome} ({m.categoria})</option>
+            ))}
+          </select>
+          <textarea
+            value={lossPending?.observacao || ""}
+            onChange={e => setLossPending(prev => prev ? { ...prev, observacao: e.target.value.slice(0, 500) } : null)}
+            placeholder="Observação adicional (opcional)"
+            maxLength={500}
+            rows={3}
+            className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground resize-none"
+          />
+          <p className="text-[10px] text-muted-foreground text-right">{lossPending?.observacao?.length || 0}/500</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLossPending(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmLoss} disabled={!lossPending?.motivoId}>Confirmar Perda</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
