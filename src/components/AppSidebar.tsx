@@ -14,7 +14,9 @@ import {
   Settings,
   FileText,
   Gauge,
+  KeyRound,
 } from "lucide-react";
+import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
