@@ -247,9 +247,9 @@ export function ContractTab({ card, onUpdate }: Props) {
 
         {/* Download Word */}
         {card.contrato_file_url && (
-          <a href={card.contrato_file_url} download className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20 w-fit">
+          <button onClick={() => handleDownload(card.contrato_file_url!, `contrato_${card.nome || card.id}.docx`)} className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20 w-fit">
             <Download size={16} />Baixar Word
-          </a>
+          </button>
         )}
 
         {card.contrato_status === "gerado" && (
