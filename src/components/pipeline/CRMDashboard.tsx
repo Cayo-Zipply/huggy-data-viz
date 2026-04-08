@@ -324,7 +324,12 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
               </div>
             );
           })}
-        </div>
+      </div>
+
+      {/* Tag conversion */}
+      {labels.length > 0 && (
+        <TagConversion cards={vis} labels={labels} getCardLabels={getCardLabels} />
+      )}
       </div>
 
       {showAll && (
