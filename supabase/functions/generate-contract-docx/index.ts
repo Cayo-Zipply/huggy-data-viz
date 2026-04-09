@@ -87,32 +87,19 @@ function buildReplacements(lead: any): Record<string, string> {
 function replaceInXml(xml: string, replacements: Record<string, string>): string {
   let result = xml;
 
-  // DOCX XML splits text across multiple <w:t> tags.
-  // We need to handle placeholders that may be split across runs.
-  // First, try direct replacement for non-split placeholders.
   for (const [placeholder, value] of Object.entries(replacements)) {
     const escapedValue = escapeXml(value);
-    // Replace in plain text
     result = result.split(placeholder).join(escapedValue);
-    // Replace XML-escaped version
     const escapedPlaceholder = escapeXml(placeholder);
     if (escapedPlaceholder !== placeholder) {
       result = result.split(escapedPlaceholder).join(escapedValue);
     }
   }
 
-  // Handle split placeholders: Word often splits "[PLACEHOLDER]" across runs like:
-  // <w:t>[</w:t></w:r><w:r><w:t>PLACEHOLDER</w:t></w:r><w:r><w:t>]</w:t>
-  // Strategy: concatenate all text in a paragraph, do replacements, then rebuild.
-  // We use a regex approach to find paragraphs and merge text content.
-
-  // Collect text from runs within each paragraph, replace, and redistribute
   result = result.replace(/<w:p[ >][\s\S]*?<\/w:p>/g, (paragraph) => {
-    // Extract all text content
     let fullText = "";
     const textParts: { match: string; text: string }[] = [];
 
-    // Find all <w:t> elements
     const tRegex = /<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g;
     let m;
     while ((m = tRegex.exec(paragraph)) !== null) {
@@ -122,7 +109,6 @@ function replaceInXml(xml: string, replacements: Record<string, string>): string
 
     if (textParts.length === 0) return paragraph;
 
-    // Check if any placeholder exists in the concatenated text
     let needsReplacement = false;
     for (const [placeholder] of Object.entries(replacements)) {
       const ep = escapeXml(placeholder);
@@ -134,7 +120,6 @@ function replaceInXml(xml: string, replacements: Record<string, string>): string
 
     if (!needsReplacement) return paragraph;
 
-    // Do replacements on the full concatenated text
     let replacedText = fullText;
     for (const [placeholder, value] of Object.entries(replacements)) {
       const escapedValue = escapeXml(value);
@@ -147,7 +132,6 @@ function replaceInXml(xml: string, replacements: Record<string, string>): string
 
     if (replacedText === fullText) return paragraph;
 
-    // Put all replaced text into the first <w:t> and clear the rest
     let firstReplaced = false;
     let result = paragraph;
     for (const part of textParts) {
@@ -173,19 +157,16 @@ async function generateFromTemplate(sbInternal: any, lead: any): Promise<Uint8Ar
     throw new Error(`Tipo de contrato desconhecido: ${tipo}`);
   }
 
-  // Download template
   const templateBytes = await downloadTemplate(sbInternal, templatePath);
 
   const fflate = await import("https://esm.sh/fflate@0.8.2");
   const unzipped = fflate.unzipSync(templateBytes);
 
-  // Build replacements
   const replacements = buildReplacements(lead);
 
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
 
-  // Identify XML files to process
   const xmlFiles = Object.keys(unzipped).filter(
     (name) =>
       name.endsWith(".xml") &&
@@ -194,24 +175,20 @@ async function generateFromTemplate(sbInternal: any, lead: any): Promise<Uint8Ar
         name.includes("word/footer"))
   );
 
-  // Build output with proper compression options per entry
-  const zipInput: Record<string, fflate.ZipInputWithoutMeta> = {};
+  const zipInput: Record<string, any> = {};
 
   for (const [name, data] of Object.entries(unzipped)) {
     if (xmlFiles.includes(name)) {
       let xmlContent = decoder.decode(data as Uint8Array);
-      // Remove yellow highlighting/shading
       xmlContent = xmlContent.replace(/<w:highlight\s+w:val="yellow"\s*\/>/g, "");
       xmlContent = xmlContent.replace(/<w:shd[^>]*w:fill="FFFF00"[^>]*\/>/g, "");
       xmlContent = xmlContent.replace(/<w:shd[^>]*w:fill="FFD966"[^>]*\/>/g, "");
       xmlContent = xmlContent.replace(/<w:shd[^>]*w:fill="FFF2CC"[^>]*\/>/g, "");
-      // Do placeholder replacements
       const replacedXml = replaceInXml(xmlContent, replacements);
       zipInput[name] = [encoder.encode(replacedXml), { level: 6 }];
     } else if (name.endsWith(".xml") || name.endsWith(".rels")) {
       zipInput[name] = [data as Uint8Array, { level: 6 }];
     } else {
-      // Binary files (images, etc.) - store without compression
       zipInput[name] = [data as Uint8Array, { level: 0 }];
     }
   }
@@ -229,7 +206,6 @@ async function sendToZapSign(
   signerEmail: string,
   signerPhone: string | null,
 ): Promise<{ doc_token: string; signer_token: string; sign_url: string }> {
-  // Chunked base64 encoding to avoid stack overflow with large files
   let binary = "";
   const chunkSize = 8192;
   for (let i = 0; i < docxBytes.length; i += chunkSize) {
@@ -284,7 +260,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { lead_id } = await req.json();
+    const { lead_id, action = "zapsign" } = await req.json();
     if (!lead_id) {
       return new Response(JSON.stringify({ success: false, message: "lead_id é obrigatório" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -356,13 +332,64 @@ Deno.serve(async (req) => {
       fileUrl = urlData.publicUrl;
     }
 
-    // ── ZapSign auto-send ──
+    const isCPF = lead.tipo_contrato === "tributario_cpf";
+    const empresaName = isCPF ? (lead.representante_nome || "Cliente") : (lead.empresa || "Empresa");
+    const contractName = `CONTRATO PQA & ${empresaName}`;
+
+    // ── ACTION: DOWNLOAD ──
+    if (action === "download") {
+      await sbExt.from("leads").update({
+        contrato_status: "gerado",
+        contrato_file_url: fileUrl,
+        contrato_preparado_em: new Date().toISOString(),
+      }).eq("id", lead_id);
+
+      return new Response(JSON.stringify({
+        success: true,
+        action: "download",
+        file_url: fileUrl,
+        file_name: fileName,
+        message: `Contrato "${contractName}" gerado com sucesso! Pronto para download.`,
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── ACTION: WHATSAPP ──
+    if (action === "whatsapp") {
+      const { data: signedUrl } = await sbInternal.storage
+        .from("contracts")
+        .createSignedUrl(fileName, 60 * 60 * 24 * 7); // 7 days
+      const shareUrl = signedUrl?.signedUrl || fileUrl;
+
+      await sbExt.from("leads").update({
+        contrato_status: "enviado_whatsapp",
+        contrato_file_url: fileUrl,
+        contrato_preparado_em: new Date().toISOString(),
+      }).eq("id", lead_id);
+
+      const phone = (lead.telefone || "").replace(/\D/g, "");
+      const whatsappPhone = phone.startsWith("55") ? phone : `55${phone}`;
+      const whatsappMessage = encodeURIComponent(
+        `Olá ${lead.representante_nome || lead.nome || ""}! Segue o contrato de assessoria jurídica da Pena Quadros Advogados para sua análise e assinatura:\n\n${shareUrl}\n\nQualquer dúvida, estamos à disposição!`
+      );
+      const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${whatsappMessage}`;
+
+      return new Response(JSON.stringify({
+        success: true,
+        action: "whatsapp",
+        file_url: fileUrl,
+        file_name: fileName,
+        share_url: shareUrl,
+        whatsapp_url: whatsappUrl,
+        whatsapp_phone: whatsappPhone,
+        message: `Contrato "${contractName}" gerado! Abrindo WhatsApp Web para envio.`,
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ── ACTION: ZAPSIGN (default) ──
     const zapSignKey = Deno.env.get("ZAPSIGN_API_KEY");
     let zapSignResult: { doc_token: string; signer_token: string; sign_url: string } | null = null;
     let zapSignError: string | null = null;
 
-    const isCPF = lead.tipo_contrato === "tributario_cpf";
-    const empresaName = isCPF ? (lead.representante_nome || "Cliente") : (lead.empresa || "Empresa");
     const docName = `CONTRATO DE ASSESSORIA JURÍDICA TRIBUTÁRIA E EMPRESARIAL - PQA & ${empresaName}`;
 
     if (zapSignKey) {
@@ -383,7 +410,6 @@ Deno.serve(async (req) => {
       zapSignError = "ZAPSIGN_API_KEY não configurada";
     }
 
-    // Update lead status in external DB
     const updatePayload: any = {
       contrato_file_url: fileUrl,
       contrato_preparado_em: new Date().toISOString(),
@@ -402,6 +428,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
+      action: "zapsign",
       file_name: fileName,
       file_url: fileUrl,
       sign_url: zapSignResult?.sign_url || null,
@@ -410,7 +437,7 @@ Deno.serve(async (req) => {
       zapsign_sent: !!zapSignResult,
       zapsign_error: zapSignError,
       message: zapSignResult
-        ? "Contrato gerado e enviado para assinatura no ZapSign!"
+        ? `Contrato "${contractName}" gerado e enviado para assinatura no ZapSign!`
         : zapSignError
           ? `Contrato gerado, mas erro no ZapSign: ${zapSignError}. Baixe o Word e suba manualmente.`
           : "Contrato gerado com sucesso",

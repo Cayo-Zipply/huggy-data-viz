@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink } from "lucide-react";
+import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import type { PipelineCard as CardType, ContractType, ContractStatus } from "./types";
 import { formatBRL } from "./types";
@@ -18,7 +18,8 @@ const CONTRACT_TYPE_OPTIONS: { value: ContractType; label: string; desc: string 
 
 const STATUS_BADGES: Record<string, { label: string; color: string }> = {
   gerado: { label: "📄 Contrato gerado", color: "bg-blue-500/20 text-blue-400" },
-  enviado: { label: "📝 Aguardando assinatura", color: "bg-amber-500/20 text-amber-400" },
+  enviado: { label: "📝 Aguardando assinatura (ZapSign)", color: "bg-amber-500/20 text-amber-400" },
+  enviado_whatsapp: { label: "📱 Enviado via WhatsApp", color: "bg-emerald-500/20 text-emerald-400" },
   assinado: { label: "✅ Contrato assinado", color: "bg-green-500/20 text-green-400" },
   recusado: { label: "❌ Contrato recusado", color: "bg-red-500/20 text-red-400" },
 };
@@ -53,8 +54,9 @@ export function ContractTab({ card, onUpdate }: Props) {
     prazo_entrega_relatorios: card.prazo_entrega_relatorios?.toString() || "",
     prazo_contrato: card.prazo_contrato || "",
   });
-  const [generating, setGenerating] = useState(false);
+  const [actionLoading, setActionLoading] = useState<"zapsign" | "download" | "whatsapp" | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
+  const [lastResult, setLastResult] = useState<{ action: string; data: any } | null>(null);
 
   useEffect(() => {
     setTipo(card.tipo_contrato || "");
@@ -79,6 +81,7 @@ export function ContractTab({ card, onUpdate }: Props) {
       prazo_entrega_relatorios: card.prazo_entrega_relatorios?.toString() || "",
       prazo_contrato: card.prazo_contrato || "",
     });
+    setLastResult(null);
   }, [card.id]);
 
   const isCNPJType = tipo === "tributario_cnpj" || tipo === "empresarial_completo";
@@ -99,6 +102,8 @@ export function ContractTab({ card, onUpdate }: Props) {
     if (!form.prazo_entrega_relatorios.trim()) errs.push("Prazo Entrega Relatórios");
     return errs;
   };
+
+  const isFormValid = () => validate().length === 0;
 
   const saveFields = async () => {
     const updates: Partial<CardType> = {
@@ -126,7 +131,7 @@ export function ContractTab({ card, onUpdate }: Props) {
     await onUpdate(card.id, updates);
   };
 
-  const handleGenerate = async () => {
+  const handleAction = async (action: "zapsign" | "download" | "whatsapp") => {
     const errs = validate();
     if (errs.length) {
       setErrors(errs);
@@ -134,48 +139,88 @@ export function ContractTab({ card, onUpdate }: Props) {
       return;
     }
     setErrors([]);
-    setGenerating(true);
+    setActionLoading(action);
+    setLastResult(null);
 
     try {
-      // Save fields first and wait for DB to persist
       await saveFields();
-      // Small delay to ensure DB write completes
       await new Promise(r => setTimeout(r, 500));
 
       const { data, error } = await supabase.functions.invoke("generate-contract-docx", {
-        body: { lead_id: card.id },
+        body: { lead_id: card.id, action },
       });
 
       if (error || !data?.success) {
         toast.error(data?.message || error?.message || "Erro ao gerar contrato");
-        setGenerating(false);
+        setActionLoading(null);
         return;
       }
 
-      if (data.zapsign_sent) {
-        toast.success("✅ Contrato gerado e enviado para assinatura!");
-        onUpdate(card.id, {
-          contrato_status: "enviado" as ContractStatus,
-          contrato_file_url: data.file_url,
-          contract_url: data.sign_url,
-          contrato_preparado_em: new Date().toISOString(),
-        });
-      } else if (data.docx_generated) {
-        toast.warning(`⚠️ ${data.message}`);
+      setLastResult({ action, data });
+
+      if (action === "zapsign") {
+        if (data.zapsign_sent) {
+          toast.success("✅ Contrato gerado e enviado para assinatura!");
+          onUpdate(card.id, {
+            contrato_status: "enviado" as ContractStatus,
+            contrato_file_url: data.file_url,
+            contract_url: data.sign_url,
+            contrato_preparado_em: new Date().toISOString(),
+            stage: "link_enviado" as const,
+          });
+        } else {
+          toast.warning(`⚠️ ${data.message}`);
+          onUpdate(card.id, {
+            contrato_status: "gerado" as ContractStatus,
+            contrato_file_url: data.file_url,
+            contrato_preparado_em: new Date().toISOString(),
+          });
+        }
+      } else if (action === "download") {
+        toast.success("📥 Contrato gerado! Download iniciado.");
+        // Trigger download
+        if (data.file_url) {
+          try {
+            const res = await fetch(data.file_url);
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = blobUrl;
+            a.download = `contrato_${card.nome || card.id}.docx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+          } catch {
+            window.open(data.file_url, "_blank");
+          }
+        }
         onUpdate(card.id, {
           contrato_status: "gerado" as ContractStatus,
           contrato_file_url: data.file_url,
           contrato_preparado_em: new Date().toISOString(),
+          stage: "link_enviado" as const,
+        });
+      } else if (action === "whatsapp") {
+        toast.success("📱 Contrato gerado! Abrindo WhatsApp Web...");
+        if (data.whatsapp_url) {
+          window.open(data.whatsapp_url, "_blank");
+        }
+        onUpdate(card.id, {
+          contrato_status: "enviado_whatsapp" as ContractStatus,
+          contrato_file_url: data.file_url,
+          contrato_preparado_em: new Date().toISOString(),
+          stage: "link_enviado" as const,
         });
       }
     } catch (e: any) {
       toast.error(e.message || "Erro ao gerar contrato");
     } finally {
-      setGenerating(false);
+      setActionLoading(null);
     }
   };
 
-  const handleDownload = async (url: string, fileName: string) => {
+  const handleDownloadFile = async (url: string, fileName: string) => {
     try {
       const res = await fetch(url);
       const blob = await res.blob();
@@ -194,6 +239,7 @@ export function ContractTab({ card, onUpdate }: Props) {
 
   const handleRegenerate = () => {
     onUpdate(card.id, { contrato_status: "pendente" as ContractStatus, contrato_file_url: null, contract_url: null });
+    setLastResult(null);
   };
 
   const updateField = (key: string, value: string) => {
@@ -238,23 +284,27 @@ export function ContractTab({ card, onUpdate }: Props) {
           </div>
         )}
 
-        {/* ZapSign link */}
         {card.contrato_status === "enviado" && card.contract_url && (
           <a href={card.contract_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors border border-amber-500/20 w-fit">
             <ExternalLink size={16} />Ver no ZapSign
           </a>
         )}
 
-        {/* Download Word */}
+        {card.contrato_status === "enviado_whatsapp" && (
+          <p className="text-xs text-muted-foreground bg-emerald-500/10 rounded-lg p-3 border border-emerald-500/20">
+            📱 Contrato enviado via WhatsApp. O link de download expira em 7 dias.
+          </p>
+        )}
+
         {card.contrato_file_url && (
-          <button onClick={() => handleDownload(card.contrato_file_url!, `contrato_${card.nome || card.id}.docx`)} className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20 w-fit">
+          <button onClick={() => handleDownloadFile(card.contrato_file_url!, `contrato_${card.nome || card.id}.docx`)} className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20 w-fit">
             <Download size={16} />Baixar Word
           </button>
         )}
 
         {card.contrato_status === "gerado" && (
           <p className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-3 border border-border/50">
-            ⚠️ Não foi possível enviar automaticamente ao ZapSign. Faça o download do Word e suba manualmente.
+            📄 Contrato gerado e disponível para download.
           </p>
         )}
 
@@ -413,14 +463,102 @@ export function ContractTab({ card, onUpdate }: Props) {
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-2">
-            <button onClick={saveFields} className="text-sm px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground transition-colors border border-border">
-              Salvar Dados
-            </button>
-            <button onClick={handleGenerate} disabled={generating} className="flex-1 text-sm px-4 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
-              {generating ? <><Loader2 size={16} className="animate-spin" />Gerando e enviando ao ZapSign...</> : <><FileSignature size={16} />Gerar Contrato</>}
-            </button>
+          {/* Actions - 3 buttons */}
+          <div className="pt-2 space-y-3">
+            <div className="flex gap-2">
+              <button onClick={saveFields} className="text-sm px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground transition-colors border border-border">
+                Salvar Dados
+              </button>
+            </div>
+
+            <p className="text-xs font-medium text-foreground uppercase tracking-wider">Como deseja prosseguir com o contrato?</p>
+
+            {!isFormValid() && (
+              <p className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-3 border border-border/50">
+                ⚠️ Preencha todos os campos obrigatórios para habilitar as opções abaixo.
+              </p>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* ZapSign */}
+              <button
+                onClick={() => handleAction("zapsign")}
+                disabled={actionLoading !== null || !isFormValid()}
+                className="flex flex-col items-center gap-1.5 px-4 py-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-40 border border-primary/20"
+              >
+                {actionLoading === "zapsign" ? <Loader2 size={20} className="animate-spin" /> : <FileSignature size={20} />}
+                <span className="text-sm font-medium">{actionLoading === "zapsign" ? "Enviando..." : "Enviar para ZapSign"}</span>
+                <span className="text-[10px] opacity-70">Assinatura eletrônica</span>
+              </button>
+
+              {/* Download */}
+              <button
+                onClick={() => handleAction("download")}
+                disabled={actionLoading !== null || !isFormValid()}
+                className="flex flex-col items-center gap-1.5 px-4 py-4 rounded-xl bg-muted text-foreground hover:bg-muted/80 transition-all disabled:opacity-40 border border-border"
+              >
+                {actionLoading === "download" ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
+                <span className="text-sm font-medium">{actionLoading === "download" ? "Gerando..." : "Criar e Baixar"}</span>
+                <span className="text-[10px] text-muted-foreground">Download do .docx</span>
+              </button>
+
+              {/* WhatsApp */}
+              <button
+                onClick={() => handleAction("whatsapp")}
+                disabled={actionLoading !== null || !isFormValid()}
+                className="flex flex-col items-center gap-1.5 px-4 py-4 rounded-xl text-white hover:opacity-90 transition-all disabled:opacity-40 border border-emerald-600/30"
+                style={{ backgroundColor: "#25D366" }}
+              >
+                {actionLoading === "whatsapp" ? <Loader2 size={20} className="animate-spin" /> : <MessageCircle size={20} />}
+                <span className="text-sm font-medium">{actionLoading === "whatsapp" ? "Gerando..." : "Enviar via WhatsApp"}</span>
+                <span className="text-[10px] opacity-80">Abre WhatsApp Web</span>
+              </button>
+            </div>
+
+            {/* Post-action feedback */}
+            {lastResult && (
+              <div className="rounded-lg border p-3 space-y-1.5 bg-muted/20 border-border">
+                {lastResult.action === "zapsign" && lastResult.data.zapsign_sent && (
+                  <>
+                    <p className="text-sm text-foreground">✅ Contrato enviado para assinatura via ZapSign</p>
+                    {lastResult.data.sign_url && (
+                      <a href={lastResult.data.sign_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
+                        <ExternalLink size={12} />Abrir link de assinatura
+                      </a>
+                    )}
+                  </>
+                )}
+                {lastResult.action === "download" && (
+                  <>
+                    <p className="text-sm text-foreground">✅ Contrato gerado com sucesso</p>
+                    <p className="text-xs text-muted-foreground">📥 O download foi iniciado automaticamente</p>
+                    {lastResult.data.file_url && (
+                      <button onClick={() => handleDownloadFile(lastResult.data.file_url, `contrato_${card.nome || card.id}.docx`)} className="text-xs text-primary hover:underline flex items-center gap-1">
+                        <Download size={12} />Baixar novamente
+                      </button>
+                    )}
+                  </>
+                )}
+                {lastResult.action === "whatsapp" && (
+                  <>
+                    <p className="text-sm text-foreground">✅ Contrato gerado com sucesso</p>
+                    <p className="text-xs text-muted-foreground">📱 WhatsApp Web foi aberto em nova aba</p>
+                    <div className="flex gap-3">
+                      {lastResult.data.whatsapp_url && (
+                        <a href={lastResult.data.whatsapp_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
+                          <MessageCircle size={12} />Abrir WhatsApp novamente
+                        </a>
+                      )}
+                      {lastResult.data.file_url && (
+                        <button onClick={() => handleDownloadFile(lastResult.data.file_url, `contrato_${card.nome || card.id}.docx`)} className="text-xs text-primary hover:underline flex items-center gap-1">
+                          <Download size={12} />Baixar contrato
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {errors.length > 0 && (
