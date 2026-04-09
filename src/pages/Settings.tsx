@@ -29,6 +29,8 @@ export default function Settings() {
   const { labels, createLabel, deleteLabel, updateLabel } = useLabels();
   const { rules, upsertRule } = useSlaRules();
   const { motivos, createMotivo, updateMotivo, toggleAtivo } = useMotivosPerda();
+  const { overrides, upsert: upsertOverride, getOverride } = useMarketingOverrides();
+  const { months: marketingMonths } = useMarketingData();
   const { toast } = useToast();
 
   const [newName, setNewName] = useState("");
@@ -36,11 +38,15 @@ export default function Settings() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState("");
-  const [activeSection, setActiveSection] = useState<"etiquetas" | "sla" | "motivos">("etiquetas");
+  const [activeSection, setActiveSection] = useState<"etiquetas" | "sla" | "motivos" | "metricas">("etiquetas");
 
   // Motivos de perda state
   const [newMotivoNome, setNewMotivoNome] = useState("");
   const [newMotivoCategoria, setNewMotivoCategoria] = useState("Outros");
+
+  // Marketing overrides state
+  const [selectedOverrideMonth, setSelectedOverrideMonth] = useState("");
+  const [overrideForm, setOverrideForm] = useState<Record<string, string>>({});
 
   if (!isAdmin) return <Navigate to="/pipeline" replace />;
 
