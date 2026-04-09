@@ -3,8 +3,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLabels } from "@/hooks/useLabels";
 import { useSlaRules, type SlaRule } from "@/hooks/useSlaRules";
 import { useMotivosPerda } from "@/hooks/useMotivosPerda";
+import { useMarketingOverrides, type MarketingOverride } from "@/hooks/useMarketingOverrides";
+import { useMarketingData } from "@/hooks/useMarketingData";
 import { Navigate } from "react-router-dom";
-import { Plus, Trash2, Palette, Tag, Settings as SettingsIcon, X, Clock, AlertTriangle, Shield } from "lucide-react";
+import { Plus, Trash2, Palette, Tag, Settings as SettingsIcon, X, Clock, AlertTriangle, Shield, BarChart3, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { STAGE_ORDER, STAGE_CONFIG } from "@/components/pipeline/types";
 import { useToast } from "@/hooks/use-toast";
@@ -27,6 +29,8 @@ export default function Settings() {
   const { labels, createLabel, deleteLabel, updateLabel } = useLabels();
   const { rules, upsertRule } = useSlaRules();
   const { motivos, createMotivo, updateMotivo, toggleAtivo } = useMotivosPerda();
+  const { overrides, upsert: upsertOverride, getOverride } = useMarketingOverrides();
+  const { months: marketingMonths } = useMarketingData();
   const { toast } = useToast();
 
   const [newName, setNewName] = useState("");
@@ -34,11 +38,15 @@ export default function Settings() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState("");
-  const [activeSection, setActiveSection] = useState<"etiquetas" | "sla" | "motivos">("etiquetas");
+  const [activeSection, setActiveSection] = useState<"etiquetas" | "sla" | "motivos" | "metricas">("etiquetas");
 
   // Motivos de perda state
   const [newMotivoNome, setNewMotivoNome] = useState("");
   const [newMotivoCategoria, setNewMotivoCategoria] = useState("Outros");
+
+  // Marketing overrides state
+  const [selectedOverrideMonth, setSelectedOverrideMonth] = useState("");
+  const [overrideForm, setOverrideForm] = useState<Record<string, string>>({});
 
   if (!isAdmin) return <Navigate to="/pipeline" replace />;
 
@@ -75,10 +83,47 @@ export default function Settings() {
     setNewMotivoCategoria("Outros");
   };
 
+  const handleSelectOverrideMonth = (monthRaw: string) => {
+    setSelectedOverrideMonth(monthRaw);
+    const existing = overrides.find(o => o.month === monthRaw);
+    const fields = ["manual_mensagens","manual_reunioes","manual_vendas","manual_faturamento","manual_impressoes","manual_cliques","manual_investimento","manual_ctr","manual_cpc","manual_cpm"];
+    const form: Record<string, string> = {};
+    for (const f of fields) {
+      const val = existing?.[f as keyof MarketingOverride];
+      form[f] = val != null ? String(val) : "";
+    }
+    setOverrideForm(form);
+  };
+
+  const handleSaveOverrides = async () => {
+    if (!selectedOverrideMonth) return;
+    const fields: Record<string, number | null> = {};
+    const keys = ["manual_mensagens","manual_reunioes","manual_vendas","manual_faturamento","manual_impressoes","manual_cliques","manual_investimento","manual_ctr","manual_cpc","manual_cpm"];
+    for (const k of keys) {
+      const v = overrideForm[k]?.trim();
+      fields[k] = v ? parseFloat(v.replace(",", ".")) : null;
+    }
+    await upsertOverride(selectedOverrideMonth, fields);
+  };
+
+  const OVERRIDE_FIELDS = [
+    { key: "manual_investimento", label: "Investimento (R$)" },
+    { key: "manual_impressoes", label: "Impressões" },
+    { key: "manual_cliques", label: "Cliques" },
+    { key: "manual_ctr", label: "CTR (%)" },
+    { key: "manual_cpc", label: "CPC (R$)" },
+    { key: "manual_cpm", label: "CPM (R$)" },
+    { key: "manual_mensagens", label: "Mensagens" },
+    { key: "manual_reunioes", label: "Reuniões Realizadas" },
+    { key: "manual_vendas", label: "Vendas" },
+    { key: "manual_faturamento", label: "Faturamento (R$)" },
+  ];
+
   const sections = [
     { key: "etiquetas" as const, label: "Etiquetas", icon: Tag },
     { key: "sla" as const, label: "Regras de SLA", icon: Clock },
     { key: "motivos" as const, label: "Motivos de Perda", icon: AlertTriangle },
+    { key: "metricas" as const, label: "Métricas Marketing", icon: BarChart3 },
   ];
 
   return (
@@ -301,6 +346,65 @@ export default function Settings() {
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Marketing Metrics Override Section */}
+      {activeSection === "metricas" && (
+        <div className="border border-border rounded-2xl bg-card overflow-hidden">
+          <div className="p-4 border-b border-border bg-muted/30">
+            <div className="flex items-center gap-2">
+              <BarChart3 size={16} className="text-primary" />
+              <h2 className="text-sm font-semibold text-foreground">Métricas de Marketing</h2>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Edite manualmente os valores de métricas por mês. Valores em branco usam os dados automáticos do sistema.
+            </p>
+          </div>
+          <div className="p-4 space-y-4">
+            {/* Month selector */}
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Selecione o mês</label>
+              <select
+                value={selectedOverrideMonth}
+                onChange={e => handleSelectOverrideMonth(e.target.value)}
+                className="text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground w-full max-w-xs"
+              >
+                <option value="">Selecionar...</option>
+                {marketingMonths.filter(m => m.source === "dynamic").map(m => (
+                  <option key={m.key} value={m.raw}>{m.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {selectedOverrideMonth && (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {OVERRIDE_FIELDS.map(f => (
+                    <div key={f.key}>
+                      <label className="text-[11px] text-muted-foreground block mb-1">{f.label}</label>
+                      <input
+                        type="text"
+                        value={overrideForm[f.key] || ""}
+                        onChange={e => setOverrideForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                        placeholder="Automático"
+                        className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground/50"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleSaveOverrides}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-all"
+                  >
+                    <Save size={14} />
+                    Salvar Métricas
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { MetricCard } from "@/components/MetricCard";
 import { TrafficFunnel } from "@/components/TrafficFunnel";
@@ -24,6 +24,7 @@ import { SalesPieChart } from "@/components/SalesPieChart";
 import { usePipelineData } from "@/components/pipeline/usePipelineData";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMarketingData } from "@/hooks/useMarketingData";
+import { useMarketingOverrides } from "@/hooks/useMarketingOverrides";
 
 const Index = () => {
   const location = useLocation();
@@ -33,8 +34,18 @@ const Index = () => {
   const { cards, goals } = usePipelineData(pipelineName);
   const pipelineOwners = [...new Set(cards.map(c => c.owner).filter(Boolean))] as string[];
 
-  // Dynamic marketing data
-  const { months: dynamicMonths, defaultMonth, getMonthData, getPreviousMonthData, getLeadMetrics, getPreviousLeadMetrics, loading: marketingLoading } = useMarketingData();
+  // Marketing overrides from internal DB
+  const { overrides: overridesList } = useMarketingOverrides();
+  const overridesMap = useMemo(() => {
+    const map: Record<string, any> = {};
+    for (const o of overridesList) {
+      map[o.month] = o;
+    }
+    return map;
+  }, [overridesList]);
+
+  // Dynamic marketing data with overrides
+  const { months: dynamicMonths, defaultMonth, getMonthData, getPreviousMonthData, getLeadMetrics, getPreviousLeadMetrics, loading: marketingLoading } = useMarketingData(overridesMap);
 
   const [selectedMonth, setSelectedMonth] = useState<string>("");
 
