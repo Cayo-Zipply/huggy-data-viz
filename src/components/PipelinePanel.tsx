@@ -16,6 +16,7 @@ import { HandoffChecklist } from "./pipeline/HandoffChecklist";
 import { LeadDrawer } from "./pipeline/LeadDrawer";
 import { CLOSERS, SDR_STAGES, CLOSER_STAGES, STAGE_CONFIG, STAGE_ORDER } from "./pipeline/types";
 import type { PipelineCard, Stage } from "./pipeline/types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLabels } from "@/hooks/useLabels";
@@ -67,6 +68,7 @@ export function PipelinePanel() {
   const [showNewLead, setShowNewLead] = useState(false);
   const [newLeadName, setNewLeadName] = useState("");
   const [newLeadPhone, setNewLeadPhone] = useState("");
+  const [newLeadStage, setNewLeadStage] = useState<Stage>("conectado");
   const [selectedCardId, setSelectedCardId] = useState<string | null>(() => sessionStorage.getItem(PIPELINE_UI_KEYS.selectedCardId) || null);
   const [drawerOpen, setDrawerOpen] = useState(() => sessionStorage.getItem(PIPELINE_UI_KEYS.drawerOpen) === "true");
   const [noShowPending, setNoShowPending] = useState<{ cardId: string; date: Date | undefined } | null>(null);
@@ -216,6 +218,7 @@ export function PipelinePanel() {
       nome: newLeadName,
       telefone: newLeadPhone || null,
       owner: showAllOwners ? currentUserName : activeUser,
+      stage: newLeadStage,
     });
     if (result?.duplicate) {
       toast({
@@ -225,7 +228,7 @@ export function PipelinePanel() {
       });
       return;
     }
-    setNewLeadName(""); setNewLeadPhone(""); setShowNewLead(false);
+    setNewLeadName(""); setNewLeadPhone(""); setNewLeadStage("conectado"); setShowNewLead(false);
     toast({ title: "Lead criado!" });
   };
 
@@ -521,9 +524,19 @@ export function PipelinePanel() {
       </div>
 
       {showNewLead && (
-        <div className="border border-border rounded-2xl bg-card p-3 shadow-sm flex flex-col sm:flex-row gap-2">
+        <div className="border border-border rounded-2xl bg-card p-3 shadow-sm flex flex-col sm:flex-row gap-2 items-center">
           <input value={newLeadName} onChange={e => setNewLeadName(e.target.value)} placeholder="Nome do lead"
             className="flex-1 text-xs bg-muted/50 border border-border rounded px-3 py-2 text-foreground" autoFocus />
+          <Select value={newLeadStage} onValueChange={(v) => setNewLeadStage(v as Stage)}>
+            <SelectTrigger className="sm:w-48 text-xs h-9">
+              <SelectValue placeholder="Etapa" />
+            </SelectTrigger>
+            <SelectContent>
+              {STAGE_ORDER.map(s => (
+                <SelectItem key={s} value={s} className="text-xs">{STAGE_CONFIG[s].label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <input value={newLeadPhone} onChange={e => setNewLeadPhone(e.target.value)} placeholder="Telefone"
             className="sm:w-40 text-xs bg-muted/50 border border-border rounded px-3 py-2 text-foreground" />
           <button onClick={addLead} className="text-xs px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90">Criar</button>

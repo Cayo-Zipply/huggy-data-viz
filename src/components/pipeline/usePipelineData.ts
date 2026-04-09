@@ -33,15 +33,15 @@ function mapStatus(status: string | null): "aberto" | "ganho" | "perdido" {
 
 function stageToEtapa(stage: Stage): string {
   const map: Record<Stage, string> = {
-    fez_contato: "fez contato",
-    conectado: "conectado",
-    sql: "sql",
-    reuniao_marcada: "reunião marcada",
-    reuniao_agendada: "reunião agendada",
-    no_show: "no show",
-    reuniao_realizada: "reunião realizada",
-    link_enviado: "link enviado",
-    contrato_assinado: "contrato assinado",
+    fez_contato: "Fez Contato",
+    conectado: "Conectado",
+    sql: "SQL",
+    reuniao_marcada: "Reunião Marcada",
+    reuniao_agendada: "Reunião Agendada",
+    no_show: "No Show",
+    reuniao_realizada: "Reunião Realizada",
+    link_enviado: "Link Enviado",
+    contrato_assinado: "Contrato Assinado",
   };
   return map[stage] || stage;
 }
