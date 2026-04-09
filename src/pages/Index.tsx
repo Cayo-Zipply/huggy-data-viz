@@ -34,7 +34,7 @@ const Index = () => {
   const pipelineOwners = [...new Set(cards.map(c => c.owner).filter(Boolean))] as string[];
 
   // Dynamic marketing data
-  const { months: dynamicMonths, defaultMonth, getMonthData, getPreviousMonthData, loading: marketingLoading } = useMarketingData();
+  const { months: dynamicMonths, defaultMonth, getMonthData, getPreviousMonthData, getLeadMetrics, getPreviousLeadMetrics, loading: marketingLoading } = useMarketingData();
 
   const [selectedMonth, setSelectedMonth] = useState<string>("");
 
@@ -47,38 +47,37 @@ const Index = () => {
 
   const currentData = getMonthData(selectedMonth);
   const previousData = getPreviousMonthData(selectedMonth);
+  const currentLeadMetrics = getLeadMetrics(selectedMonth);
+  const previousLeadMetrics = getPreviousLeadMetrics(selectedMonth);
 
   const getVariation = (current: number, previous: number | undefined) => {
     if (!previous) return undefined;
     return calculateVariation(current, previous);
   };
 
-  // Derived values from currentData
+  // Derived values from currentData + lead metrics
   const cliques = currentData ? Math.round((currentData.impressoes * currentData.ctr) / 100) : 0;
-  const conversaoGeral = currentData && currentData.mensagensEfetivas > 0
-    ? (currentData.vendas / currentData.mensagensEfetivas) * 100
+  const conversaoGeral = currentLeadMetrics.mensagens > 0
+    ? (currentLeadMetrics.vendas / currentLeadMetrics.mensagens) * 100
     : 0;
-  const previousConversaoGeral = previousData && previousData.mensagensEfetivas > 0
-    ? (previousData.vendas / previousData.mensagensEfetivas) * 100
+  const previousConversaoGeral = previousLeadMetrics && previousLeadMetrics.mensagens > 0
+    ? (previousLeadMetrics.vendas / previousLeadMetrics.mensagens) * 100
     : undefined;
 
-  const currentSales = salesData[selectedMonth];
-  const reunioesRealizadas = currentSales?.funnel.reunioes.realizado || 0;
+  const reunioesRealizadas = currentLeadMetrics.reunioesRealizadas;
   const custoPorReuniao = reunioesRealizadas > 0 && currentData
     ? currentData.investimento / reunioesRealizadas
     : 0;
-  const prevKey = previousData ? Object.keys(salesData).find(k => salesData[k] && previousData.month.toLowerCase().startsWith(k.substring(0, 3))) : null;
-  const prevSales = prevKey ? salesData[prevKey] : null;
-  const prevReunioes = prevSales?.funnel.reunioes.realizado || 0;
+  const prevReunioes = previousLeadMetrics?.reunioesRealizadas || 0;
   const prevCustoPorReuniao = prevReunioes > 0 && previousData
     ? previousData.investimento / prevReunioes
     : undefined;
 
-  const conversaoReunioes = reunioesRealizadas > 0 && currentSales
-    ? (currentSales.funnel.contratos.realizado / reunioesRealizadas) * 100
+  const conversaoReunioes = reunioesRealizadas > 0
+    ? (currentLeadMetrics.vendas / reunioesRealizadas) * 100
     : 0;
-  const prevConversaoReunioes = prevReunioes > 0 && prevSales
-    ? (prevSales.funnel.contratos.realizado / prevReunioes) * 100
+  const prevConversaoReunioes = prevReunioes > 0 && previousLeadMetrics
+    ? (previousLeadMetrics.vendas / prevReunioes) * 100
     : undefined;
 
   if (!selectedMonth) return null;
@@ -109,8 +108,8 @@ const Index = () => {
                 <MetricCard title="Impressoes" value={formatNumber(currentData.impressoes)} variation={getVariation(currentData.impressoes, previousData?.impressoes)} delay={50} />
                 <MetricCard title={metricTooltips.ctr.label} value={formatPercent(currentData.ctr)} variation={getVariation(currentData.ctr, previousData?.ctr)} tooltip={metricTooltips.ctr.tooltip} delay={100} />
                 <MetricCard title={metricTooltips.cpc.label} value={formatCurrency(currentData.cpc)} variation={getVariation(currentData.cpc, previousData?.cpc)} invertColors tooltip={metricTooltips.cpc.tooltip} delay={150} />
-                <MetricCard title="Mensagens" value={formatNumber(currentData.mensagens)} variation={getVariation(currentData.mensagens, previousData?.mensagens)} delay={200} />
-                <MetricCard title="Mensagens Efetivas" value={formatNumber(currentData.mensagensEfetivas)} variation={getVariation(currentData.mensagensEfetivas, previousData?.mensagensEfetivas)} delay={225} />
+                <MetricCard title="Mensagens" value={formatNumber(currentLeadMetrics.mensagens)} variation={getVariation(currentLeadMetrics.mensagens, previousLeadMetrics?.mensagens)} delay={200} />
+                <MetricCard title="Mensagens Efetivas" value={formatNumber(currentLeadMetrics.mensagensEfetivas)} variation={getVariation(currentLeadMetrics.mensagensEfetivas, previousLeadMetrics?.mensagensEfetivas)} delay={225} />
               </div>
 
               {/* Segunda linha de metricas */}
@@ -126,8 +125,8 @@ const Index = () => {
 
               {/* Funil de trafego */}
               <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
-                <TrafficFunnel impressoes={currentData.impressoes} cliques={cliques} mensagens={currentData.mensagens} vendas={currentData.vendas} />
-                <ROICard investimento={currentData.investimento} faturamento={currentData.faturamento} vendas={currentData.vendas} diasUteis={currentData.diasUteis} />
+                <TrafficFunnel impressoes={currentData.impressoes} cliques={cliques} mensagens={currentLeadMetrics.mensagens} vendas={currentLeadMetrics.vendas} />
+                <ROICard investimento={currentData.investimento} faturamento={currentLeadMetrics.faturamento} vendas={currentLeadMetrics.vendas} diasUteis={currentData.diasUteis} />
               </div>
             </>
           )}
