@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
-import type { PipelineCard as CardType, ContractType, ContractStatus } from "./types";
+import type { PipelineCard as CardType, ContractType, ContractStatus, Stage } from "./types";
 import { formatBRL } from "./types";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -166,7 +166,7 @@ export function ContractTab({ card, onUpdate }: Props) {
             contrato_file_url: data.file_url,
             contract_url: data.sign_url,
             contrato_preparado_em: new Date().toISOString(),
-            stage: "link_enviado" as const,
+            stage: "link_enviado" as Stage,
           });
         } else {
           toast.warning(`⚠️ ${data.message}`);
@@ -210,7 +210,7 @@ export function ContractTab({ card, onUpdate }: Props) {
           contrato_status: "enviado_whatsapp" as ContractStatus,
           contrato_file_url: data.file_url,
           contrato_preparado_em: new Date().toISOString(),
-          stage: "link_enviado" as const,
+          stage: "link_enviado" as Stage,
         });
       }
     } catch (e: any) {
