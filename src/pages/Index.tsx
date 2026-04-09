@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { MetricCard } from "@/components/MetricCard";
 import { TrafficFunnel } from "@/components/TrafficFunnel";
-import { ROICard } from "@/components/ROICard";
+// ROICard metrics now integrated into TrafficFunnel
 import { PerformanceChart } from "@/components/PerformanceChart";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { SalesFunnel } from "@/components/SalesFunnel";
@@ -149,10 +149,15 @@ const Index = () => {
               </div>
 
               {/* Funil de trafego */}
-              <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
-                <TrafficFunnel impressoes={currentData.impressoes} cliques={cliques} mensagens={effectiveMensagens} vendas={effectiveVendas} />
-                <ROICard investimento={currentData.investimento} faturamento={effectiveFaturamento} vendas={effectiveVendas} diasUteis={currentData.diasUteis} />
-              </div>
+              <TrafficFunnel
+                impressoes={currentData.impressoes}
+                cliques={cliques}
+                mensagens={effectiveMensagens}
+                reunioes={reunioesRealizadas}
+                vendas={effectiveVendas}
+                investimento={currentData.investimento}
+                faturamento={effectiveFaturamento}
+              />
             </>
           )}
 
