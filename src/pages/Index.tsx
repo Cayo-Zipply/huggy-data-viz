@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { MetricCard } from "@/components/MetricCard";
 import { TrafficFunnel } from "@/components/TrafficFunnel";
-import { ROICard } from "@/components/ROICard";
+// ROICard metrics now integrated into TrafficFunnel
 import { PerformanceChart } from "@/components/PerformanceChart";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { SalesFunnel } from "@/components/SalesFunnel";
