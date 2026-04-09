@@ -108,8 +108,8 @@ const Index = () => {
                 <MetricCard title="Impressoes" value={formatNumber(currentData.impressoes)} variation={getVariation(currentData.impressoes, previousData?.impressoes)} delay={50} />
                 <MetricCard title={metricTooltips.ctr.label} value={formatPercent(currentData.ctr)} variation={getVariation(currentData.ctr, previousData?.ctr)} tooltip={metricTooltips.ctr.tooltip} delay={100} />
                 <MetricCard title={metricTooltips.cpc.label} value={formatCurrency(currentData.cpc)} variation={getVariation(currentData.cpc, previousData?.cpc)} invertColors tooltip={metricTooltips.cpc.tooltip} delay={150} />
-                <MetricCard title="Mensagens" value={formatNumber(currentData.mensagens)} variation={getVariation(currentData.mensagens, previousData?.mensagens)} delay={200} />
-                <MetricCard title="Mensagens Efetivas" value={formatNumber(currentData.mensagensEfetivas)} variation={getVariation(currentData.mensagensEfetivas, previousData?.mensagensEfetivas)} delay={225} />
+                <MetricCard title="Mensagens" value={formatNumber(currentLeadMetrics.mensagens)} variation={getVariation(currentLeadMetrics.mensagens, previousLeadMetrics?.mensagens)} delay={200} />
+                <MetricCard title="Mensagens Efetivas" value={formatNumber(currentLeadMetrics.mensagensEfetivas)} variation={getVariation(currentLeadMetrics.mensagensEfetivas, previousLeadMetrics?.mensagensEfetivas)} delay={225} />
               </div>
 
               {/* Segunda linha de metricas */}
@@ -125,8 +125,8 @@ const Index = () => {
 
               {/* Funil de trafego */}
               <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
-                <TrafficFunnel impressoes={currentData.impressoes} cliques={cliques} mensagens={currentData.mensagens} vendas={currentData.vendas} />
-                <ROICard investimento={currentData.investimento} faturamento={currentData.faturamento} vendas={currentData.vendas} diasUteis={currentData.diasUteis} />
+                <TrafficFunnel impressoes={currentData.impressoes} cliques={cliques} mensagens={currentLeadMetrics.mensagens} vendas={currentLeadMetrics.vendas} />
+                <ROICard investimento={currentData.investimento} faturamento={currentLeadMetrics.faturamento} vendas={currentLeadMetrics.vendas} diasUteis={currentData.diasUteis} />
               </div>
             </>
           )}
