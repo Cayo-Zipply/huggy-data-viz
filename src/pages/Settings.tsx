@@ -350,6 +350,65 @@ export default function Settings() {
           </div>
         </div>
       )}
+
+      {/* Marketing Metrics Override Section */}
+      {activeSection === "metricas" && (
+        <div className="border border-border rounded-2xl bg-card overflow-hidden">
+          <div className="p-4 border-b border-border bg-muted/30">
+            <div className="flex items-center gap-2">
+              <BarChart3 size={16} className="text-primary" />
+              <h2 className="text-sm font-semibold text-foreground">Métricas de Marketing</h2>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Edite manualmente os valores de métricas por mês. Valores em branco usam os dados automáticos do sistema.
+            </p>
+          </div>
+          <div className="p-4 space-y-4">
+            {/* Month selector */}
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1">Selecione o mês</label>
+              <select
+                value={selectedOverrideMonth}
+                onChange={e => handleSelectOverrideMonth(e.target.value)}
+                className="text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground w-full max-w-xs"
+              >
+                <option value="">Selecionar...</option>
+                {marketingMonths.filter(m => m.source === "dynamic").map(m => (
+                  <option key={m.key} value={m.raw}>{m.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {selectedOverrideMonth && (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {OVERRIDE_FIELDS.map(f => (
+                    <div key={f.key}>
+                      <label className="text-[11px] text-muted-foreground block mb-1">{f.label}</label>
+                      <input
+                        type="text"
+                        value={overrideForm[f.key] || ""}
+                        onChange={e => setOverrideForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                        placeholder="Automático"
+                        className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground/50"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleSaveOverrides}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-all"
+                  >
+                    <Save size={14} />
+                    Salvar Métricas
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
