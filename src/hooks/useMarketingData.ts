@@ -14,14 +14,12 @@ interface MetaAdsRow {
   total_conversions: number;
 }
 
-interface PipelineCard {
+interface ExternalLead {
   id: string;
-  created_at: string;
-  lead_status: string | null;
-  deal_value: number | null;
-  sdr_stage: string | null;
-  closer_stage: string | null;
-  pipe: string;
+  data_entrada: string | null;
+  status: string | null;
+  etapa_atual: string | null;
+  valor_negocio: number | null;
 }
 
 export interface LeadMetrics {
@@ -55,25 +53,28 @@ function monthLabelFromDate(dateStr: string): string {
   return `${MONTH_NAMES_PT[d.getMonth() + 1]} ${d.getFullYear()}`;
 }
 
-function isReuniaoMarcada(card: PipelineCard): boolean {
-  if (card.sdr_stage === "reuniao_marcada") return true;
-  if (card.pipe === "closer" && card.closer_stage) return true;
-  return false;
+const REUNIOES_KEYWORDS = ["Reunião", "Reuniao", "No Show", "Link Enviado", "Contrato Assinado"];
+
+function isReuniaoMarcada(etapa: string | null): boolean {
+  if (!etapa) return false;
+  return REUNIOES_KEYWORDS.some(k => etapa.includes(k.split(" ")[0]));
 }
 
-function isReuniaoRealizada(card: PipelineCard): boolean {
-  if (card.lead_status === "ganho") return true;
-  if (card.closer_stage && ["reuniao_realizada", "no_show", "link_enviado", "contrato_assinado"].includes(card.closer_stage)) return true;
-  return false;
+function isReuniaoRealizada(lead: ExternalLead): boolean {
+  if (lead.status === "ganho") return true;
+  const etapa = lead.etapa_atual;
+  if (!etapa) return false;
+  const realizadaKeywords = ["Realizada", "No Show", "Link Enviado", "Contrato Assinado"];
+  return realizadaKeywords.some(k => etapa.includes(k.split(" ")[0]));
 }
 
-function computeLeadMetrics(cards: PipelineCard[]): LeadMetrics {
-  const mensagens = cards.length;
-  const reunioesMarcadas = cards.filter(isReuniaoMarcada).length;
-  const reunioesRealizadas = cards.filter(isReuniaoRealizada).length;
-  const ganhos = cards.filter(c => c.lead_status === "ganho");
+function computeLeadMetrics(leads: ExternalLead[]): LeadMetrics {
+  const mensagens = leads.length;
+  const reunioesMarcadas = leads.filter(l => isReuniaoMarcada(l.etapa_atual)).length;
+  const reunioesRealizadas = leads.filter(l => isReuniaoRealizada(l)).length;
+  const ganhos = leads.filter(l => l.status === "ganho");
   const vendas = ganhos.length;
-  const faturamento = ganhos.reduce((sum, c) => sum + (c.deal_value || 0), 0);
+  const faturamento = ganhos.reduce((sum, l) => sum + (Number(l.valor_negocio) || 0), 0);
   const ticketMedio = vendas > 0 ? faturamento / vendas : 0;
   return { mensagens, mensagensEfetivas: mensagens, reunioesMarcadas, reunioesRealizadas, vendas, faturamento, ticketMedio };
 }
@@ -89,37 +90,37 @@ export interface MonthOption {
 
 export function useMarketingData() {
   const [rows, setRows] = useState<MetaAdsRow[]>([]);
-  const [allCards, setAllCards] = useState<PipelineCard[]>([]);
+  const [allLeads, setAllLeads] = useState<ExternalLead[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const [adsRes, cardsRes] = await Promise.all([
+      const [adsRes, leadsRes] = await Promise.all([
         supabaseExt.from("meta_ads_monthly").select("*").order("month", { ascending: false }),
-        supabaseExt.from("pipeline_cards").select("id, created_at, lead_status, deal_value, sdr_stage, closer_stage, pipe"),
+        supabaseExt.from("leads").select("id, data_entrada, status, etapa_atual, valor_negocio"),
       ]);
       if (!adsRes.error && adsRes.data) setRows(adsRes.data as MetaAdsRow[]);
-      if (!cardsRes.error && cardsRes.data) setAllCards(cardsRes.data as PipelineCard[]);
+      if (!leadsRes.error && leadsRes.data) setAllLeads(leadsRes.data as ExternalLead[]);
       setLoading(false);
     })();
   }, []);
 
-  const cardsByMonth = useMemo(() => {
-    const map: Record<string, PipelineCard[]> = {};
-    for (const card of allCards) {
-      const d = new Date(card.created_at);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      if (!map[key]) map[key] = [];
-      map[key].push(card);
+  // Group leads by YYYY-MM
+  const leadsByMonth = useMemo(() => {
+    const map: Record<string, ExternalLead[]> = {};
+    for (const lead of allLeads) {
+      if (!lead.data_entrada) continue;
+      const prefix = lead.data_entrada.slice(0, 7); // "2026-04"
+      if (!map[prefix]) map[prefix] = [];
+      map[prefix].push(lead);
     }
     return map;
-  }, [allCards]);
+  }, [allLeads]);
 
   // Only dynamic rows from March 2025 onwards
   const dynamicRows = useMemo(() => rows.filter(r => new Date(r.month + "T00:00:00") >= HARDCODED_CUTOFF), [rows]);
 
   const months = useMemo<MonthOption[]>(() => {
-    // Dynamic months (Mar 2025+) from Supabase
     const dynamic: MonthOption[] = dynamicRows.map(r => ({
       key: monthKeyFromDate(r.month),
       label: monthLabelFromDate(r.month),
@@ -127,7 +128,6 @@ export function useMarketingData() {
       source: "dynamic" as const,
     }));
 
-    // Hardcoded months (Sep 2024 – Feb 2025)
     const hardcoded: MonthOption[] = Object.entries(hardcodedData).map(([key, d]) => ({
       key,
       label: `${d.month} ${d.year}`,
@@ -135,28 +135,24 @@ export function useMarketingData() {
       source: "hardcoded" as const,
     }));
 
-    // Dynamic first (newest), then hardcoded (already ordered newest first)
     return [...dynamic, ...hardcoded];
   }, [dynamicRows]);
 
   const defaultMonth = months.length > 0 ? months[0].key : "fevereiro";
 
   const getLeadMetricsForRawDate = (rawDate: string): LeadMetrics => {
-    const d = new Date(rawDate + "T00:00:00");
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    return computeLeadMetrics(cardsByMonth[key] || []);
+    const prefix = rawDate.slice(0, 7); // "2026-04"
+    return computeLeadMetrics(leadsByMonth[prefix] || []);
   };
 
   const getMonthData = (key: string): MonthData | null => {
     const opt = months.find(m => m.key === key);
     if (!opt) return null;
 
-    // Hardcoded months — return original static data as-is
     if (opt.source === "hardcoded") {
       return hardcodedData[key] || null;
     }
 
-    // Dynamic months — combine Meta Ads + pipeline leads
     const row = dynamicRows.find(r => monthKeyFromDate(r.month) === key);
     const leadMetrics = getLeadMetricsForRawDate(opt.raw);
 
