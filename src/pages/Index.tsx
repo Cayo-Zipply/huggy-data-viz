@@ -150,8 +150,8 @@ const Index = () => {
 
               {/* Funil de trafego */}
               <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
-                <TrafficFunnel impressoes={currentData.impressoes} cliques={cliques} mensagens={currentLeadMetrics.mensagens} vendas={currentLeadMetrics.vendas} />
-                <ROICard investimento={currentData.investimento} faturamento={currentLeadMetrics.faturamento} vendas={currentLeadMetrics.vendas} diasUteis={currentData.diasUteis} />
+                <TrafficFunnel impressoes={currentData.impressoes} cliques={cliques} mensagens={effectiveMensagens} vendas={effectiveVendas} />
+                <ROICard investimento={currentData.investimento} faturamento={effectiveFaturamento} vendas={effectiveVendas} diasUteis={currentData.diasUteis} />
               </div>
             </>
           )}
