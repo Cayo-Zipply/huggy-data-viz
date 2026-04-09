@@ -13,6 +13,7 @@ import {
   UsersRound,
   Settings,
   MessageSquarePlus,
+  FileText,
   Gauge,
   KeyRound,
 } from "lucide-react";
