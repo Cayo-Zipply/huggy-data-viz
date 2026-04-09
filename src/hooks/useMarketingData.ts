@@ -12,6 +12,11 @@ interface MetaAdsRow {
   avg_cpm: number;
   total_clicks: number;
   total_conversions: number;
+  // Manual overrides (nullable)
+  manual_mensagens?: number | null;
+  manual_reunioes_realizadas?: number | null;
+  manual_vendas?: number | null;
+  manual_faturamento?: number | null;
 }
 
 interface ExternalLead {
@@ -38,7 +43,6 @@ const MONTH_NAMES_PT: Record<number, string> = {
   9: "Setembro", 10: "Outubro", 11: "Novembro", 12: "Dezembro",
 };
 
-// Hardcoded data covers up to this date (inclusive). Anything after uses Supabase.
 const HARDCODED_CUTOFF = new Date("2025-03-01T00:00:00");
 
 function monthKeyFromDate(dateStr: string): string {
@@ -53,11 +57,14 @@ function monthLabelFromDate(dateStr: string): string {
   return `${MONTH_NAMES_PT[d.getMonth() + 1]} ${d.getFullYear()}`;
 }
 
-const REUNIOES_KEYWORDS = ["Reunião", "Reuniao", "No Show", "Link Enviado", "Contrato Assinado"];
+const REUNIOES_STAGES = [
+  "Reunião Marcada", "Reunião Agendada", "Reunião Realizada",
+  "No Show", "Link Enviado", "Contrato Assinado",
+];
 
 function isReuniaoMarcada(etapa: string | null): boolean {
   if (!etapa) return false;
-  return REUNIOES_KEYWORDS.some(k => etapa.includes(k.split(" ")[0]));
+  return REUNIOES_STAGES.some(k => etapa.includes(k.split(" ")[0]));
 }
 
 function isReuniaoRealizada(lead: ExternalLead): boolean {
@@ -105,19 +112,17 @@ export function useMarketingData() {
     })();
   }, []);
 
-  // Group leads by YYYY-MM
   const leadsByMonth = useMemo(() => {
     const map: Record<string, ExternalLead[]> = {};
     for (const lead of allLeads) {
       if (!lead.data_entrada) continue;
-      const prefix = lead.data_entrada.slice(0, 7); // "2026-04"
+      const prefix = lead.data_entrada.slice(0, 7);
       if (!map[prefix]) map[prefix] = [];
       map[prefix].push(lead);
     }
     return map;
   }, [allLeads]);
 
-  // Only dynamic rows from March 2025 onwards
   const dynamicRows = useMemo(() => rows.filter(r => new Date(r.month + "T00:00:00") >= HARDCODED_CUTOFF), [rows]);
 
   const months = useMemo<MonthOption[]>(() => {
@@ -140,9 +145,36 @@ export function useMarketingData() {
 
   const defaultMonth = months.length > 0 ? months[0].key : "fevereiro";
 
-  const getLeadMetricsForRawDate = (rawDate: string): LeadMetrics => {
-    const prefix = rawDate.slice(0, 7); // "2026-04"
+  const getLeadMetricsForMonth = (monthStr: string): LeadMetrics => {
+    const prefix = monthStr.slice(0, 7);
     return computeLeadMetrics(leadsByMonth[prefix] || []);
+  };
+
+  /** For dynamic months, apply manual overrides from meta_ads_monthly when present */
+  const getLeadMetrics = (key: string): LeadMetrics => {
+    const opt = months.find(m => m.key === key);
+    if (!opt) return EMPTY_LEAD_METRICS;
+    if (opt.source === "hardcoded") return EMPTY_LEAD_METRICS;
+
+    const row = dynamicRows.find(r => monthKeyFromDate(r.month) === key);
+    const computed = getLeadMetricsForMonth(opt.raw);
+
+    // Apply manual overrides
+    const mensagens = row?.manual_mensagens ?? computed.mensagens;
+    const reunioesRealizadas = row?.manual_reunioes_realizadas ?? computed.reunioesRealizadas;
+    const vendas = row?.manual_vendas ?? computed.vendas;
+    const faturamento = row?.manual_faturamento != null ? Number(row.manual_faturamento) : computed.faturamento;
+    const ticketMedio = vendas > 0 ? faturamento / vendas : 0;
+
+    return {
+      mensagens,
+      mensagensEfetivas: mensagens,
+      reunioesMarcadas: computed.reunioesMarcadas,
+      reunioesRealizadas,
+      vendas,
+      faturamento,
+      ticketMedio,
+    };
   };
 
   const getMonthData = (key: string): MonthData | null => {
@@ -154,7 +186,7 @@ export function useMarketingData() {
     }
 
     const row = dynamicRows.find(r => monthKeyFromDate(r.month) === key);
-    const leadMetrics = getLeadMetricsForRawDate(opt.raw);
+    const leadMetrics = getLeadMetrics(key);
 
     if (row) {
       const d = new Date(row.month + "T00:00:00");
@@ -176,13 +208,6 @@ export function useMarketingData() {
       };
     }
     return null;
-  };
-
-  const getLeadMetrics = (key: string): LeadMetrics => {
-    const opt = months.find(m => m.key === key);
-    if (!opt) return EMPTY_LEAD_METRICS;
-    if (opt.source === "hardcoded") return EMPTY_LEAD_METRICS;
-    return getLeadMetricsForRawDate(opt.raw);
   };
 
   const getPreviousMonthData = (key: string): MonthData | null => {
