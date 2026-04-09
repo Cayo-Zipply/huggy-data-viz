@@ -37,8 +37,6 @@ export default function Feedbacks() {
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
 
-  if (!isAdmin) return <Navigate to="/pipeline" replace />;
-
   const fetchFeedbacks = async () => {
     setLoading(true);
     const { data } = await supabase
@@ -50,6 +48,8 @@ export default function Feedbacks() {
   };
 
   useEffect(() => { fetchFeedbacks(); }, []);
+
+  if (!isAdmin) return <Navigate to="/pipeline" replace />;
 
   const updateStatus = async (id: string, status: FeedbackStatus) => {
     setSaving(id);
