@@ -83,10 +83,47 @@ export default function Settings() {
     setNewMotivoCategoria("Outros");
   };
 
+  const handleSelectOverrideMonth = (monthRaw: string) => {
+    setSelectedOverrideMonth(monthRaw);
+    const existing = overrides.find(o => o.month === monthRaw);
+    const fields = ["manual_mensagens","manual_reunioes","manual_vendas","manual_faturamento","manual_impressoes","manual_cliques","manual_investimento","manual_ctr","manual_cpc","manual_cpm"];
+    const form: Record<string, string> = {};
+    for (const f of fields) {
+      const val = existing?.[f as keyof MarketingOverride];
+      form[f] = val != null ? String(val) : "";
+    }
+    setOverrideForm(form);
+  };
+
+  const handleSaveOverrides = async () => {
+    if (!selectedOverrideMonth) return;
+    const fields: Record<string, number | null> = {};
+    const keys = ["manual_mensagens","manual_reunioes","manual_vendas","manual_faturamento","manual_impressoes","manual_cliques","manual_investimento","manual_ctr","manual_cpc","manual_cpm"];
+    for (const k of keys) {
+      const v = overrideForm[k]?.trim();
+      fields[k] = v ? parseFloat(v.replace(",", ".")) : null;
+    }
+    await upsertOverride(selectedOverrideMonth, fields);
+  };
+
+  const OVERRIDE_FIELDS = [
+    { key: "manual_investimento", label: "Investimento (R$)" },
+    { key: "manual_impressoes", label: "Impressões" },
+    { key: "manual_cliques", label: "Cliques" },
+    { key: "manual_ctr", label: "CTR (%)" },
+    { key: "manual_cpc", label: "CPC (R$)" },
+    { key: "manual_cpm", label: "CPM (R$)" },
+    { key: "manual_mensagens", label: "Mensagens" },
+    { key: "manual_reunioes", label: "Reuniões Realizadas" },
+    { key: "manual_vendas", label: "Vendas" },
+    { key: "manual_faturamento", label: "Faturamento (R$)" },
+  ];
+
   const sections = [
     { key: "etiquetas" as const, label: "Etiquetas", icon: Tag },
     { key: "sla" as const, label: "Regras de SLA", icon: Clock },
     { key: "motivos" as const, label: "Motivos de Perda", icon: AlertTriangle },
+    { key: "metricas" as const, label: "Métricas Marketing", icon: BarChart3 },
   ];
 
   return (
