@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { MetricCard } from "@/components/MetricCard";
 import { TrafficFunnel } from "@/components/TrafficFunnel";
@@ -9,12 +9,10 @@ import { SalesFunnel } from "@/components/SalesFunnel";
 import { ComparisonPanel } from "@/components/ComparisonPanel";
 import { metricTooltips } from "@/components/MetricTooltip";
 import {
-  marketingData,
   calculateVariation,
   formatCurrency,
   formatNumber,
   formatPercent,
-  getPreviousMonth,
 } from "@/data/marketingData";
 import { salesData } from "@/data/salesData";
 import { RevenuePanel } from "@/components/RevenuePanel";
@@ -25,70 +23,74 @@ import { FarolPanel } from "@/components/FarolPanel";
 import { SalesPieChart } from "@/components/SalesPieChart";
 import { usePipelineData } from "@/components/pipeline/usePipelineData";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMarketingData } from "@/hooks/useMarketingData";
 
 const Index = () => {
   const location = useLocation();
   const activeTab = location.pathname.replace("/", "") || "pipeline";
-  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
-    const now = new Date();
-    const monthNames = ["janeiro", "fevereiro", "marco", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
-    const key = monthNames[now.getMonth()];
-    const available = Object.keys(marketingData);
-    return available.includes(key) ? key : available[available.length - 1];
-  });
   const { profile } = useAuth();
   const pipelineName = profile?.nome ?? "Admin";
   const { cards, goals } = usePipelineData(pipelineName);
   const pipelineOwners = [...new Set(cards.map(c => c.owner).filter(Boolean))] as string[];
 
-  const currentData = marketingData[selectedMonth];
-  const prevKey = getPreviousMonth(selectedMonth);
-  const previousData = prevKey ? marketingData[prevKey] : null;
+  // Dynamic marketing data
+  const { months: dynamicMonths, defaultMonth, getMonthData, getPreviousMonthData, loading: marketingLoading } = useMarketingData();
+
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
+
+  // Set default month once data loads
+  useEffect(() => {
+    if (defaultMonth && !selectedMonth) {
+      setSelectedMonth(defaultMonth);
+    }
+  }, [defaultMonth, selectedMonth]);
+
+  const currentData = getMonthData(selectedMonth);
+  const previousData = getPreviousMonthData(selectedMonth);
 
   const getVariation = (current: number, previous: number | undefined) => {
     if (!previous) return undefined;
     return calculateVariation(current, previous);
   };
 
-  const cliques = Math.round(
-    (currentData.impressoes * currentData.ctr) / 100
-  );
-  const conversaoGeral =
-    (currentData.vendas / currentData.mensagensEfetivas) * 100;
-  const previousConversaoGeral = previousData
+  // Derived values from currentData
+  const cliques = currentData ? Math.round((currentData.impressoes * currentData.ctr) / 100) : 0;
+  const conversaoGeral = currentData && currentData.mensagensEfetivas > 0
+    ? (currentData.vendas / currentData.mensagensEfetivas) * 100
+    : 0;
+  const previousConversaoGeral = previousData && previousData.mensagensEfetivas > 0
     ? (previousData.vendas / previousData.mensagensEfetivas) * 100
     : undefined;
 
   const currentSales = salesData[selectedMonth];
   const reunioesRealizadas = currentSales?.funnel.reunioes.realizado || 0;
-  const custoPorReuniao =
-    reunioesRealizadas > 0
-      ? currentData.investimento / reunioesRealizadas
-      : 0;
+  const custoPorReuniao = reunioesRealizadas > 0 && currentData
+    ? currentData.investimento / reunioesRealizadas
+    : 0;
+  const prevKey = previousData ? Object.keys(salesData).find(k => salesData[k] && previousData.month.toLowerCase().startsWith(k.substring(0, 3))) : null;
   const prevSales = prevKey ? salesData[prevKey] : null;
   const prevReunioes = prevSales?.funnel.reunioes.realizado || 0;
-  const prevCustoPorReuniao =
-    prevReunioes > 0 && previousData
-      ? previousData.investimento / prevReunioes
-      : undefined;
+  const prevCustoPorReuniao = prevReunioes > 0 && previousData
+    ? previousData.investimento / prevReunioes
+    : undefined;
 
-  const conversaoReunioes =
-    reunioesRealizadas > 0
-      ? (currentSales.funnel.contratos.realizado / reunioesRealizadas) * 100
-      : 0;
-  const prevConversaoReunioes =
-    prevReunioes > 0 && prevSales
-      ? (prevSales.funnel.contratos.realizado / prevReunioes) * 100
-      : undefined;
+  const conversaoReunioes = reunioesRealizadas > 0 && currentSales
+    ? (currentSales.funnel.contratos.realizado / reunioesRealizadas) * 100
+    : 0;
+  const prevConversaoReunioes = prevReunioes > 0 && prevSales
+    ? (prevSales.funnel.contratos.realizado / prevReunioes) * 100
+    : undefined;
+
+  if (!selectedMonth) return null;
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Main content — sem sidebar interna, AppSidebar ja cuida da navegacao */}
       <main className="p-3 sm:p-4 lg:p-8 overflow-auto">
         <div className="max-w-7xl mx-auto">
           <DashboardHeader
             selectedMonth={selectedMonth}
             onSelectMonth={setSelectedMonth}
+            months={dynamicMonths}
             hideMonthSelector={
               activeTab === "rentabilidade" ||
               activeTab === "consolidado" ||
@@ -99,7 +101,7 @@ const Index = () => {
           />
 
           {/* Marketing Tab */}
-          {activeTab === "marketing" && (
+          {activeTab === "marketing" && currentData && (
             <>
               {/* Metricas principais */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 mb-4 sm:mb-6">
@@ -131,7 +133,7 @@ const Index = () => {
           )}
 
           {/* Comercial Tab */}
-          {activeTab === "comercial" && (
+          {activeTab === "comercial" && currentData && (
             <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
               <SalesFunnel data={salesData[selectedMonth] || salesData.novembro} investimento={currentData.investimento} />
               <PerformanceChart investimento={currentData.investimento} faturamento={currentData.faturamento} />

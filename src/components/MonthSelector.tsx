@@ -5,12 +5,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { MonthOption } from "@/hooks/useMarketingData";
 
 interface MonthSelectorProps {
   selectedMonth: string;
   onSelectMonth: (month: string) => void;
+  months?: MonthOption[];
 }
 
+// Legacy static list (fallback)
 export const months = [
   { key: 'setembro', label: 'Setembro 2024' },
   { key: 'outubro', label: 'Outubro 2024' },
@@ -20,14 +23,16 @@ export const months = [
   { key: 'fevereiro', label: 'Fevereiro 2025' },
 ];
 
-export const MonthSelector = ({ selectedMonth, onSelectMonth }: MonthSelectorProps) => {
+export const MonthSelector = ({ selectedMonth, onSelectMonth, months: dynamicMonths }: MonthSelectorProps) => {
+  const list = dynamicMonths || months;
+
   return (
     <Select value={selectedMonth} onValueChange={onSelectMonth}>
       <SelectTrigger className="w-[200px]">
         <SelectValue placeholder="Selecione o mês" />
       </SelectTrigger>
       <SelectContent>
-        {months.map((month) => (
+        {list.map((month) => (
           <SelectItem key={month.key} value={month.key}>
             {month.label}
           </SelectItem>
