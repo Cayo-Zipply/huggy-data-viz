@@ -38,7 +38,7 @@ const MONTH_NAMES_PT: Record<number, string> = {
   9: "Setembro", 10: "Outubro", 11: "Novembro", 12: "Dezembro",
 };
 
-const HARDCODED_CUTOFF = new Date("2025-03-01T00:00:00");
+const HARDCODED_CUTOFF = new Date("2025-04-01T00:00:00");
 
 function monthKeyFromDate(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
