@@ -7,7 +7,7 @@ export type Stage = SdrStage | CloserStage;
 export type LeadStatus = "aberto" | "ganho" | "perdido";
 export type LossCategory = "preco" | "timing" | "concorrente" | "sem_budget" | "sem_resposta" | "outro";
 export type ContractType = "tributario_cnpj" | "tributario_cpf" | "empresarial_completo";
-export type ContractStatus = "pendente" | "gerado" | "enviado" | "assinado" | "recusado";
+export type ContractStatus = "pendente" | "gerado" | "enviado" | "enviado_whatsapp" | "assinado" | "recusado";
 
 export interface StageChange {
   from: string | null;
