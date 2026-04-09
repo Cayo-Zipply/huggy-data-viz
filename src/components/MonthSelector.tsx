@@ -9,8 +9,7 @@ interface MonthSelectorProps {
 }
 
 // Legacy static list (fallback)
-export const months = fallbackMonths;
-const fallbackMonths = [
+export const months = [
   { key: 'setembro', label: 'Setembro 2024' },
   { key: 'outubro', label: 'Outubro 2024' },
   { key: 'novembro', label: 'Novembro 2024' },
