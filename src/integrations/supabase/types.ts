@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      feedbacks: {
+        Row: {
+          created_at: string
+          descricao: string
+          id: string
+          pagina: string | null
+          resposta_admin: string | null
+          screenshot_url: string | null
+          status: string
+          tipo: string
+          updated_at: string
+          user_email: string | null
+          user_id: string
+          user_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          descricao: string
+          id?: string
+          pagina?: string | null
+          resposta_admin?: string | null
+          screenshot_url?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+          user_email?: string | null
+          user_id: string
+          user_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          descricao?: string
+          id?: string
+          pagina?: string | null
+          resposta_admin?: string | null
+          screenshot_url?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+          user_email?: string | null
+          user_id?: string
+          user_name?: string | null
+        }
+        Relationships: []
+      }
       lead_history: {
         Row: {
           created_at: string | null
