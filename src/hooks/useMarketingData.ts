@@ -12,11 +12,6 @@ interface MetaAdsRow {
   avg_cpm: number;
   total_clicks: number;
   total_conversions: number;
-  // Manual overrides (nullable)
-  manual_mensagens?: number | null;
-  manual_reunioes_realizadas?: number | null;
-  manual_vendas?: number | null;
-  manual_faturamento?: number | null;
 }
 
 interface ExternalLead {
@@ -95,7 +90,20 @@ export interface MonthOption {
   source: "hardcoded" | "dynamic";
 }
 
-export function useMarketingData() {
+export interface MarketingOverrideData {
+  manual_mensagens?: number | null;
+  manual_reunioes?: number | null;
+  manual_vendas?: number | null;
+  manual_faturamento?: number | null;
+  manual_impressoes?: number | null;
+  manual_cliques?: number | null;
+  manual_investimento?: number | null;
+  manual_ctr?: number | null;
+  manual_cpc?: number | null;
+  manual_cpm?: number | null;
+}
+
+export function useMarketingData(overrides?: Record<string, MarketingOverrideData>) {
   const [rows, setRows] = useState<MetaAdsRow[]>([]);
   const [allLeads, setAllLeads] = useState<ExternalLead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,20 +158,24 @@ export function useMarketingData() {
     return computeLeadMetrics(leadsByMonth[prefix] || []);
   };
 
-  /** For dynamic months, apply manual overrides from meta_ads_monthly when present */
+  const getOverrideForMonth = (rawMonth: string): MarketingOverrideData | undefined => {
+    if (!overrides) return undefined;
+    // Try exact match first (e.g. "2026-04-01"), then prefix match
+    return overrides[rawMonth] || overrides[rawMonth.slice(0, 7)];
+  };
+
   const getLeadMetrics = (key: string): LeadMetrics => {
     const opt = months.find(m => m.key === key);
     if (!opt) return EMPTY_LEAD_METRICS;
     if (opt.source === "hardcoded") return EMPTY_LEAD_METRICS;
 
-    const row = dynamicRows.find(r => monthKeyFromDate(r.month) === key);
     const computed = getLeadMetricsForMonth(opt.raw);
+    const ov = getOverrideForMonth(opt.raw);
 
-    // Apply manual overrides
-    const mensagens = row?.manual_mensagens ?? computed.mensagens;
-    const reunioesRealizadas = row?.manual_reunioes_realizadas ?? computed.reunioesRealizadas;
-    const vendas = row?.manual_vendas ?? computed.vendas;
-    const faturamento = row?.manual_faturamento != null ? Number(row.manual_faturamento) : computed.faturamento;
+    const mensagens = ov?.manual_mensagens ?? computed.mensagens;
+    const reunioesRealizadas = ov?.manual_reunioes ?? computed.reunioesRealizadas;
+    const vendas = ov?.manual_vendas ?? computed.vendas;
+    const faturamento = ov?.manual_faturamento != null ? Number(ov.manual_faturamento) : computed.faturamento;
     const ticketMedio = vendas > 0 ? faturamento / vendas : 0;
 
     return {
@@ -187,18 +199,25 @@ export function useMarketingData() {
 
     const row = dynamicRows.find(r => monthKeyFromDate(r.month) === key);
     const leadMetrics = getLeadMetrics(key);
+    const ov = getOverrideForMonth(opt.raw);
 
     if (row) {
       const d = new Date(row.month + "T00:00:00");
-      const cpa = leadMetrics.mensagens > 0 ? row.total_spend / leadMetrics.mensagens : 0;
+      const investimento = ov?.manual_investimento != null ? Number(ov.manual_investimento) : row.total_spend;
+      const impressoes = ov?.manual_impressoes ?? row.total_impressions;
+      const ctr = ov?.manual_ctr != null ? Number(ov.manual_ctr) : row.avg_ctr;
+      const cpc = ov?.manual_cpc != null ? Number(ov.manual_cpc) : row.avg_cpc;
+      const cpm = ov?.manual_cpm != null ? Number(ov.manual_cpm) : row.avg_cpm;
+      const cpa = leadMetrics.mensagens > 0 ? investimento / leadMetrics.mensagens : 0;
+
       return {
         month: MONTH_NAMES_PT[d.getMonth() + 1],
         year: d.getFullYear(),
-        investimento: row.total_spend,
-        impressoes: row.total_impressions,
-        ctr: row.avg_ctr,
-        cpc: row.avg_cpc,
-        cpm: row.avg_cpm,
+        investimento,
+        impressoes,
+        ctr,
+        cpc,
+        cpm,
         mensagens: leadMetrics.mensagens,
         mensagensEfetivas: leadMetrics.mensagensEfetivas,
         cpa,
