@@ -19,7 +19,7 @@ export const months = [
 ];
 
 export const MonthSelector = ({ selectedMonth, onSelectMonth, months: dynamicMonths }: MonthSelectorProps) => {
-  const list = dynamicMonths || fallbackMonths;
+  const list = dynamicMonths || months;
   const currentIdx = list.findIndex(m => m.key === selectedMonth);
   const currentLabel = currentIdx >= 0 ? list[currentIdx].label : "—";
 
