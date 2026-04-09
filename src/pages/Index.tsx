@@ -50,34 +50,59 @@ const Index = () => {
   const currentLeadMetrics = getLeadMetrics(selectedMonth);
   const previousLeadMetrics = getPreviousLeadMetrics(selectedMonth);
 
+  // Detect if current month is hardcoded (Sep 24 – Feb 25)
+  const isHardcoded = dynamicMonths.find(m => m.key === selectedMonth)?.source === "hardcoded";
+
   const getVariation = (current: number, previous: number | undefined) => {
     if (!previous) return undefined;
     return calculateVariation(current, previous);
   };
 
-  // Derived values from currentData + lead metrics
+  // For hardcoded months, use original salesData; for dynamic, use lead metrics
+  const currentSales = isHardcoded ? salesData[selectedMonth] : null;
+
   const cliques = currentData ? Math.round((currentData.impressoes * currentData.ctr) / 100) : 0;
-  const conversaoGeral = currentLeadMetrics.mensagens > 0
-    ? (currentLeadMetrics.vendas / currentLeadMetrics.mensagens) * 100
+
+  // Mensagens/Vendas: hardcoded uses currentData (which has static values), dynamic uses leadMetrics
+  const effectiveMensagens = isHardcoded ? (currentData?.mensagens || 0) : currentLeadMetrics.mensagens;
+  const effectiveMensagensEfetivas = isHardcoded ? (currentData?.mensagensEfetivas || 0) : currentLeadMetrics.mensagensEfetivas;
+  const effectiveVendas = isHardcoded ? (currentData?.vendas || 0) : currentLeadMetrics.vendas;
+  const effectiveFaturamento = isHardcoded ? (currentData?.faturamento || 0) : currentLeadMetrics.faturamento;
+
+  const prevEffectiveMensagens = previousLeadMetrics ? previousLeadMetrics.mensagens : (previousData?.mensagens || 0);
+  const prevEffectiveMensagensEfetivas = previousLeadMetrics ? previousLeadMetrics.mensagensEfetivas : (previousData?.mensagensEfetivas || 0);
+  const prevEffectiveVendas = previousLeadMetrics ? previousLeadMetrics.vendas : (previousData?.vendas || 0);
+
+  const conversaoGeral = effectiveMensagens > 0
+    ? (effectiveVendas / effectiveMensagens) * 100
     : 0;
-  const previousConversaoGeral = previousLeadMetrics && previousLeadMetrics.mensagens > 0
-    ? (previousLeadMetrics.vendas / previousLeadMetrics.mensagens) * 100
+  const previousConversaoGeral = prevEffectiveMensagens > 0
+    ? (prevEffectiveVendas / prevEffectiveMensagens) * 100
     : undefined;
 
-  const reunioesRealizadas = currentLeadMetrics.reunioesRealizadas;
+  // Reuniões
+  const reunioesRealizadas = isHardcoded
+    ? (currentSales?.funnel?.reunioes?.realizado || 0)
+    : currentLeadMetrics.reunioesRealizadas;
   const custoPorReuniao = reunioesRealizadas > 0 && currentData
     ? currentData.investimento / reunioesRealizadas
     : 0;
-  const prevReunioes = previousLeadMetrics?.reunioesRealizadas || 0;
+
+  const prevSalesKey = previousData ? Object.keys(salesData).find(k => salesData[k] && previousData.month.toLowerCase().startsWith(k.substring(0, 3))) : null;
+  const prevSales = prevSalesKey ? salesData[prevSalesKey] : null;
+  const isHardcodedPrev = dynamicMonths.length > 1 && dynamicMonths[dynamicMonths.findIndex(m => m.key === selectedMonth) + 1]?.source === "hardcoded";
+  const prevReunioes = isHardcodedPrev
+    ? (prevSales?.funnel?.reunioes?.realizado || 0)
+    : (previousLeadMetrics?.reunioesRealizadas || 0);
   const prevCustoPorReuniao = prevReunioes > 0 && previousData
     ? previousData.investimento / prevReunioes
     : undefined;
 
   const conversaoReunioes = reunioesRealizadas > 0
-    ? (currentLeadMetrics.vendas / reunioesRealizadas) * 100
+    ? (effectiveVendas / reunioesRealizadas) * 100
     : 0;
-  const prevConversaoReunioes = prevReunioes > 0 && previousLeadMetrics
-    ? (previousLeadMetrics.vendas / prevReunioes) * 100
+  const prevConversaoReunioes = prevReunioes > 0
+    ? (prevEffectiveVendas / prevReunioes) * 100
     : undefined;
 
   if (!selectedMonth) return null;
@@ -108,8 +133,8 @@ const Index = () => {
                 <MetricCard title="Impressoes" value={formatNumber(currentData.impressoes)} variation={getVariation(currentData.impressoes, previousData?.impressoes)} delay={50} />
                 <MetricCard title={metricTooltips.ctr.label} value={formatPercent(currentData.ctr)} variation={getVariation(currentData.ctr, previousData?.ctr)} tooltip={metricTooltips.ctr.tooltip} delay={100} />
                 <MetricCard title={metricTooltips.cpc.label} value={formatCurrency(currentData.cpc)} variation={getVariation(currentData.cpc, previousData?.cpc)} invertColors tooltip={metricTooltips.cpc.tooltip} delay={150} />
-                <MetricCard title="Mensagens" value={formatNumber(currentLeadMetrics.mensagens)} variation={getVariation(currentLeadMetrics.mensagens, previousLeadMetrics?.mensagens)} delay={200} />
-                <MetricCard title="Mensagens Efetivas" value={formatNumber(currentLeadMetrics.mensagensEfetivas)} variation={getVariation(currentLeadMetrics.mensagensEfetivas, previousLeadMetrics?.mensagensEfetivas)} delay={225} />
+                <MetricCard title="Mensagens" value={formatNumber(effectiveMensagens)} variation={getVariation(effectiveMensagens, prevEffectiveMensagens)} delay={200} />
+                <MetricCard title="Mensagens Efetivas" value={formatNumber(effectiveMensagensEfetivas)} variation={getVariation(effectiveMensagensEfetivas, prevEffectiveMensagensEfetivas)} delay={225} />
               </div>
 
               {/* Segunda linha de metricas */}
@@ -125,8 +150,8 @@ const Index = () => {
 
               {/* Funil de trafego */}
               <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
-                <TrafficFunnel impressoes={currentData.impressoes} cliques={cliques} mensagens={currentLeadMetrics.mensagens} vendas={currentLeadMetrics.vendas} />
-                <ROICard investimento={currentData.investimento} faturamento={currentLeadMetrics.faturamento} vendas={currentLeadMetrics.vendas} diasUteis={currentData.diasUteis} />
+                <TrafficFunnel impressoes={currentData.impressoes} cliques={cliques} mensagens={effectiveMensagens} vendas={effectiveVendas} />
+                <ROICard investimento={currentData.investimento} faturamento={effectiveFaturamento} vendas={effectiveVendas} diasUteis={currentData.diasUteis} />
               </div>
             </>
           )}
