@@ -133,8 +133,8 @@ const Index = () => {
                 <MetricCard title="Impressoes" value={formatNumber(currentData.impressoes)} variation={getVariation(currentData.impressoes, previousData?.impressoes)} delay={50} />
                 <MetricCard title={metricTooltips.ctr.label} value={formatPercent(currentData.ctr)} variation={getVariation(currentData.ctr, previousData?.ctr)} tooltip={metricTooltips.ctr.tooltip} delay={100} />
                 <MetricCard title={metricTooltips.cpc.label} value={formatCurrency(currentData.cpc)} variation={getVariation(currentData.cpc, previousData?.cpc)} invertColors tooltip={metricTooltips.cpc.tooltip} delay={150} />
-                <MetricCard title="Mensagens" value={formatNumber(currentLeadMetrics.mensagens)} variation={getVariation(currentLeadMetrics.mensagens, previousLeadMetrics?.mensagens)} delay={200} />
-                <MetricCard title="Mensagens Efetivas" value={formatNumber(currentLeadMetrics.mensagensEfetivas)} variation={getVariation(currentLeadMetrics.mensagensEfetivas, previousLeadMetrics?.mensagensEfetivas)} delay={225} />
+                <MetricCard title="Mensagens" value={formatNumber(effectiveMensagens)} variation={getVariation(effectiveMensagens, prevEffectiveMensagens)} delay={200} />
+                <MetricCard title="Mensagens Efetivas" value={formatNumber(effectiveMensagensEfetivas)} variation={getVariation(effectiveMensagensEfetivas, prevEffectiveMensagensEfetivas)} delay={225} />
               </div>
 
               {/* Segunda linha de metricas */}
