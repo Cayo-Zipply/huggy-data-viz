@@ -61,7 +61,7 @@ const Index = () => {
   // For hardcoded months, use original salesData; for dynamic, use lead metrics
   const currentSales = isHardcoded ? salesData[selectedMonth] : null;
 
-  const cliques = currentData ? Math.round((currentData.impressoes * currentData.ctr) / 100) : 0;
+  const cliques = currentData ? (isHardcoded ? Math.round((currentData.impressoes * currentData.ctr) / 100) : Math.round((currentData.impressoes * currentData.ctr) / 100)) : 0;
 
   // Mensagens/Vendas: hardcoded uses currentData (which has static values), dynamic uses leadMetrics
   const effectiveMensagens = isHardcoded ? (currentData?.mensagens || 0) : currentLeadMetrics.mensagens;
