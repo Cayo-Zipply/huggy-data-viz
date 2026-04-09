@@ -12,7 +12,7 @@ import {
   HelpCircle,
   UsersRound,
   Settings,
-  FileText,
+  MessageSquarePlus,
   Gauge,
   KeyRound,
 } from "lucide-react";
@@ -31,6 +31,7 @@ const NAV_ITEMS = [
   { key: "/farol", label: "Farol", icon: Gauge, roles: ["admin"] },
   { key: "/usuarios", label: "Usuários", icon: UsersRound, roles: ["admin"] },
   { key: "/configuracoes", label: "Configurações", icon: Settings, roles: ["admin"] },
+  { key: "/feedbacks", label: "Feedbacks", icon: MessageSquarePlus, roles: ["admin"] },
   { key: "/ajuda", label: "Ajuda", icon: HelpCircle, roles: ["admin", "sdr", "closer"] },
 ];
 

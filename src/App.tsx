@@ -10,6 +10,7 @@ import NotFound from "@/pages/NotFound";
 import UserManagement from "@/pages/UserManagement";
 import Settings from "@/pages/Settings";
 import Contratos from "@/pages/Contratos";
+import Feedbacks from "@/pages/Feedbacks";
 import { AppSidebar } from "@/components/AppSidebar";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { useState } from "react";
@@ -163,6 +164,7 @@ const App = () => (
               <Route path="/usuarios" element={<RoleGuard roles={["admin"]}><UserManagement /></RoleGuard>} />
               <Route path="/contratos" element={<RoleGuard roles={["admin"]}><Contratos /></RoleGuard>} />
               <Route path="/configuracoes" element={<RoleGuard roles={["admin"]}><Settings /></RoleGuard>} />
+              <Route path="/feedbacks" element={<RoleGuard roles={["admin"]}><Feedbacks /></RoleGuard>} />
             </Route>
 
             <Route path="/" element={<Navigate to="/pipeline" replace />} />
