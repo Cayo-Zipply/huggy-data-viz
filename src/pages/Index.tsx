@@ -34,7 +34,7 @@ const Index = () => {
   const pipelineOwners = [...new Set(cards.map(c => c.owner).filter(Boolean))] as string[];
 
   // Dynamic marketing data
-  const { months: dynamicMonths, defaultMonth, getMonthData, getPreviousMonthData, loading: marketingLoading } = useMarketingData();
+  const { months: dynamicMonths, defaultMonth, getMonthData, getPreviousMonthData, getLeadMetrics, getPreviousLeadMetrics, loading: marketingLoading } = useMarketingData();
 
   const [selectedMonth, setSelectedMonth] = useState<string>("");
 
@@ -47,38 +47,37 @@ const Index = () => {
 
   const currentData = getMonthData(selectedMonth);
   const previousData = getPreviousMonthData(selectedMonth);
+  const currentLeadMetrics = getLeadMetrics(selectedMonth);
+  const previousLeadMetrics = getPreviousLeadMetrics(selectedMonth);
 
   const getVariation = (current: number, previous: number | undefined) => {
     if (!previous) return undefined;
     return calculateVariation(current, previous);
   };
 
-  // Derived values from currentData
+  // Derived values from currentData + lead metrics
   const cliques = currentData ? Math.round((currentData.impressoes * currentData.ctr) / 100) : 0;
-  const conversaoGeral = currentData && currentData.mensagensEfetivas > 0
-    ? (currentData.vendas / currentData.mensagensEfetivas) * 100
+  const conversaoGeral = currentLeadMetrics.mensagens > 0
+    ? (currentLeadMetrics.vendas / currentLeadMetrics.mensagens) * 100
     : 0;
-  const previousConversaoGeral = previousData && previousData.mensagensEfetivas > 0
-    ? (previousData.vendas / previousData.mensagensEfetivas) * 100
+  const previousConversaoGeral = previousLeadMetrics && previousLeadMetrics.mensagens > 0
+    ? (previousLeadMetrics.vendas / previousLeadMetrics.mensagens) * 100
     : undefined;
 
-  const currentSales = salesData[selectedMonth];
-  const reunioesRealizadas = currentSales?.funnel.reunioes.realizado || 0;
+  const reunioesRealizadas = currentLeadMetrics.reunioesRealizadas;
   const custoPorReuniao = reunioesRealizadas > 0 && currentData
     ? currentData.investimento / reunioesRealizadas
     : 0;
-  const prevKey = previousData ? Object.keys(salesData).find(k => salesData[k] && previousData.month.toLowerCase().startsWith(k.substring(0, 3))) : null;
-  const prevSales = prevKey ? salesData[prevKey] : null;
-  const prevReunioes = prevSales?.funnel.reunioes.realizado || 0;
+  const prevReunioes = previousLeadMetrics?.reunioesRealizadas || 0;
   const prevCustoPorReuniao = prevReunioes > 0 && previousData
     ? previousData.investimento / prevReunioes
     : undefined;
 
-  const conversaoReunioes = reunioesRealizadas > 0 && currentSales
-    ? (currentSales.funnel.contratos.realizado / reunioesRealizadas) * 100
+  const conversaoReunioes = reunioesRealizadas > 0
+    ? (currentLeadMetrics.vendas / reunioesRealizadas) * 100
     : 0;
-  const prevConversaoReunioes = prevReunioes > 0 && prevSales
-    ? (prevSales.funnel.contratos.realizado / prevReunioes) * 100
+  const prevConversaoReunioes = prevReunioes > 0 && previousLeadMetrics
+    ? (previousLeadMetrics.vendas / prevReunioes) * 100
     : undefined;
 
   if (!selectedMonth) return null;
