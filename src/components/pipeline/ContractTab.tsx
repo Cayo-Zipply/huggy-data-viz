@@ -166,7 +166,7 @@ export function ContractTab({ card, onUpdate }: Props) {
             contrato_file_url: data.file_url,
             contract_url: data.sign_url,
             contrato_preparado_em: new Date().toISOString(),
-            stage: "link_enviado" as any,
+            stage: "link_enviado" as const,
           });
         } else {
           toast.warning(`⚠️ ${data.message}`);
@@ -199,7 +199,7 @@ export function ContractTab({ card, onUpdate }: Props) {
           contrato_status: "gerado" as ContractStatus,
           contrato_file_url: data.file_url,
           contrato_preparado_em: new Date().toISOString(),
-          stage: "link_enviado" as any,
+          stage: "link_enviado" as const,
         });
       } else if (action === "whatsapp") {
         toast.success("📱 Contrato gerado! Abrindo WhatsApp Web...");
@@ -210,7 +210,7 @@ export function ContractTab({ card, onUpdate }: Props) {
           contrato_status: "enviado_whatsapp" as ContractStatus,
           contrato_file_url: data.file_url,
           contrato_preparado_em: new Date().toISOString(),
-          stage: "link_enviado" as any,
+          stage: "link_enviado" as const,
         });
       }
     } catch (e: any) {
