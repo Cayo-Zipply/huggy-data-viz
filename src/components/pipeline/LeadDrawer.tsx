@@ -155,10 +155,25 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const submitObservation = async () => {
     if (!card || !obsText.trim()) return;
     setSavingObs(true);
+    // Save to lead_anotacoes table
+    const { error } = await db.from("lead_anotacoes").insert({
+      lead_id: card.id,
+      texto: obsText.trim(),
+      source: "manual",
+      autor_nome: profile?.nome || user?.email || "Usuário",
+      autor_user_id: user?.id || null,
+    });
+    if (error) {
+      toast.error("Erro ao salvar observação: " + error.message);
+      setSavingObs(false);
+      return;
+    }
+    // Also call legacy handler for backward compat
     onSaveObservation?.(card.id, obsText.trim());
     clearDraft(card.id, "obs_new");
     setObsText("");
     setSavingObs(false);
+    fetchAnotacoes();
   };
 
   if (!card) return null;
