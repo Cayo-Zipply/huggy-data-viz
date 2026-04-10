@@ -97,17 +97,29 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const [loadingAnotacoes, setLoadingAnotacoes] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionKey>("dados");
 
-  // Load drafts and contract when card changes
+  const fetchAnotacoes = useCallback(async () => {
+    if (!card) return;
+    setLoadingAnotacoes(true);
+    const { data } = await db
+      .from("lead_anotacoes")
+      .select("*")
+      .eq("lead_id", card.id)
+      .order("created_at", { ascending: false });
+    setAnotacoes((data as Anotacao[]) ?? []);
+    setLoadingAnotacoes(false);
+  }, [card?.id]);
+
+  // Load drafts, contract, and anotacoes when card changes
   useEffect(() => {
     if (card) {
       setNtResp(card.owner || "");
       const cf = loadContract(card.id);
       setContractFile(cf);
-      // Load observation draft
       const obsDraft = loadDraft(card.id, "obs_new");
       setObsText(obsDraft || "");
+      fetchAnotacoes();
     }
-  }, [card?.id, card?.owner]);
+  }, [card?.id, card?.owner, fetchAnotacoes]);
 
   // When starting to edit, check for draft first
   const startEdit = useCallback((f: string, v: string) => {
