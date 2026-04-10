@@ -3,6 +3,7 @@ import { MessageSquarePlus, Bug, Lightbulb, Send, X, Image, Loader2, ChevronDown
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { supabaseExt } from "@/lib/supabaseExternal";
 
 type FeedbackStatus = "pendente" | "visto" | "concluido";
 
@@ -21,6 +22,9 @@ const STATUS_CONFIG: Record<FeedbackStatus, { label: string; icon: typeof Clock;
   visto: { label: "Visto", icon: Eye, color: "text-blue-500" },
   concluido: { label: "Concluído", icon: CheckCircle2, color: "text-green-500" },
 };
+
+const EXTERNAL_URL = "https://riyfdcmmabvpcubusujw.supabase.co";
+const EXTERNAL_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpeWZkY21tYWJ2cGN1YnVzdWp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NTMyMDMsImV4cCI6MjA5MDIyOTIwM30.pCRIa4UEC9WQiBP8EwzVrO73qS1FbsQ9fvKzlUPD1Gc";
 
 export function FeedbackWidget() {
   const { user, profile } = useAuth();
@@ -70,7 +74,8 @@ export function FeedbackWidget() {
     }
     setSending(true);
     try {
-      const { error } = await supabase.from("feedbacks").insert({
+      // 1) Save to Lovable Cloud feedbacks table for tracking
+      const { error: dbError } = await supabase.from("feedbacks").insert({
         tipo: type,
         descricao: description.trim(),
         screenshot_url: screenshot,
@@ -79,7 +84,31 @@ export function FeedbackWidget() {
         user_name: profile?.nome || "Anônimo",
         user_email: profile?.email || "",
       });
-      if (error) throw error;
+      if (dbError) throw dbError;
+
+      // 2) Call external edge function feedback-report (Slack notification)
+      try {
+        const userName = profile?.nome || user.email || "Anônimo";
+        await fetch(`${EXTERNAL_URL}/functions/v1/feedback-report`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": EXTERNAL_ANON_KEY,
+          },
+          body: JSON.stringify({
+            type,
+            description: description.trim(),
+            user_name: userName,
+            user_email: profile?.email || user.email || "",
+            page_url: window.location.href,
+            screenshot: screenshot ?? null,
+          }),
+        });
+      } catch (slackErr) {
+        // Slack notification is best-effort, don't fail the whole flow
+        console.warn("feedback-report edge function error:", slackErr);
+      }
+
       toast.success("Feedback enviado! Obrigado 🙏");
       setDescription("");
       setScreenshot(null);
