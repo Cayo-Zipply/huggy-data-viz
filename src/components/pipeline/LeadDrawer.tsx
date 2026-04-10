@@ -6,6 +6,10 @@ import {
   X, Copy, ExternalLink, MapPin, Megaphone, MessageSquare, Save, Loader2,
   AlertTriangle, Tag, StickyNote, FileSignature
 } from "lucide-react";
+import { supabaseExt } from "@/lib/supabaseExternal";
+import { useAuth } from "@/contexts/AuthContext";
+import { ObservacaoItem, type Anotacao } from "./ObservacaoItem";
+import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
