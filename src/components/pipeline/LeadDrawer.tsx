@@ -77,7 +77,8 @@ interface Props {
 type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "contrato" | "anexo" | "acoes";
 
 export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onSaveObservation, labels = [], cardLabels = [], onAddLabel, onRemoveLabel }: Props) {
-  const [activeSection, setActiveSection] = useState<SectionKey>("dados");
+  const { user, isAdmin } = useAuth();
+  const db = supabaseExt as any;
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [saving, setSaving] = useState(false);
@@ -92,6 +93,9 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const [contractFile, setContractFile] = useState<{ data: string; name: string } | null>(null);
   const [obsText, setObsText] = useState("");
   const [savingObs, setSavingObs] = useState(false);
+  const [anotacoes, setAnotacoes] = useState<Anotacao[]>([]);
+  const [loadingAnotacoes, setLoadingAnotacoes] = useState(false);
+  const [activeSection, setActiveSection] = useState<SectionKey>("dados");
 
   // Load drafts and contract when card changes
   useEffect(() => {
