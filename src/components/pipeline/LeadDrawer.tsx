@@ -559,38 +559,71 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
             {/* HISTÓRICO */}
             {activeSection === "historico" && (
               <div>
-                {/* Observations section */}
-                {observations.length > 0 && (
-                  <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <StickyNote size={14} className="text-primary" />
-                      <p className="text-xs font-medium text-foreground uppercase tracking-wider">Observações</p>
-                    </div>
-                    <div className="space-y-2">
-                      {[...observations].reverse().map((obs, i) => (
-                        <div key={`obs-${i}`} className="bg-muted/30 rounded-lg p-3 border border-border/50">
-                          {obs.to.includes("![print]") ? (
-                            <div className="space-y-2">
-                              {obs.to.split(/!\[print\]\([^)]+\)/).map((text, ti) => (
-                                <span key={`t-${ti}`} className="text-sm text-foreground whitespace-pre-wrap">{text}</span>
-                              ))}
-                              {obs.to.match(/!\[print\]\((data:image\/[^)]+)\)/g)?.map((match, mi) => {
-                                const src = match.match(/\(([^)]+)\)/)?.[1];
-                                return src ? <img key={`img-${mi}`} src={src} alt="anexo" className="max-h-40 rounded-md border border-border mt-1" /> : null;
-                              })}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-foreground whitespace-pre-wrap">{obs.to}</p>
-                          )}
-                          <p className="text-[10px] text-muted-foreground mt-2">
-                            {new Date(obs.at).toLocaleString("pt-BR")} · por {obs.by}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                    <Separator className="my-4" />
+                {/* Legacy anotacoes field */}
+                {card.anotacoes && String(card.anotacoes).trim().length > 0 && (
+                  <div className="rounded-md border border-dashed p-3 bg-muted/30 mb-4">
+                    <div className="text-xs text-muted-foreground mb-1">Histórico (legado, somente leitura)</div>
+                    <pre className="text-xs whitespace-pre-wrap font-sans text-foreground">{String(card.anotacoes)}</pre>
                   </div>
                 )}
+
+                {/* New anotacoes from lead_anotacoes table */}
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <StickyNote size={14} className="text-primary" />
+                    <p className="text-xs font-medium text-foreground uppercase tracking-wider">Observações</p>
+                  </div>
+                  {loadingAnotacoes ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 size={16} className="animate-spin text-muted-foreground" />
+                    </div>
+                  ) : anotacoes.length > 0 ? (
+                    <div className="space-y-2">
+                      {anotacoes.map(a => (
+                        <ObservacaoItem
+                          key={a.id}
+                          anotacao={a}
+                          currentUserId={user?.id || null}
+                          isAdmin={isAdmin}
+                          onUpdate={fetchAnotacoes}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">Nenhuma observação ainda</p>
+                  )}
+
+                  {/* Also show old-style observations from history */}
+                  {observations.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Observações anteriores (migração)</p>
+                      <div className="space-y-2">
+                        {[...observations].reverse().map((obs, i) => (
+                          <div key={`obs-${i}`} className="bg-muted/30 rounded-lg p-3 border border-border/50">
+                            {obs.to.includes("![print]") ? (
+                              <div className="space-y-2">
+                                {obs.to.split(/!\[print\]\([^)]+\)/).map((text, ti) => (
+                                  text.trim() ? <span key={`t-${ti}`} className="text-sm text-foreground whitespace-pre-wrap">{text}</span> : null
+                                ))}
+                                {obs.to.match(/!\[print\]\((data:image\/[^)]+)\)/g)?.map((match, mi) => {
+                                  const src = match.match(/\(([^)]+)\)/)?.[1];
+                                  return src ? <img key={`img-${mi}`} src={src} alt="anexo" className="max-h-40 rounded-md border border-border mt-1" /> : null;
+                                })}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-foreground whitespace-pre-wrap">{obs.to}</p>
+                            )}
+                            <p className="text-[10px] text-muted-foreground mt-2">
+                              {new Date(obs.at).toLocaleString("pt-BR")} · por {obs.by}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <Separator className="my-4" />
 
                 {/* Stage changes */}
                 <div className="flex items-center gap-2 mb-3">
