@@ -23,9 +23,10 @@ interface Props {
   onToggleTask: (id: string) => void;
   onCardClick?: (card: PipelineCard) => void;
   slaRule?: SlaRule;
+  ownerOptions?: string[];
 }
 
-export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, selectedIds, onToggleSelect, onUpdate, onDrop, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick, slaRule }: Props) {
+export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, selectedIds, onToggleSelect, onUpdate, onDrop, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick, slaRule, ownerOptions }: Props) {
   const cfg = STAGE_CONFIG[stageKey];
   const Icon = cfg.icon;
   const [dragOver, setDragOver] = useState(false);
@@ -112,7 +113,7 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
                 {selectedIds?.has(card.id) && "✓"}
               </div>
             )}
-            <PipelineCardItem card={card} tasks={tasks} cardLabels={getCardLabels?.(card.id) || []} slaHoras={slaRule?.sla_horas} onUpdate={onUpdate}
+            <PipelineCardItem card={card} tasks={tasks} cardLabels={getCardLabels?.(card.id) || []} slaHoras={slaRule?.sla_horas} ownerOptions={ownerOptions} onUpdate={onUpdate}
               onMarkWon={onMarkWon} onMarkLost={onMarkLost} onCreateTask={onCreateTask} onToggleTask={onToggleTask}
               onCardClick={onCardClick} />
           </div>
