@@ -5,11 +5,13 @@ import { useSlaRules, type SlaRule } from "@/hooks/useSlaRules";
 import { useMotivosPerda } from "@/hooks/useMotivosPerda";
 import { useMarketingOverrides, type MarketingOverride } from "@/hooks/useMarketingOverrides";
 import { useMarketingData } from "@/hooks/useMarketingData";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { Navigate } from "react-router-dom";
-import { Plus, Trash2, Palette, Tag, Settings as SettingsIcon, X, Clock, AlertTriangle, Shield, BarChart3, Save } from "lucide-react";
+import { Plus, Trash2, Palette, Tag, Settings as SettingsIcon, X, Clock, AlertTriangle, Shield, BarChart3, Save, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { STAGE_ORDER, STAGE_CONFIG } from "@/components/pipeline/types";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const PRESET_COLORS = [
   "#ef4444", "#f97316", "#f59e0b", "#22c55e", "#14b8a6",
@@ -31,6 +33,7 @@ export default function Settings() {
   const { motivos, createMotivo, updateMotivo, toggleAtivo } = useMotivosPerda();
   const { overrides, upsert: upsertOverride, getOverride } = useMarketingOverrides();
   const { months: marketingMonths } = useMarketingData();
+  const { members: teamMembers, refetch: refetchTeam } = useTeamMembers();
   const { toast } = useToast();
 
   const [newName, setNewName] = useState("");
@@ -38,7 +41,7 @@ export default function Settings() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState("");
-  const [activeSection, setActiveSection] = useState<"etiquetas" | "sla" | "motivos" | "metricas">("etiquetas");
+  const [activeSection, setActiveSection] = useState<"etiquetas" | "sla" | "motivos" | "metricas" | "responsaveis">("etiquetas");
 
   // Motivos de perda state
   const [newMotivoNome, setNewMotivoNome] = useState("");
@@ -106,6 +109,15 @@ export default function Settings() {
     await upsertOverride(selectedOverrideMonth, fields);
   };
 
+  const handleToggleResponsavel = async (memberId: string, current: boolean) => {
+    await (supabase as any)
+      .from("user_profiles")
+      .update({ pode_ser_responsavel: !current })
+      .eq("id", memberId);
+    await refetchTeam();
+    toast({ title: !current ? "Responsável habilitado" : "Responsável removido" });
+  };
+
   const OVERRIDE_FIELDS = [
     { key: "manual_investimento", label: "Investimento (R$)" },
     { key: "manual_impressoes", label: "Impressões" },
@@ -121,6 +133,7 @@ export default function Settings() {
 
   const sections = [
     { key: "etiquetas" as const, label: "Etiquetas", icon: Tag },
+    { key: "responsaveis" as const, label: "Responsáveis", icon: Users },
     { key: "sla" as const, label: "Regras de SLA", icon: Clock },
     { key: "motivos" as const, label: "Motivos de Perda", icon: AlertTriangle },
     { key: "metricas" as const, label: "Métricas Marketing", icon: BarChart3 },
@@ -228,6 +241,46 @@ export default function Settings() {
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Responsáveis Section */}
+      {activeSection === "responsaveis" && (
+        <div className="border border-border rounded-2xl bg-card overflow-hidden">
+          <div className="p-4 border-b border-border bg-muted/30">
+            <div className="flex items-center gap-2">
+              <Users size={16} className="text-primary" />
+              <h2 className="text-sm font-semibold text-foreground">Responsáveis por Negócios</h2>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Selecione quais membros da equipe podem ser atribuídos como dono de um negócio no pipeline</p>
+          </div>
+          <div className="p-4 space-y-2">
+            {teamMembers.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">Nenhum membro cadastrado</p>
+            ) : (
+              teamMembers.map(m => (
+                <div key={m.id} className="flex items-center gap-3 py-2 px-3 rounded-lg border border-border bg-background">
+                  <button
+                    onClick={() => handleToggleResponsavel(m.id, m.pode_ser_responsavel)}
+                    className={cn(
+                      "w-5 h-5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0",
+                      m.pode_ser_responsavel
+                        ? "bg-primary border-primary text-primary-foreground"
+                        : "border-muted-foreground/40"
+                    )}
+                  >
+                    {m.pode_ser_responsavel && (
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    )}
+                  </button>
+                  <span className="text-sm text-foreground flex-1">{m.nome}</span>
+                  <span className="text-[10px] bg-muted/50 text-muted-foreground rounded px-1.5 py-0.5">
+                    {[m.role, m.secondary_role].filter(Boolean).join(" + ")}
+                  </span>
+                </div>
+              ))
             )}
           </div>
         </div>

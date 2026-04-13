@@ -47,7 +47,7 @@ export function PipelinePanel() {
   const { profile, isAdmin, isSdr, isCloser, isDual } = useAuth();
   const { labels, getCardLabels, addLabelToCard, removeLabelFromCard } = useLabels();
   const { rules: slaRules, getRuleForStage } = useSlaRules();
-  const { allNames: teamNames } = useTeamMembers();
+  const { allNames: teamNames, ownerNames } = useTeamMembers();
   const { activeMotivos } = useMotivosPerda();
   const { addEntry: addHistoryEntry } = useLeadHistory();
   const currentUserName = useMemo(() => {
@@ -124,13 +124,13 @@ export function PipelinePanel() {
   const ownerOptions = useMemo(() => {
     const pool = new Set<string>([
       currentUserName,
-      ...teamNames,
+      ...(ownerNames.length > 0 ? ownerNames : teamNames),
       ...cards.map((card) => card.owner).filter(Boolean) as string[],
       ...tasks.map((task) => task.responsible).filter(Boolean) as string[],
       ...goals.map((goal) => goal.closer).filter(Boolean),
     ]);
     return Array.from(pool).filter(Boolean).sort((a, b) => a.localeCompare(b, "pt-BR"));
-  }, [cards, currentUserName, goals, tasks, teamNames]);
+  }, [cards, currentUserName, goals, tasks, teamNames, ownerNames]);
 
   const showAllOwners = isAdmin && activeUser === "all";
 

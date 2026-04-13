@@ -427,6 +427,7 @@ export type Database = {
           email: string
           id: string
           nome: string
+          pode_ser_responsavel: boolean
           role: string | null
           secondary_role: string | null
           updated_at: string
@@ -437,6 +438,7 @@ export type Database = {
           email: string
           id?: string
           nome: string
+          pode_ser_responsavel?: boolean
           role?: string | null
           secondary_role?: string | null
           updated_at?: string
@@ -447,6 +449,7 @@ export type Database = {
           email?: string
           id?: string
           nome?: string
+          pode_ser_responsavel?: boolean
           role?: string | null
           secondary_role?: string | null
           updated_at?: string
