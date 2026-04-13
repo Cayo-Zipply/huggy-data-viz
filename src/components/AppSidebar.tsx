@@ -42,7 +42,12 @@ export function AppSidebar() {
   const navigate = useNavigate();
 
   const role = profile?.role ?? "closer";
-  const filtered = NAV_ITEMS.filter((item) => item.roles.includes(role));
+  const secondaryRole = profile?.secondary_role;
+  const filtered = NAV_ITEMS.filter((item) => {
+    if (item.roles.includes(role)) return true;
+    if (secondaryRole && item.roles.includes(secondaryRole)) return true;
+    return false;
+  });
   const initials = (profile?.nome ?? profile?.email ?? "U")
     .slice(0, 2)
     .toUpperCase();
@@ -93,7 +98,7 @@ export function AppSidebar() {
               {profile?.nome ?? profile?.email ?? "Usuário"}
             </p>
             <p className="text-[10px] text-muted-foreground capitalize">
-              {role}
+              {secondaryRole ? `${role} + ${secondaryRole}` : role}
             </p>
           </div>
           <ChangePasswordDialog>

@@ -43,7 +43,7 @@ const PIPELINE_UI_KEYS = {
 export function PipelinePanel() {
   const [searchQuery, setSearchQuery] = useState(() => sessionStorage.getItem(PIPELINE_UI_KEYS.search) || "");
   const [activeUser, setActiveUser] = useState<string>("all");
-  const { profile, isAdmin, isSdr, isCloser } = useAuth();
+  const { profile, isAdmin, isSdr, isCloser, isDual } = useAuth();
   const { labels, getCardLabels, addLabelToCard, removeLabelFromCard } = useLabels();
   const { rules: slaRules, getRuleForStage } = useSlaRules();
   const { activeMotivos } = useMotivosPerda();
@@ -55,7 +55,7 @@ export function PipelinePanel() {
 
   const { cards, tasks, goals, createCard, updateCard, moveCard, markWon, markLost, createTask, toggleTask, rescheduleTask, upsertGoal, importCSV, deleteCard, saveObservation, refresh } = usePipelineData(currentUserName);
   const [refreshing, setRefreshing] = useState(false);
-  const defaultPipe = isCloser ? "closer" : isSdr ? "sdr" : "all";
+  const defaultPipe = isDual ? "all" : isCloser ? "closer" : isSdr ? "sdr" : "all";
   const [activePipe, setActivePipe] = useState<"sdr" | "closer" | "all">(() => {
     const saved = sessionStorage.getItem(PIPELINE_UI_KEYS.activePipe);
     return saved === "sdr" || saved === "closer" || saved === "all" ? saved : defaultPipe;
@@ -100,10 +100,10 @@ export function PipelinePanel() {
   }, [activeUser, isAdmin]);
 
   useEffect(() => {
-    if (!isAdmin) {
+    if (!isAdmin && !isDual) {
       setActivePipe(defaultPipe);
     }
-  }, [defaultPipe, isAdmin]);
+  }, [defaultPipe, isAdmin, isDual]);
 
   // Persist search & filters to sessionStorage
   useEffect(() => { sessionStorage.setItem(PIPELINE_UI_KEYS.search, searchQuery); }, [searchQuery]);
@@ -517,11 +517,14 @@ export function PipelinePanel() {
 
             <div className="flex flex-wrap gap-2">
               {([
-                { key: "all", label: "Todos", count: visibleCards.length, roles: ["admin"] },
-                { key: "sdr", label: "SDR", count: sdrCount, roles: ["admin", "sdr"] },
-                { key: "closer", label: "Closer", count: closerCount, roles: ["admin", "closer"] },
+                { key: "all", label: "Todos", count: visibleCards.length, roles: ["admin", "dual"] },
+                { key: "sdr", label: "SDR", count: sdrCount, roles: ["admin", "sdr", "dual"] },
+                { key: "closer", label: "Closer", count: closerCount, roles: ["admin", "closer", "dual"] },
               ] as const).filter(pipe => {
                 const role = profile?.role || "closer";
+                const secondaryRole = profile?.secondary_role;
+                const hasDual = (role === "sdr" && secondaryRole === "closer") || (role === "closer" && secondaryRole === "sdr");
+                if (hasDual) return (pipe.roles as readonly string[]).includes("dual");
                 return (pipe.roles as readonly string[]).includes(role);
               }).map((pipe) => (
                 <button
@@ -551,7 +554,7 @@ export function PipelinePanel() {
               <SelectValue placeholder="Etapa" />
             </SelectTrigger>
             <SelectContent>
-              {(isCloser ? CLOSER_STAGES : isSdr ? SDR_STAGES : STAGE_ORDER).map(s => (
+              {(isDual ? STAGE_ORDER : isCloser ? CLOSER_STAGES : isSdr ? SDR_STAGES : STAGE_ORDER).map(s => (
                 <SelectItem key={s} value={s} className="text-xs">{STAGE_CONFIG[s].label}</SelectItem>
               ))}
             </SelectContent>
