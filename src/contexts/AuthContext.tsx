@@ -15,6 +15,7 @@ interface UserProfile {
   email: string;
   nome: string;
   role: "admin" | "sdr" | "closer" | null;
+  secondary_role: "sdr" | "closer" | null;
   user_id: string | null;
 }
 
@@ -26,6 +27,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isSdr: boolean;
   isCloser: boolean;
+  isDual: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   setRole: (role: "sdr" | "closer") => Promise<boolean>;
@@ -235,8 +237,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, fetchProfile]);
 
   const isAdmin = profile?.role === "admin";
-  const isSdr = profile?.role === "sdr";
-  const isCloser = profile?.role === "closer";
+  const primaryRole = profile?.role;
+  const secondaryRole = profile?.secondary_role;
+  const hasRole = (r: string) => primaryRole === r || secondaryRole === r;
+  const isSdr = hasRole("sdr");
+  const isCloser = hasRole("closer");
+  const isDual = isSdr && isCloser;
 
   const setRole = useCallback(async (role: "sdr" | "closer") => {
     if (!profile) return false;
@@ -262,6 +268,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin,
         isSdr,
         isCloser,
+        isDual,
         signOut,
         refreshProfile,
         setRole,

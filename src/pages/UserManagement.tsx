@@ -9,6 +9,7 @@ interface UserRow {
   email: string;
   nome: string;
   role: string | null;
+  secondary_role: string | null;
   user_id: string | null;
   created_at: string;
 }
@@ -18,6 +19,12 @@ const ROLES = [
   { value: "admin", label: "Admin", icon: Shield, color: "text-red-500" },
   { value: "sdr", label: "SDR", icon: Users, color: "text-blue-500" },
   { value: "closer", label: "Closer", icon: UserCheck, color: "text-green-500" },
+];
+
+const SECONDARY_ROLES = [
+  { value: "", label: "Nenhum" },
+  { value: "sdr", label: "SDR" },
+  { value: "closer", label: "Closer" },
 ];
 
 export default function UserManagement() {
@@ -49,6 +56,16 @@ export default function UserManagement() {
     setUpdating(null);
   };
 
+  const updateSecondaryRole = async (userId: string, newRole: string) => {
+    setUpdating(userId);
+    await (supabase as any)
+      .from("user_profiles")
+      .update({ secondary_role: newRole || null, updated_at: new Date().toISOString() })
+      .eq("id", userId);
+    await fetchUsers();
+    setUpdating(null);
+  };
+
   if (!isAdmin) return <Navigate to="/pipeline" replace />;
 
   return (
@@ -71,7 +88,8 @@ export default function UserManagement() {
               <tr className="border-b border-border bg-muted/50">
                 <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Usuário</th>
                 <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">E-mail</th>
-                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Função</th>
+                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Função Principal</th>
+                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Função Secundária</th>
                 <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">Ações</th>
               </tr>
             </thead>
@@ -92,13 +110,32 @@ export default function UserManagement() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
+                    {u.secondary_role ? (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-muted text-muted-foreground">
+                        {SECONDARY_ROLES.find((r) => r.value === u.secondary_role)?.label || u.secondary_role}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 space-y-1">
                     <select
                       value={u.role ?? ""}
                       onChange={(e) => updateRole(u.id, e.target.value)}
                       disabled={updating === u.id}
-                      className="text-sm border border-border rounded-lg px-2 py-1.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
+                      className="text-sm border border-border rounded-lg px-2 py-1.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 w-full"
                     >
                       {ROLES.map((r) => (
+                        <option key={r.value} value={r.value}>{r.label}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={u.secondary_role ?? ""}
+                      onChange={(e) => updateSecondaryRole(u.id, e.target.value)}
+                      disabled={updating === u.id}
+                      className="text-sm border border-border rounded-lg px-2 py-1.5 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 w-full"
+                    >
+                      {SECONDARY_ROLES.filter(r => r.value !== u.role).map((r) => (
                         <option key={r.value} value={r.value}>{r.label}</option>
                       ))}
                     </select>

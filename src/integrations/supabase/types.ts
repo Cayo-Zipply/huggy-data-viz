@@ -428,6 +428,7 @@ export type Database = {
           id: string
           nome: string
           role: string | null
+          secondary_role: string | null
           updated_at: string
           user_id: string | null
         }
@@ -437,6 +438,7 @@ export type Database = {
           id?: string
           nome: string
           role?: string | null
+          secondary_role?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -446,6 +448,7 @@ export type Database = {
           id?: string
           nome?: string
           role?: string | null
+          secondary_role?: string | null
           updated_at?: string
           user_id?: string | null
         }
