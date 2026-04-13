@@ -31,7 +31,11 @@ export function applyFilters(cards: PipelineCard[], f: FilterState): PipelineCar
     if (f.dateTo && c.created_at > f.dateTo + "T23:59:59") return false;
     if (f.stageChangedFrom && c.stage_changed_at < f.stageChangedFrom) return false;
     if (f.stageChangedTo && c.stage_changed_at > f.stageChangedTo + "T23:59:59") return false;
-    if (f.closers.length > 0 && !f.closers.includes(c.owner || "")) return false;
+    if (f.closers.length > 0 && !f.closers.some(fc => {
+      const o = (c.owner || "").toLowerCase().trim();
+      const t = fc.toLowerCase().trim();
+      return o === t || o.startsWith(t + " ") || o.includes(t);
+    })) return false;
     if (f.status !== "todos" && c.lead_status !== f.status) return false;
     if (f.stages.length > 0 && !f.stages.includes(c.stage)) return false;
     if (f.staleDays != null && daysDiff(c.stage_changed_at) < f.staleDays) return false;
