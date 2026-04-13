@@ -72,6 +72,7 @@ interface Props {
   cardLabels?: PipelineLabel[];
   onAddLabel?: (cardId: string, labelId: string) => void;
   onRemoveLabel?: (cardId: string, labelId: string) => void;
+  ownerOptions?: string[];
 }
 
 type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "contrato" | "anexo" | "acoes";

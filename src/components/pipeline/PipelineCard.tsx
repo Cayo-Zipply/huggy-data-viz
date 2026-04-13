@@ -14,6 +14,7 @@ interface Props {
   tasks: PipelineTask[];
   cardLabels?: PipelineLabel[];
   slaHoras?: number;
+  ownerOptions?: string[];
   onUpdate: (id: string, u: Partial<CardType>) => void;
   onMarkWon: (id: string) => void;
   onMarkLost: (id: string, cat: string, reason: string) => void;
@@ -24,7 +25,7 @@ interface Props {
 
 type Tab = "info" | "historico" | "tarefas" | "acoes";
 
-export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick }: Props) {
+export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, ownerOptions: ownerOptionsProp, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [tab, setTab] = useState<Tab>("info");
   const [editing, setEditing] = useState<string | null>(null);
@@ -44,7 +45,7 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, onUpd
   const cardTasks = tasks.filter(t => t.card_id === card.id);
   const pendingCount = cardTasks.filter(t => t.status === "pendente").length;
   const staleDays = daysDiff(card.stage_changed_at);
-  const ownerOptions = Array.from(new Set([card.owner, ...CLOSERS, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
+  const ownerOptions = ownerOptionsProp || Array.from(new Set([card.owner, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
 
   // SLA status
   const hoursInStage = staleDays * 24;
