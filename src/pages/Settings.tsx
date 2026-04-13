@@ -33,6 +33,7 @@ export default function Settings() {
   const { motivos, createMotivo, updateMotivo, toggleAtivo } = useMotivosPerda();
   const { overrides, upsert: upsertOverride, getOverride } = useMarketingOverrides();
   const { months: marketingMonths } = useMarketingData();
+  const { members: teamMembers, refetch: refetchTeam } = useTeamMembers();
   const { toast } = useToast();
 
   const [newName, setNewName] = useState("");
