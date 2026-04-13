@@ -212,24 +212,35 @@ export function PipelinePanel() {
     e.target.value = "";
   };
 
+  const [isCreatingLead, setIsCreatingLead] = useState(false);
+
   const addLead = async () => {
-    if (!newLeadName.trim()) return;
-    const result = await createCard({
-      nome: newLeadName,
-      telefone: newLeadPhone || null,
-      owner: showAllOwners ? currentUserName : activeUser,
-      stage: newLeadStage,
-    });
-    if (result?.duplicate) {
-      toast({
-        title: "Lead duplicado!",
-        description: `Já existe um lead com este telefone: ${result.existingCard.nome} — ${STAGE_CONFIG[result.existingCard.stage]?.label || result.existingCard.stage}`,
-        variant: "destructive",
+    if (!newLeadName.trim() || isCreatingLead) return;
+    setIsCreatingLead(true);
+    try {
+      const result = await createCard({
+        nome: newLeadName,
+        telefone: newLeadPhone || null,
+        owner: showAllOwners ? currentUserName : activeUser,
+        stage: newLeadStage,
       });
-      return;
+      if (result?.duplicate) {
+        toast({
+          title: "Lead duplicado!",
+          description: `Já existe um lead com este telefone: ${result.existingCard.nome} — ${STAGE_CONFIG[result.existingCard.stage]?.label || result.existingCard.stage}`,
+          variant: "destructive",
+        });
+        return;
+      }
+      // Refresh pipeline data immediately so the new lead appears
+      await refresh();
+      setNewLeadName(""); setNewLeadPhone(""); setNewLeadStage("conectado"); setShowNewLead(false);
+      toast({ title: "Lead criado!" });
+    } catch (err: any) {
+      toast({ title: "Erro ao criar lead", description: err?.message || "Tente novamente.", variant: "destructive" });
+    } finally {
+      setIsCreatingLead(false);
     }
-    setNewLeadName(""); setNewLeadPhone(""); setNewLeadStage("conectado"); setShowNewLead(false);
-    toast({ title: "Lead criado!" });
   };
 
   const getStages = () => {
