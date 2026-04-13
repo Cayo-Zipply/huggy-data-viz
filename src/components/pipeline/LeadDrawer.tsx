@@ -77,7 +77,7 @@ interface Props {
 
 type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "contrato" | "anexo" | "acoes";
 
-export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onSaveObservation, labels = [], cardLabels = [], onAddLabel, onRemoveLabel }: Props) {
+export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onSaveObservation, labels = [], cardLabels = [], onAddLabel, onRemoveLabel, ownerOptions: ownerOptionsProp }: Props) {
   const { user, isAdmin, profile } = useAuth();
   const db = supabaseExt as any;
   const [editing, setEditing] = useState<string | null>(null);
@@ -191,7 +191,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const pendingCount = cardTasks.filter(t => t.status === "pendente").length;
   const staleDays = daysDiff(card.stage_changed_at);
   const stageConf = STAGE_CONFIG[card.stage];
-  const ownerOptions = Array.from(new Set([card.owner, ...CLOSERS, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
+  const ownerOptions = ownerOptionsProp || Array.from(new Set([card.owner, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
 
   const copyPhone = () => {
     if (card.telefone) {
