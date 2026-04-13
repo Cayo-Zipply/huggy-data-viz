@@ -14,7 +14,8 @@ import { CRMDashboard } from "./pipeline/CRMDashboard";
 import { GoalsPanel } from "./pipeline/GoalsPanel";
 import { HandoffChecklist } from "./pipeline/HandoffChecklist";
 import { LeadDrawer } from "./pipeline/LeadDrawer";
-import { CLOSERS, SDR_STAGES, CLOSER_STAGES, STAGE_CONFIG, STAGE_ORDER } from "./pipeline/types";
+import { SDR_STAGES, CLOSER_STAGES, STAGE_CONFIG, STAGE_ORDER } from "./pipeline/types";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 import type { PipelineCard, Stage } from "./pipeline/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -46,6 +47,7 @@ export function PipelinePanel() {
   const { profile, isAdmin, isSdr, isCloser, isDual } = useAuth();
   const { labels, getCardLabels, addLabelToCard, removeLabelFromCard } = useLabels();
   const { rules: slaRules, getRuleForStage } = useSlaRules();
+  const { allNames: teamNames } = useTeamMembers();
   const { activeMotivos } = useMotivosPerda();
   const { addEntry: addHistoryEntry } = useLeadHistory();
   const currentUserName = useMemo(() => {
@@ -122,13 +124,13 @@ export function PipelinePanel() {
   const ownerOptions = useMemo(() => {
     const pool = new Set<string>([
       currentUserName,
-      ...CLOSERS,
+      ...teamNames,
       ...cards.map((card) => card.owner).filter(Boolean) as string[],
       ...tasks.map((task) => task.responsible).filter(Boolean) as string[],
       ...goals.map((goal) => goal.closer).filter(Boolean),
     ]);
     return Array.from(pool).filter(Boolean).sort((a, b) => a.localeCompare(b, "pt-BR"));
-  }, [cards, currentUserName, goals, tasks]);
+  }, [cards, currentUserName, goals, tasks, teamNames]);
 
   const showAllOwners = isAdmin && activeUser === "all";
 
@@ -583,7 +585,7 @@ export function PipelinePanel() {
 
       {subTab === "kanban" && (
         <>
-          <PipelineFiltersBar filters={filters} onChange={setFilters} onExport={() => exportCSV(visibleCards, tasks)} />
+          <PipelineFiltersBar filters={filters} onChange={setFilters} onExport={() => exportCSV(visibleCards, tasks)} closerOptions={ownerOptions} />
           <div className="flex gap-3 overflow-x-auto rounded-2xl border border-border bg-muted/20 p-3 pb-4">
             {getStages().map(s => (
               <StageColumn key={s} stageKey={s} cards={getCardsForStage(s)} tasks={tasks}
@@ -592,6 +594,7 @@ export function PipelinePanel() {
                 selectedIds={selectedIds}
                 onToggleSelect={toggleSelect}
                 slaRule={getRuleForStage(s)}
+                ownerOptions={ownerOptions}
                 onUpdate={updateCard} onDrop={handleDrop} onMarkWon={markWon} onMarkLost={handleLossRequest}
                 onCreateTask={createTask} onToggleTask={toggleTask} onCardClick={handleCardClick} />
             ))}
@@ -618,6 +621,7 @@ export function PipelinePanel() {
         cardLabels={selectedCard ? getCardLabels(selectedCard.id) : []}
         onAddLabel={addLabelToCard}
         onRemoveLabel={removeLabelFromCard}
+        ownerOptions={ownerOptions}
       />
 
       {/* No Show date popup */}

@@ -14,7 +14,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import type { PipelineCard as CardType, PipelineTask, LossCategory } from "./types";
-import { CLOSERS, LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
+import { LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
 import { ContractTab } from "./ContractTab";
 import type { PipelineLabel } from "@/hooks/useLabels";
 
@@ -72,11 +72,12 @@ interface Props {
   cardLabels?: PipelineLabel[];
   onAddLabel?: (cardId: string, labelId: string) => void;
   onRemoveLabel?: (cardId: string, labelId: string) => void;
+  ownerOptions?: string[];
 }
 
 type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "contrato" | "anexo" | "acoes";
 
-export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onSaveObservation, labels = [], cardLabels = [], onAddLabel, onRemoveLabel }: Props) {
+export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onSaveObservation, labels = [], cardLabels = [], onAddLabel, onRemoveLabel, ownerOptions: ownerOptionsProp }: Props) {
   const { user, isAdmin, profile } = useAuth();
   const db = supabaseExt as any;
   const [editing, setEditing] = useState<string | null>(null);
@@ -190,7 +191,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const pendingCount = cardTasks.filter(t => t.status === "pendente").length;
   const staleDays = daysDiff(card.stage_changed_at);
   const stageConf = STAGE_CONFIG[card.stage];
-  const ownerOptions = Array.from(new Set([card.owner, ...CLOSERS, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
+  const ownerOptions = ownerOptionsProp || Array.from(new Set([card.owner, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
 
   const copyPhone = () => {
     if (card.telefone) {

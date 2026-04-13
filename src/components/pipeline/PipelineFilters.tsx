@@ -4,7 +4,7 @@ import { Filter, X, Download, CalendarIcon, ChevronDown } from "lucide-react";
 import { format, startOfMonth, endOfMonth, subMonths, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { PipelineCard, PipelineTask, LeadStatus, Stage } from "./types";
-import { CLOSERS, STAGE_ORDER, STAGE_CONFIG, formatBRL, daysDiff } from "./types";
+import { STAGE_ORDER, STAGE_CONFIG, formatBRL, daysDiff } from "./types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 
@@ -96,9 +96,10 @@ interface Props {
   filters: FilterState;
   onChange: (f: FilterState) => void;
   onExport: () => void;
+  closerOptions?: string[];
 }
 
-export function PipelineFiltersBar({ filters, onChange, onExport }: Props) {
+export function PipelineFiltersBar({ filters, onChange, onExport, closerOptions = [] }: Props) {
   const [open, setOpen] = useState(false);
   const [presetOpen, setPresetOpen] = useState(false);
   const [calFromOpen, setCalFromOpen] = useState(false);
@@ -259,7 +260,7 @@ export function PipelineFiltersBar({ filters, onChange, onExport }: Props) {
           <div>
             <label className="text-[10px] text-muted-foreground block mb-1">Closer</label>
             <div className="flex gap-1 flex-wrap">
-              {CLOSERS.map(c => (
+              {closerOptions.map(c => (
                 <button key={c} onClick={() => {
                   const next = filters.closers.includes(c) ? filters.closers.filter(x => x !== c) : [...filters.closers, c];
                   onChange({ ...filters, closers: next });
