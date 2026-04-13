@@ -246,6 +246,46 @@ export default function Settings() {
         </div>
       )}
 
+      {/* Responsáveis Section */}
+      {activeSection === "responsaveis" && (
+        <div className="border border-border rounded-2xl bg-card overflow-hidden">
+          <div className="p-4 border-b border-border bg-muted/30">
+            <div className="flex items-center gap-2">
+              <Users size={16} className="text-primary" />
+              <h2 className="text-sm font-semibold text-foreground">Responsáveis por Negócios</h2>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Selecione quais membros da equipe podem ser atribuídos como dono de um negócio no pipeline</p>
+          </div>
+          <div className="p-4 space-y-2">
+            {teamMembers.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">Nenhum membro cadastrado</p>
+            ) : (
+              teamMembers.map(m => (
+                <div key={m.id} className="flex items-center gap-3 py-2 px-3 rounded-lg border border-border bg-background">
+                  <button
+                    onClick={() => handleToggleResponsavel(m.id, m.pode_ser_responsavel)}
+                    className={cn(
+                      "w-5 h-5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0",
+                      m.pode_ser_responsavel
+                        ? "bg-primary border-primary text-primary-foreground"
+                        : "border-muted-foreground/40"
+                    )}
+                  >
+                    {m.pode_ser_responsavel && (
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    )}
+                  </button>
+                  <span className="text-sm text-foreground flex-1">{m.nome}</span>
+                  <span className="text-[10px] bg-muted/50 text-muted-foreground rounded px-1.5 py-0.5">
+                    {[m.role, m.secondary_role].filter(Boolean).join(" + ")}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
       {/* SLA Rules Section */}
       {activeSection === "sla" && (
         <div className="border border-border rounded-2xl bg-card overflow-hidden">
