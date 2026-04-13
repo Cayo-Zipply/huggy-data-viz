@@ -5,11 +5,13 @@ import { useSlaRules, type SlaRule } from "@/hooks/useSlaRules";
 import { useMotivosPerda } from "@/hooks/useMotivosPerda";
 import { useMarketingOverrides, type MarketingOverride } from "@/hooks/useMarketingOverrides";
 import { useMarketingData } from "@/hooks/useMarketingData";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { Navigate } from "react-router-dom";
-import { Plus, Trash2, Palette, Tag, Settings as SettingsIcon, X, Clock, AlertTriangle, Shield, BarChart3, Save } from "lucide-react";
+import { Plus, Trash2, Palette, Tag, Settings as SettingsIcon, X, Clock, AlertTriangle, Shield, BarChart3, Save, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { STAGE_ORDER, STAGE_CONFIG } from "@/components/pipeline/types";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const PRESET_COLORS = [
   "#ef4444", "#f97316", "#f59e0b", "#22c55e", "#14b8a6",
