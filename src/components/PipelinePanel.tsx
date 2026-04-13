@@ -585,7 +585,7 @@ export function PipelinePanel() {
 
       {subTab === "kanban" && (
         <>
-          <PipelineFiltersBar filters={filters} onChange={setFilters} onExport={() => exportCSV(visibleCards, tasks)} />
+          <PipelineFiltersBar filters={filters} onChange={setFilters} onExport={() => exportCSV(visibleCards, tasks)} closerOptions={ownerOptions} />
           <div className="flex gap-3 overflow-x-auto rounded-2xl border border-border bg-muted/20 p-3 pb-4">
             {getStages().map(s => (
               <StageColumn key={s} stageKey={s} cards={getCardsForStage(s)} tasks={tasks}
@@ -620,6 +620,7 @@ export function PipelinePanel() {
         cardLabels={selectedCard ? getCardLabels(selectedCard.id) : []}
         onAddLabel={addLabelToCard}
         onRemoveLabel={removeLabelFromCard}
+        ownerOptions={ownerOptions}
       />
 
       {/* No Show date popup */}
