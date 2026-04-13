@@ -41,7 +41,7 @@ export default function Settings() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState("");
-  const [activeSection, setActiveSection] = useState<"etiquetas" | "sla" | "motivos" | "metricas">("etiquetas");
+  const [activeSection, setActiveSection] = useState<"etiquetas" | "sla" | "motivos" | "metricas" | "responsaveis">("etiquetas");
 
   // Motivos de perda state
   const [newMotivoNome, setNewMotivoNome] = useState("");
@@ -109,6 +109,15 @@ export default function Settings() {
     await upsertOverride(selectedOverrideMonth, fields);
   };
 
+  const handleToggleResponsavel = async (memberId: string, current: boolean) => {
+    await (supabase as any)
+      .from("user_profiles")
+      .update({ pode_ser_responsavel: !current })
+      .eq("id", memberId);
+    await refetchTeam();
+    toast({ title: !current ? "Responsável habilitado" : "Responsável removido" });
+  };
+
   const OVERRIDE_FIELDS = [
     { key: "manual_investimento", label: "Investimento (R$)" },
     { key: "manual_impressoes", label: "Impressões" },
@@ -124,6 +133,7 @@ export default function Settings() {
 
   const sections = [
     { key: "etiquetas" as const, label: "Etiquetas", icon: Tag },
+    { key: "responsaveis" as const, label: "Responsáveis", icon: Users },
     { key: "sla" as const, label: "Regras de SLA", icon: Clock },
     { key: "motivos" as const, label: "Motivos de Perda", icon: AlertTriangle },
     { key: "metricas" as const, label: "Métricas Marketing", icon: BarChart3 },
