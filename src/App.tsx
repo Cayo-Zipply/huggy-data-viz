@@ -16,7 +16,17 @@ import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { useState } from "react";
 import { Users, UserCheck } from "lucide-react";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 2,
+      retry: 1,
+      refetchOnMount: true,
+      refetchOnReconnect: true,
+    },
+  },
+});
 
 const TAB_ROUTES = new Set(["pipeline", "marketing", "comercial", "comparativo", "rentabilidade", "consolidado", "ajuda", "farol"]);
 const ADMIN_TABS = new Set(["marketing", "comercial", "comparativo", "rentabilidade", "consolidado", "farol"]);

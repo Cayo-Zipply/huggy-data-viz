@@ -212,24 +212,35 @@ export function PipelinePanel() {
     e.target.value = "";
   };
 
+  const [isCreatingLead, setIsCreatingLead] = useState(false);
+
   const addLead = async () => {
-    if (!newLeadName.trim()) return;
-    const result = await createCard({
-      nome: newLeadName,
-      telefone: newLeadPhone || null,
-      owner: showAllOwners ? currentUserName : activeUser,
-      stage: newLeadStage,
-    });
-    if (result?.duplicate) {
-      toast({
-        title: "Lead duplicado!",
-        description: `Já existe um lead com este telefone: ${result.existingCard.nome} — ${STAGE_CONFIG[result.existingCard.stage]?.label || result.existingCard.stage}`,
-        variant: "destructive",
+    if (!newLeadName.trim() || isCreatingLead) return;
+    setIsCreatingLead(true);
+    try {
+      const result = await createCard({
+        nome: newLeadName,
+        telefone: newLeadPhone || null,
+        owner: showAllOwners ? currentUserName : activeUser,
+        stage: newLeadStage,
       });
-      return;
+      if (result?.duplicate) {
+        toast({
+          title: "Lead duplicado!",
+          description: `Já existe um lead com este telefone: ${result.existingCard.nome} — ${STAGE_CONFIG[result.existingCard.stage]?.label || result.existingCard.stage}`,
+          variant: "destructive",
+        });
+        return;
+      }
+      // Refresh pipeline data immediately so the new lead appears
+      await refresh();
+      setNewLeadName(""); setNewLeadPhone(""); setNewLeadStage("conectado"); setShowNewLead(false);
+      toast({ title: "Lead criado!" });
+    } catch (err: any) {
+      toast({ title: "Erro ao criar lead", description: err?.message || "Tente novamente.", variant: "destructive" });
+    } finally {
+      setIsCreatingLead(false);
     }
-    setNewLeadName(""); setNewLeadPhone(""); setNewLeadStage("conectado"); setShowNewLead(false);
-    toast({ title: "Lead criado!" });
   };
 
   const getStages = () => {
@@ -539,7 +550,7 @@ export function PipelinePanel() {
           </Select>
           <input value={newLeadPhone} onChange={e => setNewLeadPhone(e.target.value)} placeholder="Telefone"
             className="sm:w-40 text-xs bg-muted/50 border border-border rounded px-3 py-2 text-foreground" />
-          <button onClick={addLead} className="text-xs px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90">Criar</button>
+          <button onClick={addLead} disabled={isCreatingLead} className="text-xs px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed">{isCreatingLead ? "Criando..." : "Criar"}</button>
           <button onClick={() => setShowNewLead(false)} className="text-xs px-3 py-2 text-muted-foreground">Cancelar</button>
         </div>
       )}
