@@ -550,7 +550,7 @@ export function PipelinePanel() {
           </Select>
           <input value={newLeadPhone} onChange={e => setNewLeadPhone(e.target.value)} placeholder="Telefone"
             className="sm:w-40 text-xs bg-muted/50 border border-border rounded px-3 py-2 text-foreground" />
-          <button onClick={addLead} className="text-xs px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90">Criar</button>
+          <button onClick={addLead} disabled={isCreatingLead} className="text-xs px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed">{isCreatingLead ? "Criando..." : "Criar"}</button>
           <button onClick={() => setShowNewLead(false)} className="text-xs px-3 py-2 text-muted-foreground">Cancelar</button>
         </div>
       )}
