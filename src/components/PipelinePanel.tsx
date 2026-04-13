@@ -68,7 +68,7 @@ export function PipelinePanel() {
   const [showNewLead, setShowNewLead] = useState(false);
   const [newLeadName, setNewLeadName] = useState("");
   const [newLeadPhone, setNewLeadPhone] = useState("");
-  const [newLeadStage, setNewLeadStage] = useState<Stage>("conectado");
+  const [newLeadStage, setNewLeadStage] = useState<Stage>(isCloser ? "reuniao_agendada" : "conectado");
   const [selectedCardId, setSelectedCardId] = useState<string | null>(() => sessionStorage.getItem(PIPELINE_UI_KEYS.selectedCardId) || null);
   const [drawerOpen, setDrawerOpen] = useState(() => sessionStorage.getItem(PIPELINE_UI_KEYS.drawerOpen) === "true");
   const [noShowPending, setNoShowPending] = useState<{ cardId: string; date: Date | undefined } | null>(null);
@@ -543,7 +543,7 @@ export function PipelinePanel() {
               <SelectValue placeholder="Etapa" />
             </SelectTrigger>
             <SelectContent>
-              {STAGE_ORDER.map(s => (
+              {(isCloser ? CLOSER_STAGES : isSdr ? SDR_STAGES : STAGE_ORDER).map(s => (
                 <SelectItem key={s} value={s} className="text-xs">{STAGE_CONFIG[s].label}</SelectItem>
               ))}
             </SelectContent>
