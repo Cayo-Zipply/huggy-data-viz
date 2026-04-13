@@ -6,7 +6,7 @@ import {
   AlertTriangle
 } from "lucide-react";
 import type { PipelineCard as CardType, PipelineTask, PipeType, LossCategory } from "./types";
-import { CLOSERS, LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
+import { LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
 import type { PipelineLabel } from "@/hooks/useLabels";
 
 interface Props {
