@@ -594,6 +594,7 @@ export function PipelinePanel() {
                 selectedIds={selectedIds}
                 onToggleSelect={toggleSelect}
                 slaRule={getRuleForStage(s)}
+                ownerOptions={ownerOptions}
                 onUpdate={updateCard} onDrop={handleDrop} onMarkWon={markWon} onMarkLost={handleLossRequest}
                 onCreateTask={createTask} onToggleTask={toggleTask} onCardClick={handleCardClick} />
             ))}
