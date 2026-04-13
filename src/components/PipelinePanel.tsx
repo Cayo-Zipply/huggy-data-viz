@@ -242,7 +242,7 @@ export function PipelinePanel() {
       }
       // Refresh pipeline data immediately so the new lead appears
       await refresh();
-      setNewLeadName(""); setNewLeadPhone(""); setNewLeadStage("conectado"); setShowNewLead(false);
+      setNewLeadName(""); setNewLeadPhone(""); setNewLeadStage(isCloser ? "reuniao_agendada" : "conectado"); setShowNewLead(false);
       toast({ title: "Lead criado!" });
     } catch (err: any) {
       toast({ title: "Erro ao criar lead", description: err?.message || "Tente novamente.", variant: "destructive" });
