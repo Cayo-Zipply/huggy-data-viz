@@ -29,7 +29,7 @@ const NAV_ITEMS = [
   { key: "/rentabilidade", label: "Rentabilidade", icon: DollarSign, roles: ["admin"] },
   { key: "/consolidado", label: "Consolidado", icon: PieChart, roles: ["admin"] },
   { key: "/contratos", label: "Contratos", icon: FileText, roles: ["admin"] },
-  { key: "/farol", label: "Farol", icon: Gauge, roles: ["admin", "sdr", "closer"] },
+  { key: "/farol", label: "Farol", icon: Gauge, roles: ["admin"] },
   { key: "/usuarios", label: "Usuários", icon: UsersRound, roles: ["admin"] },
   { key: "/configuracoes", label: "Configurações", icon: Settings, roles: ["admin"] },
   { key: "/feedbacks", label: "Feedbacks", icon: MessageSquarePlus, roles: ["admin"] },

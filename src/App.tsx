@@ -29,7 +29,7 @@ const queryClient = new QueryClient({
 });
 
 const TAB_ROUTES = new Set(["pipeline", "marketing", "comercial", "comparativo", "rentabilidade", "consolidado", "ajuda", "farol"]);
-const ADMIN_TABS = new Set(["marketing", "comercial", "comparativo", "rentabilidade", "consolidado"]);
+const ADMIN_TABS = new Set(["marketing", "comercial", "comparativo", "rentabilidade", "consolidado", "farol"]);
 
 function AuthLayout() {
   const { user, profile, loading, signOut, setRole } = useAuth();
