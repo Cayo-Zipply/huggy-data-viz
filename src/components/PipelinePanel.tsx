@@ -134,15 +134,23 @@ export function PipelinePanel() {
 
   const visibleCards = useMemo(() => {
     let filtered = cards;
+    
+    // Helper: check if card owner matches a given name (partial/first-name match)
+    const ownerMatches = (cardOwner: string | null, target: string) => {
+      if (!cardOwner || !target) return false;
+      const o = cardOwner.toLowerCase().trim();
+      const t = target.toLowerCase().trim();
+      return o === t || o.startsWith(t + " ") || o.includes(t);
+    };
+    
     if (!isAdmin) {
-      // SDR users see their own cards + ALL no_show cards (mirroring from closer pipe)
       if (isSdr) {
-        filtered = filtered.filter((card) => card.owner === currentUserName || !card.owner || card.stage === "no_show");
+        filtered = filtered.filter((card) => ownerMatches(card.owner, currentUserName) || !card.owner || card.stage === "no_show");
       } else {
-        filtered = filtered.filter((card) => card.owner === currentUserName || !card.owner);
+        filtered = filtered.filter((card) => ownerMatches(card.owner, currentUserName) || !card.owner);
       }
     } else if (!showAllOwners) {
-      filtered = filtered.filter((card) => card.owner === activeUser);
+      filtered = filtered.filter((card) => ownerMatches(card.owner, activeUser));
     }
     filtered = applyFilters(filtered, filters);
     if (searchQuery.trim()) {
@@ -155,7 +163,7 @@ export function PipelinePanel() {
     }
     filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     return filtered;
-  }, [cards, isAdmin, currentUserName, showAllOwners, activeUser, filters, searchQuery]);
+  }, [cards, isAdmin, isSdr, currentUserName, showAllOwners, activeUser, filters, searchQuery]);
 
   const todayPending = useMemo(() => {
     const today = new Date().toISOString().split("T")[0];
