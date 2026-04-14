@@ -136,6 +136,7 @@ export function usePipelineData(actorName: string) {
   const [goals, setGoals] = useState<PipelineGoal[]>([]);
   const [loaded, setLoaded] = useState(false);
   const channelRef = useRef<any>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const legacyRef = useRef<{ cards: PipelineCard[]; tasks: PipelineTask[]; goals: PipelineGoal[] }>({
     cards: [],
     tasks: [],
@@ -206,20 +207,28 @@ export function usePipelineData(actorName: string) {
   useEffect(() => {
     if (!loaded) return;
 
+    const debouncedFetch = () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => { void fetchPipelineSnapshot(); }, 500);
+    };
+
     const channel = sbExt
       .channel(`crm-realtime-${crypto.randomUUID()}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, () => { void fetchPipelineSnapshot(); })
-      .on("postgres_changes", { event: "*", schema: "public", table: "tarefas" }, () => { void fetchPipelineSnapshot(); })
-      .on("postgres_changes", { event: "*", schema: "public", table: "lead_historico" }, () => { void fetchPipelineSnapshot(); })
-      .on("postgres_changes", { event: "*", schema: "public", table: "metas" }, () => { void fetchPipelineSnapshot(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, debouncedFetch)
+      .on("postgres_changes", { event: "*", schema: "public", table: "tarefas" }, debouncedFetch)
+      .on("postgres_changes", { event: "*", schema: "public", table: "lead_historico" }, debouncedFetch)
+      .on("postgres_changes", { event: "*", schema: "public", table: "metas" }, debouncedFetch)
       .subscribe((status) => {
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-          void fetchPipelineSnapshot();
+          debouncedFetch();
         }
       });
 
     channelRef.current = channel;
-    return () => { sbExt.removeChannel(channel); };
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      sbExt.removeChannel(channel);
+    };
   }, [loaded, fetchPipelineSnapshot]);
 
   /* ── fallback sync removido — atualização agora é manual via botão ── */
@@ -341,6 +350,9 @@ export function usePipelineData(actorName: string) {
         console.warn("Auto-tag FS error:", e);
       }
     }
+
+    // Optimistic: add card to local state immediately
+    setCards(prev => [card, ...prev]);
 
     return card;
   }, [actorName, genAutoTasks]);
