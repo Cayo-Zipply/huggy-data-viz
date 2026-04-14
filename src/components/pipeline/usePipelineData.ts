@@ -351,6 +351,9 @@ export function usePipelineData(actorName: string) {
       }
     }
 
+    // Optimistic: add card to local state immediately
+    setCards(prev => [card, ...prev]);
+
     return card;
   }, [actorName, genAutoTasks]);
 
