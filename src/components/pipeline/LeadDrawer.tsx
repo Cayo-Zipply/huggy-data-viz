@@ -9,6 +9,7 @@ import {
 import { InputMoedaBRL } from "@/components/ui/input-moeda-brl";
 import { supabaseExt } from "@/lib/supabaseExternal";
 import { supabase as supabaseCloud } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { ObservacaoItem, type Anotacao } from "./ObservacaoItem";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
