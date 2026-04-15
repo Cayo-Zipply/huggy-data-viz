@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pencil, Loader2, Save, X } from "lucide-react";
 import { toast } from "sonner";
-import { supabaseExt } from "@/lib/supabaseExternal";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Anotacao {
   id: string;
@@ -22,7 +22,7 @@ interface Props {
   onUpdate: () => void;
 }
 
-const db = supabaseExt as any;
+const db = supabase as any;
 
 export function ObservacaoItem({ anotacao, currentUserId, isAdmin, onUpdate }: Props) {
   const [editando, setEditando] = useState(false);
