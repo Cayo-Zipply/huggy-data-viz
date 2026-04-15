@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink, MessageCircle } from "lucide-react";
+import { InputMoedaBRL } from "@/components/ui/input-moeda-brl";
 import { toast } from "sonner";
 import type { PipelineCard as CardType, ContractType, ContractStatus, Stage } from "./types";
 import { formatBRL } from "./types";
@@ -44,16 +45,16 @@ export function ContractTab({ card, onUpdate }: Props) {
     cidade: card.cidade || "",
     estado: card.estado || "",
     cep: card.cep || "",
-    valor_mensalidade: card.valor_mensalidade?.toString() || "",
     qtd_salarios_minimos: card.qtd_salarios_minimos || "",
     porcentagem_exito: card.porcentagem_exito || "",
-    valor_divida: card.valor_divida?.toString() || "",
-    valor_proposta: card.valor_proposta?.toString() || "",
     data_primeiro_pagamento: card.data_primeiro_pagamento || "",
     dia_demais_pagamentos: card.dia_demais_pagamentos || "",
     prazo_entrega_relatorios: card.prazo_entrega_relatorios?.toString() || "",
     prazo_contrato: card.prazo_contrato || "",
   });
+  const [valorMensalidade, setValorMensalidade] = useState<number | null>(card.valor_mensalidade ?? null);
+  const [valorDivida, setValorDivida] = useState<number | null>(card.valor_divida ?? null);
+  const [valorProposta, setValorProposta] = useState<number | null>(card.valor_proposta ?? null);
   const [actionLoading, setActionLoading] = useState<"zapsign" | "download" | "whatsapp" | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [lastResult, setLastResult] = useState<{ action: string; data: any } | null>(null);
@@ -71,16 +72,16 @@ export function ContractTab({ card, onUpdate }: Props) {
       cidade: card.cidade || "",
       estado: card.estado || "",
       cep: card.cep || "",
-      valor_mensalidade: card.valor_mensalidade?.toString() || "",
       qtd_salarios_minimos: card.qtd_salarios_minimos || "",
       porcentagem_exito: card.porcentagem_exito || "",
-      valor_divida: card.valor_divida?.toString() || "",
-      valor_proposta: card.valor_proposta?.toString() || "",
       data_primeiro_pagamento: card.data_primeiro_pagamento || "",
       dia_demais_pagamentos: card.dia_demais_pagamentos || "",
       prazo_entrega_relatorios: card.prazo_entrega_relatorios?.toString() || "",
       prazo_contrato: card.prazo_contrato || "",
     });
+    setValorMensalidade(card.valor_mensalidade ?? null);
+    setValorDivida(card.valor_divida ?? null);
+    setValorProposta(card.valor_proposta ?? null);
     setLastResult(null);
   }, [card.id]);
 
@@ -94,7 +95,7 @@ export function ContractTab({ card, onUpdate }: Props) {
     if (!form.representante_nome.trim()) errs.push("Nome do Representante");
     if (!form.representante_cpf.trim()) errs.push("CPF do Representante");
     if (!form.email.trim()) errs.push("Email");
-    if (!form.valor_mensalidade.trim()) errs.push("Valor da Mensalidade");
+    if (valorMensalidade === null || valorMensalidade === 0) errs.push("Valor da Mensalidade");
     if (!form.qtd_salarios_minimos.trim()) errs.push("Qtd Salários Mínimos");
     if (!form.porcentagem_exito.trim()) errs.push("Porcentagem de Êxito");
     if (!form.data_primeiro_pagamento) errs.push("Data do Primeiro Pagamento");
@@ -118,11 +119,11 @@ export function ContractTab({ card, onUpdate }: Props) {
       cidade: form.cidade || null,
       estado: form.estado || null,
       cep: form.cep || null,
-      valor_mensalidade: form.valor_mensalidade ? parseFloat(form.valor_mensalidade.replace(",", ".")) : null,
+      valor_mensalidade: valorMensalidade,
       qtd_salarios_minimos: form.qtd_salarios_minimos || null,
       porcentagem_exito: form.porcentagem_exito || null,
-      valor_divida: form.valor_divida ? parseFloat(form.valor_divida.replace(",", ".")) : null,
-      valor_proposta: form.valor_proposta ? parseFloat(form.valor_proposta.replace(",", ".")) : null,
+      valor_divida: valorDivida,
+      valor_proposta: valorProposta,
       data_primeiro_pagamento: form.data_primeiro_pagamento || null,
       dia_demais_pagamentos: form.dia_demais_pagamentos || null,
       prazo_entrega_relatorios: form.prazo_entrega_relatorios ? parseInt(form.prazo_entrega_relatorios) : null,
@@ -406,7 +407,7 @@ export function ContractTab({ card, onUpdate }: Props) {
             <div className="space-y-3">
               <div>
                 <label className="text-[11px] text-muted-foreground mb-1 block">Valor da Mensalidade (R$) *</label>
-                <input value={form.valor_mensalidade} onChange={e => updateField("valor_mensalidade", e.target.value)} placeholder="0,00" className={inputClass("Valor da Mensalidade")} />
+                <InputMoedaBRL value={valorMensalidade} onChange={setValorMensalidade} hasError={errors.includes("Valor da Mensalidade")} />
               </div>
               <div>
                 <label className="text-[11px] text-muted-foreground mb-1 block">Quantidade de Salários Mínimos *</label>
@@ -418,11 +419,11 @@ export function ContractTab({ card, onUpdate }: Props) {
               </div>
               <div>
                 <label className="text-[11px] text-muted-foreground mb-1 block">Valor da Dívida (R$)</label>
-                <input value={form.valor_divida} onChange={e => updateField("valor_divida", e.target.value)} placeholder="0,00" className={inputClass("")} />
+                <InputMoedaBRL value={valorDivida} onChange={setValorDivida} />
               </div>
               <div>
                 <label className="text-[11px] text-muted-foreground mb-1 block">Valor da Proposta (R$)</label>
-                <input value={form.valor_proposta} onChange={e => updateField("valor_proposta", e.target.value)} placeholder="0,00" className={inputClass("")} />
+                <InputMoedaBRL value={valorProposta} onChange={setValorProposta} />
               </div>
             </div>
           </div>
