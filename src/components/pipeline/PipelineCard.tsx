@@ -3,8 +3,9 @@ import { cn } from "@/lib/utils";
 import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
   ChevronDown, ChevronUp, Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap,
-  AlertTriangle
+  AlertTriangle, Calendar
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import type { PipelineCard as CardType, PipelineTask, PipeType, LossCategory } from "./types";
 import { LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
 import type { PipelineLabel } from "@/hooks/useLabels";
@@ -116,6 +117,11 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
               {isWon && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">Ganho</span>}
               {isLost && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-destructive/20 text-red-400 font-medium">Perdido</span>}
               {stale && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400">{staleDays}d parado</span>}
+              {card.fim_de_semana && (
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-amber-500/40 bg-amber-500/10 text-amber-500 gap-0.5">
+                  <Calendar size={8} /> FDS
+                </Badge>
+              )}
               {(card.resumo_reuniao || card.transcricao_reuniao) && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-medium">📎 Anexo</span>}
               {card.contrato_status === "gerado" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-medium">📄 Contrato</span>}
               {card.contrato_status === "enviado" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-medium">📝 Assinatura</span>}
