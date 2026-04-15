@@ -135,8 +135,8 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
     if (!card) return;
     setSaving(true);
     let val: any = editValue || null;
-    if (f === "deal_value" || f === "valor_divida") val = editValue ? parseFloat(editValue.replace(/[^\d.,]/g, "").replace(",", ".")) : null;
-    if (f === "deal_value" && !val) val = 1621;
+    if (f === "deal_value") { val = editValue ? parseFloat(editValue.replace(/[^\d.,]/g, "").replace(",", ".")) : null; if (!val) val = 1621; }
+    if (f === "valor_divida") val = editValue ? parseFloat(editValue.replace(/[^\d.,]/g, "").replace(",", ".")) : null;
     onUpdate(card.id, { [f]: val } as any);
     clearDraft(card.id, f);
     setEditing(null);
