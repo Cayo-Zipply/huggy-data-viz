@@ -59,6 +59,42 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_anotacoes: {
+        Row: {
+          autor_nome: string | null
+          autor_user_id: string | null
+          created_at: string
+          id: string
+          is_edited: boolean | null
+          lead_id: string
+          source: string | null
+          texto: string
+          updated_at: string
+        }
+        Insert: {
+          autor_nome?: string | null
+          autor_user_id?: string | null
+          created_at?: string
+          id?: string
+          is_edited?: boolean | null
+          lead_id: string
+          source?: string | null
+          texto: string
+          updated_at?: string
+        }
+        Update: {
+          autor_nome?: string | null
+          autor_user_id?: string | null
+          created_at?: string
+          id?: string
+          is_edited?: boolean | null
+          lead_id?: string
+          source?: string | null
+          texto?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lead_history: {
         Row: {
           created_at: string | null
