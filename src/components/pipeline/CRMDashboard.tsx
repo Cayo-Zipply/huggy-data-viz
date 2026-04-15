@@ -94,8 +94,46 @@ function TagConversion({ cards, labels, getCardLabels }: { cards: PipelineCard[]
     </div>
   );
 }
+function WeekendConversionCard({ cards }: { cards: PipelineCard[] }) {
+  const stats = useMemo(() => {
+    const compute = (filter: boolean) => {
+      const subset = cards.filter(c => c.fim_de_semana === filter);
+      const ganhos = subset.filter(c => c.lead_status === "ganho");
+      const perdidos = subset.filter(c => c.lead_status === "perdido");
+      const fechados = ganhos.length + perdidos.length;
+      const receita = ganhos.reduce((s, c) => s + (c.deal_value || 0), 0);
+      const ticket = ganhos.length > 0 ? receita / ganhos.length : 0;
+      const taxa = fechados > 0 ? Math.round((ganhos.length / fechados) * 10000) / 100 : 0;
+      return { total: subset.length, ganhos: ganhos.length, taxa, ticket, receita };
+    };
+    return { diaUtil: compute(false), fds: compute(true) };
+  }, [cards]);
 
-export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+          <Briefcase size={12} /> Dia útil
+        </div>
+        <p className="text-2xl font-bold text-foreground">{stats.diaUtil.taxa}%</p>
+        <p className="text-[10px] text-muted-foreground">{stats.diaUtil.total} leads · {stats.diaUtil.ganhos} ganhos</p>
+        <p className="text-[10px] text-muted-foreground">Ticket médio: {formatBRL(stats.diaUtil.ticket)}</p>
+        <p className="text-xs text-emerald-400 font-medium mt-1">{formatBRL(stats.diaUtil.receita)}</p>
+      </div>
+      <div className="space-y-2">
+        <div className="flex items-center gap-1.5 text-xs text-amber-500 font-medium">
+          <Calendar size={12} /> Fim de semana
+        </div>
+        <p className="text-2xl font-bold text-foreground">{stats.fds.taxa}%</p>
+        <p className="text-[10px] text-muted-foreground">{stats.fds.total} leads · {stats.fds.ganhos} ganhos</p>
+        <p className="text-[10px] text-muted-foreground">Ticket médio: {formatBRL(stats.fds.ticket)}</p>
+        <p className="text-xs text-emerald-400 font-medium mt-1">{formatBRL(stats.fds.receita)}</p>
+      </div>
+    </div>
+  );
+}
+
+
 
   const showAll = canViewAll && activeUser === "all";
   const vis = showAll ? cards : cards.filter(c => c.owner === activeUser);
