@@ -45,16 +45,16 @@ export function ContractTab({ card, onUpdate }: Props) {
     cidade: card.cidade || "",
     estado: card.estado || "",
     cep: card.cep || "",
-    valor_mensalidade: card.valor_mensalidade?.toString() || "",
     qtd_salarios_minimos: card.qtd_salarios_minimos || "",
     porcentagem_exito: card.porcentagem_exito || "",
-    valor_divida: card.valor_divida?.toString() || "",
-    valor_proposta: card.valor_proposta?.toString() || "",
     data_primeiro_pagamento: card.data_primeiro_pagamento || "",
     dia_demais_pagamentos: card.dia_demais_pagamentos || "",
     prazo_entrega_relatorios: card.prazo_entrega_relatorios?.toString() || "",
     prazo_contrato: card.prazo_contrato || "",
   });
+  const [valorMensalidade, setValorMensalidade] = useState<number | null>(card.valor_mensalidade ?? null);
+  const [valorDivida, setValorDivida] = useState<number | null>(card.valor_divida ?? null);
+  const [valorProposta, setValorProposta] = useState<number | null>(card.valor_proposta ?? null);
   const [actionLoading, setActionLoading] = useState<"zapsign" | "download" | "whatsapp" | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [lastResult, setLastResult] = useState<{ action: string; data: any } | null>(null);
