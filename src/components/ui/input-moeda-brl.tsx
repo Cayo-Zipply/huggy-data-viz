@@ -1,4 +1,4 @@
-import { forwardRef, useMemo } from "react";
+import { forwardRef, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 type InputMoedaBRLProps = {
@@ -11,29 +11,56 @@ type InputMoedaBRLProps = {
   hasError?: boolean;
 };
 
+function formatBRL(v: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(v);
+}
+
+function parseBRL(raw: string): number | null {
+  const cleaned = raw.trim();
+  if (!cleaned) return null;
+  // Remove dots (thousands sep), replace comma with dot (decimal sep)
+  const normalized = cleaned.replace(/\./g, "").replace(",", ".");
+  const num = parseFloat(normalized);
+  if (isNaN(num)) return null;
+  return num;
+}
+
 export const InputMoedaBRL = forwardRef<HTMLInputElement, InputMoedaBRLProps>(
   function InputMoedaBRL({ value, onChange, placeholder = "0,00", disabled, className, id, hasError }, ref) {
-    const centavos = useMemo(() => {
-      if (value === null || value === undefined || isNaN(Number(value))) return 0;
-      return Math.round(Number(value) * 100);
-    }, [value]);
+    const [display, setDisplay] = useState(() =>
+      value != null && !isNaN(Number(value)) ? formatBRL(Number(value)) : ""
+    );
+    const [focused, setFocused] = useState(false);
 
-    const displayValue = useMemo(() => {
-      if (centavos === 0 && (value === null || value === undefined)) return "";
-      return new Intl.NumberFormat("pt-BR", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(centavos / 100);
-    }, [centavos, value]);
+    // Sync display when value changes externally (and not focused)
+    useEffect(() => {
+      if (focused) return;
+      if (value != null && !isNaN(Number(value))) {
+        setDisplay(formatBRL(Number(value)));
+      } else {
+        setDisplay("");
+      }
+    }, [value, focused]);
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-      const apenasDigitos = e.target.value.replace(/\D/g, "");
-      if (!apenasDigitos) {
-        onChange(null);
-        return;
+      // Allow free typing — only digits, dots, commas
+      setDisplay(e.target.value);
+    }
+
+    function handleBlur() {
+      setFocused(false);
+      const parsed = parseBRL(display);
+      onChange(parsed);
+      if (parsed != null) {
+        setDisplay(formatBRL(parsed));
       }
-      const novoCentavos = parseInt(apenasDigitos, 10);
-      onChange(novoCentavos / 100);
+    }
+
+    function handleFocus() {
+      setFocused(true);
     }
 
     return (
@@ -45,9 +72,11 @@ export const InputMoedaBRL = forwardRef<HTMLInputElement, InputMoedaBRLProps>(
           ref={ref}
           id={id}
           type="text"
-          inputMode="numeric"
-          value={displayValue}
+          inputMode="decimal"
+          value={display}
           onChange={handleChange}
+          onBlur={handleBlur}
+          onFocus={handleFocus}
           placeholder={placeholder}
           disabled={disabled}
           className={cn(
