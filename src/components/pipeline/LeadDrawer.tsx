@@ -103,11 +103,12 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const fetchAnotacoes = useCallback(async () => {
     if (!card) return;
     setLoadingAnotacoes(true);
-    const { data } = await db
+    const { data, error } = await supabaseCloud
       .from("lead_anotacoes")
       .select("*")
       .eq("lead_id", card.id)
       .order("created_at", { ascending: false });
+    if (error) console.error("[fetchAnotacoes] error:", error.message);
     setAnotacoes((data as Anotacao[]) ?? []);
     setLoadingAnotacoes(false);
   }, [card?.id]);
@@ -159,8 +160,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
     if (!card || !obsText.trim()) return;
     setSavingObs(true);
     try {
-      // Try saving to lead_anotacoes table
-      const { error } = await db.from("lead_anotacoes").insert({
+      const { error } = await supabaseCloud.from("lead_anotacoes").insert({
         lead_id: card.id,
         texto: obsText.trim(),
         source: "manual",
@@ -168,19 +168,20 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
         autor_user_id: user?.id || null,
       });
       if (error) {
-        console.warn("lead_anotacoes insert error, falling back to legacy:", error.message);
-        // Fallback to legacy handler
-        onSaveObservation?.(card.id, obsText.trim());
+        console.error("[submitObservation] INSERT falhou:", error.message);
+        toast.error("Erro ao salvar observação: " + error.message);
+        setSavingObs(false);
+        return;
       }
+      clearDraft(card.id, "obs_new");
+      setObsText("");
+      toast.success("Observação salva!");
+      fetchAnotacoes();
     } catch (err: any) {
-      console.warn("lead_anotacoes exception, falling back to legacy:", err);
-      onSaveObservation?.(card.id, obsText.trim());
+      console.error("[submitObservation] exception:", err);
+      toast.error("Erro ao salvar observação: " + (err.message || "Erro desconhecido"));
     }
-    clearDraft(card.id, "obs_new");
-    setObsText("");
     setSavingObs(false);
-    toast.success("Observação salva!");
-    fetchAnotacoes();
   };
 
   if (!card) return null;
