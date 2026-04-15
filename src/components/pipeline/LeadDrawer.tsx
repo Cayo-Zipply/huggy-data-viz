@@ -372,7 +372,6 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                 <Separator className="my-1" />
                 {/* Valor do Negócio - currency input */}
                 <div className="flex items-center gap-3 py-2">
-                  <div className="text-muted-foreground flex-shrink-0"><DollarSign size={16} /></div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Valor do Negócio</p>
                     <InputMoedaBRL
@@ -384,7 +383,6 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                 <Separator className="my-1" />
                 {/* Valor da Dívida - currency input */}
                 <div className="flex items-center gap-3 py-2">
-                  <div className="text-muted-foreground flex-shrink-0"><DollarSign size={16} /></div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Valor da Dívida</p>
                     <InputMoedaBRL
