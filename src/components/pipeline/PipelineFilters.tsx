@@ -175,6 +175,15 @@ export function PipelineFiltersBar({ filters, onChange, onExport, closerOptions 
           </button>
         ))}
 
+        {/* Weekend filter toggle */}
+        <button
+          onClick={() => onChange({ ...filters, apenasFimDeSemana: !filters.apenasFimDeSemana })}
+          className={cn("text-[11px] px-3 py-1 rounded-full border transition-all flex items-center gap-1",
+            filters.apenasFimDeSemana ? "bg-amber-500/20 text-amber-500 border-amber-500/40" : "border-border text-muted-foreground hover:text-foreground")}
+        >
+          <CalendarIcon size={10} /> FDS
+        </button>
+
         <div className="flex-1" />
 
         {/* Date preset dropdown + calendar */}

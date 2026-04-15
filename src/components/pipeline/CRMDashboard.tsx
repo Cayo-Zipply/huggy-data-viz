@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Users, Trophy, XCircle, TrendingUp, DollarSign, Clock, Target, ChevronDown, Tag } from "lucide-react";
+import { Users, Trophy, XCircle, TrendingUp, DollarSign, Clock, Target, ChevronDown, Tag, Calendar, Briefcase } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
 import type { PipelineCard } from "./types";
 import { STAGE_ORDER, STAGE_CONFIG, LOSS_CATEGORIES, formatBRL, cardsReachedStage, daysDiff } from "./types";
@@ -314,6 +314,12 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
           </div>
         </div>
       )}
+
+      {/* Weekend conversion card */}
+      <div className="bg-card border border-border rounded-xl p-4">
+        <h4 className="text-sm font-semibold text-foreground mb-3">Conversão: Dia útil vs. Fim de semana</h4>
+        <WeekendConversionCard cards={vis} />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {lossData.length > 0 && (
