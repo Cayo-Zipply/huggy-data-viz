@@ -18,11 +18,13 @@ export interface FilterState {
   stages: string[];
   staleDays: number | null;
   slaFilter: "todos" | "dentro" | "proximo" | "estourado";
+  apenasFimDeSemana: boolean;
 }
 
 export const defaultFilters: FilterState = {
   dateFrom: "", dateTo: "", stageChangedFrom: "", stageChangedTo: "",
   closers: [], status: "todos", stages: [], staleDays: null, slaFilter: "todos",
+  apenasFimDeSemana: false,
 };
 
 export function applyFilters(cards: PipelineCard[], f: FilterState): PipelineCard[] {
@@ -39,6 +41,7 @@ export function applyFilters(cards: PipelineCard[], f: FilterState): PipelineCar
     if (f.status !== "todos" && c.lead_status !== f.status) return false;
     if (f.stages.length > 0 && !f.stages.includes(c.stage)) return false;
     if (f.staleDays != null && daysDiff(c.stage_changed_at) < f.staleDays) return false;
+    if (f.apenasFimDeSemana && !c.fim_de_semana) return false;
     return true;
   });
 }
@@ -105,7 +108,7 @@ export function PipelineFiltersBar({ filters, onChange, onExport, closerOptions 
   const [calFromOpen, setCalFromOpen] = useState(false);
   const [calToOpen, setCalToOpen] = useState(false);
 
-  const hasF = filters.dateFrom || filters.dateTo || filters.closers.length || filters.status !== "todos" || filters.stages.length || filters.staleDays != null || filters.slaFilter !== "todos";
+  const hasF = filters.dateFrom || filters.dateTo || filters.closers.length || filters.status !== "todos" || filters.stages.length || filters.staleDays != null || filters.slaFilter !== "todos" || filters.apenasFimDeSemana;
   const currentPreset = detectPreset(filters);
 
   const applyPreset = (preset: DatePreset) => {
@@ -171,6 +174,15 @@ export function PipelineFiltersBar({ filters, onChange, onExport, closerOptions 
             {s === "todos" ? "Todos" : s.charAt(0).toUpperCase() + s.slice(1) + "s"}
           </button>
         ))}
+
+        {/* Weekend filter toggle */}
+        <button
+          onClick={() => onChange({ ...filters, apenasFimDeSemana: !filters.apenasFimDeSemana })}
+          className={cn("text-[11px] px-3 py-1 rounded-full border transition-all flex items-center gap-1",
+            filters.apenasFimDeSemana ? "bg-amber-500/20 text-amber-500 border-amber-500/40" : "border-border text-muted-foreground hover:text-foreground")}
+        >
+          <CalendarIcon size={10} /> FDS
+        </button>
 
         <div className="flex-1" />
 

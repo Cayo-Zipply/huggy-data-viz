@@ -67,6 +67,7 @@ export interface PipelineCard {
   estado: string | null;
   cep: string | null;
   zapsign_signed_at: string | null;
+  fim_de_semana: boolean;
 }
 
 export interface PipelineTask {

@@ -219,6 +219,7 @@ export type Database = {
           data_perda: string | null
           deal_value: number | null
           email: string | null
+          fim_de_semana: boolean
           id: string
           last_stage: string | null
           lead_status: string | null
@@ -245,6 +246,7 @@ export type Database = {
           data_perda?: string | null
           deal_value?: number | null
           email?: string | null
+          fim_de_semana?: boolean
           id?: string
           last_stage?: string | null
           lead_status?: string | null
@@ -271,6 +273,7 @@ export type Database = {
           data_perda?: string | null
           deal_value?: number | null
           email?: string | null
+          fim_de_semana?: boolean
           id?: string
           last_stage?: string | null
           lead_status?: string | null
@@ -459,10 +462,23 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      vw_conversao_fim_de_semana: {
+        Row: {
+          em_aberto: number | null
+          ganhos: number | null
+          perdidos: number | null
+          periodo: string | null
+          receita_total: number | null
+          taxa_conversao_pct: number | null
+          ticket_medio_ganho: number | null
+          total_leads: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_weekend_sp: { Args: { ts: string }; Returns: boolean }
     }
     Enums: {
       closer_stage:

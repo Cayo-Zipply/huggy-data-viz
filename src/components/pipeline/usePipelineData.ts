@@ -46,8 +46,17 @@ function stageToEtapa(stage: Stage): string {
   return map[stage] || stage;
 }
 
+function isWeekendSP(dateStr: string): boolean {
+  const d = new Date(dateStr);
+  // Convert to São Paulo timezone and check day of week
+  const spDate = new Date(d.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  const dow = spDate.getDay();
+  return dow === 0 || dow === 6;
+}
+
 function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
   const stage = mapEtapa(row.etapa_atual);
+  const createdAt = row.data_entrada || row.created_at || new Date().toISOString();
   return {
     id: row.id,
     nome: row.nome || "",
@@ -61,7 +70,7 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     origem: row.origem || null,
     anotacoes: row.anotacoes || null,
     contract_url: row.contract_url || null,
-    created_at: row.data_entrada || row.created_at || new Date().toISOString(),
+    created_at: createdAt,
     updated_at: row.data_ultima_mudanca_etapa || new Date().toISOString(),
     owner: row.closer || null,
     deal_value: row.valor_negocio || DEFAULT_DEAL_VALUE,
@@ -77,7 +86,6 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     duracao_reuniao: row.duracao_reuniao || null,
     participantes_reuniao: row.participantes_reuniao || null,
     data_no_show: row.data_no_show || null,
-    // Contract fields
     contrato_status: row.contrato_status || null,
     contrato_file_url: row.contrato_file_url || null,
     contrato_preparado_em: row.contrato_preparado_em || null,
@@ -98,6 +106,7 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     estado: row.estado || null,
     cep: row.cep || null,
     zapsign_signed_at: row.zapsign_signed_at || null,
+    fim_de_semana: row.fim_de_semana === true || isWeekendSP(createdAt),
   };
 }
 
@@ -321,6 +330,7 @@ export function usePipelineData(actorName: string) {
       qtd_salarios_minimos: null, porcentagem_exito: null, data_primeiro_pagamento: null, dia_demais_pagamentos: null,
       prazo_entrega_relatorios: null, prazo_contrato: null, valor_proposta: null, endereco: null, cidade: null,
       estado: null, cep: null, zapsign_signed_at: null,
+      fim_de_semana: isWeekendSP(data.created_at || now),
     };
 
     const firstTask = {
