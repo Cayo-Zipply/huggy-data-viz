@@ -1,4 +1,4 @@
-import { forwardRef, useState, useEffect } from "react";
+import { forwardRef, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 type InputMoedaBRLProps = {
@@ -11,61 +11,94 @@ type InputMoedaBRLProps = {
   hasError?: boolean;
 };
 
-function formatBRL(v: number): string {
+function parseValorBR(raw: string): number | null {
+  if (!raw) return null;
+  const cleaned = raw.replace(/[^\d.,-]/g, "").trim();
+  if (!cleaned) return null;
+
+  if (cleaned.includes(",")) {
+    const normalized = cleaned.replace(/\./g, "").replace(",", ".");
+    const n = parseFloat(normalized);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  if (cleaned.includes(".")) {
+    const parts = cleaned.split(".");
+    if (parts.length > 2 || (parts[1] && parts[1].length === 3)) {
+      const n = parseFloat(cleaned.replace(/\./g, ""));
+      return Number.isFinite(n) ? n : null;
+    }
+    const n = parseFloat(cleaned);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  const n = parseFloat(cleaned);
+  return Number.isFinite(n) ? n : null;
+}
+
+function formatPtBR(valor: number): string {
   return new Intl.NumberFormat("pt-BR", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(v);
-}
-
-function parseBRL(raw: string): number | null {
-  const cleaned = raw.trim();
-  if (!cleaned) return null;
-  // Remove dots (thousands sep), replace comma with dot (decimal sep)
-  const normalized = cleaned.replace(/\./g, "").replace(",", ".");
-  const num = parseFloat(normalized);
-  if (isNaN(num)) return null;
-  return num;
+  }).format(valor);
 }
 
 export const InputMoedaBRL = forwardRef<HTMLInputElement, InputMoedaBRLProps>(
-  function InputMoedaBRL({ value, onChange, placeholder = "0,00", disabled, className, id, hasError }, ref) {
-    const [display, setDisplay] = useState(() =>
-      value != null && !isNaN(Number(value)) ? formatBRL(Number(value)) : ""
-    );
+  function InputMoedaBRL(
+    { value, onChange, placeholder = "0,00", disabled, className, id, hasError },
+    ref
+  ) {
+    const [display, setDisplay] = useState("");
     const [focused, setFocused] = useState(false);
 
-    // Sync display when value changes externally (and not focused)
     useEffect(() => {
       if (focused) return;
-      if (value != null && !isNaN(Number(value))) {
-        setDisplay(formatBRL(Number(value)));
-      } else {
+      if (value === null || value === undefined || isNaN(Number(value))) {
         setDisplay("");
+      } else if (Number(value) === 0) {
+        setDisplay("");
+      } else {
+        setDisplay(formatPtBR(Number(value)));
       }
     }, [value, focused]);
 
+    function handleFocus(e: React.FocusEvent<HTMLInputElement>) {
+      setFocused(true);
+      if (value !== null && value !== undefined && Number(value) > 0) {
+        const str = String(Number(value)).replace(".", ",");
+        setDisplay(str);
+        requestAnimationFrame(() => e.target.select());
+      } else {
+        setDisplay("");
+      }
+    }
+
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-      // Allow free typing — only digits, dots, commas
-      setDisplay(e.target.value);
+      const raw = e.target.value.replace(/[^\d.,\s]/g, "");
+      setDisplay(raw);
     }
 
     function handleBlur() {
       setFocused(false);
-      const parsed = parseBRL(display);
-      onChange(parsed);
-      if (parsed != null) {
-        setDisplay(formatBRL(parsed));
+      const parsed = parseValorBR(display);
+      if (parsed === null) {
+        onChange(null);
+        setDisplay("");
+      } else {
+        onChange(parsed);
+        setDisplay(formatPtBR(parsed));
       }
     }
 
-    function handleFocus() {
-      setFocused(true);
+    function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+      if (e.key === "Enter") {
+        (e.target as HTMLInputElement).blur();
+      }
     }
 
     return (
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium select-none">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium select-none pointer-events-none">
           R$
         </span>
         <input
@@ -73,10 +106,12 @@ export const InputMoedaBRL = forwardRef<HTMLInputElement, InputMoedaBRLProps>(
           id={id}
           type="text"
           inputMode="decimal"
+          autoComplete="off"
           value={display}
           onChange={handleChange}
-          onBlur={handleBlur}
           onFocus={handleFocus}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
           className={cn(
