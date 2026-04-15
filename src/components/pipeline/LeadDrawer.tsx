@@ -6,6 +6,7 @@ import {
   X, Copy, ExternalLink, MapPin, Megaphone, MessageSquare, Save, Loader2,
   AlertTriangle, Tag, StickyNote, FileSignature
 } from "lucide-react";
+import { InputMoedaBRL } from "@/components/ui/input-moeda-brl";
 import { supabaseExt } from "@/lib/supabaseExternal";
 import { useAuth } from "@/contexts/AuthContext";
 import { ObservacaoItem, type Anotacao } from "./ObservacaoItem";
@@ -367,9 +368,29 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                 <Separator className="my-1" />
                 {renderEditableField("cnpj", "CNPJ", <Building2 size={16} />, card.cnpj)}
                 <Separator className="my-1" />
-                {renderEditableField("deal_value", "Valor do Negócio", <DollarSign size={16} />, card.deal_value?.toString())}
+                {/* Valor do Negócio - currency input */}
+                <div className="flex items-center gap-3 py-2">
+                  <div className="text-muted-foreground flex-shrink-0"><DollarSign size={16} /></div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Valor do Negócio</p>
+                    <InputMoedaBRL
+                      value={card.deal_value ?? 1621}
+                      onChange={(v) => onUpdate(card.id, { deal_value: v ?? 1621 })}
+                    />
+                  </div>
+                </div>
                 <Separator className="my-1" />
-                {renderEditableField("valor_divida", "Valor da Dívida", <DollarSign size={16} />, card.valor_divida?.toString())}
+                {/* Valor da Dívida - currency input */}
+                <div className="flex items-center gap-3 py-2">
+                  <div className="text-muted-foreground flex-shrink-0"><DollarSign size={16} /></div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Valor da Dívida</p>
+                    <InputMoedaBRL
+                      value={card.valor_divida}
+                      onChange={(v) => onUpdate(card.id, { valor_divida: v })}
+                    />
+                  </div>
+                </div>
                 <Separator className="my-1" />
 
                 {/* Owner */}
