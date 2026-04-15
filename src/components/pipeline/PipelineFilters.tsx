@@ -18,11 +18,13 @@ export interface FilterState {
   stages: string[];
   staleDays: number | null;
   slaFilter: "todos" | "dentro" | "proximo" | "estourado";
+  apenasFimDeSemana: boolean;
 }
 
 export const defaultFilters: FilterState = {
   dateFrom: "", dateTo: "", stageChangedFrom: "", stageChangedTo: "",
   closers: [], status: "todos", stages: [], staleDays: null, slaFilter: "todos",
+  apenasFimDeSemana: false,
 };
 
 export function applyFilters(cards: PipelineCard[], f: FilterState): PipelineCard[] {
@@ -39,6 +41,7 @@ export function applyFilters(cards: PipelineCard[], f: FilterState): PipelineCar
     if (f.status !== "todos" && c.lead_status !== f.status) return false;
     if (f.stages.length > 0 && !f.stages.includes(c.stage)) return false;
     if (f.staleDays != null && daysDiff(c.stage_changed_at) < f.staleDays) return false;
+    if (f.apenasFimDeSemana && !c.fim_de_semana) return false;
     return true;
   });
 }
