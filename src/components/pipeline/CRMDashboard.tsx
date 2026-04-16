@@ -277,7 +277,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
           <BarChart data={monthCompData} margin={{ left: 10, right: 10 }}>
             <XAxis dataKey="metric" tick={{ fill: "hsl(215,20%,55%)", fontSize: 11 }} />
             <YAxis tick={{ fill: "hsl(215,20%,55%)", fontSize: 10 }} />
-            <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12 }} />
+            <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12, color: "hsl(210,40%,98%)" }} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Bar dataKey={curLabel} fill="hsl(207,90%,54%)" radius={[4, 4, 0, 0]} />
             <Bar dataKey={prevLabel} fill="hsl(25,95%,53%)" radius={[4, 4, 0, 0]} opacity={0.7} />
@@ -297,7 +297,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
                 <BarChart data={sellerData.leads} layout="vertical" margin={{ left: 80 }}>
                   <XAxis type="number" tick={{ fill: "hsl(215,20%,55%)", fontSize: 10 }} />
                   <YAxis type="category" dataKey="name" tick={{ fill: "hsl(210,40%,98%)", fontSize: 11 }} width={75} />
-                  <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12 }} />
+                  <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12, color: "hsl(210,40%,98%)" }} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                     {sellerData.leads.map((_, i) => <Cell key={i} fill={SELLER_COLORS[i % SELLER_COLORS.length]} />)}
                   </Bar>
@@ -312,7 +312,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
                 <BarChart data={sellerData.conversao} margin={{ left: 10 }}>
                   <XAxis dataKey="name" tick={{ fill: "hsl(215,20%,55%)", fontSize: 11 }} />
                   <YAxis tick={{ fill: "hsl(215,20%,55%)", fontSize: 10 }} />
-                  <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => `${v}%`} />
+                  <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12, color: "hsl(210,40%,98%)" }} formatter={(v: number) => `${v}%`} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} />
                   <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                     {sellerData.conversao.map((_, i) => <Cell key={i} fill={SELLER_COLORS[i % SELLER_COLORS.length]} />)}
                   </Bar>
@@ -327,7 +327,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
                 <BarChart data={sellerData.ganhos} layout="vertical" margin={{ left: 80 }}>
                   <XAxis type="number" tick={{ fill: "hsl(215,20%,55%)", fontSize: 10 }} />
                   <YAxis type="category" dataKey="name" tick={{ fill: "hsl(210,40%,98%)", fontSize: 11 }} width={75} />
-                  <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12 }} />
+                  <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12, color: "hsl(210,40%,98%)" }} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                     {sellerData.ganhos.map((_, i) => <Cell key={i} fill={SELLER_COLORS[i % SELLER_COLORS.length]} />)}
                   </Bar>
@@ -342,7 +342,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
                 <BarChart data={sellerData.faturamento} margin={{ left: 10 }}>
                   <XAxis dataKey="name" tick={{ fill: "hsl(215,20%,55%)", fontSize: 11 }} />
                   <YAxis tick={{ fill: "hsl(215,20%,55%)", fontSize: 10 }} />
-                  <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => formatBRL(v)} />
+                  <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12, color: "hsl(210,40%,98%)" }} formatter={(v: number) => formatBRL(v)} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} />
                   <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                     {sellerData.faturamento.map((_, i) => <Cell key={i} fill={SELLER_COLORS[i % SELLER_COLORS.length]} />)}
                   </Bar>
