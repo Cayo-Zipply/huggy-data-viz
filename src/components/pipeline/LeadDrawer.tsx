@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, memo } from "react";
 import { cn } from "@/lib/utils";
 import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
@@ -18,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import type { PipelineCard as CardType, PipelineTask, LossCategory } from "./types";
 import { LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
 import { ContractTab } from "./ContractTab";
+import { AbaAnexos } from "@/components/lead/aba-anexos";
 import type { PipelineLabel } from "@/hooks/useLabels";
 
 /* ── Draft helpers (localStorage) ── */
@@ -735,7 +736,8 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
             {/* ANEXO */}
             {activeSection === "anexo" && (
               <div className="space-y-4">
-                {hasMeetingData ? (
+                {/* Meeting data (legacy) */}
+                {hasMeetingData && (
                   <>
                     {card.data_reuniao && (
                       <div className="flex items-center gap-3 py-2">
@@ -786,14 +788,11 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                         </div>
                       </div>
                     )}
+                    <Separator className="my-3" />
                   </>
-                ) : (
-                  <div className="text-center py-8">
-                    <Paperclip size={24} className="mx-auto text-muted-foreground/50 mb-2" />
-                    <p className="text-xs text-muted-foreground">Nenhum anexo de reunião disponível</p>
-                    <p className="text-[10px] text-muted-foreground/70 mt-1">Os dados aparecerão automaticamente após a reunião ser realizada</p>
-                  </div>
                 )}
+                {/* Anexos from lead_anexos table */}
+                <AbaAnexos leadId={card.id} />
               </div>
             )}
 
