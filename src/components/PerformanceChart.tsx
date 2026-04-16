@@ -49,6 +49,7 @@ export const PerformanceChart = ({ investimento, faturamento }: PerformanceChart
                 borderRadius: '8px',
                 color: 'hsl(210, 40%, 98%)',
               }}
+              cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }}
             />
             <Legend 
               verticalAlign="bottom"
