@@ -59,6 +59,57 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_anexos: {
+        Row: {
+          conteudo_texto: string | null
+          created_at: string
+          id: string
+          lead_id: string
+          mime_type: string | null
+          nome_arquivo: string
+          source: string
+          storage_path: string | null
+          tamanho_bytes: number | null
+          tipo: string
+          updated_at: string
+          uploaded_by: string | null
+          uploaded_by_nome: string | null
+          url_publica: string | null
+        }
+        Insert: {
+          conteudo_texto?: string | null
+          created_at?: string
+          id?: string
+          lead_id: string
+          mime_type?: string | null
+          nome_arquivo: string
+          source?: string
+          storage_path?: string | null
+          tamanho_bytes?: number | null
+          tipo?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_nome?: string | null
+          url_publica?: string | null
+        }
+        Update: {
+          conteudo_texto?: string | null
+          created_at?: string
+          id?: string
+          lead_id?: string
+          mime_type?: string | null
+          nome_arquivo?: string
+          source?: string
+          storage_path?: string | null
+          tamanho_bytes?: number | null
+          tipo?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          uploaded_by_nome?: string | null
+          url_publica?: string | null
+        }
+        Relationships: []
+      }
       lead_anotacoes: {
         Row: {
           autor_nome: string | null
