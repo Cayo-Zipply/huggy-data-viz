@@ -6,7 +6,7 @@ import { Navigate } from "react-router-dom";
 export default function Login() {
   const { user, loading: authLoading } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("");
   const [nome, setNome] = useState("");
   const [loading, setLoading] = useState(false);
@@ -54,11 +54,11 @@ export default function Login() {
       <div className="bg-card border border-border rounded-2xl p-10 max-w-[420px] w-full mx-4 shadow-xl">
         {/* Brand */}
         <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-6 text-primary-foreground text-2xl font-bold">
-          PQ
+              OF
         </div>
 
         <h1 className="text-2xl font-bold text-foreground text-center mb-1">
-          Pena Quadros CRM
+            O Farol
         </h1>
         <p className="text-sm text-muted-foreground text-center mb-8">
           {isSignUp ? "Crie sua conta para acessar o painel" : "Acesse o painel com suas credenciais"}
