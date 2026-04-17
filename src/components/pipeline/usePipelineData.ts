@@ -332,6 +332,7 @@ export function usePipelineData(actorName: string) {
       prazo_entrega_relatorios: null, prazo_contrato: null, valor_proposta: null, endereco: null, cidade: null,
       estado: null, cep: null, zapsign_signed_at: null,
       fim_de_semana: isWeekendSP(data.created_at || now),
+      tipo_documento: null,
     };
 
     const firstTask = {
