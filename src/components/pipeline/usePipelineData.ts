@@ -107,6 +107,7 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     cep: row.cep || null,
     zapsign_signed_at: row.zapsign_signed_at || null,
     fim_de_semana: row.fim_de_semana === true || isWeekendSP(createdAt),
+    tipo_documento: (row.tipo_documento === "cpf" || row.tipo_documento === "cnpj") ? row.tipo_documento : null,
   };
 }
 
@@ -331,6 +332,7 @@ export function usePipelineData(actorName: string) {
       prazo_entrega_relatorios: null, prazo_contrato: null, valor_proposta: null, endereco: null, cidade: null,
       estado: null, cep: null, zapsign_signed_at: null,
       fim_de_semana: isWeekendSP(data.created_at || now),
+      tipo_documento: null,
     };
 
     const firstTask = {

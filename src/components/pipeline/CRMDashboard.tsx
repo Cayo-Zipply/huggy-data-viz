@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend
 import type { PipelineCard } from "./types";
 import { STAGE_ORDER, STAGE_CONFIG, LOSS_CATEGORIES, formatBRL, cardsReachedStage, daysDiff } from "./types";
 import { useLabels } from "@/hooks/useLabels";
+import { MetricasTipoDocumentoCard } from "./MetricasTipoDocumentoCard";
 
 interface Props {
   cards: PipelineCard[];
@@ -358,6 +359,9 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
         <h4 className="text-sm font-semibold text-foreground mb-3">Conversão: Dia útil vs. Fim de semana</h4>
         <WeekendConversionCard cards={vis} />
       </div>
+
+      {/* CPF vs CNPJ metrics */}
+      <MetricasTipoDocumentoCard />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {lossData.length > 0 && (

@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
   ChevronDown, ChevronUp, Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap,
-  AlertTriangle, Calendar
+  AlertTriangle, Calendar, User
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { PipelineCard as CardType, PipelineTask, PipeType, LossCategory } from "./types";
@@ -120,6 +120,16 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
               {card.fim_de_semana && (
                 <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-amber-500/40 bg-amber-500/10 text-amber-500 gap-0.5">
                   <Calendar size={8} /> FDS
+                </Badge>
+              )}
+              {card.tipo_documento === "cnpj" && (
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-blue-500/40 bg-blue-500/10 text-blue-500 gap-0.5">
+                  <Building2 size={8} /> CNPJ
+                </Badge>
+              )}
+              {card.tipo_documento === "cpf" && (
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-violet-500/40 bg-violet-500/10 text-violet-500 gap-0.5">
+                  <User size={8} /> CPF
                 </Badge>
               )}
               {(card.resumo_reuniao || card.transcricao_reuniao) && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-medium">📎 Anexo</span>}
