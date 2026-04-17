@@ -19,12 +19,14 @@ export interface FilterState {
   staleDays: number | null;
   slaFilter: "todos" | "dentro" | "proximo" | "estourado";
   apenasFimDeSemana: boolean;
+  tipoDocumento: "todos" | "cpf" | "cnpj" | "nenhum";
 }
 
 export const defaultFilters: FilterState = {
   dateFrom: "", dateTo: "", stageChangedFrom: "", stageChangedTo: "",
   closers: [], status: "todos", stages: [], staleDays: null, slaFilter: "todos",
   apenasFimDeSemana: false,
+  tipoDocumento: "todos",
 };
 
 export function applyFilters(cards: PipelineCard[], f: FilterState): PipelineCard[] {
@@ -42,6 +44,9 @@ export function applyFilters(cards: PipelineCard[], f: FilterState): PipelineCar
     if (f.stages.length > 0 && !f.stages.includes(c.stage)) return false;
     if (f.staleDays != null && daysDiff(c.stage_changed_at) < f.staleDays) return false;
     if (f.apenasFimDeSemana && !c.fim_de_semana) return false;
+    if (f.tipoDocumento === "cpf" && c.tipo_documento !== "cpf") return false;
+    if (f.tipoDocumento === "cnpj" && c.tipo_documento !== "cnpj") return false;
+    if (f.tipoDocumento === "nenhum" && c.tipo_documento) return false;
     return true;
   });
 }
@@ -108,7 +113,7 @@ export function PipelineFiltersBar({ filters, onChange, onExport, closerOptions 
   const [calFromOpen, setCalFromOpen] = useState(false);
   const [calToOpen, setCalToOpen] = useState(false);
 
-  const hasF = filters.dateFrom || filters.dateTo || filters.closers.length || filters.status !== "todos" || filters.stages.length || filters.staleDays != null || filters.slaFilter !== "todos" || filters.apenasFimDeSemana;
+  const hasF = filters.dateFrom || filters.dateTo || filters.closers.length || filters.status !== "todos" || filters.stages.length || filters.staleDays != null || filters.slaFilter !== "todos" || filters.apenasFimDeSemana || filters.tipoDocumento !== "todos";
   const currentPreset = detectPreset(filters);
 
   const applyPreset = (preset: DatePreset) => {
@@ -183,6 +188,28 @@ export function PipelineFiltersBar({ filters, onChange, onExport, closerOptions 
         >
           <CalendarIcon size={10} /> FDS
         </button>
+
+        {/* Tipo documento filter */}
+        {(["todos", "cnpj", "cpf", "nenhum"] as const).map(td => (
+          <button
+            key={td}
+            onClick={() => onChange({ ...filters, tipoDocumento: td })}
+            className={cn(
+              "text-[11px] px-3 py-1 rounded-full border transition-all",
+              filters.tipoDocumento === td
+                ? td === "cnpj"
+                  ? "bg-blue-500/20 text-blue-500 border-blue-500/40"
+                  : td === "cpf"
+                  ? "bg-violet-500/20 text-violet-500 border-violet-500/40"
+                  : td === "nenhum"
+                  ? "bg-muted text-foreground border-border"
+                  : "bg-primary/20 text-primary border-primary/40"
+                : "border-border text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {td === "todos" ? "Doc: todos" : td === "cnpj" ? "CNPJ" : td === "cpf" ? "CPF" : "Sem doc"}
+          </button>
+        ))}
 
         <div className="flex-1" />
 
