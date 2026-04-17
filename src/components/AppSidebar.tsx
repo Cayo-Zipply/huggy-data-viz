@@ -57,9 +57,8 @@ export function AppSidebar() {
       {/* Logo */}
       <div className="p-4 border-b border-sidebar-border">
         <h1 className="text-base font-bold text-sidebar-foreground tracking-tight">
-          Pena Quadros
+          O Farol
         </h1>
-        <p className="text-[10px] text-muted-foreground">CRM</p>
       </div>
 
       {/* Nav */}
