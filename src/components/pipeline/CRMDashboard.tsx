@@ -109,23 +109,21 @@ function WeekendConversionCard({ cards }: { cards: PipelineCard[] }) {
 
   return (
     <div className="grid grid-cols-2 gap-4">
-      <div className="space-y-2">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-          <Briefcase size={12} /> Dia útil
-        </div>
-        <p className="text-2xl font-bold text-foreground">{stats.diaUtil.taxa}%</p>
-        <p className="text-[10px] text-muted-foreground">{stats.diaUtil.total} leads · {stats.diaUtil.ganhos} ganhos</p>
-        <p className="text-[10px] text-muted-foreground">Ticket médio: {formatBRL(stats.diaUtil.ticket)}</p>
-        <p className="text-xs text-emerald-400 font-medium mt-1">{formatBRL(stats.diaUtil.receita)}</p>
+      <div className="relative pl-3 space-y-1.5">
+        <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded bg-slate-400 dark:bg-slate-600" />
+        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Dia útil</p>
+        <p className="text-2xl font-bold text-foreground tabular-nums">{stats.diaUtil.taxa}%</p>
+        <p className="text-[11px] text-muted-foreground">{stats.diaUtil.total} leads · {stats.diaUtil.ganhos} ganhos</p>
+        <p className="text-[11px] text-muted-foreground">Ticket: <span className="text-foreground font-medium">{formatBRL(stats.diaUtil.ticket)}</span></p>
+        <p className="text-xs text-foreground font-semibold tabular-nums">{formatBRL(stats.diaUtil.receita)}</p>
       </div>
-      <div className="space-y-2">
-        <div className="flex items-center gap-1.5 text-xs text-amber-500 font-medium">
-          <Calendar size={12} /> Fim de semana
-        </div>
-        <p className="text-2xl font-bold text-foreground">{stats.fds.taxa}%</p>
-        <p className="text-[10px] text-muted-foreground">{stats.fds.total} leads · {stats.fds.ganhos} ganhos</p>
-        <p className="text-[10px] text-muted-foreground">Ticket médio: {formatBRL(stats.fds.ticket)}</p>
-        <p className="text-xs text-emerald-400 font-medium mt-1">{formatBRL(stats.fds.receita)}</p>
+      <div className="relative pl-3 space-y-1.5">
+        <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded bg-amber-500" />
+        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Fim de semana</p>
+        <p className="text-2xl font-bold text-foreground tabular-nums">{stats.fds.taxa}%</p>
+        <p className="text-[11px] text-muted-foreground">{stats.fds.total} leads · {stats.fds.ganhos} ganhos</p>
+        <p className="text-[11px] text-muted-foreground">Ticket: <span className="text-foreground font-medium">{formatBRL(stats.fds.ticket)}</span></p>
+        <p className="text-xs text-foreground font-semibold tabular-nums">{formatBRL(stats.fds.receita)}</p>
       </div>
     </div>
   );
@@ -246,12 +244,12 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
-        <MetricBox label="Leads Ativos" value={ativos.length.toString()} icon={Users} color="bg-primary/20" />
-        <MetricBox label="Valor Bruto" value={formatBRL(valorBrutoPipe)} icon={DollarSign} color="bg-emerald-400/20" />
-        <MetricBox label="Valor Ponderado" value={formatBRL(valorPondPipe)} icon={Target} color="bg-yellow-400/20" />
-        <MetricBox label="Ganhos" value={ganhos.length.toString()} sub={formatBRL(valorGanhos)} icon={Trophy} color="bg-green-500/20" />
-        <MetricBox label="Perdidos" value={perdidos.length.toString()} sub={`${taxaPerda}% de perda`} icon={XCircle} color="bg-destructive/20" />
-        <MetricBox label="Conversão" value={`${taxaConv}%`} icon={TrendingUp} color="bg-primary/20" />
+        <MetricBox label="Leads Ativos" value={ativos.length.toString()} />
+        <MetricBox label="Valor Bruto" value={formatBRL(valorBrutoPipe)} />
+        <MetricBox label="Valor Ponderado" value={formatBRL(valorPondPipe)} />
+        <MetricBox label="Ganhos" value={ganhos.length.toString()} sub={formatBRL(valorGanhos)} />
+        <MetricBox label="Perdidos" value={perdidos.length.toString()} sub={`${taxaPerda}% de perda`} />
+        <MetricBox label="Conversão" value={`${taxaConv}%`} />
       </div>
 
       {/* Month comparison */}
