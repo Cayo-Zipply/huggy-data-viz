@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Building2, User, Users } from "lucide-react";
 import { sbExt } from "@/lib/supabaseExternal";
 import { formatBRL } from "./types";
 
@@ -61,8 +60,40 @@ export function MetricasTipoDocumentoCard() {
       ? `Leads com CPF convertem ${cpfConv}% vs ${cnpjConv}% do CNPJ. Campanhas focadas em pessoa física estão performando melhor.`
       : `Conversão equilibrada entre CPF e CNPJ. Diversifique investimento de campanha.`;
 
+  const Tile = ({
+    label,
+    accent,
+    total,
+    ganhos,
+    perdidos,
+    conv,
+    ticket,
+    receita,
+  }: {
+    label: string;
+    accent: string;
+    total: number;
+    ganhos: number;
+    perdidos: number;
+    conv: number;
+    ticket: number;
+    receita?: number;
+  }) => (
+    <div className="relative bg-card rounded-lg border border-border p-3 overflow-hidden shadow-[0_1px_2px_0_rgba(0,0,0,0.04)]">
+      <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${accent}`} />
+      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider pl-1">{label}</p>
+      <p className="text-2xl font-bold text-foreground mt-1 tabular-nums pl-1">{total}</p>
+      <p className="text-[11px] text-muted-foreground pl-1">{ganhos} ganhos · {perdidos} perdidos</p>
+      <div className="mt-2 pl-1 space-y-0.5 text-[11px]">
+        <p className="text-muted-foreground">Conversão: <span className="text-foreground font-semibold tabular-nums">{conv}%</span></p>
+        <p className="text-muted-foreground">Ticket: <span className="text-foreground font-medium tabular-nums">{formatBRL(ticket)}</span></p>
+        {receita !== undefined && <p className="text-muted-foreground">Receita: <span className="text-foreground font-semibold tabular-nums">{formatBRL(receita)}</span></p>}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="bg-card border border-border rounded-xl p-4">
+    <div className="bg-card border border-border rounded-lg p-4 shadow-[0_1px_2px_0_rgba(0,0,0,0.04)]">
       <div className="mb-3">
         <h4 className="text-sm font-semibold text-foreground">Leads por Tipo de Documento</h4>
         <p className="text-xs text-muted-foreground mt-0.5">
@@ -71,70 +102,17 @@ export function MetricasTipoDocumentoCard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {/* CNPJ */}
-        <div className="bg-muted/20 rounded-lg p-3 border border-blue-500/30">
-          <div className="flex items-center gap-1.5 text-xs text-blue-500 font-medium">
-            <Building2 size={12} /> CNPJ (Empresa)
-          </div>
-          <p className="text-2xl font-bold text-foreground mt-1">{cnpj?.total_leads ?? 0}</p>
-          <p className="text-[10px] text-muted-foreground">
-            {cnpj?.ganhos ?? 0} ganhos · {cnpj?.perdidos ?? 0} perdidos
-          </p>
-          <p className="text-[10px] text-muted-foreground mt-1">
-            Conversão: <span className="text-foreground font-medium">{cnpjConv}%</span>
-          </p>
-          <p className="text-[10px] text-muted-foreground">
-            Ticket: <span className="text-foreground">{formatBRL(Number(cnpj?.ticket_medio_ganho ?? 0))}</span>
-          </p>
-          <p className="text-xs text-emerald-400 font-medium mt-1">
-            {formatBRL(Number(cnpj?.receita_total ?? 0))}
-          </p>
-        </div>
-
-        {/* CPF */}
-        <div className="bg-muted/20 rounded-lg p-3 border border-violet-500/30">
-          <div className="flex items-center gap-1.5 text-xs text-violet-500 font-medium">
-            <User size={12} /> CPF (Pessoa Física)
-          </div>
-          <p className="text-2xl font-bold text-foreground mt-1">{cpf?.total_leads ?? 0}</p>
-          <p className="text-[10px] text-muted-foreground">
-            {cpf?.ganhos ?? 0} ganhos · {cpf?.perdidos ?? 0} perdidos
-          </p>
-          <p className="text-[10px] text-muted-foreground mt-1">
-            Conversão: <span className="text-foreground font-medium">{cpfConv}%</span>
-          </p>
-          <p className="text-[10px] text-muted-foreground">
-            Ticket: <span className="text-foreground">{formatBRL(Number(cpf?.ticket_medio_ganho ?? 0))}</span>
-          </p>
-          <p className="text-xs text-emerald-400 font-medium mt-1">
-            {formatBRL(Number(cpf?.receita_total ?? 0))}
-          </p>
-        </div>
-
-        {/* Sem documento */}
-        <div className="bg-muted/20 rounded-lg p-3 border border-border">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-            <Users size={12} /> Sem documento
-          </div>
-          <p className="text-2xl font-bold text-foreground mt-1">{sem?.total_leads ?? 0}</p>
-          <p className="text-[10px] text-muted-foreground">
-            {sem?.ganhos ?? 0} ganhos · {sem?.perdidos ?? 0} perdidos
-          </p>
-          <p className="text-[10px] text-muted-foreground mt-1">
-            Conversão: <span className="text-foreground font-medium">{Number(sem?.taxa_conversao_pct ?? 0)}%</span>
-          </p>
-          <p className="text-[10px] text-muted-foreground">
-            Ticket: <span className="text-foreground">{formatBRL(Number(sem?.ticket_medio_ganho ?? 0))}</span>
-          </p>
-        </div>
+        <Tile label="CNPJ (Empresa)" accent="bg-blue-600" total={cnpj?.total_leads ?? 0} ganhos={cnpj?.ganhos ?? 0} perdidos={cnpj?.perdidos ?? 0} conv={cnpjConv} ticket={Number(cnpj?.ticket_medio_ganho ?? 0)} receita={Number(cnpj?.receita_total ?? 0)} />
+        <Tile label="CPF (Pessoa Física)" accent="bg-violet-600" total={cpf?.total_leads ?? 0} ganhos={cpf?.ganhos ?? 0} perdidos={cpf?.perdidos ?? 0} conv={cpfConv} ticket={Number(cpf?.ticket_medio_ganho ?? 0)} receita={Number(cpf?.receita_total ?? 0)} />
+        <Tile label="Sem documento" accent="bg-slate-400 dark:bg-slate-600" total={sem?.total_leads ?? 0} ganhos={sem?.ganhos ?? 0} perdidos={sem?.perdidos ?? 0} conv={Number(sem?.taxa_conversao_pct ?? 0)} ticket={Number(sem?.ticket_medio_ganho ?? 0)} />
       </div>
 
       {/* Insight para marketing */}
-      <div className="mt-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
-        <p className="text-xs font-semibold text-primary mb-1">📊 Insight para marketing</p>
-        <p className="text-xs text-foreground">{insight}</p>
+      <div className="mt-3 p-3 rounded-lg bg-muted/30 border border-border">
+        <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider mb-1">Insight para marketing</p>
+        <p className="text-xs text-foreground leading-relaxed">{insight}</p>
         {(sem?.total_leads ?? 0) > 0 && (
-          <p className="text-[10px] text-muted-foreground mt-1.5">
+          <p className="text-[11px] text-muted-foreground mt-1.5">
             {sem?.total_leads} leads sem documento preenchido — incentive o time a cadastrar CPF/CNPJ para dados mais precisos.
           </p>
         )}

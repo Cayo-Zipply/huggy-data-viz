@@ -46,32 +46,29 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
   return (
     <div
       className={cn(
-        "flex w-[320px] min-w-[320px] max-w-[320px] flex-col rounded-2xl border shadow-sm transition-all",
-        dragOver ? "border-primary/60 bg-primary/5" : "border-border bg-card"
+        "flex w-[300px] min-w-[300px] max-w-[300px] flex-col rounded-lg border transition-colors",
+        dragOver ? "border-primary/50 bg-primary/5" : "border-border bg-card/50"
       )}
       onDragOver={e => { e.preventDefault(); setDragOver(true); }}
       onDragLeave={() => setDragOver(false)}
       onDrop={e => { e.preventDefault(); setDragOver(false); const id = e.dataTransfer.getData("cardId"); if (id) onDrop(id, stageKey); }}
     >
-      <div className="sticky top-0 z-10 rounded-t-2xl border-b border-border bg-card/95 p-3 backdrop-blur">
+      <div className="sticky top-0 z-10 rounded-t-lg border-b border-border bg-card/95 px-3 py-2.5 backdrop-blur">
         <div className="flex items-center gap-2">
-          <div className={cn("w-6 h-6 rounded-md flex items-center justify-center", cfg.bg.split(" ")[0])}>
-            <Icon size={12} className={cfg.color} />
-          </div>
-          <span className="text-sm font-medium text-foreground flex-1">{cfg.label}</span>
-          <span className="text-xs text-muted-foreground bg-muted/50 rounded-full px-2 py-0.5">{cards.length}</span>
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground flex-1 truncate">{cfg.label}</span>
+          <span className="text-[11px] font-medium text-muted-foreground tabular-nums">{cards.length}</span>
           {slaBreached > 0 && (
-            <span className="text-[10px] font-bold bg-destructive/20 text-destructive rounded-full px-1.5 py-0.5 flex items-center gap-0.5">
-              <AlertTriangle size={10} />{slaBreached}
+            <span className="text-[10px] font-medium bg-red-50 text-red-700 border border-red-200 rounded-md px-1.5 py-0.5 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900">
+              {slaBreached} SLA
             </span>
           )}
           <button onClick={() => setShowTooltip(!showTooltip)} className="text-muted-foreground hover:text-foreground">
             <Info size={12} />
           </button>
         </div>
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-[10px] text-emerald-400 font-medium">{formatBRL(totalPonderado)}</span>
-          <span className="text-[10px] text-muted-foreground">({Math.round(cfg.probability * 100)}%)</span>
+        <div className="flex items-center gap-2 mt-1 text-[11px] tabular-nums">
+          <span className="font-semibold text-foreground">{formatBRL(totalPonderado)}</span>
+          <span className="text-muted-foreground">· {Math.round(cfg.probability * 100)}%</span>
         </div>
         {totalBruto > 0 && (
           <span className="text-[10px] text-muted-foreground">Bruto: {formatBRL(totalBruto)}</span>
@@ -82,7 +79,7 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
           </div>
         )}
       </div>
-      <div className="flex-1 space-y-2 overflow-y-auto bg-muted/20 p-2.5 max-h-[62vh]">
+      <div className="flex-1 space-y-2 overflow-y-auto p-2 max-h-[62vh]">
         {cards.map(card => (
           <div
             key={card.id}
@@ -100,7 +97,7 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
             className={cn(
               "cursor-grab active:cursor-grabbing relative",
               bulkMode && "cursor-pointer",
-              bulkMode && selectedIds?.has(card.id) && "ring-2 ring-primary rounded-2xl"
+              bulkMode && selectedIds?.has(card.id) && "ring-1 ring-primary rounded-lg"
             )}
           >
             {bulkMode && (

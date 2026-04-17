@@ -83,68 +83,35 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
     { key: "acoes", label: "Ações", icon: Zap },
   ];
 
+  // Status accent bar color (left side, 3px)
+  const accentColor = isWon
+    ? "bg-emerald-600"
+    : isLost
+    ? "bg-red-600"
+    : slaStatus === "estourado"
+    ? "bg-red-600"
+    : slaStatus === "proximo"
+    ? "bg-amber-500"
+    : stale
+    ? "bg-amber-500"
+    : "bg-slate-300 dark:bg-slate-600";
+
   return (
     <div className={cn(
-      "group overflow-hidden rounded-2xl border bg-background shadow-sm transition-all",
-      slaStatus === "estourado" && "border-destructive ring-1 ring-destructive/30",
-      slaStatus === "proximo" && "border-yellow-500/60 ring-1 ring-yellow-500/20",
-      stale && slaStatus === "dentro" && "border-destructive/60",
-      isLost && "opacity-50 border-destructive/40",
-      isWon && "border-green-500/40",
-      !stale && !isLost && !isWon && slaStatus === "dentro" && "border-border hover:border-primary/30 hover:shadow-md"
+      "group relative overflow-hidden rounded-lg border border-border bg-card transition-colors",
+      "shadow-[0_1px_2px_0_rgba(0,0,0,0.04)] hover:bg-accent/40",
+      isLost && "opacity-60"
     )}>
-      <div className="p-3">
-        {/* SLA badge */}
-        {slaStatus === "estourado" && (
-          <div className="flex items-center gap-1 mb-1.5">
-            <span className="text-[9px] font-bold bg-destructive/20 text-destructive rounded px-1.5 py-0.5 flex items-center gap-0.5">
-              <Clock size={9} /> SLA
-            </span>
-          </div>
-        )}
-        {slaStatus === "proximo" && (
-          <div className="flex items-center gap-1 mb-1.5">
-            <span className="text-[9px] font-bold bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 rounded px-1.5 py-0.5 flex items-center gap-0.5">
-              <Clock size={9} /> SLA próximo
-            </span>
-          </div>
-        )}
-        {/* Header */}
+      {/* Status accent — left bar */}
+      <div className={cn("absolute left-0 top-0 bottom-0 w-[3px]", accentColor)} />
+
+      <div className="p-3 pl-4">
+        {/* Header — name + chevron */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onCardClick?.(card)}>
-            <div className="flex items-center gap-1.5">
-              <p className="font-semibold text-foreground text-sm truncate hover:text-primary transition-colors">{card.nome}</p>
-              {isWon && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">Ganho</span>}
-              {isLost && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-destructive/20 text-red-400 font-medium">Perdido</span>}
-              {stale && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400">{staleDays}d parado</span>}
-              {card.fim_de_semana && (
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-amber-500/40 bg-amber-500/10 text-amber-500 gap-0.5">
-                  <Calendar size={8} /> FDS
-                </Badge>
-              )}
-              {card.tipo_documento === "cnpj" && (
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-blue-500/40 bg-blue-500/10 text-blue-500 gap-0.5">
-                  <Building2 size={8} /> CNPJ
-                </Badge>
-              )}
-              {card.tipo_documento === "cpf" && (
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 border-violet-500/40 bg-violet-500/10 text-violet-500 gap-0.5">
-                  <User size={8} /> CPF
-                </Badge>
-              )}
-              {(card.resumo_reuniao || card.transcricao_reuniao) && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-medium">📎 Anexo</span>}
-              {card.contrato_status === "gerado" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-medium">📄 Contrato</span>}
-              {card.contrato_status === "enviado" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-medium">📝 Assinatura</span>}
-              {card.contrato_status === "assinado" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 font-medium">✅ Assinado</span>}
-              {card.contrato_status === "recusado" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 font-medium">❌ Recusado</span>}
-            </div>
+            <p className="font-medium text-foreground text-sm truncate">{card.nome}</p>
             {card.empresa && (
-              <p className="text-[11px] text-muted-foreground truncate mt-0.5">{card.empresa}</p>
-            )}
-            {card.telefone && (
-              <a href={wa || "#"} target="_blank" rel="noopener noreferrer" className="text-xs text-emerald-400 hover:underline flex items-center gap-1 mt-0.5">
-                <Phone size={10} /> {card.telefone}
-              </a>
+              <p className="text-xs text-muted-foreground truncate mt-0.5">{card.empresa}</p>
             )}
           </div>
           <button onClick={() => setExpanded(!expanded)} className="text-muted-foreground hover:text-foreground p-0.5">
@@ -152,39 +119,75 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
           </button>
         </div>
 
-        {/* Quick badges */}
-        <div className="flex flex-wrap gap-1 mt-2">
+        {/* Badges line — discreet, text-only */}
+        {(isWon || isLost || stale || card.fim_de_semana || card.tipo_documento || card.contrato_status || slaStatus !== "dentro") && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {isWon && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900">Ganho</span>}
+            {isLost && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900">Perdido</span>}
+            {slaStatus === "estourado" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900">SLA</span>}
+            {slaStatus === "proximo" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900">SLA próx.</span>}
+            {stale && slaStatus === "dentro" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900">{staleDays}d parado</span>}
+            {card.tipo_documento === "cnpj" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900">CNPJ</span>}
+            {card.tipo_documento === "cpf" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-900">CPF</span>}
+            {card.fim_de_semana && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900">FDS</span>}
+            {(card.resumo_reuniao || card.transcricao_reuniao) && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">Anexo</span>}
+            {card.contrato_status === "assinado" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900">Assinado</span>}
+            {card.contrato_status === "enviado" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900">Em assinatura</span>}
+            {card.contrato_status === "gerado" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900">Contrato</span>}
+            {card.contrato_status === "recusado" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900">Recusado</span>}
+          </div>
+        )}
+
+        {/* Metadata grid — owner + value */}
+        <div className="flex items-center justify-between gap-2 mt-2.5 text-xs">
+          <span className={cn(
+            "truncate",
+            card.owner === "SDR" ? "text-amber-700 dark:text-amber-400 font-medium" : "text-muted-foreground"
+          )}>
+            {card.owner === "SDR" ? "Atribuir responsável" : (card.owner || "Sem closer")}
+          </span>
           {editing === "deal_value" ? (
             <div className="flex gap-1">
               <input value={editValue} onChange={e => setEditValue(e.target.value)}
-                className="w-20 text-[10px] bg-muted/50 border border-border rounded px-1.5 py-0.5 text-foreground"
+                className="w-20 text-xs bg-muted/50 border border-border rounded px-1.5 py-0.5 text-foreground"
                 autoFocus onKeyDown={e => e.key === "Enter" && saveEdit("deal_value")} />
-              <button onClick={() => saveEdit("deal_value")} className="text-[10px] px-1.5 bg-primary/20 text-primary rounded">OK</button>
+              <button onClick={() => saveEdit("deal_value")} className="text-xs px-1.5 bg-primary text-primary-foreground rounded">OK</button>
             </div>
           ) : (
             <button onClick={() => startEdit("deal_value", card.deal_value?.toString() || "1621")}
-              className="text-[10px] px-1.5 py-0.5 bg-emerald-400/10 rounded text-emerald-400 hover:bg-emerald-400/20">
+              className="font-semibold text-foreground hover:text-primary transition-colors">
               {formatBRL(card.deal_value || 1621)}
             </button>
           )}
-          {card.owner && card.owner === "SDR" ? (
-            <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 rounded text-amber-500 flex items-center gap-0.5 font-medium">
-              <AlertTriangle size={9} />Atribuir responsável
-            </span>
-          ) : card.owner ? (
-            <span className="text-[10px] px-1.5 py-0.5 bg-primary/10 rounded text-primary flex items-center gap-0.5"><UserCircle size={8} />{card.owner}</span>
-          ) : null}
-          {card.origem && <span className="text-[10px] px-1.5 py-0.5 bg-muted/50 rounded text-muted-foreground">{card.origem}</span>}
-          <span className="text-[10px] px-1.5 py-0.5 bg-muted/50 rounded text-muted-foreground flex items-center gap-0.5">
-            <Clock size={8} />{new Date(card.created_at).toLocaleDateString("pt-BR")}
-          </span>
-          {pendingCount > 0 && <span className="text-[10px] px-1.5 py-0.5 bg-yellow-400/10 rounded text-yellow-400">{pendingCount} tarefa(s)</span>}
-          {cardLabels.map(label => (
-            <span key={label.id} className="text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: label.color + "20", color: label.color }}>
-              {label.name}
-            </span>
-          ))}
         </div>
+
+        {/* Bottom row — origem + date + tasks (subtle) */}
+        <div className="flex items-center justify-between gap-2 mt-1.5 text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-2 min-w-0">
+            {card.origem && <span className="truncate">{card.origem}</span>}
+            {pendingCount > 0 && <span className="text-amber-700 dark:text-amber-400">{pendingCount} tarefa{pendingCount > 1 ? "s" : ""}</span>}
+          </div>
+          <span className="shrink-0">{new Date(card.created_at).toLocaleDateString("pt-BR")}</span>
+        </div>
+
+        {/* Telefone (linha sutil) */}
+        {card.telefone && (
+          <a href={wa || "#"} target="_blank" rel="noopener noreferrer"
+            className="block mt-1.5 text-[11px] text-muted-foreground hover:text-foreground truncate">
+            {card.telefone}
+          </a>
+        )}
+
+        {/* Custom labels */}
+        {cardLabels.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {cardLabels.map(label => (
+              <span key={label.id} className="text-[10px] px-1.5 py-0.5 rounded-md font-medium border" style={{ backgroundColor: label.color + "15", color: label.color, borderColor: label.color + "30" }}>
+                {label.name}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Expanded */}
         {expanded && (
