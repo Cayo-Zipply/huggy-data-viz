@@ -78,7 +78,7 @@ export function AppSidebar() {
                   : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
               )}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-4 w-4" strokeWidth={1.5} />
               {item.label}
             </button>
           );

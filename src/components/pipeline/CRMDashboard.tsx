@@ -14,15 +14,12 @@ interface Props {
   owners: string[];
 }
 
-function MetricBox({ label, value, sub, icon: Icon, color }: { label: string; value: string; sub?: string; icon: any; color: string }) {
+function MetricBox({ label, value, sub }: { label: string; value: string; sub?: string; icon?: any; color?: string }) {
   return (
-    <div className="bg-card border border-border rounded-xl p-3 sm:p-4">
-      <div className="flex items-center gap-2 mb-1.5">
-        <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center", color)}><Icon size={14} className="text-foreground" /></div>
-        <span className="text-[10px] sm:text-xs text-muted-foreground">{label}</span>
-      </div>
-      <p className="text-lg sm:text-xl font-bold text-foreground">{value}</p>
-      {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
+    <div className="bg-card border border-border rounded-lg p-4 shadow-[0_1px_2px_0_rgba(0,0,0,0.04)]">
+      <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
+      <p className="text-2xl font-bold text-foreground mt-1.5 tabular-nums">{value}</p>
+      {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
     </div>
   );
 }
