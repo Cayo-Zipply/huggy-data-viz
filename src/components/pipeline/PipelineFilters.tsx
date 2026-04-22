@@ -35,15 +35,47 @@ export function getDateFieldForStatus(status: FilterState["status"]): "data_vend
   return "created_at";
 }
 
+function normalizeDateOnly(value: string | null | undefined): string | null {
+  if (!value) return null;
+
+  const isoDateTime = value.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+  if (isoDateTime) return `${isoDateTime[1]}-${isoDateTime[2]}-${isoDateTime[3]}`;
+
+  const isoDate = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoDate) return `${isoDate[1]}-${isoDate[2]}-${isoDate[3]}`;
+
+  const dmy = value.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
+  if (dmy) {
+    const day = dmy[1].padStart(2, "0");
+    const month = dmy[2].padStart(2, "0");
+    const year = dmy[3].length === 2 ? `20${dmy[3]}` : dmy[3];
+    return `${year}-${month}-${day}`;
+  }
+
+  return null;
+}
+
+function getCardReferenceDate(card: PipelineCard): string | null {
+  if (card.lead_status === "ganho") {
+    return normalizeDateOnly(card.data_venda) ?? normalizeDateOnly(card.stage_changed_at);
+  }
+
+  if (card.lead_status === "perdido") {
+    return normalizeDateOnly(card.stage_changed_at);
+  }
+
+  return normalizeDateOnly(card.created_at);
+}
+
 export function applyFilters(cards: PipelineCard[], f: FilterState): PipelineCard[] {
-  const dateField = getDateFieldForStatus(f.status);
   return cards.filter(c => {
-    const refDate = (c as any)[dateField] as string | null | undefined;
+    const refDate = getCardReferenceDate(c);
+
     if (f.dateFrom) {
       if (!refDate || refDate < f.dateFrom) return false;
     }
     if (f.dateTo) {
-      if (!refDate || refDate > f.dateTo + "T23:59:59") return false;
+      if (!refDate || refDate > f.dateTo) return false;
     }
     if (f.stageChangedFrom && c.stage_changed_at < f.stageChangedFrom) return false;
     if (f.stageChangedTo && c.stage_changed_at > f.stageChangedTo + "T23:59:59") return false;
