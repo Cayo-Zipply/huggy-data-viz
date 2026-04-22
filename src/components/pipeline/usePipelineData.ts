@@ -108,6 +108,7 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     zapsign_signed_at: row.zapsign_signed_at || null,
     fim_de_semana: row.fim_de_semana === true || isWeekendSP(createdAt),
     tipo_documento: (row.tipo_documento === "cpf" || row.tipo_documento === "cnpj") ? row.tipo_documento : null,
+    data_venda: row.data_venda || null,
   };
 }
 
@@ -333,6 +334,7 @@ export function usePipelineData(actorName: string) {
       estado: null, cep: null, zapsign_signed_at: null,
       fim_de_semana: isWeekendSP(data.created_at || now),
       tipo_documento: null,
+      data_venda: null,
     };
 
     const firstTask = {
@@ -408,6 +410,7 @@ export function usePipelineData(actorName: string) {
     if (updates.cidade !== undefined) dbUpdates.cidade = updates.cidade;
     if (updates.estado !== undefined) dbUpdates.estado = updates.estado;
     if (updates.cep !== undefined) dbUpdates.cep = updates.cep;
+    if (updates.data_venda !== undefined) dbUpdates.data_venda = updates.data_venda;
 
     if (Object.keys(dbUpdates).length) {
       const { error } = await sbExt.from("leads").update(dbUpdates).eq("id", id);
@@ -474,13 +477,25 @@ export function usePipelineData(actorName: string) {
   }, [cards, actorName, genAutoTasks]);
 
   /* ── mark won/lost ── */
-  const markWon = useCallback(async (id: string) => {
-    await sbExt.from("leads").update({ status: "ganho" }).eq("id", id);
-    setCards(prev => prev.map(c => c.id === id ? { ...c, lead_status: "ganho", updated_at: new Date().toISOString() } : c));
+  const markWon = useCallback(async (id: string, dataVenda?: string | null) => {
+    // dataVenda esperado em formato "YYYY-MM-DD" (date input). Converte para timestamp meio-dia local.
+    const dataVendaIso = dataVenda
+      ? new Date(`${dataVenda}T12:00:00`).toISOString()
+      : new Date().toISOString();
+
+    const update: any = { status: "ganho", data_venda: dataVendaIso };
+    await sbExt.from("leads").update(update).eq("id", id);
+
+    setCards(prev => prev.map(c => c.id === id ? {
+      ...c,
+      lead_status: "ganho",
+      data_venda: dataVendaIso,
+      updated_at: new Date().toISOString(),
+    } : c));
     try {
       await supabase.from("lead_history").insert({
         lead_id: id, tipo: "etapa",
-        descricao: `Lead marcado como ganho por ${actorName}`,
+        descricao: `Lead marcado como ganho por ${actorName}${dataVenda ? ` (data da venda: ${dataVenda})` : ""}`,
         valor_anterior: "aberto", valor_novo: "ganho", usuario_nome: actorName,
       } as any);
     } catch (e) { console.warn("lead_history insert error:", e); }
