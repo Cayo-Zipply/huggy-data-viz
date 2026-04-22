@@ -50,6 +50,22 @@ function filterByMonth(cards: PipelineCard[], date: Date): PipelineCard[] {
   });
 }
 
+/**
+ * Filtra leads ganhos pelo MÊS DA VENDA (`data_venda`).
+ * Usado no dashboard para que vendas retroativas apareçam no mês correto,
+ * e não no mês em que o card foi criado ou em que a etapa mudou.
+ * Fallback para `stage_changed_at` se `data_venda` não existir (leads antigos).
+ */
+function filterGanhosByMonth(cards: PipelineCard[], date: Date): PipelineCard[] {
+  const { start, end } = getMonthRange(date);
+  return cards.filter(c => {
+    if (c.lead_status !== "ganho") return false;
+    const ref = c.data_venda || c.stage_changed_at;
+    const d = new Date(ref);
+    return d >= start && d <= end;
+  });
+}
+
 function TagConversion({ cards, labels, getCardLabels }: { cards: PipelineCard[]; labels: any[]; getCardLabels: (id: string) => any[] }) {
   const data = useMemo(() => {
     return labels.map(label => {
@@ -184,18 +200,20 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
   const barColors = ["hsl(207,90%,54%)", "hsl(270,70%,60%)", "hsl(142,76%,36%)", "hsl(207,90%,54%)", "hsl(45,93%,47%)", "hsl(25,95%,53%)", "hsl(142,76%,50%)"];
 
   // Month comparison data
+  // IMPORTANTE: ganhos e faturamento usam `data_venda` (não data de criação),
+  // para que vendas retroativas apareçam no mês correto.
   const monthCompData = useMemo(() => {
     const curLabel = getMonthLabel(currentMonth);
     const prevLabel = getMonthLabel(compareMonth);
-    const curGanhos = currentCards.filter(c => c.lead_status === "ganho");
-    const prevGanhos = prevCards.filter(c => c.lead_status === "ganho");
+    const curGanhos = filterGanhosByMonth(vis, currentMonth);
+    const prevGanhos = filterGanhosByMonth(vis, compareMonth);
     return [
       { metric: "Leads Criados", [curLabel]: currentCards.length, [prevLabel]: prevCards.length },
       { metric: "Ganhos", [curLabel]: curGanhos.length, [prevLabel]: prevGanhos.length },
       { metric: "Faturamento (R$)", [curLabel]: curGanhos.reduce((s, c) => s + (c.deal_value || 0), 0), [prevLabel]: prevGanhos.reduce((s, c) => s + (c.deal_value || 0), 0) },
       { metric: "Perdidos", [curLabel]: currentCards.filter(c => c.lead_status === "perdido").length, [prevLabel]: prevCards.filter(c => c.lead_status === "perdido").length },
     ];
-  }, [currentCards, prevCards, currentMonth, compareMonth]);
+  }, [vis, currentCards, prevCards, currentMonth, compareMonth]);
 
   const curLabel = getMonthLabel(currentMonth);
   const prevLabel = getMonthLabel(compareMonth);

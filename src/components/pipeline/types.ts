@@ -69,6 +69,7 @@ export interface PipelineCard {
   zapsign_signed_at: string | null;
   fim_de_semana: boolean;
   tipo_documento: "cpf" | "cnpj" | null;
+  data_venda: string | null;
 }
 
 export interface PipelineTask {

@@ -14,6 +14,7 @@ import { CRMDashboard } from "./pipeline/CRMDashboard";
 import { GoalsPanel } from "./pipeline/GoalsPanel";
 import { HandoffChecklist } from "./pipeline/HandoffChecklist";
 import { LeadDrawer } from "./pipeline/LeadDrawer";
+import { ConfirmarGanhoDialog } from "./pipeline/ConfirmarGanhoDialog";
 import { SDR_STAGES, CLOSER_STAGES, STAGE_CONFIG, STAGE_ORDER } from "./pipeline/types";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import type { PipelineCard, Stage } from "./pipeline/types";
@@ -75,6 +76,7 @@ export function PipelinePanel() {
   const [drawerOpen, setDrawerOpen] = useState(() => sessionStorage.getItem(PIPELINE_UI_KEYS.drawerOpen) === "true");
   const [noShowPending, setNoShowPending] = useState<{ cardId: string; date: Date | undefined } | null>(null);
   const [lossPending, setLossPending] = useState<{ cardId: string; motivoId: string; observacao: string } | null>(null);
+  const [ganhoPending, setGanhoPending] = useState<{ cardId: string; cardNome: string } | null>(null);
   const { toast } = useToast();
 
   // Bulk selection state (admin only)
@@ -188,6 +190,11 @@ export function PipelinePanel() {
       setNoShowPending({ cardId, date: undefined });
       return;
     }
+    if (targetStage === "contrato_assinado") {
+      // Pede confirmação + data da venda antes de mover
+      setGanhoPending({ cardId, cardNome: card.nome });
+      return;
+    }
     if (card.pipe === "sdr" && STAGE_CONFIG[targetStage as Stage]?.pipe === "closer") {
       setPendingHandoff({ cardId, targetStage: targetStage as Stage });
       return;
@@ -200,6 +207,17 @@ export function PipelinePanel() {
     updateCard(noShowPending.cardId, { data_no_show: noShowPending.date.toISOString() } as any);
     moveCard(noShowPending.cardId, "no_show" as Stage);
     setNoShowPending(null);
+  };
+
+  const confirmGanho = async (dataVenda: string) => {
+    if (!ganhoPending) return;
+    const { cardId } = ganhoPending;
+    setGanhoPending(null);
+    // 1. Move para "Contrato Assinado" (registra histórico de etapa)
+    await moveCard(cardId, "contrato_assinado" as Stage);
+    // 2. Marca como ganho com a data da venda escolhida
+    await markWon(cardId, dataVenda);
+    toast({ title: "Venda confirmada!", description: `Data da venda: ${new Date(`${dataVenda}T12:00:00`).toLocaleDateString("pt-BR")}` });
   };
 
   const confirmHandoff = () => {
@@ -687,6 +705,14 @@ export function PipelinePanel() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmar venda (Contrato Assinado) */}
+      <ConfirmarGanhoDialog
+        open={!!ganhoPending}
+        leadNome={ganhoPending?.cardNome ?? ""}
+        onConfirm={confirmGanho}
+        onCancel={() => setGanhoPending(null)}
+      />
     </div>
   );
 }
