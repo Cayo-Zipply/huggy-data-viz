@@ -25,12 +25,20 @@ export interface MetaStats {
   reach: number;
 }
 
+export interface CloserBreakdown {
+  closer: string;
+  vendas: number;
+  faturamento: number;
+  reunioes: number;
+}
+
 export interface LeadsStats {
   mensagens: number;
   reunioesAgendadas: number;
   reunioesRealizadas: number;
   vendas: number;
   faturamento: number;
+  porCloser: CloserBreakdown[];
 }
 
 const REUNIAO_AGENDADA_STAGES = [
