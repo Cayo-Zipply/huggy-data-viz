@@ -188,7 +188,7 @@ const Index = () => {
       <main className="p-3 sm:p-4 lg:p-8 overflow-auto">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-wrap items-center justify-end gap-3 mb-8">
-            {activeTab === "marketing" && !isHardcoded && (
+            {(activeTab === "marketing" || activeTab === "comercial") && !isHardcoded && (
               <CampaignSelector
                 campaigns={live.campaigns}
                 selected={live.selectedCampaigns}
