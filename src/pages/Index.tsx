@@ -27,7 +27,7 @@ import { useMarketingData } from "@/hooks/useMarketingData";
 import { useMarketingOverrides } from "@/hooks/useMarketingOverrides";
 import { useMarketingLive } from "@/hooks/useMarketingLive";
 import { CampaignSelector } from "@/components/CampaignSelector";
-import { CloserCardsGrid } from "@/components/CloserCardsGrid";
+import { FarolCloserCards } from "@/components/FarolCloserCards";
 
 const Index = () => {
   const location = useLocation();
@@ -274,15 +274,16 @@ const Index = () => {
                     <MetricCard title="Conv. Reuniões" value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "—"} variation={getVariation(conversaoReunioes, prevConversaoReunioes)} delay={250} />
                   </div>
 
-                  {/* Cards individuais por closer (Conversões Individuais) */}
-                  <CloserCardsGrid
+                  {/* Farol por closer (pace + projeção por dias úteis) */}
+                  <FarolCloserCards
                     porCloser={live.leadsStats?.porCloser ?? []}
                     metasCloser={live.metasCloser ?? []}
-                    investimento={investimentoView}
-                    totalReunioes={reunioesRealizadas}
                     monthLabel={dynamicMonths.find(m => m.key === selectedMonth)?.label ?? ""}
+                    selectedMonth={selectedMonthYYYYMM}
                     totalVendas={effectiveVendas}
                     totalFaturamento={effectiveFaturamento}
+                    totalReunioesRealizadas={reunioesRealizadas}
+                    investimento={investimentoView}
                   />
 
                   {/* Performance chart genérico */}
