@@ -150,6 +150,13 @@ export function PipelinePanel() {
     if (!isAdmin) {
       if (isSdr) {
         filtered = filtered.filter((card) => ownerMatches(card.owner, currentUserName) || !card.owner || card.stage === "no_show");
+      } else if (isCloser || isDual) {
+        // Closers veem: seus próprios leads + leads sem dono em "Reunião Agendada"
+        // (pool aberto que qualquer closer pode pegar).
+        filtered = filtered.filter((card) =>
+          ownerMatches(card.owner, currentUserName) ||
+          (!card.owner && card.stage === "reuniao_agendada"),
+        );
       } else {
         filtered = filtered.filter((card) => ownerMatches(card.owner, currentUserName) || !card.owner);
       }

@@ -23,9 +23,10 @@ export const MonthSelector = ({ selectedMonth, onSelectMonth, months: dynamicMon
   const currentIdx = list.findIndex(m => m.key === selectedMonth);
   const currentLabel = currentIdx >= 0 ? list[currentIdx].label : "—";
 
-  // months[0] is newest, so "prev" (left arrow) goes to older = higher index
-  const canGoNewer = currentIdx > 0;
+  // list[0] is newest. Left arrow = previous (older) = higher index.
+  // Right arrow = next (newer) = lower index.
   const canGoOlder = currentIdx < list.length - 1;
+  const canGoNewer = currentIdx > 0;
 
   return (
     <div className="flex items-center gap-1">
@@ -33,20 +34,22 @@ export const MonthSelector = ({ selectedMonth, onSelectMonth, months: dynamicMon
         variant="ghost"
         size="icon"
         className="h-8 w-8"
-        disabled={!canGoNewer}
-        onClick={() => canGoNewer && onSelectMonth(list[currentIdx - 1].key)}
+        disabled={!canGoOlder}
+        onClick={() => canGoOlder && onSelectMonth(list[currentIdx + 1].key)}
+        aria-label="Mês anterior"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
-      <span className="text-sm font-medium min-w-[140px] text-center select-none">
+      <span className="text-sm font-medium min-w-[160px] text-center select-none capitalize">
         {currentLabel}
       </span>
       <Button
         variant="ghost"
         size="icon"
         className="h-8 w-8"
-        disabled={!canGoOlder}
-        onClick={() => canGoOlder && onSelectMonth(list[currentIdx + 1].key)}
+        disabled={!canGoNewer}
+        onClick={() => canGoNewer && onSelectMonth(list[currentIdx - 1].key)}
+        aria-label="Próximo mês"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>

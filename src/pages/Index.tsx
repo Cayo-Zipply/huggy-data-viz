@@ -27,6 +27,7 @@ import { useMarketingData } from "@/hooks/useMarketingData";
 import { useMarketingOverrides } from "@/hooks/useMarketingOverrides";
 import { useMarketingLive } from "@/hooks/useMarketingLive";
 import { CampaignSelector } from "@/components/CampaignSelector";
+import { CommercialCloserTable } from "@/components/CommercialCloserTable";
 
 const Index = () => {
   const location = useLocation();
@@ -187,7 +188,7 @@ const Index = () => {
       <main className="p-3 sm:p-4 lg:p-8 overflow-auto">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-wrap items-center justify-end gap-3 mb-8">
-            {activeTab === "marketing" && !isHardcoded && (
+            {(activeTab === "marketing" || activeTab === "comercial") && !isHardcoded && (
               <CampaignSelector
                 campaigns={live.campaigns}
                 selected={live.selectedCampaigns}
@@ -246,11 +247,48 @@ const Index = () => {
           )}
 
           {/* Comercial Tab */}
-          {activeTab === "comercial" && currentData && (
-            <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
-              <SalesFunnel data={salesData[selectedMonth] || salesData.novembro} investimento={currentData.investimento} />
-              <PerformanceChart investimento={currentData.investimento} faturamento={currentData.faturamento} />
-            </div>
+          {activeTab === "comercial" && (
+            <>
+              {isHardcoded ? (
+                currentData && (
+                  <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
+                    <SalesFunnel
+                      data={salesData[selectedMonth] || salesData.novembro}
+                      investimento={currentData.investimento}
+                    />
+                    <PerformanceChart
+                      investimento={currentData.investimento}
+                      faturamento={currentData.faturamento}
+                    />
+                  </div>
+                )
+              ) : (
+                <div className="space-y-4 lg:space-y-6">
+                  {/* Top KPIs (mesma fonte de dados do funil/marketing) */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">
+                    <MetricCard title="Vendas" value={formatNumber(effectiveVendas)} variation={getVariation(effectiveVendas, prevEffectiveVendas)} delay={0} />
+                    <MetricCard title="Faturamento" value={formatCurrency(effectiveFaturamento)} delay={50} />
+                    <MetricCard title="Reuniões Realizadas" value={formatNumber(reunioesRealizadas)} variation={getVariation(reunioesRealizadas, prevReunioes)} delay={100} />
+                    <MetricCard title="Mensagens" value={formatNumber(effectiveMensagens)} variation={getVariation(effectiveMensagens, prevEffectiveMensagens)} delay={150} />
+                    <MetricCard title="Ticket Médio" value={effectiveVendas > 0 ? formatCurrency(effectiveFaturamento / effectiveVendas) : "—"} delay={200} />
+                    <MetricCard title="Conv. Reuniões" value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "—"} variation={getVariation(conversaoReunioes, prevConversaoReunioes)} delay={250} />
+                  </div>
+
+                  {/* Tabela detalhada por closer */}
+                  <CommercialCloserTable
+                    porCloser={live.leadsStats?.porCloser ?? []}
+                    investimento={investimentoView}
+                    totalReunioes={reunioesRealizadas}
+                  />
+
+                  {/* Performance chart genérico */}
+                  <PerformanceChart
+                    investimento={investimentoView}
+                    faturamento={effectiveFaturamento}
+                  />
+                </div>
+              )}
+            </>
           )}
 
           {/* Rentabilidade Tab */}
