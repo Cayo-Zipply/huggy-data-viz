@@ -157,9 +157,13 @@ async function fetchLeadsStats(monthYYYYMM: string): Promise<LeadsStats> {
 
   const reunMarcadasNorm = (reunMarcadasRows ?? []).filter((r: any) => {
     const e = String(r.etapa_atual ?? "").toLowerCase();
-    return REUNIAO_AGENDADA_STAGES.some((s) => e.includes(s.toLowerCase().split(" ")[0]) && (
-      e.includes("reuni") || e.includes("proposta") || e.includes("contrato") || e.includes("link") || e.includes("no show")
-    ));
+    return (
+      e.includes("reuni") ||
+      e.includes("proposta") ||
+      e.includes("contrato") ||
+      e.includes("link enviado") ||
+      e.includes("no show")
+    );
   });
 
   // reuniões realizadas: pela data_reuniao real (NÃO por etapa_atual + created_at)
