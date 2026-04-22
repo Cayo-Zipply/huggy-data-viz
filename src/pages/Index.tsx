@@ -186,38 +186,47 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <main className="p-3 sm:p-4 lg:p-8 overflow-auto">
         <div className="max-w-7xl mx-auto">
-          <DashboardHeader
-            selectedMonth={selectedMonth}
-            onSelectMonth={setSelectedMonth}
-            months={dynamicMonths}
-            hideMonthSelector={
-              activeTab === "rentabilidade" ||
-              activeTab === "consolidado" ||
-              activeTab === "pipeline" ||
-              activeTab === "ajuda" ||
-              activeTab === "farol"
-            }
-          />
+          <div className="flex flex-wrap items-center justify-end gap-3 mb-8">
+            {activeTab === "marketing" && !isHardcoded && (
+              <CampaignSelector
+                campaigns={live.campaigns}
+                selected={live.selectedCampaigns}
+                onChange={live.setSelectedCampaigns}
+              />
+            )}
+            <DashboardHeader
+              selectedMonth={selectedMonth}
+              onSelectMonth={setSelectedMonth}
+              months={dynamicMonths}
+              hideMonthSelector={
+                activeTab === "rentabilidade" ||
+                activeTab === "consolidado" ||
+                activeTab === "pipeline" ||
+                activeTab === "ajuda" ||
+                activeTab === "farol"
+              }
+            />
+          </div>
 
           {/* Marketing Tab */}
-          {activeTab === "marketing" && currentData && (
+          {activeTab === "marketing" && (
             <>
               {/* Metricas principais */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 mb-4 sm:mb-6">
-                <MetricCard title="Investimento" value={formatCurrency(currentData.investimento)} variation={getVariation(currentData.investimento, previousData?.investimento)} invertColors delay={0} />
-                <MetricCard title="Impressoes" value={formatNumber(currentData.impressoes)} variation={getVariation(currentData.impressoes, previousData?.impressoes)} delay={50} />
-                <MetricCard title={metricTooltips.ctr.label} value={formatPercent(currentData.ctr)} variation={getVariation(currentData.ctr, previousData?.ctr)} tooltip={metricTooltips.ctr.tooltip} delay={100} />
-                <MetricCard title={metricTooltips.cpc.label} value={formatCurrency(currentData.cpc)} variation={getVariation(currentData.cpc, previousData?.cpc)} invertColors tooltip={metricTooltips.cpc.tooltip} delay={150} />
+                <MetricCard title="Investimento" value={formatCurrency(investimentoView)} variation={getVariation(investimentoView, prevInvestimentoView)} invertColors delay={0} />
+                <MetricCard title="Impressoes" value={formatNumber(impressoesView)} variation={getVariation(impressoesView, prevImpressoesView)} delay={50} />
+                <MetricCard title={metricTooltips.ctr.label} value={formatPercent(ctrView)} variation={getVariation(ctrView, prevCtrView)} tooltip={metricTooltips.ctr.tooltip} delay={100} />
+                <MetricCard title={metricTooltips.cpc.label} value={formatCurrency(cpcView)} variation={getVariation(cpcView, prevCpcView)} invertColors tooltip={metricTooltips.cpc.tooltip} delay={150} />
                 <MetricCard title="Mensagens" value={formatNumber(effectiveMensagens)} variation={getVariation(effectiveMensagens, prevEffectiveMensagens)} delay={200} />
                 <MetricCard title="Mensagens Efetivas" value={formatNumber(effectiveMensagensEfetivas)} variation={getVariation(effectiveMensagensEfetivas, prevEffectiveMensagensEfetivas)} delay={225} />
               </div>
 
               {/* Segunda linha de metricas */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-4 mb-4 sm:mb-6">
-                <MetricCard title={metricTooltips.cpa.label} value={formatCurrency(currentData.cpa)} variation={getVariation(currentData.cpa, previousData?.cpa)} invertColors tooltip={metricTooltips.cpa.tooltip} delay={250} />
-                <MetricCard title={metricTooltips.cpm.label} value={formatCurrency(currentData.cpm)} variation={getVariation(currentData.cpm, previousData?.cpm)} invertColors tooltip={metricTooltips.cpm.tooltip} delay={300} />
-                <MetricCard title={metricTooltips.frequencia.label} value={formatPercent(currentData.frequencia)} variation={getVariation(currentData.frequencia, previousData?.frequencia)} tooltip={metricTooltips.frequencia.tooltip} delay={350} />
-                <MetricCard title="Cliques" value={formatNumber(cliques)} delay={400} />
+                <MetricCard title={metricTooltips.cpa.label} value={formatCurrency(cpaView)} variation={getVariation(cpaView, prevCpaView)} invertColors tooltip={metricTooltips.cpa.tooltip} delay={250} />
+                <MetricCard title={metricTooltips.cpm.label} value={formatCurrency(cpmView)} variation={getVariation(cpmView, prevCpmView)} invertColors tooltip={metricTooltips.cpm.tooltip} delay={300} />
+                <MetricCard title={metricTooltips.frequencia.label} value={formatPercent(currentData?.frequencia ?? 0)} variation={getVariation(currentData?.frequencia ?? 0, previousData?.frequencia)} tooltip={metricTooltips.frequencia.tooltip} delay={350} />
+                <MetricCard title="Cliques" value={formatNumber(cliquesView)} delay={400} />
                 <MetricCard title="Conversao Geral" value={formatPercent(conversaoGeral)} variation={getVariation(conversaoGeral, previousConversaoGeral)} delay={450} />
                 <MetricCard title="Custo por Reuniao" value={custoPorReuniao > 0 ? formatCurrency(custoPorReuniao) : "N/A"} variation={getVariation(custoPorReuniao, prevCustoPorReuniao)} invertColors delay={500} />
                 <MetricCard title="Conv. Reunioes" value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "N/A"} variation={getVariation(conversaoReunioes, prevConversaoReunioes)} delay={550} />
@@ -225,12 +234,12 @@ const Index = () => {
 
               {/* Funil de trafego */}
               <TrafficFunnel
-                impressoes={currentData.impressoes}
-                cliques={cliques}
+                impressoes={impressoesView}
+                cliques={cliquesView}
                 mensagens={effectiveMensagens}
                 reunioes={reunioesRealizadas}
                 vendas={effectiveVendas}
-                investimento={currentData.investimento}
+                investimento={investimentoView}
                 faturamento={effectiveFaturamento}
               />
             </>
