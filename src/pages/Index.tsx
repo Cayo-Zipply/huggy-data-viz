@@ -25,6 +25,8 @@ import { usePipelineData } from "@/components/pipeline/usePipelineData";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMarketingData } from "@/hooks/useMarketingData";
 import { useMarketingOverrides } from "@/hooks/useMarketingOverrides";
+import { useMarketingLive } from "@/hooks/useMarketingLive";
+import { CampaignSelector } from "@/components/CampaignSelector";
 
 const Index = () => {
   const location = useLocation();
