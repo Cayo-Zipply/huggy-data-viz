@@ -29,7 +29,14 @@ export interface CloserBreakdown {
   closer: string;
   vendas: number;
   faturamento: number;
+  /** Reuniões realizadas (contadas por data_reuniao). */
   reunioes: number;
+  /** Reuniões realizadas (mesmo valor de `reunioes`, alias semântico). */
+  reunioesRealizadas: number;
+  /** Reuniões marcadas (leads do mês com etapa avançada). */
+  reunioesMarcadas: number;
+  /** Ticket médio realizado no mês. */
+  ticketMedioRealizado: number;
 }
 
 export interface MetaCloser {
@@ -141,20 +148,27 @@ async function fetchLeadsStats(monthYYYYMM: string): Promise<LeadsStats> {
     .gte("created_at", inicioIso)
     .lte("created_at", fimIso);
 
-  // reuniões agendadas / realizadas (leads do mês com etapa avançada)
-  const { data: reunioesRows } = await supabaseExt
+  // reuniões marcadas: leads criados no mês que chegaram pelo menos à etapa de reunião
+  const { data: reunMarcadasRows } = await supabaseExt
     .from("leads")
-    .select("etapa_atual, status, closer")
+    .select("etapa_atual, closer")
     .gte("created_at", inicioIso)
     .lte("created_at", fimIso);
 
-  const reunioesAgendadasRows = (reunioesRows ?? []).filter((r: any) =>
-    REUNIAO_AGENDADA_STAGES.includes(r.etapa_atual),
-  );
-  const reunioesRealizadasRows = (reunioesRows ?? []).filter(
-    (r: any) =>
-      REUNIAO_REALIZADA_STAGES.includes(r.etapa_atual) || r.status === "ganho",
-  );
+  const reunMarcadasNorm = (reunMarcadasRows ?? []).filter((r: any) => {
+    const e = String(r.etapa_atual ?? "").toLowerCase();
+    return REUNIAO_AGENDADA_STAGES.some((s) => e.includes(s.toLowerCase().split(" ")[0]) && (
+      e.includes("reuni") || e.includes("proposta") || e.includes("contrato") || e.includes("link") || e.includes("no show")
+    ));
+  });
+
+  // reuniões realizadas: pela data_reuniao real (NÃO por etapa_atual + created_at)
+  const { data: reunRealizadasRows } = await supabaseExt
+    .from("leads")
+    .select("closer, data_reuniao")
+    .not("data_reuniao", "is", null)
+    .gte("data_reuniao", inicioIso)
+    .lte("data_reuniao", fimIso);
 
   // vendas e faturamento por data_venda no mês
   const { data: vendasRows } = await supabaseExt
@@ -175,26 +189,42 @@ async function fetchLeadsStats(monthYYYYMM: string): Promise<LeadsStats> {
   const ensure = (name: string) => {
     const key = (name || "Sem closer").trim() || "Sem closer";
     if (!map.has(key)) {
-      map.set(key, { closer: key, vendas: 0, faturamento: 0, reunioes: 0 });
+      map.set(key, {
+        closer: key,
+        vendas: 0,
+        faturamento: 0,
+        reunioes: 0,
+        reunioesRealizadas: 0,
+        reunioesMarcadas: 0,
+        ticketMedioRealizado: 0,
+      });
     }
     return map.get(key)!;
   };
-  reunioesRealizadasRows.forEach((r: any) => {
-    ensure(r.closer).reunioes += 1;
+  (reunRealizadasRows ?? []).forEach((r: any) => {
+    const b = ensure(r.closer);
+    b.reunioes += 1;
+    b.reunioesRealizadas += 1;
+  });
+  reunMarcadasNorm.forEach((r: any) => {
+    ensure(r.closer).reunioesMarcadas += 1;
   });
   (vendasRows ?? []).forEach((l: any) => {
     const b = ensure(l.closer);
     b.vendas += 1;
     b.faturamento += Number(l.valor_negocio ?? 0);
   });
-  const porCloser = Array.from(map.values()).sort(
-    (a, b) => b.faturamento - a.faturamento || b.vendas - a.vendas,
-  );
+  map.forEach((b) => {
+    b.ticketMedioRealizado = b.vendas > 0 ? b.faturamento / b.vendas : 0;
+  });
+  const porCloser = Array.from(map.values())
+    .filter((c) => c.closer !== "Sem closer")
+    .sort((a, b) => b.faturamento - a.faturamento || b.vendas - a.vendas);
 
   return {
     mensagens: mensagensCount ?? 0,
-    reunioesAgendadas: reunioesAgendadasRows.length,
-    reunioesRealizadas: reunioesRealizadasRows.length,
+    reunioesAgendadas: reunMarcadasNorm.length,
+    reunioesRealizadas: reunRealizadasRows?.length ?? 0,
     vendas,
     faturamento,
     porCloser,
