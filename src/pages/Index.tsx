@@ -27,6 +27,7 @@ import { useMarketingData } from "@/hooks/useMarketingData";
 import { useMarketingOverrides } from "@/hooks/useMarketingOverrides";
 import { useMarketingLive } from "@/hooks/useMarketingLive";
 import { CampaignSelector } from "@/components/CampaignSelector";
+import { CommercialCloserTable } from "@/components/CommercialCloserTable";
 
 const Index = () => {
   const location = useLocation();
