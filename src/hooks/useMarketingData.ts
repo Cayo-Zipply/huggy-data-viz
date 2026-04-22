@@ -141,6 +141,20 @@ export function useMarketingData(overrides?: Record<string, MarketingOverrideDat
       source: "dynamic" as const,
     }));
 
+    // Always include the current month at the top, even if not present in
+    // meta_ads_monthly yet (so the dashboard defaults to "today's month").
+    const now = new Date();
+    const currentRaw = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+    const currentKey = monthKeyFromDate(currentRaw);
+    if (!dynamic.some(d => d.key === currentKey)) {
+      dynamic.unshift({
+        key: currentKey,
+        label: monthLabelFromDate(currentRaw),
+        raw: currentRaw,
+        source: "dynamic" as const,
+      });
+    }
+
     const hardcoded: MonthOption[] = Object.entries(hardcodedData).map(([key, d]) => ({
       key,
       label: `${d.month} ${d.year}`,
@@ -151,6 +165,7 @@ export function useMarketingData(overrides?: Record<string, MarketingOverrideDat
     return [...dynamic, ...hardcoded];
   }, [dynamicRows]);
 
+  // Default to the current month (always first in the dynamic list above).
   const defaultMonth = months.length > 0 ? months[0].key : "fevereiro";
 
   const getLeadMetricsForMonth = (monthStr: string): LeadMetrics => {
