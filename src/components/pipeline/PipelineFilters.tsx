@@ -29,10 +29,22 @@ export const defaultFilters: FilterState = {
   tipoDocumento: "todos",
 };
 
+export function getDateFieldForStatus(status: FilterState["status"]): "data_venda" | "stage_changed_at" | "created_at" {
+  if (status === "ganho") return "data_venda";
+  if (status === "perdido") return "stage_changed_at";
+  return "created_at";
+}
+
 export function applyFilters(cards: PipelineCard[], f: FilterState): PipelineCard[] {
+  const dateField = getDateFieldForStatus(f.status);
   return cards.filter(c => {
-    if (f.dateFrom && c.created_at < f.dateFrom) return false;
-    if (f.dateTo && c.created_at > f.dateTo + "T23:59:59") return false;
+    const refDate = (c as any)[dateField] as string | null | undefined;
+    if (f.dateFrom) {
+      if (!refDate || refDate < f.dateFrom) return false;
+    }
+    if (f.dateTo) {
+      if (!refDate || refDate > f.dateTo + "T23:59:59") return false;
+    }
     if (f.stageChangedFrom && c.stage_changed_at < f.stageChangedFrom) return false;
     if (f.stageChangedTo && c.stage_changed_at > f.stageChangedTo + "T23:59:59") return false;
     if (f.closers.length > 0 && !f.closers.some(fc => {
