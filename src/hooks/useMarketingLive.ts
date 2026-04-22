@@ -135,22 +135,22 @@ async function fetchLeadsStats(monthYYYYMM: string): Promise<LeadsStats> {
   // reuniões agendadas / realizadas (leads do mês com etapa avançada)
   const { data: reunioesRows } = await supabaseExt
     .from("leads")
-    .select("etapa_atual, status")
+    .select("etapa_atual, status, closer")
     .gte("created_at", inicioIso)
     .lte("created_at", fimIso);
 
-  const reunioesAgendadas = (reunioesRows ?? []).filter((r: any) =>
+  const reunioesAgendadasRows = (reunioesRows ?? []).filter((r: any) =>
     REUNIAO_AGENDADA_STAGES.includes(r.etapa_atual),
-  ).length;
-  const reunioesRealizadas = (reunioesRows ?? []).filter(
+  );
+  const reunioesRealizadasRows = (reunioesRows ?? []).filter(
     (r: any) =>
       REUNIAO_REALIZADA_STAGES.includes(r.etapa_atual) || r.status === "ganho",
-  ).length;
+  );
 
   // vendas e faturamento por data_venda no mês
   const { data: vendasRows } = await supabaseExt
     .from("leads")
-    .select("valor_negocio, data_venda")
+    .select("valor_negocio, data_venda, closer")
     .eq("status", "ganho")
     .gte("data_venda", inicioIso)
     .lte("data_venda", fimIso);
@@ -161,12 +161,34 @@ async function fetchLeadsStats(monthYYYYMM: string): Promise<LeadsStats> {
     0,
   );
 
+  // Breakdown por closer
+  const map = new Map<string, CloserBreakdown>();
+  const ensure = (name: string) => {
+    const key = (name || "Sem closer").trim() || "Sem closer";
+    if (!map.has(key)) {
+      map.set(key, { closer: key, vendas: 0, faturamento: 0, reunioes: 0 });
+    }
+    return map.get(key)!;
+  };
+  reunioesRealizadasRows.forEach((r: any) => {
+    ensure(r.closer).reunioes += 1;
+  });
+  (vendasRows ?? []).forEach((l: any) => {
+    const b = ensure(l.closer);
+    b.vendas += 1;
+    b.faturamento += Number(l.valor_negocio ?? 0);
+  });
+  const porCloser = Array.from(map.values()).sort(
+    (a, b) => b.faturamento - a.faturamento || b.vendas - a.vendas,
+  );
+
   return {
     mensagens: mensagensCount ?? 0,
-    reunioesAgendadas,
-    reunioesRealizadas,
+    reunioesAgendadas: reunioesAgendadasRows.length,
+    reunioesRealizadas: reunioesRealizadasRows.length,
     vendas,
     faturamento,
+    porCloser,
   };
 }
 
