@@ -66,6 +66,18 @@ const Index = () => {
   // Detect if current month is hardcoded (Sep 24 – Feb 25)
   const isHardcoded = dynamicMonths.find(m => m.key === selectedMonth)?.source === "hardcoded";
 
+  // Convert selected month key (e.g. "abril_2026") to YYYY-MM using the raw
+  // value from dynamicMonths (which is "2026-04-01" for dynamic entries).
+  const selectedMonthYYYYMM = useMemo(() => {
+    const opt = dynamicMonths.find(m => m.key === selectedMonth);
+    if (!opt || opt.source === "hardcoded") return "";
+    return opt.raw.slice(0, 7); // "2026-04-01" -> "2026-04"
+  }, [dynamicMonths, selectedMonth]);
+
+  // Live marketing data (Meta Ads from meta_ads_daily filtered by campaigns,
+  // commercial metrics from leads). Only used for non-hardcoded months.
+  const live = useMarketingLive(selectedMonthYYYYMM);
+
   const getVariation = (current: number, previous: number | undefined) => {
     if (!previous) return undefined;
     return calculateVariation(current, previous);
@@ -74,17 +86,67 @@ const Index = () => {
   // For hardcoded months, use original salesData; for dynamic, use lead metrics
   const currentSales = isHardcoded ? salesData[selectedMonth] : null;
 
-  const cliques = currentData ? (isHardcoded ? Math.round((currentData.impressoes * currentData.ctr) / 100) : Math.round((currentData.impressoes * currentData.ctr) / 100)) : 0;
+  // ============================================================
+  // Effective metrics for the Marketing tab
+  // ============================================================
+  // Hardcoded months keep their static dataset. Dynamic months use:
+  //  - meta_ads_daily aggregated by selected campaigns (Meta Ads metrics)
+  //  - live counts from `leads` table (commercial metrics)
+  // ============================================================
 
-  // Mensagens/Vendas: hardcoded uses currentData (which has static values), dynamic uses leadMetrics
-  const effectiveMensagens = isHardcoded ? (currentData?.mensagens || 0) : currentLeadMetrics.mensagens;
-  const effectiveMensagensEfetivas = isHardcoded ? (currentData?.mensagensEfetivas || 0) : currentLeadMetrics.mensagensEfetivas;
-  const effectiveVendas = isHardcoded ? (currentData?.vendas || 0) : currentLeadMetrics.vendas;
-  const effectiveFaturamento = isHardcoded ? (currentData?.faturamento || 0) : currentLeadMetrics.faturamento;
+  const liveInvestimento = live.metaStats?.spend ?? 0;
+  const liveImpressoes = live.metaStats?.impressions ?? 0;
+  const liveCliques = live.metaStats?.clicks ?? 0;
+  const liveCtr = liveImpressoes > 0 ? (liveCliques / liveImpressoes) * 100 : 0;
+  const liveCpc = liveCliques > 0 ? liveInvestimento / liveCliques : 0;
+  const liveCpm = liveImpressoes > 0 ? (liveInvestimento / liveImpressoes) * 1000 : 0;
 
-  const prevEffectiveMensagens = previousLeadMetrics ? previousLeadMetrics.mensagens : (previousData?.mensagens || 0);
-  const prevEffectiveMensagensEfetivas = previousLeadMetrics ? previousLeadMetrics.mensagensEfetivas : (previousData?.mensagensEfetivas || 0);
-  const prevEffectiveVendas = previousLeadMetrics ? previousLeadMetrics.vendas : (previousData?.vendas || 0);
+  const prevLiveInvestimento = live.metaStatsPrev?.spend ?? 0;
+  const prevLiveImpressoes = live.metaStatsPrev?.impressions ?? 0;
+  const prevLiveCliques = live.metaStatsPrev?.clicks ?? 0;
+  const prevLiveCtr = prevLiveImpressoes > 0 ? (prevLiveCliques / prevLiveImpressoes) * 100 : 0;
+  const prevLiveCpc = prevLiveCliques > 0 ? prevLiveInvestimento / prevLiveCliques : 0;
+  const prevLiveCpm = prevLiveImpressoes > 0 ? (prevLiveInvestimento / prevLiveImpressoes) * 1000 : 0;
+
+  // Investimento / impressões / cliques: use live for dynamic months
+  const investimentoView = isHardcoded ? (currentData?.investimento ?? 0) : liveInvestimento;
+  const impressoesView = isHardcoded ? (currentData?.impressoes ?? 0) : liveImpressoes;
+  const ctrView = isHardcoded ? (currentData?.ctr ?? 0) : liveCtr;
+  const cpcView = isHardcoded ? (currentData?.cpc ?? 0) : liveCpc;
+  const cpmView = isHardcoded ? (currentData?.cpm ?? 0) : liveCpm;
+  const cliquesView = isHardcoded
+    ? Math.round(((currentData?.impressoes ?? 0) * (currentData?.ctr ?? 0)) / 100)
+    : liveCliques;
+
+  const prevInvestimentoView = isHardcoded ? previousData?.investimento : prevLiveInvestimento;
+  const prevImpressoesView = isHardcoded ? previousData?.impressoes : prevLiveImpressoes;
+  const prevCtrView = isHardcoded ? previousData?.ctr : prevLiveCtr;
+  const prevCpcView = isHardcoded ? previousData?.cpc : prevLiveCpc;
+  const prevCpmView = isHardcoded ? previousData?.cpm : prevLiveCpm;
+
+  // Mensagens/Vendas: hardcoded uses currentData (which has static values),
+  // dynamic uses live counts from `leads`
+  const effectiveMensagens = isHardcoded ? (currentData?.mensagens || 0) : (live.leadsStats?.mensagens ?? 0);
+  const effectiveMensagensEfetivas = isHardcoded ? (currentData?.mensagensEfetivas || 0) : (live.leadsStats?.mensagens ?? 0);
+  const effectiveVendas = isHardcoded ? (currentData?.vendas || 0) : (live.leadsStats?.vendas ?? 0);
+  const effectiveFaturamento = isHardcoded ? (currentData?.faturamento || 0) : (live.leadsStats?.faturamento ?? 0);
+
+  const prevEffectiveMensagens = isHardcoded
+    ? (previousData?.mensagens || 0)
+    : (live.leadsStatsPrev?.mensagens ?? 0);
+  const prevEffectiveMensagensEfetivas = isHardcoded
+    ? (previousData?.mensagensEfetivas || 0)
+    : (live.leadsStatsPrev?.mensagens ?? 0);
+  const prevEffectiveVendas = isHardcoded
+    ? (previousData?.vendas || 0)
+    : (live.leadsStatsPrev?.vendas ?? 0);
+
+  // CPA from live data
+  const liveCpa = effectiveVendas > 0 ? investimentoView / effectiveVendas : 0;
+  const cpaView = isHardcoded ? (currentData?.cpa ?? 0) : liveCpa;
+  const prevCpaView = isHardcoded
+    ? previousData?.cpa
+    : (prevEffectiveVendas > 0 ? (prevInvestimentoView ?? 0) / prevEffectiveVendas : undefined);
 
   const conversaoGeral = effectiveMensagens > 0
     ? (effectiveVendas / effectiveMensagens) * 100
