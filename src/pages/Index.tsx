@@ -27,7 +27,6 @@ import { useMarketingData } from "@/hooks/useMarketingData";
 import { useMarketingOverrides } from "@/hooks/useMarketingOverrides";
 import { useMarketingLive } from "@/hooks/useMarketingLive";
 import { CampaignSelector } from "@/components/CampaignSelector";
-import { CommercialCloserTable } from "@/components/CommercialCloserTable";
 
 const Index = () => {
   const location = useLocation();
@@ -263,30 +262,46 @@ const Index = () => {
                   </div>
                 )
               ) : (
-                <div className="space-y-4 lg:space-y-6">
-                  {/* Top KPIs (mesma fonte de dados do funil/marketing) */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">
-                    <MetricCard title="Vendas" value={formatNumber(effectiveVendas)} variation={getVariation(effectiveVendas, prevEffectiveVendas)} delay={0} />
-                    <MetricCard title="Faturamento" value={formatCurrency(effectiveFaturamento)} delay={50} />
-                    <MetricCard title="Reuniões Realizadas" value={formatNumber(reunioesRealizadas)} variation={getVariation(reunioesRealizadas, prevReunioes)} delay={100} />
-                    <MetricCard title="Mensagens" value={formatNumber(effectiveMensagens)} variation={getVariation(effectiveMensagens, prevEffectiveMensagens)} delay={150} />
-                    <MetricCard title="Ticket Médio" value={effectiveVendas > 0 ? formatCurrency(effectiveFaturamento / effectiveVendas) : "—"} delay={200} />
-                    <MetricCard title="Conv. Reuniões" value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "—"} variation={getVariation(conversaoReunioes, prevConversaoReunioes)} delay={250} />
-                  </div>
-
-                  {/* Tabela detalhada por closer */}
-                  <CommercialCloserTable
-                    porCloser={live.leadsStats?.porCloser ?? []}
-                    investimento={investimentoView}
-                    totalReunioes={reunioesRealizadas}
-                  />
-
-                  {/* Performance chart genérico */}
-                  <PerformanceChart
-                    investimento={investimentoView}
-                    faturamento={effectiveFaturamento}
-                  />
-                </div>
+                (() => {
+                  // Monta MonthSalesData a partir do hook unificado leadsStats
+                  // para que os números dos cards individuais batam com o funil.
+                  const porCloser = live.leadsStats?.porCloser ?? [];
+                  const goalsByCloser = new Map(
+                    (goals ?? [])
+                      .filter((g: any) => g.month === selectedMonthYYYYMM)
+                      .map((g: any) => [g.closer, g]),
+                  );
+                  const liveSalesData = {
+                    funnel: {
+                      mensagens: effectiveMensagens,
+                      reunioes: { realizado: reunioesRealizadas, meta: 0 },
+                      contratos: { realizado: effectiveVendas, meta: 0 },
+                      faturamento: { realizado: effectiveFaturamento, meta: 0 },
+                    },
+                    individuais: porCloser.map((c) => {
+                      const g: any = goalsByCloser.get(c.closer);
+                      return {
+                        nome: c.closer,
+                        contratos: c.vendas,
+                        faturamento: c.faturamento,
+                        reunioes: c.reunioes,
+                        meta: Number(g?.faturamento_meta ?? 0),
+                      };
+                    }),
+                  };
+                  return (
+                    <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
+                      <SalesFunnel
+                        data={liveSalesData}
+                        investimento={investimentoView}
+                      />
+                      <PerformanceChart
+                        investimento={investimentoView}
+                        faturamento={effectiveFaturamento}
+                      />
+                    </div>
+                  );
+                })()
               )}
             </>
           )}
