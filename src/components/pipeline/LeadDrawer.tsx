@@ -455,6 +455,31 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     <p className="text-sm text-foreground">{new Date(card.stage_changed_at).toLocaleString("pt-BR")}</p>
                   </div>
                 </div>
+
+                {/* Data da Venda — só para leads ganhos. Determina em qual mês a venda aparece no dashboard. */}
+                {card.lead_status === "ganho" && (
+                  <div className="flex items-center gap-3 py-2">
+                    <Clock size={16} className="text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Data da Venda</p>
+                      <input
+                        type="date"
+                        value={card.data_venda ? new Date(card.data_venda).toISOString().slice(0, 10) : ""}
+                        max={new Date().toISOString().slice(0, 10)}
+                        onChange={(e) => {
+                          const novaData = e.target.value
+                            ? new Date(`${e.target.value}T12:00:00`).toISOString()
+                            : null;
+                          onUpdate(card.id, { data_venda: novaData } as any);
+                        }}
+                        className="text-sm bg-background border border-border rounded px-2 py-1 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        Determina em qual mês a venda aparece no dashboard.
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <Separator className="my-1" />
 
                 {/* Contract */}
