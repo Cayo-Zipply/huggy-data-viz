@@ -155,12 +155,12 @@ const Index = () => {
     ? (prevEffectiveVendas / prevEffectiveMensagens) * 100
     : undefined;
 
-  // Reuniões
+  // Reuniões — live for dynamic months, salesData for hardcoded
   const reunioesRealizadas = isHardcoded
     ? (currentSales?.funnel?.reunioes?.realizado || 0)
-    : currentLeadMetrics.reunioesRealizadas;
-  const custoPorReuniao = reunioesRealizadas > 0 && currentData
-    ? currentData.investimento / reunioesRealizadas
+    : (live.leadsStats?.reunioesRealizadas ?? 0);
+  const custoPorReuniao = reunioesRealizadas > 0
+    ? investimentoView / reunioesRealizadas
     : 0;
 
   const prevSalesKey = previousData ? Object.keys(salesData).find(k => salesData[k] && previousData.month.toLowerCase().startsWith(k.substring(0, 3))) : null;
@@ -168,9 +168,9 @@ const Index = () => {
   const isHardcodedPrev = dynamicMonths.length > 1 && dynamicMonths[dynamicMonths.findIndex(m => m.key === selectedMonth) + 1]?.source === "hardcoded";
   const prevReunioes = isHardcodedPrev
     ? (prevSales?.funnel?.reunioes?.realizado || 0)
-    : (previousLeadMetrics?.reunioesRealizadas || 0);
-  const prevCustoPorReuniao = prevReunioes > 0 && previousData
-    ? previousData.investimento / prevReunioes
+    : (live.leadsStatsPrev?.reunioesRealizadas ?? 0);
+  const prevCustoPorReuniao = prevReunioes > 0 && (prevInvestimentoView ?? 0) > 0
+    ? (prevInvestimentoView ?? 0) / prevReunioes
     : undefined;
 
   const conversaoReunioes = reunioesRealizadas > 0
