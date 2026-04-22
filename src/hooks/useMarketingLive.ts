@@ -32,6 +32,15 @@ export interface CloserBreakdown {
   reunioes: number;
 }
 
+export interface MetaCloser {
+  closer: string;
+  mes: string;
+  meta_reunioes_marcadas: number | null;
+  meta_reunioes_realizadas: number | null;
+  meta_faturamento: number | null;
+  meta_conversao: number | null;
+}
+
 export interface LeadsStats {
   mensagens: number;
   reunioesAgendadas: number;
@@ -255,6 +264,21 @@ export function useMarketingLive(selectedMonth: string) {
     staleTime: 60_000,
   });
 
+  // 5. Metas dos closers para o mês selecionado
+  const metasQuery = useQuery({
+    queryKey: ["metas-closer", selectedMonth],
+    queryFn: async (): Promise<MetaCloser[]> => {
+      const { data, error } = await supabaseExt
+        .from("metas")
+        .select("closer, mes, meta_reunioes_marcadas, meta_reunioes_realizadas, meta_faturamento, meta_conversao")
+        .eq("mes", selectedMonth);
+      if (error) throw error;
+      return (data ?? []) as MetaCloser[];
+    },
+    enabled,
+    staleTime: 60_000,
+  });
+
   return {
     campaigns: campaignsQuery.data ?? [],
     selectedCampaigns,
@@ -263,6 +287,7 @@ export function useMarketingLive(selectedMonth: string) {
     metaStatsPrev: metaPrevQuery.data,
     leadsStats: leadsQuery.data,
     leadsStatsPrev: leadsPrevQuery.data,
+    metasCloser: metasQuery.data ?? [],
     loading:
       campaignsQuery.isLoading ||
       metaQuery.isLoading ||
