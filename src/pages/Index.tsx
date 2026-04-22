@@ -25,6 +25,8 @@ import { usePipelineData } from "@/components/pipeline/usePipelineData";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMarketingData } from "@/hooks/useMarketingData";
 import { useMarketingOverrides } from "@/hooks/useMarketingOverrides";
+import { useMarketingLive } from "@/hooks/useMarketingLive";
+import { CampaignSelector } from "@/components/CampaignSelector";
 
 const Index = () => {
   const location = useLocation();
@@ -64,6 +66,18 @@ const Index = () => {
   // Detect if current month is hardcoded (Sep 24 – Feb 25)
   const isHardcoded = dynamicMonths.find(m => m.key === selectedMonth)?.source === "hardcoded";
 
+  // Convert selected month key (e.g. "abril_2026") to YYYY-MM using the raw
+  // value from dynamicMonths (which is "2026-04-01" for dynamic entries).
+  const selectedMonthYYYYMM = useMemo(() => {
+    const opt = dynamicMonths.find(m => m.key === selectedMonth);
+    if (!opt || opt.source === "hardcoded") return "";
+    return opt.raw.slice(0, 7); // "2026-04-01" -> "2026-04"
+  }, [dynamicMonths, selectedMonth]);
+
+  // Live marketing data (Meta Ads from meta_ads_daily filtered by campaigns,
+  // commercial metrics from leads). Only used for non-hardcoded months.
+  const live = useMarketingLive(selectedMonthYYYYMM);
+
   const getVariation = (current: number, previous: number | undefined) => {
     if (!previous) return undefined;
     return calculateVariation(current, previous);
@@ -72,17 +86,67 @@ const Index = () => {
   // For hardcoded months, use original salesData; for dynamic, use lead metrics
   const currentSales = isHardcoded ? salesData[selectedMonth] : null;
 
-  const cliques = currentData ? (isHardcoded ? Math.round((currentData.impressoes * currentData.ctr) / 100) : Math.round((currentData.impressoes * currentData.ctr) / 100)) : 0;
+  // ============================================================
+  // Effective metrics for the Marketing tab
+  // ============================================================
+  // Hardcoded months keep their static dataset. Dynamic months use:
+  //  - meta_ads_daily aggregated by selected campaigns (Meta Ads metrics)
+  //  - live counts from `leads` table (commercial metrics)
+  // ============================================================
 
-  // Mensagens/Vendas: hardcoded uses currentData (which has static values), dynamic uses leadMetrics
-  const effectiveMensagens = isHardcoded ? (currentData?.mensagens || 0) : currentLeadMetrics.mensagens;
-  const effectiveMensagensEfetivas = isHardcoded ? (currentData?.mensagensEfetivas || 0) : currentLeadMetrics.mensagensEfetivas;
-  const effectiveVendas = isHardcoded ? (currentData?.vendas || 0) : currentLeadMetrics.vendas;
-  const effectiveFaturamento = isHardcoded ? (currentData?.faturamento || 0) : currentLeadMetrics.faturamento;
+  const liveInvestimento = live.metaStats?.spend ?? 0;
+  const liveImpressoes = live.metaStats?.impressions ?? 0;
+  const liveCliques = live.metaStats?.clicks ?? 0;
+  const liveCtr = liveImpressoes > 0 ? (liveCliques / liveImpressoes) * 100 : 0;
+  const liveCpc = liveCliques > 0 ? liveInvestimento / liveCliques : 0;
+  const liveCpm = liveImpressoes > 0 ? (liveInvestimento / liveImpressoes) * 1000 : 0;
 
-  const prevEffectiveMensagens = previousLeadMetrics ? previousLeadMetrics.mensagens : (previousData?.mensagens || 0);
-  const prevEffectiveMensagensEfetivas = previousLeadMetrics ? previousLeadMetrics.mensagensEfetivas : (previousData?.mensagensEfetivas || 0);
-  const prevEffectiveVendas = previousLeadMetrics ? previousLeadMetrics.vendas : (previousData?.vendas || 0);
+  const prevLiveInvestimento = live.metaStatsPrev?.spend ?? 0;
+  const prevLiveImpressoes = live.metaStatsPrev?.impressions ?? 0;
+  const prevLiveCliques = live.metaStatsPrev?.clicks ?? 0;
+  const prevLiveCtr = prevLiveImpressoes > 0 ? (prevLiveCliques / prevLiveImpressoes) * 100 : 0;
+  const prevLiveCpc = prevLiveCliques > 0 ? prevLiveInvestimento / prevLiveCliques : 0;
+  const prevLiveCpm = prevLiveImpressoes > 0 ? (prevLiveInvestimento / prevLiveImpressoes) * 1000 : 0;
+
+  // Investimento / impressões / cliques: use live for dynamic months
+  const investimentoView = isHardcoded ? (currentData?.investimento ?? 0) : liveInvestimento;
+  const impressoesView = isHardcoded ? (currentData?.impressoes ?? 0) : liveImpressoes;
+  const ctrView = isHardcoded ? (currentData?.ctr ?? 0) : liveCtr;
+  const cpcView = isHardcoded ? (currentData?.cpc ?? 0) : liveCpc;
+  const cpmView = isHardcoded ? (currentData?.cpm ?? 0) : liveCpm;
+  const cliquesView = isHardcoded
+    ? Math.round(((currentData?.impressoes ?? 0) * (currentData?.ctr ?? 0)) / 100)
+    : liveCliques;
+
+  const prevInvestimentoView = isHardcoded ? previousData?.investimento : prevLiveInvestimento;
+  const prevImpressoesView = isHardcoded ? previousData?.impressoes : prevLiveImpressoes;
+  const prevCtrView = isHardcoded ? previousData?.ctr : prevLiveCtr;
+  const prevCpcView = isHardcoded ? previousData?.cpc : prevLiveCpc;
+  const prevCpmView = isHardcoded ? previousData?.cpm : prevLiveCpm;
+
+  // Mensagens/Vendas: hardcoded uses currentData (which has static values),
+  // dynamic uses live counts from `leads`
+  const effectiveMensagens = isHardcoded ? (currentData?.mensagens || 0) : (live.leadsStats?.mensagens ?? 0);
+  const effectiveMensagensEfetivas = isHardcoded ? (currentData?.mensagensEfetivas || 0) : (live.leadsStats?.mensagens ?? 0);
+  const effectiveVendas = isHardcoded ? (currentData?.vendas || 0) : (live.leadsStats?.vendas ?? 0);
+  const effectiveFaturamento = isHardcoded ? (currentData?.faturamento || 0) : (live.leadsStats?.faturamento ?? 0);
+
+  const prevEffectiveMensagens = isHardcoded
+    ? (previousData?.mensagens || 0)
+    : (live.leadsStatsPrev?.mensagens ?? 0);
+  const prevEffectiveMensagensEfetivas = isHardcoded
+    ? (previousData?.mensagensEfetivas || 0)
+    : (live.leadsStatsPrev?.mensagens ?? 0);
+  const prevEffectiveVendas = isHardcoded
+    ? (previousData?.vendas || 0)
+    : (live.leadsStatsPrev?.vendas ?? 0);
+
+  // CPA from live data
+  const liveCpa = effectiveVendas > 0 ? investimentoView / effectiveVendas : 0;
+  const cpaView = isHardcoded ? (currentData?.cpa ?? 0) : liveCpa;
+  const prevCpaView = isHardcoded
+    ? previousData?.cpa
+    : (prevEffectiveVendas > 0 ? (prevInvestimentoView ?? 0) / prevEffectiveVendas : undefined);
 
   const conversaoGeral = effectiveMensagens > 0
     ? (effectiveVendas / effectiveMensagens) * 100
@@ -91,12 +155,12 @@ const Index = () => {
     ? (prevEffectiveVendas / prevEffectiveMensagens) * 100
     : undefined;
 
-  // Reuniões
+  // Reuniões — live for dynamic months, salesData for hardcoded
   const reunioesRealizadas = isHardcoded
     ? (currentSales?.funnel?.reunioes?.realizado || 0)
-    : currentLeadMetrics.reunioesRealizadas;
-  const custoPorReuniao = reunioesRealizadas > 0 && currentData
-    ? currentData.investimento / reunioesRealizadas
+    : (live.leadsStats?.reunioesRealizadas ?? 0);
+  const custoPorReuniao = reunioesRealizadas > 0
+    ? investimentoView / reunioesRealizadas
     : 0;
 
   const prevSalesKey = previousData ? Object.keys(salesData).find(k => salesData[k] && previousData.month.toLowerCase().startsWith(k.substring(0, 3))) : null;
@@ -104,9 +168,9 @@ const Index = () => {
   const isHardcodedPrev = dynamicMonths.length > 1 && dynamicMonths[dynamicMonths.findIndex(m => m.key === selectedMonth) + 1]?.source === "hardcoded";
   const prevReunioes = isHardcodedPrev
     ? (prevSales?.funnel?.reunioes?.realizado || 0)
-    : (previousLeadMetrics?.reunioesRealizadas || 0);
-  const prevCustoPorReuniao = prevReunioes > 0 && previousData
-    ? previousData.investimento / prevReunioes
+    : (live.leadsStatsPrev?.reunioesRealizadas ?? 0);
+  const prevCustoPorReuniao = prevReunioes > 0 && (prevInvestimentoView ?? 0) > 0
+    ? (prevInvestimentoView ?? 0) / prevReunioes
     : undefined;
 
   const conversaoReunioes = reunioesRealizadas > 0
@@ -122,38 +186,47 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <main className="p-3 sm:p-4 lg:p-8 overflow-auto">
         <div className="max-w-7xl mx-auto">
-          <DashboardHeader
-            selectedMonth={selectedMonth}
-            onSelectMonth={setSelectedMonth}
-            months={dynamicMonths}
-            hideMonthSelector={
-              activeTab === "rentabilidade" ||
-              activeTab === "consolidado" ||
-              activeTab === "pipeline" ||
-              activeTab === "ajuda" ||
-              activeTab === "farol"
-            }
-          />
+          <div className="flex flex-wrap items-center justify-end gap-3 mb-8">
+            {activeTab === "marketing" && !isHardcoded && (
+              <CampaignSelector
+                campaigns={live.campaigns}
+                selected={live.selectedCampaigns}
+                onChange={live.setSelectedCampaigns}
+              />
+            )}
+            <DashboardHeader
+              selectedMonth={selectedMonth}
+              onSelectMonth={setSelectedMonth}
+              months={dynamicMonths}
+              hideMonthSelector={
+                activeTab === "rentabilidade" ||
+                activeTab === "consolidado" ||
+                activeTab === "pipeline" ||
+                activeTab === "ajuda" ||
+                activeTab === "farol"
+              }
+            />
+          </div>
 
           {/* Marketing Tab */}
-          {activeTab === "marketing" && currentData && (
+          {activeTab === "marketing" && (
             <>
               {/* Metricas principais */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 mb-4 sm:mb-6">
-                <MetricCard title="Investimento" value={formatCurrency(currentData.investimento)} variation={getVariation(currentData.investimento, previousData?.investimento)} invertColors delay={0} />
-                <MetricCard title="Impressoes" value={formatNumber(currentData.impressoes)} variation={getVariation(currentData.impressoes, previousData?.impressoes)} delay={50} />
-                <MetricCard title={metricTooltips.ctr.label} value={formatPercent(currentData.ctr)} variation={getVariation(currentData.ctr, previousData?.ctr)} tooltip={metricTooltips.ctr.tooltip} delay={100} />
-                <MetricCard title={metricTooltips.cpc.label} value={formatCurrency(currentData.cpc)} variation={getVariation(currentData.cpc, previousData?.cpc)} invertColors tooltip={metricTooltips.cpc.tooltip} delay={150} />
+                <MetricCard title="Investimento" value={formatCurrency(investimentoView)} variation={getVariation(investimentoView, prevInvestimentoView)} invertColors delay={0} />
+                <MetricCard title="Impressoes" value={formatNumber(impressoesView)} variation={getVariation(impressoesView, prevImpressoesView)} delay={50} />
+                <MetricCard title={metricTooltips.ctr.label} value={formatPercent(ctrView)} variation={getVariation(ctrView, prevCtrView)} tooltip={metricTooltips.ctr.tooltip} delay={100} />
+                <MetricCard title={metricTooltips.cpc.label} value={formatCurrency(cpcView)} variation={getVariation(cpcView, prevCpcView)} invertColors tooltip={metricTooltips.cpc.tooltip} delay={150} />
                 <MetricCard title="Mensagens" value={formatNumber(effectiveMensagens)} variation={getVariation(effectiveMensagens, prevEffectiveMensagens)} delay={200} />
                 <MetricCard title="Mensagens Efetivas" value={formatNumber(effectiveMensagensEfetivas)} variation={getVariation(effectiveMensagensEfetivas, prevEffectiveMensagensEfetivas)} delay={225} />
               </div>
 
               {/* Segunda linha de metricas */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-4 mb-4 sm:mb-6">
-                <MetricCard title={metricTooltips.cpa.label} value={formatCurrency(currentData.cpa)} variation={getVariation(currentData.cpa, previousData?.cpa)} invertColors tooltip={metricTooltips.cpa.tooltip} delay={250} />
-                <MetricCard title={metricTooltips.cpm.label} value={formatCurrency(currentData.cpm)} variation={getVariation(currentData.cpm, previousData?.cpm)} invertColors tooltip={metricTooltips.cpm.tooltip} delay={300} />
-                <MetricCard title={metricTooltips.frequencia.label} value={formatPercent(currentData.frequencia)} variation={getVariation(currentData.frequencia, previousData?.frequencia)} tooltip={metricTooltips.frequencia.tooltip} delay={350} />
-                <MetricCard title="Cliques" value={formatNumber(cliques)} delay={400} />
+                <MetricCard title={metricTooltips.cpa.label} value={formatCurrency(cpaView)} variation={getVariation(cpaView, prevCpaView)} invertColors tooltip={metricTooltips.cpa.tooltip} delay={250} />
+                <MetricCard title={metricTooltips.cpm.label} value={formatCurrency(cpmView)} variation={getVariation(cpmView, prevCpmView)} invertColors tooltip={metricTooltips.cpm.tooltip} delay={300} />
+                <MetricCard title={metricTooltips.frequencia.label} value={formatPercent(currentData?.frequencia ?? 0)} variation={getVariation(currentData?.frequencia ?? 0, previousData?.frequencia)} tooltip={metricTooltips.frequencia.tooltip} delay={350} />
+                <MetricCard title="Cliques" value={formatNumber(cliquesView)} delay={400} />
                 <MetricCard title="Conversao Geral" value={formatPercent(conversaoGeral)} variation={getVariation(conversaoGeral, previousConversaoGeral)} delay={450} />
                 <MetricCard title="Custo por Reuniao" value={custoPorReuniao > 0 ? formatCurrency(custoPorReuniao) : "N/A"} variation={getVariation(custoPorReuniao, prevCustoPorReuniao)} invertColors delay={500} />
                 <MetricCard title="Conv. Reunioes" value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "N/A"} variation={getVariation(conversaoReunioes, prevConversaoReunioes)} delay={550} />
@@ -161,12 +234,12 @@ const Index = () => {
 
               {/* Funil de trafego */}
               <TrafficFunnel
-                impressoes={currentData.impressoes}
-                cliques={cliques}
+                impressoes={impressoesView}
+                cliques={cliquesView}
                 mensagens={effectiveMensagens}
                 reunioes={reunioesRealizadas}
                 vendas={effectiveVendas}
-                investimento={currentData.investimento}
+                investimento={investimentoView}
                 faturamento={effectiveFaturamento}
               />
             </>
