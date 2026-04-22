@@ -705,6 +705,14 @@ export function PipelinePanel() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmar venda (Contrato Assinado) */}
+      <ConfirmarGanhoDialog
+        open={!!ganhoPending}
+        leadNome={ganhoPending?.cardNome ?? ""}
+        onConfirm={confirmGanho}
+        onCancel={() => setGanhoPending(null)}
+      />
     </div>
   );
 }
