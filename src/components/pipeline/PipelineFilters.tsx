@@ -22,12 +22,24 @@ export interface FilterState {
   tipoDocumento: "todos" | "cpf" | "cnpj" | "nenhum";
 }
 
-export const defaultFilters: FilterState = {
-  dateFrom: "", dateTo: "", stageChangedFrom: "", stageChangedTo: "",
-  closers: [], status: "todos", stages: [], staleDays: null, slaFilter: "todos",
-  apenasFimDeSemana: false,
-  tipoDocumento: "todos",
-};
+export const defaultFilters: FilterState = (() => {
+  // Por padrão, o Kanban geral fica travado no MÊS ATUAL.
+  // Para ver fechamentos de outros meses, o usuário precisa alterar o filtro de data.
+  const now = new Date();
+  return {
+    dateFrom: format(startOfMonth(now), "yyyy-MM-dd"),
+    dateTo: format(endOfMonth(now), "yyyy-MM-dd"),
+    stageChangedFrom: "",
+    stageChangedTo: "",
+    closers: [],
+    status: "todos",
+    stages: [],
+    staleDays: null,
+    slaFilter: "todos",
+    apenasFimDeSemana: false,
+    tipoDocumento: "todos",
+  };
+})();
 
 export function getDateFieldForStatus(status: FilterState["status"]): "data_venda" | "stage_changed_at" | "created_at" {
   if (status === "ganho") return "data_venda";
