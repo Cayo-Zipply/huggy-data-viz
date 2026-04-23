@@ -104,10 +104,11 @@ export function PipelinePanel() {
   }, [activeUser, isAdmin]);
 
   useEffect(() => {
-    if (!isAdmin && !isDual) {
-      setActivePipe(defaultPipe);
+    // SDR puro fica trancado no pipe SDR; demais (closer, dual, admin) podem alternar
+    if (isSdr && !isCloser && !isAdmin) {
+      setActivePipe("sdr");
     }
-  }, [defaultPipe, isAdmin, isDual]);
+  }, [isAdmin, isCloser, isDual, isSdr]);
 
   // Persist search & filters to sessionStorage
   useEffect(() => { sessionStorage.setItem(PIPELINE_UI_KEYS.search, searchQuery); }, [searchQuery]);
@@ -148,14 +149,16 @@ export function PipelinePanel() {
     };
     
     if (!isAdmin) {
-      if (isSdr) {
+      if (isSdr && !isCloser) {
         filtered = filtered.filter((card) => ownerMatches(card.owner, currentUserName) || !card.owner || card.stage === "no_show");
       } else if (isCloser || isDual) {
         // Closers veem: seus próprios leads + leads sem dono em "Reunião Agendada"
-        // (pool aberto que qualquer closer pode pegar).
+        // (pool aberto que qualquer closer pode pegar) + todos os leads do pipe SDR
+        // (visibilidade do funil de pré-vendas para acompanhar o que está chegando).
         filtered = filtered.filter((card) =>
           ownerMatches(card.owner, currentUserName) ||
-          (!card.owner && card.stage === "reuniao_agendada"),
+          (!card.owner && card.stage === "reuniao_agendada") ||
+          card.pipe === "sdr",
         );
       } else {
         filtered = filtered.filter((card) => ownerMatches(card.owner, currentUserName) || !card.owner);
@@ -279,9 +282,8 @@ export function PipelinePanel() {
   };
 
   const getStages = () => {
-    if (isCloser) return CLOSER_STAGES;
-    // SDR sees SDR stages + no_show from closer
-    if (isSdr) return [...SDR_STAGES, "no_show" as Stage];
+    // SDR puro vê SDR + no_show (para retomar leads)
+    if (isSdr && !isCloser && !isAdmin) return [...SDR_STAGES, "no_show" as Stage];
     if (activePipe === "sdr") return SDR_STAGES;
     if (activePipe === "closer") return CLOSER_STAGES;
     return STAGE_ORDER;
@@ -544,8 +546,8 @@ export function PipelinePanel() {
 
             <div className="flex flex-wrap gap-2">
               {([
-                { key: "all", label: "Todos", count: visibleCards.length, roles: ["admin", "dual"] },
-                { key: "sdr", label: "SDR", count: sdrCount, roles: ["admin", "sdr", "dual"] },
+                { key: "all", label: "Todos", count: visibleCards.length, roles: ["admin", "dual", "closer"] },
+                { key: "sdr", label: "SDR", count: sdrCount, roles: ["admin", "sdr", "dual", "closer"] },
                 { key: "closer", label: "Closer", count: closerCount, roles: ["admin", "closer", "dual"] },
               ] as const).filter(pipe => {
                 const role = profile?.role || "closer";
