@@ -305,14 +305,45 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
             </select>
           </div>
         </div>
-        <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={monthCompData} margin={{ left: 10, right: 10 }}>
+        <ResponsiveContainer width="100%" height={260}>
+          <BarChart data={monthCompData} margin={{ left: 10, right: 20, top: 20 }}>
             <XAxis dataKey="metric" tick={{ fill: "hsl(215,20%,55%)", fontSize: 11 }} />
-            <YAxis tick={{ fill: "hsl(215,20%,55%)", fontSize: 10 }} />
-            <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12, color: "hsl(210,40%,98%)" }} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} />
+            <YAxis
+              tick={{ fill: "hsl(215,20%,55%)", fontSize: 10 }}
+              width={70}
+              tickFormatter={(v: number) => v >= 1000 ? formatBRLCompact(v) : v.toLocaleString("pt-BR")}
+            />
+            <Tooltip
+              contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12, color: "hsl(210,40%,98%)" }}
+              cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }}
+              formatter={(value: number, _name, ctx: any) => {
+                const isMoney = ctx?.payload?.metric === "Faturamento (R$)";
+                return isMoney ? formatBRL(value) : value.toLocaleString("pt-BR");
+              }}
+            />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar dataKey={curLabel} fill="hsl(207,90%,54%)" radius={[4, 4, 0, 0]} />
-            <Bar dataKey={prevLabel} fill="hsl(25,95%,53%)" radius={[4, 4, 0, 0]} opacity={0.7} />
+            <Bar dataKey={curLabel} fill="hsl(207,90%,54%)" radius={[4, 4, 0, 0]}>
+              <LabelList
+                dataKey={curLabel}
+                position="top"
+                style={{ fill: "hsl(var(--foreground))", fontSize: 10, fontWeight: 600 }}
+                formatter={(value: number, _n: any, _i: any, idx: number) => {
+                  const metric = monthCompData[idx]?.metric;
+                  return metric === "Faturamento (R$)" ? formatBRLCompact(value) : formatNumCompact(value);
+                }}
+              />
+            </Bar>
+            <Bar dataKey={prevLabel} fill="hsl(25,95%,53%)" radius={[4, 4, 0, 0]} opacity={0.7}>
+              <LabelList
+                dataKey={prevLabel}
+                position="top"
+                style={{ fill: "hsl(var(--muted-foreground))", fontSize: 10, fontWeight: 600 }}
+                formatter={(value: number, _n: any, _i: any, idx: number) => {
+                  const metric = monthCompData[idx]?.metric;
+                  return metric === "Faturamento (R$)" ? formatBRLCompact(value) : formatNumCompact(value);
+                }}
+              />
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>
