@@ -836,26 +836,6 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     </button>
                   </div>
                 )}
-                    </button>
-                  </div>
-                )}
-                {showLoss && (
-                  <div className="space-y-3 bg-destructive/5 rounded-lg p-4 border border-destructive/20">
-                    <p className="text-sm font-medium text-foreground">Motivo da perda</p>
-                    <select value={lossCat} onChange={e => setLossCat(e.target.value as LossCategory)}
-                      className="w-full text-sm bg-muted/50 border border-border rounded-md px-2.5 py-2 text-foreground">
-                      {LOSS_CATEGORIES.map(l => <option key={l.key} value={l.key}>{l.label}</option>)}
-                    </select>
-                    {lossCat === "outro" && (
-                      <input value={lossText} onChange={e => setLossText(e.target.value)} placeholder="Descreva o motivo..."
-                        className="w-full text-sm bg-muted/50 border border-border rounded-md px-2.5 py-1.5 text-foreground" />
-                    )}
-                    <div className="flex gap-2">
-                      <button onClick={submitLoss} className="text-sm px-4 py-1.5 bg-destructive/20 text-red-400 rounded-md flex-1 hover:bg-destructive/30">Confirmar</button>
-                      <button onClick={() => setShowLoss(false)} className="text-sm px-4 py-1.5 bg-muted text-muted-foreground rounded-md hover:bg-muted/80">Cancelar</button>
-                    </div>
-                  </div>
-                )}
                 {isLost && (
                   <div className="text-sm text-red-400/70 bg-destructive/5 rounded-lg p-3 border border-destructive/20">
                     <strong>Motivo:</strong> {card.loss_reason}
