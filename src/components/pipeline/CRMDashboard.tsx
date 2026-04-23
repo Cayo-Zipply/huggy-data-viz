@@ -170,13 +170,12 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
   const { labels, getCardLabels } = useLabels();
 
   const now = new Date();
+  const [currentMonth, setCurrentMonth] = useState<Date>(() => new Date(now.getFullYear(), now.getMonth(), 1));
   const [compareMonth, setCompareMonth] = useState(() => {
-    const d = new Date(now);
-    d.setMonth(d.getMonth() - 1);
+    const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     return d;
   });
 
-  const currentMonth = now;
   const currentCards = useMemo(() => filterByMonth(vis, currentMonth), [vis, currentMonth]);
   const prevCards = useMemo(() => filterByMonth(vis, compareMonth), [vis, compareMonth]);
 
