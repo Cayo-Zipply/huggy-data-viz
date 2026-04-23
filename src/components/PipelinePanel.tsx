@@ -281,9 +281,8 @@ export function PipelinePanel() {
   };
 
   const getStages = () => {
-    if (isCloser) return CLOSER_STAGES;
-    // SDR sees SDR stages + no_show from closer
-    if (isSdr) return [...SDR_STAGES, "no_show" as Stage];
+    // SDR puro vê SDR + no_show (para retomar leads)
+    if (isSdr && !isCloser && !isAdmin) return [...SDR_STAGES, "no_show" as Stage];
     if (activePipe === "sdr") return SDR_STAGES;
     if (activePipe === "closer") return CLOSER_STAGES;
     return STAGE_ORDER;
