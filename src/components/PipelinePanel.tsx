@@ -545,8 +545,8 @@ export function PipelinePanel() {
 
             <div className="flex flex-wrap gap-2">
               {([
-                { key: "all", label: "Todos", count: visibleCards.length, roles: ["admin", "dual"] },
-                { key: "sdr", label: "SDR", count: sdrCount, roles: ["admin", "sdr", "dual"] },
+                { key: "all", label: "Todos", count: visibleCards.length, roles: ["admin", "dual", "closer"] },
+                { key: "sdr", label: "SDR", count: sdrCount, roles: ["admin", "sdr", "dual", "closer"] },
                 { key: "closer", label: "Closer", count: closerCount, roles: ["admin", "closer", "dual"] },
               ] as const).filter(pipe => {
                 const role = profile?.role || "closer";
