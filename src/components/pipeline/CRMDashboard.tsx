@@ -433,13 +433,14 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
         {lossData.length > 0 && (
           <div className="bg-card border border-border rounded-xl p-4">
             <h4 className="text-sm font-semibold text-foreground mb-3">Motivos de Perda</h4>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={lossData} layout="vertical" margin={{ left: 80 }}>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={lossData} layout="vertical" margin={{ left: 80, right: 40 }}>
                 <XAxis type="number" tick={{ fill: "hsl(215,20%,55%)", fontSize: 10 }} />
-                <YAxis type="category" dataKey="name" tick={{ fill: "hsl(210,40%,98%)", fontSize: 11 }} width={75} />
+                <YAxis type="category" dataKey="name" tick={{ fill: "hsl(var(--foreground))", fontSize: 11 }} width={75} />
                 <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12, color: "hsl(210,40%,98%)" }} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                   {lossData.map((_, i) => <Cell key={i} fill="hsl(0,72%,51%)" fillOpacity={0.7} />)}
+                  <LabelList dataKey="value" position="right" style={{ fill: "hsl(var(--foreground))", fontSize: 11, fontWeight: 600 }} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -448,13 +449,14 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
 
         <div className="bg-card border border-border rounded-xl p-4">
           <h4 className="text-sm font-semibold text-foreground mb-3">Tempo Médio por Etapa (dias)</h4>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={timeData} margin={{ left: 10 }}>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={timeData} margin={{ left: 10, right: 10, top: 20 }}>
               <XAxis dataKey="name" tick={{ fill: "hsl(215,20%,55%)", fontSize: 9 }} angle={-20} textAnchor="end" height={50} />
               <YAxis tick={{ fill: "hsl(215,20%,55%)", fontSize: 10 }} />
-              <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12, color: "hsl(210,40%,98%)" }} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} />
+              <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12, color: "hsl(210,40%,98%)" }} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} formatter={(v: number) => `${v} dias`} />
               <Bar dataKey="dias" radius={[4, 4, 0, 0]}>
                 {timeData.map((_, i) => <Cell key={i} fill={barColors[i % barColors.length]} fillOpacity={0.7} />)}
+                <LabelList dataKey="dias" position="top" style={{ fill: "hsl(var(--foreground))", fontSize: 10, fontWeight: 600 }} formatter={(v: number) => v > 0 ? `${v}d` : ""} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
