@@ -830,9 +830,12 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                       className="flex-1 text-sm py-2.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 flex items-center justify-center gap-2 transition-colors border border-green-500/20">
                       <Trophy size={16} />Marcar como Ganho
                     </button>
-                    <button onClick={() => setShowLoss(true)}
+                    <button onClick={() => onMarkLost(card.id, "", "")}
                       className="flex-1 text-sm py-2.5 rounded-lg bg-destructive/10 text-red-400 hover:bg-destructive/20 flex items-center justify-center gap-2 transition-colors border border-destructive/20">
                       <XCircle size={16} />Marcar como Perdido
+                    </button>
+                  </div>
+                )}
                     </button>
                   </div>
                 )}
