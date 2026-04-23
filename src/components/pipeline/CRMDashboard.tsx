@@ -170,13 +170,12 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
   const { labels, getCardLabels } = useLabels();
 
   const now = new Date();
+  const [currentMonth, setCurrentMonth] = useState<Date>(() => new Date(now.getFullYear(), now.getMonth(), 1));
   const [compareMonth, setCompareMonth] = useState(() => {
-    const d = new Date(now);
-    d.setMonth(d.getMonth() - 1);
+    const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     return d;
   });
 
-  const currentMonth = now;
   const currentCards = useMemo(() => filterByMonth(vis, currentMonth), [vis, currentMonth]);
   const prevCards = useMemo(() => filterByMonth(vis, compareMonth), [vis, compareMonth]);
 
@@ -262,21 +261,39 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
     return { leads, ganhos: ganhosArr, faturamento: fatArr, conversao: convArr, sellers };
   }, [vis, owners]);
 
-  // Available months for comparison
+  // Available months selector: mês atual + 23 meses anteriores
   const availableMonths = useMemo(() => {
     const months: Date[] = [];
-    for (let i = 1; i <= 12; i++) {
+    for (let i = 0; i <= 23; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       months.push(d);
     }
     return months;
   }, []);
 
+  const currentMonthKey = currentMonth.toISOString();
+  const compareOptions = availableMonths.filter(m => m.toISOString() !== currentMonthKey);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-bold text-foreground">Dashboard CRM</h3>
-        <p className="text-xs text-muted-foreground mt-0.5">Visão {showAll ? "geral" : `de ${activeUser}`}</p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-bold text-foreground">Dashboard CRM</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Visão {showAll ? "geral" : `de ${activeUser}`} · {getMonthLabel(currentMonth)}</p>
+        </div>
+        <label className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground self-start sm:self-auto">
+          <Calendar size={14} className="text-primary" />
+          <span>Mês:</span>
+          <select
+            value={currentMonthKey}
+            onChange={e => setCurrentMonth(new Date(e.target.value))}
+            className="bg-transparent text-foreground outline-none capitalize"
+          >
+            {availableMonths.map(m => (
+              <option key={m.toISOString()} value={m.toISOString()}>{getMonthLabel(m)}</option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
@@ -299,7 +316,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
               onChange={e => setCompareMonth(new Date(e.target.value))}
               className="text-xs border border-border rounded-lg px-2 py-1.5 bg-background text-foreground"
             >
-              {availableMonths.map(m => (
+              {compareOptions.map(m => (
                 <option key={m.toISOString()} value={m.toISOString()}>{getMonthLabel(m)}</option>
               ))}
             </select>
