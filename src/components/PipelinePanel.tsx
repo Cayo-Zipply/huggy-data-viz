@@ -104,10 +104,11 @@ export function PipelinePanel() {
   }, [activeUser, isAdmin]);
 
   useEffect(() => {
-    if (!isAdmin && !isDual) {
-      setActivePipe(defaultPipe);
+    // SDR puro fica trancado no pipe SDR; demais (closer, dual, admin) podem alternar
+    if (isSdr && !isCloser && !isAdmin) {
+      setActivePipe("sdr");
     }
-  }, [defaultPipe, isAdmin, isDual]);
+  }, [isAdmin, isCloser, isDual, isSdr]);
 
   // Persist search & filters to sessionStorage
   useEffect(() => { sessionStorage.setItem(PIPELINE_UI_KEYS.search, searchQuery); }, [searchQuery]);
