@@ -316,7 +316,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
               onChange={e => setCompareMonth(new Date(e.target.value))}
               className="text-xs border border-border rounded-lg px-2 py-1.5 bg-background text-foreground"
             >
-              {availableMonths.map(m => (
+              {compareOptions.map(m => (
                 <option key={m.toISOString()} value={m.toISOString()}>{getMonthLabel(m)}</option>
               ))}
             </select>
