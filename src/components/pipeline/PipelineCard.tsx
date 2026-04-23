@@ -342,27 +342,10 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
                       className="flex-1 text-xs py-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 flex items-center justify-center gap-1">
                       <Trophy size={12} />Ganho
                     </button>
-                    <button onClick={() => setShowLoss(true)}
+                    <button onClick={() => onMarkLost(card.id, "", "")}
                       className="flex-1 text-xs py-1.5 rounded-lg bg-destructive/10 text-red-400 hover:bg-destructive/20 flex items-center justify-center gap-1">
                       <XCircle size={12} />Perdido
                     </button>
-                  </div>
-                )}
-                {showLoss && (
-                  <div className="space-y-2 bg-destructive/5 rounded-lg p-3 border border-destructive/20">
-                    <p className="text-xs font-medium text-foreground">Motivo da perda</p>
-                    <select value={lossCat} onChange={e => setLossCat(e.target.value as LossCategory)}
-                      className="w-full text-xs bg-muted/50 border border-border rounded px-2 py-1.5 text-foreground">
-                      {LOSS_CATEGORIES.map(l => <option key={l.key} value={l.key}>{l.label}</option>)}
-                    </select>
-                    {lossCat === "outro" && (
-                      <input value={lossText} onChange={e => setLossText(e.target.value)} placeholder="Descreva o motivo..."
-                        className="w-full text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground" />
-                    )}
-                    <div className="flex gap-1">
-                      <button onClick={submitLoss} className="text-xs px-3 py-1 bg-destructive/20 text-red-400 rounded flex-1">Confirmar</button>
-                      <button onClick={() => setShowLoss(false)} className="text-xs px-3 py-1 bg-muted text-muted-foreground rounded">Cancelar</button>
-                    </div>
                   </div>
                 )}
                 {isLost && (
