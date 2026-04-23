@@ -28,7 +28,7 @@ import { useLeadHistory } from "@/hooks/useLeadHistory";
 
 const SUB_TABS = [
   { key: "kanban", label: "Kanban", icon: LayoutGrid },
-  { key: "hoje", label: "Hoje", icon: ListChecks },
+  { key: "hoje", label: "Tarefas", icon: ListChecks },
   { key: "dashboard", label: "Dashboard", icon: BarChart3 },
   { key: "metas", label: "Metas", icon: Target },
 ];
@@ -595,16 +595,16 @@ export function PipelinePanel() {
         </div>
       )}
 
-      <div className="flex gap-1 bg-muted/30 rounded-2xl p-1 overflow-x-auto">
+      <div className="flex gap-1.5 bg-muted/30 rounded-2xl p-1.5 overflow-x-auto">
         {SUB_TABS.map(tab => {
           const Icon = tab.icon;
           const badge = tab.key === "hoje" ? todayPending : 0;
           return (
             <button key={tab.key} onClick={() => setSubTab(tab.key)}
-              className={cn("flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap relative",
+              className={cn("flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap relative",
                 subTab === tab.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
-              <Icon size={14} />{tab.label}
-              {badge > 0 && <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] rounded-full w-4 h-4 flex items-center justify-center">{badge}</span>}
+              <Icon size={18} strokeWidth={2.25} />{tab.label}
+              {badge > 0 && <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center shadow">{badge}</span>}
             </button>
           );
         })}
