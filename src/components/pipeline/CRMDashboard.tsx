@@ -276,9 +276,24 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-bold text-foreground">Dashboard CRM</h3>
-        <p className="text-xs text-muted-foreground mt-0.5">Visão {showAll ? "geral" : `de ${activeUser}`}</p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-bold text-foreground">Dashboard CRM</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Visão {showAll ? "geral" : `de ${activeUser}`} · {getMonthLabel(currentMonth)}</p>
+        </div>
+        <label className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground self-start sm:self-auto">
+          <Calendar size={14} className="text-primary" />
+          <span>Mês:</span>
+          <select
+            value={currentMonthKey}
+            onChange={e => setCurrentMonth(new Date(e.target.value))}
+            className="bg-transparent text-foreground outline-none capitalize"
+          >
+            {availableMonths.map(m => (
+              <option key={m.toISOString()} value={m.toISOString()}>{getMonthLabel(m)}</option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
