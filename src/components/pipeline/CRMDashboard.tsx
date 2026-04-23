@@ -1,11 +1,29 @@
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Users, Trophy, XCircle, TrendingUp, DollarSign, Clock, Target, ChevronDown, Tag, Calendar, Briefcase } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend, LabelList } from "recharts";
 import type { PipelineCard } from "./types";
 import { STAGE_ORDER, STAGE_CONFIG, LOSS_CATEGORIES, formatBRL, cardsReachedStage, daysDiff } from "./types";
 import { useLabels } from "@/hooks/useLabels";
 import { MetricasTipoDocumentoCard } from "./MetricasTipoDocumentoCard";
+
+/** Formata BRL compacto: R$ 36,7 mil / R$ 1,2 mi — ideal para eixos e labels de barra */
+function formatBRLCompact(value: number): string {
+  if (!Number.isFinite(value) || value === 0) return "R$ 0";
+  const abs = Math.abs(value);
+  const sign = value < 0 ? "-" : "";
+  if (abs >= 1_000_000) return `${sign}R$ ${(abs / 1_000_000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mi`;
+  if (abs >= 1_000) return `${sign}R$ ${(abs / 1_000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mil`;
+  return `${sign}R$ ${abs.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`;
+}
+
+/** Formata número compacto: 1,2 mil / 32 */
+function formatNumCompact(value: number): string {
+  if (!Number.isFinite(value)) return "0";
+  const abs = Math.abs(value);
+  if (abs >= 1_000) return `${(value / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mil`;
+  return value.toLocaleString("pt-BR");
+}
 
 interface Props {
   cards: PipelineCard[];
