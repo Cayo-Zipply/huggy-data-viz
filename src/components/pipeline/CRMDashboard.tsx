@@ -261,15 +261,18 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
     return { leads, ganhos: ganhosArr, faturamento: fatArr, conversao: convArr, sellers };
   }, [vis, owners]);
 
-  // Available months for comparison
+  // Available months selector: mês atual + 23 meses anteriores
   const availableMonths = useMemo(() => {
     const months: Date[] = [];
-    for (let i = 1; i <= 12; i++) {
+    for (let i = 0; i <= 23; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       months.push(d);
     }
     return months;
   }, []);
+
+  const currentMonthKey = currentMonth.toISOString();
+  const compareOptions = availableMonths.filter(m => m.toISOString() !== currentMonthKey);
 
   return (
     <div className="space-y-6">
