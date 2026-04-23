@@ -356,13 +356,14 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
             {/* Leads by seller - horizontal bars */}
             <div>
               <p className="text-xs text-muted-foreground mb-2 font-medium">Leads Totais</p>
-              <ResponsiveContainer width="100%" height={Math.max(sellerData.sellers.length * 40, 120)}>
-                <BarChart data={sellerData.leads} layout="vertical" margin={{ left: 80 }}>
+              <ResponsiveContainer width="100%" height={Math.max(sellerData.sellers.length * 44, 130)}>
+                <BarChart data={sellerData.leads} layout="vertical" margin={{ left: 80, right: 40 }}>
                   <XAxis type="number" tick={{ fill: "hsl(215,20%,55%)", fontSize: 10 }} />
-                  <YAxis type="category" dataKey="name" tick={{ fill: "hsl(210,40%,98%)", fontSize: 11 }} width={75} />
-                  <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12, color: "hsl(210,40%,98%)" }} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} />
+                  <YAxis type="category" dataKey="name" tick={{ fill: "hsl(var(--foreground))", fontSize: 11 }} width={75} />
+                  <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12, color: "hsl(210,40%,98%)" }} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} formatter={(v: number) => v.toLocaleString("pt-BR")} />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                     {sellerData.leads.map((_, i) => <Cell key={i} fill={SELLER_COLORS[i % SELLER_COLORS.length]} />)}
+                    <LabelList dataKey="value" position="right" style={{ fill: "hsl(var(--foreground))", fontSize: 11, fontWeight: 600 }} formatter={(v: number) => v.toLocaleString("pt-BR")} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -371,13 +372,14 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
             {/* Conversion % - vertical bars */}
             <div>
               <p className="text-xs text-muted-foreground mb-2 font-medium">Conversão (%)</p>
-              <ResponsiveContainer width="100%" height={Math.max(sellerData.sellers.length * 40, 120)}>
-                <BarChart data={sellerData.conversao} margin={{ left: 10 }}>
+              <ResponsiveContainer width="100%" height={Math.max(sellerData.sellers.length * 44, 130)}>
+                <BarChart data={sellerData.conversao} margin={{ left: 10, right: 10, top: 20 }}>
                   <XAxis dataKey="name" tick={{ fill: "hsl(215,20%,55%)", fontSize: 11 }} />
-                  <YAxis tick={{ fill: "hsl(215,20%,55%)", fontSize: 10 }} />
+                  <YAxis tick={{ fill: "hsl(215,20%,55%)", fontSize: 10 }} tickFormatter={(v: number) => `${v}%`} />
                   <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12, color: "hsl(210,40%,98%)" }} formatter={(v: number) => `${v}%`} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} />
                   <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                     {sellerData.conversao.map((_, i) => <Cell key={i} fill={SELLER_COLORS[i % SELLER_COLORS.length]} />)}
+                    <LabelList dataKey="value" position="top" style={{ fill: "hsl(var(--foreground))", fontSize: 11, fontWeight: 600 }} formatter={(v: number) => `${v}%`} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -386,13 +388,14 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
             {/* Ganhos - horizontal bars */}
             <div>
               <p className="text-xs text-muted-foreground mb-2 font-medium">Vendas (Ganhos)</p>
-              <ResponsiveContainer width="100%" height={Math.max(sellerData.sellers.length * 40, 120)}>
-                <BarChart data={sellerData.ganhos} layout="vertical" margin={{ left: 80 }}>
+              <ResponsiveContainer width="100%" height={Math.max(sellerData.sellers.length * 44, 130)}>
+                <BarChart data={sellerData.ganhos} layout="vertical" margin={{ left: 80, right: 40 }}>
                   <XAxis type="number" tick={{ fill: "hsl(215,20%,55%)", fontSize: 10 }} />
-                  <YAxis type="category" dataKey="name" tick={{ fill: "hsl(210,40%,98%)", fontSize: 11 }} width={75} />
-                  <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12, color: "hsl(210,40%,98%)" }} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} />
+                  <YAxis type="category" dataKey="name" tick={{ fill: "hsl(var(--foreground))", fontSize: 11 }} width={75} />
+                  <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12, color: "hsl(210,40%,98%)" }} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} formatter={(v: number) => v.toLocaleString("pt-BR")} />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                     {sellerData.ganhos.map((_, i) => <Cell key={i} fill={SELLER_COLORS[i % SELLER_COLORS.length]} />)}
+                    <LabelList dataKey="value" position="right" style={{ fill: "hsl(var(--foreground))", fontSize: 11, fontWeight: 600 }} formatter={(v: number) => v.toLocaleString("pt-BR")} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -401,13 +404,14 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
             {/* Faturamento - vertical bars */}
             <div>
               <p className="text-xs text-muted-foreground mb-2 font-medium">Faturamento (R$)</p>
-              <ResponsiveContainer width="100%" height={Math.max(sellerData.sellers.length * 40, 120)}>
-                <BarChart data={sellerData.faturamento} margin={{ left: 10 }}>
+              <ResponsiveContainer width="100%" height={Math.max(sellerData.sellers.length * 44, 130)}>
+                <BarChart data={sellerData.faturamento} margin={{ left: 10, right: 10, top: 20 }}>
                   <XAxis dataKey="name" tick={{ fill: "hsl(215,20%,55%)", fontSize: 11 }} />
-                  <YAxis tick={{ fill: "hsl(215,20%,55%)", fontSize: 10 }} />
+                  <YAxis tick={{ fill: "hsl(215,20%,55%)", fontSize: 10 }} width={70} tickFormatter={(v: number) => formatBRLCompact(v)} />
                   <Tooltip contentStyle={{ background: "hsl(222,47%,9%)", border: "1px solid hsl(222,47%,16%)", borderRadius: 8, fontSize: 12, color: "hsl(210,40%,98%)" }} formatter={(v: number) => formatBRL(v)} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} />
                   <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                     {sellerData.faturamento.map((_, i) => <Cell key={i} fill={SELLER_COLORS[i % SELLER_COLORS.length]} />)}
+                    <LabelList dataKey="value" position="top" style={{ fill: "hsl(var(--foreground))", fontSize: 10, fontWeight: 600 }} formatter={(v: number) => formatBRLCompact(v)} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
