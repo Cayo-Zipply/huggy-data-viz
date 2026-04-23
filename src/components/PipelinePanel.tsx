@@ -28,7 +28,7 @@ import { useLeadHistory } from "@/hooks/useLeadHistory";
 
 const SUB_TABS = [
   { key: "kanban", label: "Kanban", icon: LayoutGrid },
-  { key: "hoje", label: "Hoje", icon: ListChecks },
+  { key: "hoje", label: "Tarefas", icon: ListChecks },
   { key: "dashboard", label: "Dashboard", icon: BarChart3 },
   { key: "metas", label: "Metas", icon: Target },
 ];
