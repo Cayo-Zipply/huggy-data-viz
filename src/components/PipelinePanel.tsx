@@ -148,14 +148,16 @@ export function PipelinePanel() {
     };
     
     if (!isAdmin) {
-      if (isSdr) {
+      if (isSdr && !isCloser) {
         filtered = filtered.filter((card) => ownerMatches(card.owner, currentUserName) || !card.owner || card.stage === "no_show");
       } else if (isCloser || isDual) {
         // Closers veem: seus próprios leads + leads sem dono em "Reunião Agendada"
-        // (pool aberto que qualquer closer pode pegar).
+        // (pool aberto que qualquer closer pode pegar) + todos os leads do pipe SDR
+        // (visibilidade do funil de pré-vendas para acompanhar o que está chegando).
         filtered = filtered.filter((card) =>
           ownerMatches(card.owner, currentUserName) ||
-          (!card.owner && card.stage === "reuniao_agendada"),
+          (!card.owner && card.stage === "reuniao_agendada") ||
+          card.pipe === "sdr",
         );
       } else {
         filtered = filtered.filter((card) => ownerMatches(card.owner, currentUserName) || !card.owner);
