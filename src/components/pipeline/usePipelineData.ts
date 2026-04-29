@@ -435,10 +435,10 @@ export function usePipelineData(actorName: string) {
     }
 
     // Optimistic: add card to local state immediately
-    setCards(prev => [card, ...prev]);
+    updateCardsState(prev => [card, ...prev]);
 
     return card;
-  }, [actorName, genAutoTasks]);
+  }, [actorName, genAutoTasks, updateCardsState]);
 
   /* ── update card ── */
   const updateCard = useCallback(async (id: string, updates: Partial<PipelineCard>) => {
@@ -487,8 +487,8 @@ export function usePipelineData(actorName: string) {
     }
 
     // optimistic
-    setCards(prev => prev.map(c => c.id === id ? { ...c, ...updates, updated_at: new Date().toISOString() } : c));
-  }, []);
+    updateCardsState(prev => prev.map(c => c.id === id ? { ...c, ...updates, updated_at: new Date().toISOString() } : c));
+  }, [updateCardsState]);
 
   /* ── move card ── */
   const moveCard = useCallback(async (cardId: string, targetStage: Stage) => {
@@ -542,8 +542,8 @@ export function usePipelineData(actorName: string) {
     }
 
     // optimistic
-    setCards(prev => prev.map(c => c.id === cardId ? updated : c));
-  }, [cards, actorName, genAutoTasks]);
+    updateCardsState(prev => prev.map(c => c.id === cardId ? updated : c));
+  }, [cards, actorName, genAutoTasks, updateCardsState]);
 
   /* ── mark won/lost ── */
   const markWon = useCallback(async (id: string, dataVenda?: string | null) => {
