@@ -310,8 +310,10 @@ const Index = () => {
             <PipelinePanel />
           </div>
 
-          {/* Farol Tab */}
-          {activeTab === "farol" && <FarolPanel cards={cards} goals={goals} owners={pipelineOwners} />}
+          {/* Farol Tab — kept mounted to preserve state and avoid reload flicker */}
+          <div className={activeTab === "farol" ? "" : "hidden"}>
+            <FarolPanel cards={cards} goals={goals} owners={pipelineOwners} />
+          </div>
 
           {/* Ajuda Tab */}
           {activeTab === "ajuda" && <HelpPanel />}
