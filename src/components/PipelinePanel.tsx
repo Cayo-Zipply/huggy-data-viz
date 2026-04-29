@@ -168,12 +168,29 @@ export function PipelinePanel() {
     }
     filtered = applyFilters(filtered, filters);
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(c =>
-        c.nome.toLowerCase().includes(q) ||
-        (c.telefone || '').includes(q) ||
-        (c.origem || '').toLowerCase().includes(q)
-      );
+      const normalize = (s: string) =>
+        s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+      const onlyDigits = (s: string) => s.replace(/\D+/g, "");
+      const rawQ = searchQuery.trim();
+      const q = normalize(rawQ);
+      const qDigits = onlyDigits(rawQ);
+      filtered = filtered.filter(c => {
+        const fields = [
+          c.nome,
+          c.empresa || '',
+          c.email || '',
+          c.origem || '',
+          c.cnpj || '',
+          c.owner || '',
+        ].map(normalize);
+        if (fields.some(f => f.includes(q))) return true;
+        if (qDigits.length >= 3) {
+          const phone = onlyDigits(c.telefone || '');
+          const cnpj = onlyDigits(c.cnpj || '');
+          if (phone.includes(qDigits) || cnpj.includes(qDigits)) return true;
+        }
+        return false;
+      });
     }
     filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     return filtered;
