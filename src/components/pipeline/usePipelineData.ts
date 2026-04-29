@@ -149,6 +149,8 @@ const pipelineDataCache: PipelineSnapshot & { inFlight: Promise<void> | null } =
   inFlight: null,
 };
 const pipelineDataListeners = new Set<(snapshot: PipelineSnapshot) => void>();
+let pipelineRealtimeChannel: any = null;
+let pipelineRealtimeDebounce: ReturnType<typeof setTimeout> | null = null;
 
 function publishPipelineSnapshot(snapshot: PipelineSnapshot) {
   pipelineDataCache.cards = snapshot.cards;
@@ -165,7 +167,6 @@ export function usePipelineData(actorName: string) {
   const [goals, setGoals] = useState<PipelineGoal[]>(() => pipelineDataCache.goals);
   const [loaded, setLoaded] = useState(() => pipelineDataCache.loaded);
   const channelRef = useRef<any>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const legacyRef = useRef<{ cards: PipelineCard[]; tasks: PipelineTask[]; goals: PipelineGoal[] }>({
     cards: [],
     tasks: [],
