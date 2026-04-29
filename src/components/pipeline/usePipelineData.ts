@@ -177,11 +177,31 @@ export function usePipelineData(actorName: string) {
     if (pipelineDataCache.inFlight) return pipelineDataCache.inFlight;
 
     pipelineDataCache.inFlight = (async () => {
+    // Paginated fetch to bypass PostgREST's default 1000-row cap
+    const PAGE_SIZE = 1000;
+    async function fetchAll(table: string, orderCol?: string) {
+      const all: any[] = [];
+      let from = 0;
+      // Loop until we get a short page (means no more rows)
+      // Cap at 100k rows for safety
+      while (from < 100000) {
+        let q = sbExt.from(table).select("*").range(from, from + PAGE_SIZE - 1);
+        if (orderCol) q = q.order(orderCol, { ascending: true });
+        const { data, error } = await q;
+        if (error) return { data: null, error };
+        const rows = data || [];
+        all.push(...rows);
+        if (rows.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
+      return { data: all, error: null };
+    }
+
     const [leadsRes, tasksRes, goalsRes, histRes] = await Promise.all([
-      sbExt.from("leads").select("*"),
-      sbExt.from("tarefas").select("*"),
+      fetchAll("leads"),
+      fetchAll("tarefas"),
       sbExt.from("metas").select("*"),
-      sbExt.from("lead_historico").select("*").order("created_at", { ascending: true }),
+      fetchAll("lead_historico", "created_at"),
     ]);
 
     if (leadsRes.error || tasksRes.error || goalsRes.error || histRes.error) {
