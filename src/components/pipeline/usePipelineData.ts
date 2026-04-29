@@ -664,8 +664,9 @@ export function usePipelineData(actorName: string) {
 
   const deleteCard = useCallback(async (id: string) => {
     await sbExt.from("leads").delete().eq("id", id);
-    setCards(prev => prev.filter(c => c.id !== id));
-    setTasks(prev => prev.filter(t => t.card_id !== id));
+    const nextCards = pipelineDataCache.cards.filter(c => c.id !== id);
+    const nextTasks = pipelineDataCache.tasks.filter(t => t.card_id !== id);
+    publishPipelineSnapshot({ cards: nextCards, tasks: nextTasks, goals: pipelineDataCache.goals, loaded: true });
   }, []);
 
   /* ── save observation as history entry ── */
@@ -680,14 +681,14 @@ export function usePipelineData(actorName: string) {
     });
 
     // Optimistic update
-    setCards(prev => prev.map(c => {
+    updateCardsState(prev => prev.map(c => {
       if (c.id !== cardId) return c;
       return {
         ...c,
         history: [...c.history, { from: "__obs__", to: text, at: now, by: actorName, duration_days: null }],
       };
     }));
-  }, [actorName]);
+  }, [actorName, updateCardsState]);
 
   return {
     cards, tasks, goals,
