@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, type SetStateAction } from "react";
 import type { PipelineCard, PipelineTask, PipelineGoal, Stage, PipeType, StageChange } from "./types";
 import { DEFAULT_DEAL_VALUE, STAGE_CONFIG, AUTO_TASKS, addDays } from "./types";
 import { sbExt as _sbExt } from "@/lib/supabaseExternal";
@@ -258,6 +258,30 @@ export function usePipelineData(actorName: string) {
     };
     void fetchPipelineSnapshot();
   }, [fetchPipelineSnapshot]);
+
+  const updateCardsState = useCallback((updater: SetStateAction<PipelineCard[]>) => {
+    setCards((prev) => {
+      const next = typeof updater === "function" ? (updater as (value: PipelineCard[]) => PipelineCard[])(prev) : updater;
+      publishPipelineSnapshot({ cards: next, tasks: pipelineDataCache.tasks, goals: pipelineDataCache.goals, loaded: true });
+      return next;
+    });
+  }, []);
+
+  const updateTasksState = useCallback((updater: SetStateAction<PipelineTask[]>) => {
+    setTasks((prev) => {
+      const next = typeof updater === "function" ? (updater as (value: PipelineTask[]) => PipelineTask[])(prev) : updater;
+      publishPipelineSnapshot({ cards: pipelineDataCache.cards, tasks: next, goals: pipelineDataCache.goals, loaded: true });
+      return next;
+    });
+  }, []);
+
+  const updateGoalsState = useCallback((updater: SetStateAction<PipelineGoal[]>) => {
+    setGoals((prev) => {
+      const next = typeof updater === "function" ? (updater as (value: PipelineGoal[]) => PipelineGoal[])(prev) : updater;
+      publishPipelineSnapshot({ cards: pipelineDataCache.cards, tasks: pipelineDataCache.tasks, goals: next, loaded: true });
+      return next;
+    });
+  }, []);
 
   /* ── realtime subscription ── */
   useEffect(() => {
