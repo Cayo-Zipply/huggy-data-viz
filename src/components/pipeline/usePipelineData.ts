@@ -173,6 +173,9 @@ export function usePipelineData(actorName: string) {
   });
 
   const fetchPipelineSnapshot = useCallback(async () => {
+    if (pipelineDataCache.inFlight) return pipelineDataCache.inFlight;
+
+    pipelineDataCache.inFlight = (async () => {
     const [leadsRes, tasksRes, goalsRes, histRes] = await Promise.all([
       sbExt.from("leads").select("*"),
       sbExt.from("tarefas").select("*"),
@@ -215,15 +218,39 @@ export function usePipelineData(actorName: string) {
     const mergedTasks = [...supaTasks, ...legacyRef.current.tasks.filter(t => !supaTaskIds.has(t.id))];
 
     const supaGoals = (goalsRes.data || []).map(dbRowToGoal);
+    const nextSnapshot = {
+      cards: mergedCards,
+      tasks: mergedTasks,
+      goals: supaGoals.length ? supaGoals : legacyRef.current.goals,
+      loaded: true,
+    };
 
-    setCards(mergedCards);
-    setTasks(mergedTasks);
-    setGoals(supaGoals.length ? supaGoals : legacyRef.current.goals);
-    setLoaded(true);
+    publishPipelineSnapshot(nextSnapshot);
+    })().finally(() => {
+      pipelineDataCache.inFlight = null;
+    });
+
+    return pipelineDataCache.inFlight;
   }, []);
 
   /* ── initial fetch: merge localStorage legacy + Supabase ── */
   useEffect(() => {
+    const listener = (snapshot: PipelineSnapshot) => {
+      setCards(snapshot.cards);
+      setTasks(snapshot.tasks);
+      setGoals(snapshot.goals);
+      setLoaded(snapshot.loaded);
+    };
+    pipelineDataListeners.add(listener);
+    listener(pipelineDataCache);
+
+    return () => {
+      pipelineDataListeners.delete(listener);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (pipelineDataCache.loaded || pipelineDataCache.inFlight) return;
     legacyRef.current = {
       cards: loadLS("crm_cards", []),
       tasks: loadLS("crm_tasks", []),
