@@ -41,7 +41,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const mountedRef = useRef(true);
+  const profileRef = useRef<UserProfile | null>(null);
   const profileRequestRef = useRef(0);
+
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
 
   const fetchProfile = useCallback(async (userId: string, email: string) => {
     try {
@@ -185,7 +190,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const sameUserProfile = profile?.user_id === newSession.user.id || profile?.email === newSession.user.email;
+      const currentProfile = profileRef.current;
+      const sameUserProfile = currentProfile?.user_id === newSession.user.id || currentProfile?.email === newSession.user.email;
       if (sameUserProfile) {
         setLoading(false);
         return;
@@ -223,7 +229,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mountedRef.current = false;
       subscription.unsubscribe();
     };
-  }, [applySessionState, clearAuthState, loadProfile, profile?.email, profile?.user_id]);
+  }, [applySessionState, clearAuthState, loadProfile]);
 
   const signOut = useCallback(async () => {
     try {
