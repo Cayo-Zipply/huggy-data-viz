@@ -185,6 +185,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      const sameUserProfile = profile?.user_id === newSession.user.id || profile?.email === newSession.user.email;
+      if (sameUserProfile) {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       window.setTimeout(() => {
         if (!mountedRef.current || !newSession.user.email) return;
@@ -217,7 +223,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mountedRef.current = false;
       subscription.unsubscribe();
     };
-  }, [applySessionState, clearAuthState, loadProfile]);
+  }, [applySessionState, clearAuthState, loadProfile, profile?.email, profile?.user_id]);
 
   const signOut = useCallback(async () => {
     try {
