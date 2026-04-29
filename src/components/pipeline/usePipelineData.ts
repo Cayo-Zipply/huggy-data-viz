@@ -260,27 +260,18 @@ export function usePipelineData(actorName: string) {
   }, [fetchPipelineSnapshot]);
 
   const updateCardsState = useCallback((updater: SetStateAction<PipelineCard[]>) => {
-    setCards((prev) => {
-      const next = typeof updater === "function" ? (updater as (value: PipelineCard[]) => PipelineCard[])(prev) : updater;
-      publishPipelineSnapshot({ cards: next, tasks: pipelineDataCache.tasks, goals: pipelineDataCache.goals, loaded: true });
-      return next;
-    });
+    const next = typeof updater === "function" ? (updater as (value: PipelineCard[]) => PipelineCard[])(pipelineDataCache.cards) : updater;
+    publishPipelineSnapshot({ cards: next, tasks: pipelineDataCache.tasks, goals: pipelineDataCache.goals, loaded: true });
   }, []);
 
   const updateTasksState = useCallback((updater: SetStateAction<PipelineTask[]>) => {
-    setTasks((prev) => {
-      const next = typeof updater === "function" ? (updater as (value: PipelineTask[]) => PipelineTask[])(prev) : updater;
-      publishPipelineSnapshot({ cards: pipelineDataCache.cards, tasks: next, goals: pipelineDataCache.goals, loaded: true });
-      return next;
-    });
+    const next = typeof updater === "function" ? (updater as (value: PipelineTask[]) => PipelineTask[])(pipelineDataCache.tasks) : updater;
+    publishPipelineSnapshot({ cards: pipelineDataCache.cards, tasks: next, goals: pipelineDataCache.goals, loaded: true });
   }, []);
 
   const updateGoalsState = useCallback((updater: SetStateAction<PipelineGoal[]>) => {
-    setGoals((prev) => {
-      const next = typeof updater === "function" ? (updater as (value: PipelineGoal[]) => PipelineGoal[])(prev) : updater;
-      publishPipelineSnapshot({ cards: pipelineDataCache.cards, tasks: pipelineDataCache.tasks, goals: next, loaded: true });
-      return next;
-    });
+    const next = typeof updater === "function" ? (updater as (value: PipelineGoal[]) => PipelineGoal[])(pipelineDataCache.goals) : updater;
+    publishPipelineSnapshot({ cards: pipelineDataCache.cards, tasks: pipelineDataCache.tasks, goals: next, loaded: true });
   }, []);
 
   /* ── realtime subscription ── */
