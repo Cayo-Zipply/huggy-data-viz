@@ -555,7 +555,7 @@ export function usePipelineData(actorName: string) {
     const update: any = { status: "ganho", data_venda: dataVendaIso };
     await sbExt.from("leads").update(update).eq("id", id);
 
-    setCards(prev => prev.map(c => c.id === id ? {
+    updateCardsState(prev => prev.map(c => c.id === id ? {
       ...c,
       lead_status: "ganho",
       data_venda: dataVendaIso,
@@ -568,7 +568,7 @@ export function usePipelineData(actorName: string) {
         valor_anterior: "aberto", valor_novo: "ganho", usuario_nome: actorName,
       } as any);
     } catch (e) { console.warn("lead_history insert error:", e); }
-  }, [actorName]);
+  }, [actorName, updateCardsState]);
 
   const markLost = useCallback(async (id: string, category: string, reason: string) => {
     const card = cards.find(c => c.id === id);
@@ -578,12 +578,12 @@ export function usePipelineData(actorName: string) {
       motivo_perda_detalhe: reason || category,
       ultima_etapa: card ? stageToEtapa(card.stage) : null,
     }).eq("id", id);
-    setCards(prev => prev.map(c => c.id === id ? {
+    updateCardsState(prev => prev.map(c => c.id === id ? {
       ...c, lead_status: "perdido", loss_category: category as any,
       loss_reason: reason || category, last_stage: card?.stage || null,
       updated_at: new Date().toISOString(),
     } : c));
-  }, [cards]);
+  }, [cards, updateCardsState]);
 
   /* ── tasks ── */
   const createTask = useCallback(async (task: Omit<PipelineTask, "id" | "created_at">) => {
@@ -592,8 +592,8 @@ export function usePipelineData(actorName: string) {
       id, lead_id: task.card_id, titulo: task.title, data_tarefa: task.due_date,
       status: task.status, pipeline: task.pipe_context, closer: task.responsible, auto: task.auto_generated,
     });
-    setTasks(prev => [{ ...task, id, created_at: new Date().toISOString() }, ...prev]);
-  }, []);
+    updateTasksState(prev => [{ ...task, id, created_at: new Date().toISOString() }, ...prev]);
+  }, [updateTasksState]);
 
   const toggleTask = useCallback(async (id: string) => {
     const task = tasks.find(t => t.id === id);
