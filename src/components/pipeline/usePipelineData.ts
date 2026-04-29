@@ -289,11 +289,7 @@ export function usePipelineData(actorName: string) {
       .on("postgres_changes", { event: "*", schema: "public", table: "tarefas" }, debouncedFetch)
       .on("postgres_changes", { event: "*", schema: "public", table: "lead_historico" }, debouncedFetch)
       .on("postgres_changes", { event: "*", schema: "public", table: "metas" }, debouncedFetch)
-      .subscribe((status) => {
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-          debouncedFetch();
-        }
-      });
+      .subscribe();
 
     channelRef.current = channel;
     return () => {
