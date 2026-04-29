@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, type SetStateAction } from "react";
 import type { PipelineCard, PipelineTask, PipelineGoal, Stage, PipeType, StageChange } from "./types";
 import { DEFAULT_DEAL_VALUE, STAGE_CONFIG, AUTO_TASKS, addDays } from "./types";
 import { sbExt as _sbExt } from "@/lib/supabaseExternal";
@@ -140,14 +140,33 @@ function dbRowToGoal(row: any): PipelineGoal {
 /* ── localStorage legacy helpers ── */
 function loadLS<T>(k: string, d: T): T { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }
 
+type PipelineSnapshot = { cards: PipelineCard[]; tasks: PipelineTask[]; goals: PipelineGoal[]; loaded: boolean };
+const pipelineDataCache: PipelineSnapshot & { inFlight: Promise<void> | null } = {
+  cards: [],
+  tasks: [],
+  goals: [],
+  loaded: false,
+  inFlight: null,
+};
+const pipelineDataListeners = new Set<(snapshot: PipelineSnapshot) => void>();
+let pipelineRealtimeChannel: any = null;
+let pipelineRealtimeDebounce: ReturnType<typeof setTimeout> | null = null;
+
+function publishPipelineSnapshot(snapshot: PipelineSnapshot) {
+  pipelineDataCache.cards = snapshot.cards;
+  pipelineDataCache.tasks = snapshot.tasks;
+  pipelineDataCache.goals = snapshot.goals;
+  pipelineDataCache.loaded = snapshot.loaded;
+  pipelineDataListeners.forEach((listener) => listener(snapshot));
+}
+
 /* ── main hook ── */
 export function usePipelineData(actorName: string) {
-  const [cards, setCards] = useState<PipelineCard[]>([]);
-  const [tasks, setTasks] = useState<PipelineTask[]>([]);
-  const [goals, setGoals] = useState<PipelineGoal[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [cards, setCards] = useState<PipelineCard[]>(() => pipelineDataCache.cards);
+  const [tasks, setTasks] = useState<PipelineTask[]>(() => pipelineDataCache.tasks);
+  const [goals, setGoals] = useState<PipelineGoal[]>(() => pipelineDataCache.goals);
+  const [loaded, setLoaded] = useState(() => pipelineDataCache.loaded);
   const channelRef = useRef<any>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const legacyRef = useRef<{ cards: PipelineCard[]; tasks: PipelineTask[]; goals: PipelineGoal[] }>({
     cards: [],
     tasks: [],
@@ -155,6 +174,9 @@ export function usePipelineData(actorName: string) {
   });
 
   const fetchPipelineSnapshot = useCallback(async () => {
+    if (pipelineDataCache.inFlight) return pipelineDataCache.inFlight;
+
+    pipelineDataCache.inFlight = (async () => {
     const [leadsRes, tasksRes, goalsRes, histRes] = await Promise.all([
       sbExt.from("leads").select("*"),
       sbExt.from("tarefas").select("*"),
@@ -197,15 +219,39 @@ export function usePipelineData(actorName: string) {
     const mergedTasks = [...supaTasks, ...legacyRef.current.tasks.filter(t => !supaTaskIds.has(t.id))];
 
     const supaGoals = (goalsRes.data || []).map(dbRowToGoal);
+    const nextSnapshot = {
+      cards: mergedCards,
+      tasks: mergedTasks,
+      goals: supaGoals.length ? supaGoals : legacyRef.current.goals,
+      loaded: true,
+    };
 
-    setCards(mergedCards);
-    setTasks(mergedTasks);
-    setGoals(supaGoals.length ? supaGoals : legacyRef.current.goals);
-    setLoaded(true);
+    publishPipelineSnapshot(nextSnapshot);
+    })().finally(() => {
+      pipelineDataCache.inFlight = null;
+    });
+
+    return pipelineDataCache.inFlight;
   }, []);
 
   /* ── initial fetch: merge localStorage legacy + Supabase ── */
   useEffect(() => {
+    const listener = (snapshot: PipelineSnapshot) => {
+      setCards(snapshot.cards);
+      setTasks(snapshot.tasks);
+      setGoals(snapshot.goals);
+      setLoaded(snapshot.loaded);
+    };
+    pipelineDataListeners.add(listener);
+    listener(pipelineDataCache);
+
+    return () => {
+      pipelineDataListeners.delete(listener);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (pipelineDataCache.loaded || pipelineDataCache.inFlight) return;
     legacyRef.current = {
       cards: loadLS("crm_cards", []),
       tasks: loadLS("crm_tasks", []),
@@ -214,13 +260,28 @@ export function usePipelineData(actorName: string) {
     void fetchPipelineSnapshot();
   }, [fetchPipelineSnapshot]);
 
+  const updateCardsState = useCallback((updater: SetStateAction<PipelineCard[]>) => {
+    const next = typeof updater === "function" ? (updater as (value: PipelineCard[]) => PipelineCard[])(pipelineDataCache.cards) : updater;
+    publishPipelineSnapshot({ cards: next, tasks: pipelineDataCache.tasks, goals: pipelineDataCache.goals, loaded: true });
+  }, []);
+
+  const updateTasksState = useCallback((updater: SetStateAction<PipelineTask[]>) => {
+    const next = typeof updater === "function" ? (updater as (value: PipelineTask[]) => PipelineTask[])(pipelineDataCache.tasks) : updater;
+    publishPipelineSnapshot({ cards: pipelineDataCache.cards, tasks: next, goals: pipelineDataCache.goals, loaded: true });
+  }, []);
+
+  const updateGoalsState = useCallback((updater: SetStateAction<PipelineGoal[]>) => {
+    const next = typeof updater === "function" ? (updater as (value: PipelineGoal[]) => PipelineGoal[])(pipelineDataCache.goals) : updater;
+    publishPipelineSnapshot({ cards: pipelineDataCache.cards, tasks: pipelineDataCache.tasks, goals: next, loaded: true });
+  }, []);
+
   /* ── realtime subscription ── */
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded || pipelineRealtimeChannel) return;
 
     const debouncedFetch = () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => { void fetchPipelineSnapshot(); }, 500);
+      if (pipelineRealtimeDebounce) clearTimeout(pipelineRealtimeDebounce);
+      pipelineRealtimeDebounce = setTimeout(() => { void fetchPipelineSnapshot(); }, 500);
     };
 
     const channel = sbExt
@@ -229,16 +290,12 @@ export function usePipelineData(actorName: string) {
       .on("postgres_changes", { event: "*", schema: "public", table: "tarefas" }, debouncedFetch)
       .on("postgres_changes", { event: "*", schema: "public", table: "lead_historico" }, debouncedFetch)
       .on("postgres_changes", { event: "*", schema: "public", table: "metas" }, debouncedFetch)
-      .subscribe((status) => {
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-          debouncedFetch();
-        }
-      });
+      .subscribe();
 
     channelRef.current = channel;
+    pipelineRealtimeChannel = channel;
     return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      sbExt.removeChannel(channel);
+      channelRef.current = null;
     };
   }, [loaded, fetchPipelineSnapshot]);
 
@@ -366,10 +423,10 @@ export function usePipelineData(actorName: string) {
     }
 
     // Optimistic: add card to local state immediately
-    setCards(prev => [card, ...prev]);
+    updateCardsState(prev => [card, ...prev]);
 
     return card;
-  }, [actorName, genAutoTasks]);
+  }, [actorName, genAutoTasks, updateCardsState]);
 
   /* ── update card ── */
   const updateCard = useCallback(async (id: string, updates: Partial<PipelineCard>) => {
@@ -418,8 +475,8 @@ export function usePipelineData(actorName: string) {
     }
 
     // optimistic
-    setCards(prev => prev.map(c => c.id === id ? { ...c, ...updates, updated_at: new Date().toISOString() } : c));
-  }, []);
+    updateCardsState(prev => prev.map(c => c.id === id ? { ...c, ...updates, updated_at: new Date().toISOString() } : c));
+  }, [updateCardsState]);
 
   /* ── move card ── */
   const moveCard = useCallback(async (cardId: string, targetStage: Stage) => {
@@ -473,8 +530,8 @@ export function usePipelineData(actorName: string) {
     }
 
     // optimistic
-    setCards(prev => prev.map(c => c.id === cardId ? updated : c));
-  }, [cards, actorName, genAutoTasks]);
+    updateCardsState(prev => prev.map(c => c.id === cardId ? updated : c));
+  }, [cards, actorName, genAutoTasks, updateCardsState]);
 
   /* ── mark won/lost ── */
   const markWon = useCallback(async (id: string, dataVenda?: string | null) => {
@@ -486,7 +543,7 @@ export function usePipelineData(actorName: string) {
     const update: any = { status: "ganho", data_venda: dataVendaIso };
     await sbExt.from("leads").update(update).eq("id", id);
 
-    setCards(prev => prev.map(c => c.id === id ? {
+    updateCardsState(prev => prev.map(c => c.id === id ? {
       ...c,
       lead_status: "ganho",
       data_venda: dataVendaIso,
@@ -499,7 +556,7 @@ export function usePipelineData(actorName: string) {
         valor_anterior: "aberto", valor_novo: "ganho", usuario_nome: actorName,
       } as any);
     } catch (e) { console.warn("lead_history insert error:", e); }
-  }, [actorName]);
+  }, [actorName, updateCardsState]);
 
   const markLost = useCallback(async (id: string, category: string, reason: string) => {
     const card = cards.find(c => c.id === id);
@@ -509,12 +566,12 @@ export function usePipelineData(actorName: string) {
       motivo_perda_detalhe: reason || category,
       ultima_etapa: card ? stageToEtapa(card.stage) : null,
     }).eq("id", id);
-    setCards(prev => prev.map(c => c.id === id ? {
+    updateCardsState(prev => prev.map(c => c.id === id ? {
       ...c, lead_status: "perdido", loss_category: category as any,
       loss_reason: reason || category, last_stage: card?.stage || null,
       updated_at: new Date().toISOString(),
     } : c));
-  }, [cards]);
+  }, [cards, updateCardsState]);
 
   /* ── tasks ── */
   const createTask = useCallback(async (task: Omit<PipelineTask, "id" | "created_at">) => {
@@ -523,21 +580,21 @@ export function usePipelineData(actorName: string) {
       id, lead_id: task.card_id, titulo: task.title, data_tarefa: task.due_date,
       status: task.status, pipeline: task.pipe_context, closer: task.responsible, auto: task.auto_generated,
     });
-    setTasks(prev => [{ ...task, id, created_at: new Date().toISOString() }, ...prev]);
-  }, []);
+    updateTasksState(prev => [{ ...task, id, created_at: new Date().toISOString() }, ...prev]);
+  }, [updateTasksState]);
 
   const toggleTask = useCallback(async (id: string) => {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
     const newStatus = task.status === "pendente" ? "concluida" : "pendente";
     await sbExt.from("tarefas").update({ status: newStatus }).eq("id", id);
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
-  }, [tasks]);
+    updateTasksState(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
+  }, [tasks, updateTasksState]);
 
   const rescheduleTask = useCallback(async (id: string, date: string) => {
     await sbExt.from("tarefas").update({ data_tarefa: date }).eq("id", id);
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, due_date: date } : t));
-  }, []);
+    updateTasksState(prev => prev.map(t => t.id === id ? { ...t, due_date: date } : t));
+  }, [updateTasksState]);
 
   /* ── goals ── */
   const upsertGoal = useCallback(async (goal: PipelineGoal) => {
@@ -550,12 +607,12 @@ export function usePipelineData(actorName: string) {
       meta_conversao: goal.conversao_meta,
     }, { onConflict: "closer,mes" });
 
-    setGoals(prev => {
+    updateGoalsState(prev => {
       const idx = prev.findIndex(g => g.closer === goal.closer && g.month === goal.month);
       if (idx >= 0) { const n = [...prev]; n[idx] = goal; return n; }
       return [...prev, goal];
     });
-  }, []);
+  }, [updateGoalsState]);
 
   /* ── CSV import ── */
   const importCSV = useCallback(async (text: string) => {
@@ -595,8 +652,9 @@ export function usePipelineData(actorName: string) {
 
   const deleteCard = useCallback(async (id: string) => {
     await sbExt.from("leads").delete().eq("id", id);
-    setCards(prev => prev.filter(c => c.id !== id));
-    setTasks(prev => prev.filter(t => t.card_id !== id));
+    const nextCards = pipelineDataCache.cards.filter(c => c.id !== id);
+    const nextTasks = pipelineDataCache.tasks.filter(t => t.card_id !== id);
+    publishPipelineSnapshot({ cards: nextCards, tasks: nextTasks, goals: pipelineDataCache.goals, loaded: true });
   }, []);
 
   /* ── save observation as history entry ── */
@@ -611,14 +669,14 @@ export function usePipelineData(actorName: string) {
     });
 
     // Optimistic update
-    setCards(prev => prev.map(c => {
+    updateCardsState(prev => prev.map(c => {
       if (c.id !== cardId) return c;
       return {
         ...c,
         history: [...c.history, { from: "__obs__", to: text, at: now, by: actorName, duration_days: null }],
       };
     }));
-  }, [actorName]);
+  }, [actorName, updateCardsState]);
 
   return {
     cards, tasks, goals,
