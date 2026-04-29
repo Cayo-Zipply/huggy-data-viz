@@ -140,12 +140,30 @@ function dbRowToGoal(row: any): PipelineGoal {
 /* ── localStorage legacy helpers ── */
 function loadLS<T>(k: string, d: T): T { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }
 
+type PipelineSnapshot = { cards: PipelineCard[]; tasks: PipelineTask[]; goals: PipelineGoal[]; loaded: boolean };
+const pipelineDataCache: PipelineSnapshot & { inFlight: Promise<void> | null } = {
+  cards: [],
+  tasks: [],
+  goals: [],
+  loaded: false,
+  inFlight: null,
+};
+const pipelineDataListeners = new Set<(snapshot: PipelineSnapshot) => void>();
+
+function publishPipelineSnapshot(snapshot: PipelineSnapshot) {
+  pipelineDataCache.cards = snapshot.cards;
+  pipelineDataCache.tasks = snapshot.tasks;
+  pipelineDataCache.goals = snapshot.goals;
+  pipelineDataCache.loaded = snapshot.loaded;
+  pipelineDataListeners.forEach((listener) => listener(snapshot));
+}
+
 /* ── main hook ── */
 export function usePipelineData(actorName: string) {
-  const [cards, setCards] = useState<PipelineCard[]>([]);
-  const [tasks, setTasks] = useState<PipelineTask[]>([]);
-  const [goals, setGoals] = useState<PipelineGoal[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const [cards, setCards] = useState<PipelineCard[]>(() => pipelineDataCache.cards);
+  const [tasks, setTasks] = useState<PipelineTask[]>(() => pipelineDataCache.tasks);
+  const [goals, setGoals] = useState<PipelineGoal[]>(() => pipelineDataCache.goals);
+  const [loaded, setLoaded] = useState(() => pipelineDataCache.loaded);
   const channelRef = useRef<any>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const legacyRef = useRef<{ cards: PipelineCard[]; tasks: PipelineTask[]; goals: PipelineGoal[] }>({
