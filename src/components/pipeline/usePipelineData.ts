@@ -600,13 +600,13 @@ export function usePipelineData(actorName: string) {
     if (!task) return;
     const newStatus = task.status === "pendente" ? "concluida" : "pendente";
     await sbExt.from("tarefas").update({ status: newStatus }).eq("id", id);
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
-  }, [tasks]);
+    updateTasksState(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
+  }, [tasks, updateTasksState]);
 
   const rescheduleTask = useCallback(async (id: string, date: string) => {
     await sbExt.from("tarefas").update({ data_tarefa: date }).eq("id", id);
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, due_date: date } : t));
-  }, []);
+    updateTasksState(prev => prev.map(t => t.id === id ? { ...t, due_date: date } : t));
+  }, [updateTasksState]);
 
   /* ── goals ── */
   const upsertGoal = useCallback(async (goal: PipelineGoal) => {
@@ -619,12 +619,12 @@ export function usePipelineData(actorName: string) {
       meta_conversao: goal.conversao_meta,
     }, { onConflict: "closer,mes" });
 
-    setGoals(prev => {
+    updateGoalsState(prev => {
       const idx = prev.findIndex(g => g.closer === goal.closer && g.month === goal.month);
       if (idx >= 0) { const n = [...prev]; n[idx] = goal; return n; }
       return [...prev, goal];
     });
-  }, []);
+  }, [updateGoalsState]);
 
   /* ── CSV import ── */
   const importCSV = useCallback(async (text: string) => {
