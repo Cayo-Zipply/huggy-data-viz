@@ -209,101 +209,103 @@ const Index = () => {
             />
           </div>
 
-          {/* Marketing Tab */}
-          {activeTab === "marketing" && (
-            <>
-              {/* Metricas principais */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 mb-4 sm:mb-6">
-                <MetricCard title="Investimento" value={formatCurrency(investimentoView)} variation={getVariation(investimentoView, prevInvestimentoView)} invertColors delay={0} />
-                <MetricCard title="Impressoes" value={formatNumber(impressoesView)} variation={getVariation(impressoesView, prevImpressoesView)} delay={50} />
-                <MetricCard title={metricTooltips.ctr.label} value={formatPercent(ctrView)} variation={getVariation(ctrView, prevCtrView)} tooltip={metricTooltips.ctr.tooltip} delay={100} />
-                <MetricCard title={metricTooltips.cpc.label} value={formatCurrency(cpcView)} variation={getVariation(cpcView, prevCpcView)} invertColors tooltip={metricTooltips.cpc.tooltip} delay={150} />
-                <MetricCard title="Mensagens" value={formatNumber(effectiveMensagens)} variation={getVariation(effectiveMensagens, prevEffectiveMensagens)} delay={200} />
-                <MetricCard title="Mensagens Efetivas" value={formatNumber(effectiveMensagensEfetivas)} variation={getVariation(effectiveMensagensEfetivas, prevEffectiveMensagensEfetivas)} delay={225} />
-              </div>
+          {/* Marketing Tab — kept mounted */}
+          <div className={activeTab === "marketing" ? "" : "hidden"}>
+            {/* Metricas principais */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 mb-4 sm:mb-6">
+              <MetricCard title="Investimento" value={formatCurrency(investimentoView)} variation={getVariation(investimentoView, prevInvestimentoView)} invertColors delay={0} />
+              <MetricCard title="Impressoes" value={formatNumber(impressoesView)} variation={getVariation(impressoesView, prevImpressoesView)} delay={50} />
+              <MetricCard title={metricTooltips.ctr.label} value={formatPercent(ctrView)} variation={getVariation(ctrView, prevCtrView)} tooltip={metricTooltips.ctr.tooltip} delay={100} />
+              <MetricCard title={metricTooltips.cpc.label} value={formatCurrency(cpcView)} variation={getVariation(cpcView, prevCpcView)} invertColors tooltip={metricTooltips.cpc.tooltip} delay={150} />
+              <MetricCard title="Mensagens" value={formatNumber(effectiveMensagens)} variation={getVariation(effectiveMensagens, prevEffectiveMensagens)} delay={200} />
+              <MetricCard title="Mensagens Efetivas" value={formatNumber(effectiveMensagensEfetivas)} variation={getVariation(effectiveMensagensEfetivas, prevEffectiveMensagensEfetivas)} delay={225} />
+            </div>
 
-              {/* Segunda linha de metricas */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-4 mb-4 sm:mb-6">
-                <MetricCard title={metricTooltips.cpa.label} value={formatCurrency(cpaView)} variation={getVariation(cpaView, prevCpaView)} invertColors tooltip={metricTooltips.cpa.tooltip} delay={250} />
-                <MetricCard title={metricTooltips.cpm.label} value={formatCurrency(cpmView)} variation={getVariation(cpmView, prevCpmView)} invertColors tooltip={metricTooltips.cpm.tooltip} delay={300} />
-                <MetricCard title={metricTooltips.frequencia.label} value={formatPercent(currentData?.frequencia ?? 0)} variation={getVariation(currentData?.frequencia ?? 0, previousData?.frequencia)} tooltip={metricTooltips.frequencia.tooltip} delay={350} />
-                <MetricCard title="Cliques" value={formatNumber(cliquesView)} delay={400} />
-                <MetricCard title="Conversao Geral" value={formatPercent(conversaoGeral)} variation={getVariation(conversaoGeral, previousConversaoGeral)} delay={450} />
-                <MetricCard title="Custo por Reuniao" value={custoPorReuniao > 0 ? formatCurrency(custoPorReuniao) : "N/A"} variation={getVariation(custoPorReuniao, prevCustoPorReuniao)} invertColors delay={500} />
-                <MetricCard title="Conv. Reunioes" value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "N/A"} variation={getVariation(conversaoReunioes, prevConversaoReunioes)} delay={550} />
-              </div>
+            {/* Segunda linha de metricas */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-4 mb-4 sm:mb-6">
+              <MetricCard title={metricTooltips.cpa.label} value={formatCurrency(cpaView)} variation={getVariation(cpaView, prevCpaView)} invertColors tooltip={metricTooltips.cpa.tooltip} delay={250} />
+              <MetricCard title={metricTooltips.cpm.label} value={formatCurrency(cpmView)} variation={getVariation(cpmView, prevCpmView)} invertColors tooltip={metricTooltips.cpm.tooltip} delay={300} />
+              <MetricCard title={metricTooltips.frequencia.label} value={formatPercent(currentData?.frequencia ?? 0)} variation={getVariation(currentData?.frequencia ?? 0, previousData?.frequencia)} tooltip={metricTooltips.frequencia.tooltip} delay={350} />
+              <MetricCard title="Cliques" value={formatNumber(cliquesView)} delay={400} />
+              <MetricCard title="Conversao Geral" value={formatPercent(conversaoGeral)} variation={getVariation(conversaoGeral, previousConversaoGeral)} delay={450} />
+              <MetricCard title="Custo por Reuniao" value={custoPorReuniao > 0 ? formatCurrency(custoPorReuniao) : "N/A"} variation={getVariation(custoPorReuniao, prevCustoPorReuniao)} invertColors delay={500} />
+              <MetricCard title="Conv. Reunioes" value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "N/A"} variation={getVariation(conversaoReunioes, prevConversaoReunioes)} delay={550} />
+            </div>
 
-              {/* Funil de trafego */}
-              <TrafficFunnel
-                impressoes={impressoesView}
-                cliques={cliquesView}
-                mensagens={effectiveMensagens}
-                reunioes={reunioesRealizadas}
-                vendas={effectiveVendas}
-                investimento={investimentoView}
-                faturamento={effectiveFaturamento}
-              />
-            </>
-          )}
+            {/* Funil de trafego */}
+            <TrafficFunnel
+              impressoes={impressoesView}
+              cliques={cliquesView}
+              mensagens={effectiveMensagens}
+              reunioes={reunioesRealizadas}
+              vendas={effectiveVendas}
+              investimento={investimentoView}
+              faturamento={effectiveFaturamento}
+            />
+          </div>
 
-          {/* Comercial Tab */}
-          {activeTab === "comercial" && (
-            <>
-              {isHardcoded ? (
-                currentData && (
-                  <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
-                    <SalesFunnel
-                      data={salesData[selectedMonth] || salesData.novembro}
-                      investimento={currentData.investimento}
-                    />
-                    <PerformanceChart
-                      investimento={currentData.investimento}
-                      faturamento={currentData.faturamento}
-                    />
-                  </div>
-                )
-              ) : (
-                <div className="space-y-4 lg:space-y-6">
-                  {/* Top KPIs (mesma fonte de dados do funil/marketing) */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">
-                    <MetricCard title="Vendas" value={formatNumber(effectiveVendas)} variation={getVariation(effectiveVendas, prevEffectiveVendas)} delay={0} />
-                    <MetricCard title="Faturamento" value={formatCurrency(effectiveFaturamento)} delay={50} />
-                    <MetricCard title="Reuniões Realizadas" value={formatNumber(reunioesRealizadas)} variation={getVariation(reunioesRealizadas, prevReunioes)} delay={100} />
-                    <MetricCard title="Mensagens" value={formatNumber(effectiveMensagens)} variation={getVariation(effectiveMensagens, prevEffectiveMensagens)} delay={150} />
-                    <MetricCard title="Ticket Médio" value={effectiveVendas > 0 ? formatCurrency(effectiveFaturamento / effectiveVendas) : "—"} delay={200} />
-                    <MetricCard title="Conv. Reuniões" value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "—"} variation={getVariation(conversaoReunioes, prevConversaoReunioes)} delay={250} />
-                  </div>
-
-                  {/* Farol por closer (pace + projeção por dias úteis) */}
-                  <FarolCloserCards
-                    porCloser={live.leadsStats?.porCloser ?? []}
-                    metasCloser={live.metasCloser ?? []}
-                    monthLabel={dynamicMonths.find(m => m.key === selectedMonth)?.label ?? ""}
-                    selectedMonth={selectedMonthYYYYMM}
-                    totalVendas={effectiveVendas}
-                    totalFaturamento={effectiveFaturamento}
-                    totalReunioesRealizadas={reunioesRealizadas}
-                    investimento={investimentoView}
+          {/* Comercial Tab — kept mounted */}
+          <div className={activeTab === "comercial" ? "" : "hidden"}>
+            {isHardcoded ? (
+              currentData && (
+                <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
+                  <SalesFunnel
+                    data={salesData[selectedMonth] || salesData.novembro}
+                    investimento={currentData.investimento}
                   />
-
-                  {/* Performance chart genérico */}
                   <PerformanceChart
-                    investimento={investimentoView}
-                    faturamento={effectiveFaturamento}
+                    investimento={currentData.investimento}
+                    faturamento={currentData.faturamento}
                   />
                 </div>
-              )}
-            </>
-          )}
+              )
+            ) : (
+              <div className="space-y-4 lg:space-y-6">
+                {/* Top KPIs (mesma fonte de dados do funil/marketing) */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">
+                  <MetricCard title="Vendas" value={formatNumber(effectiveVendas)} variation={getVariation(effectiveVendas, prevEffectiveVendas)} delay={0} />
+                  <MetricCard title="Faturamento" value={formatCurrency(effectiveFaturamento)} delay={50} />
+                  <MetricCard title="Reuniões Realizadas" value={formatNumber(reunioesRealizadas)} variation={getVariation(reunioesRealizadas, prevReunioes)} delay={100} />
+                  <MetricCard title="Mensagens" value={formatNumber(effectiveMensagens)} variation={getVariation(effectiveMensagens, prevEffectiveMensagens)} delay={150} />
+                  <MetricCard title="Ticket Médio" value={effectiveVendas > 0 ? formatCurrency(effectiveFaturamento / effectiveVendas) : "—"} delay={200} />
+                  <MetricCard title="Conv. Reuniões" value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "—"} variation={getVariation(conversaoReunioes, prevConversaoReunioes)} delay={250} />
+                </div>
 
-          {/* Rentabilidade Tab */}
-          {activeTab === "rentabilidade" && <RevenuePanel />}
+                {/* Farol por closer (pace + projeção por dias úteis) */}
+                <FarolCloserCards
+                  porCloser={live.leadsStats?.porCloser ?? []}
+                  metasCloser={live.metasCloser ?? []}
+                  monthLabel={dynamicMonths.find(m => m.key === selectedMonth)?.label ?? ""}
+                  selectedMonth={selectedMonthYYYYMM}
+                  totalVendas={effectiveVendas}
+                  totalFaturamento={effectiveFaturamento}
+                  totalReunioesRealizadas={reunioesRealizadas}
+                  investimento={investimentoView}
+                />
 
-          {/* Comparativo Tab */}
-          {activeTab === "comparativo" && <ComparisonPanel />}
+                {/* Performance chart genérico */}
+                <PerformanceChart
+                  investimento={investimentoView}
+                  faturamento={effectiveFaturamento}
+                />
+              </div>
+            )}
+          </div>
 
-          {/* Consolidado Tab */}
-          {activeTab === "consolidado" && <ConsolidatedPanel />}
+          {/* Rentabilidade Tab — kept mounted */}
+          <div className={activeTab === "rentabilidade" ? "" : "hidden"}>
+            <RevenuePanel />
+          </div>
+
+          {/* Comparativo Tab — kept mounted */}
+          <div className={activeTab === "comparativo" ? "" : "hidden"}>
+            <ComparisonPanel />
+          </div>
+
+          {/* Consolidado Tab — kept mounted */}
+          <div className={activeTab === "consolidado" ? "" : "hidden"}>
+            <ConsolidatedPanel />
+          </div>
 
           {/* Pipeline Tab — kept mounted to preserve state */}
           <div className={activeTab === "pipeline" ? "" : "hidden"}>
@@ -315,8 +317,10 @@ const Index = () => {
             <FarolPanel cards={cards} goals={goals} owners={pipelineOwners} />
           </div>
 
-          {/* Ajuda Tab */}
-          {activeTab === "ajuda" && <HelpPanel />}
+          {/* Ajuda Tab — kept mounted */}
+          <div className={activeTab === "ajuda" ? "" : "hidden"}>
+            <HelpPanel />
+          </div>
         </div>
       </main>
     </div>
