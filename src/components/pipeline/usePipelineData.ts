@@ -277,11 +277,11 @@ export function usePipelineData(actorName: string) {
 
   /* ── realtime subscription ── */
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded || pipelineRealtimeChannel) return;
 
     const debouncedFetch = () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => { void fetchPipelineSnapshot(); }, 500);
+      if (pipelineRealtimeDebounce) clearTimeout(pipelineRealtimeDebounce);
+      pipelineRealtimeDebounce = setTimeout(() => { void fetchPipelineSnapshot(); }, 500);
     };
 
     const channel = sbExt
@@ -293,9 +293,9 @@ export function usePipelineData(actorName: string) {
       .subscribe();
 
     channelRef.current = channel;
+    pipelineRealtimeChannel = channel;
     return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      sbExt.removeChannel(channel);
+      channelRef.current = null;
     };
   }, [loaded, fetchPipelineSnapshot]);
 
