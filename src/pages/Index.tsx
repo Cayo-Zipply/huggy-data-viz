@@ -291,6 +291,7 @@ const Index = () => {
                 />
               </div>
             )}
+            </div>
           </div>
 
           {/* Rentabilidade Tab — kept mounted */}
