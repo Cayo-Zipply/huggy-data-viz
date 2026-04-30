@@ -86,7 +86,7 @@ export function CommercialCloserTable({
               <TableHead className="text-right">Reuniões</TableHead>
               <TableHead className="text-right">Ticket Médio</TableHead>
               <TableHead className="text-right">Conv. (%)</TableHead>
-              <TableHead className="text-right">Invest. Prop.</TableHead>
+              <TableHead className="text-right">Custo Investido</TableHead>
               <TableHead className="text-right">Custo/Reunião</TableHead>
             </TableRow>
           </TableHeader>
