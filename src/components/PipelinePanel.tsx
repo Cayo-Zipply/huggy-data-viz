@@ -628,7 +628,7 @@ export function PipelinePanel() {
       {subTab === "kanban" && (
         <>
           <PipelineFiltersBar filters={filters} onChange={setFilters} onExport={() => exportCSV(visibleCards, tasks)} closerOptions={ownerOptions} />
-          <div className="flex gap-3 overflow-x-auto rounded-2xl border border-border bg-muted/20 p-3 pb-4">
+          <div className="flex gap-2 overflow-x-auto rounded-xl border border-border bg-muted/20 p-2 pb-2">
             {getStages().map(s => (
               <StageColumn key={s} stageKey={s} cards={getCardsForStage(s)} tasks={tasks}
                 getCardLabels={getCardLabels}
