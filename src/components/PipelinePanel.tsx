@@ -404,7 +404,7 @@ export function PipelinePanel() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {pendingHandoff && (
         <HandoffChecklist
           leadName={cards.find(c => c.id === pendingHandoff.cardId)?.nome || ""}
@@ -413,22 +413,20 @@ export function PipelinePanel() {
         />
       )}
 
-      <div className="rounded-2xl border border-border bg-card shadow-sm">
-        <div className="flex flex-col gap-4 p-4 sm:p-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-2">
-              <div>
-                <h2 className="text-xl font-bold tracking-tight text-foreground">Pipeline de Vendas</h2>
-                <p className="text-sm text-muted-foreground">
-                  {cards.length} leads totais · {visibleCards.length} visíveis · visão de {viewLabel}
-                </p>
-              </div>
+      <div className="rounded-xl border border-border bg-card shadow-sm">
+        <div className="flex flex-col gap-2 p-2.5 sm:p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="min-w-0">
+              <h2 className="text-sm font-bold tracking-tight text-foreground leading-tight">Pipeline de Vendas</h2>
+              <p className="text-[11px] text-muted-foreground leading-tight">
+                {cards.length} totais · {visibleCards.length} visíveis · {viewLabel}
+              </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-1 flex-wrap items-center justify-end gap-1.5">
               {isAdmin ? (
-                <label className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
-                  <UserCircle size={14} className="text-primary" />
+                <label className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground">
+                  <UserCircle size={12} className="text-primary" />
                   <span>Visão</span>
                   <select
                     value={activeUser}
@@ -440,11 +438,11 @@ export function PipelinePanel() {
                       <option key={owner} value={owner}>{owner}</option>
                     ))}
                   </select>
-                  <ChevronDown size={12} className="text-muted-foreground" />
+                  <ChevronDown size={10} className="text-muted-foreground" />
                 </label>
               ) : (
-                <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
-                  <UserCircle size={14} className="text-primary" />
+                <div className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground">
+                  <UserCircle size={12} className="text-primary" />
                   <span className="font-medium text-foreground">{currentUserName}</span>
                 </div>
               )}
@@ -452,30 +450,30 @@ export function PipelinePanel() {
               {isAdmin && !bulkMode && (
                 <button
                   onClick={() => setBulkMode(true)}
-                  className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <CheckSquare size={12} />Selecionar
+                  <CheckSquare size={11} />Selecionar
                 </button>
               )}
 
               <button
                 onClick={() => setShowNewLead(!showNewLead)}
-                className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                className="flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground transition-opacity hover:opacity-90"
               >
-                <Plus size={12} />Novo Lead
+                <Plus size={11} />Novo Lead
               </button>
 
-              <label className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-background px-3.5 py-2 text-xs text-foreground transition-colors hover:bg-muted/40">
-                <Upload size={12} />Importar CSV
+              <label className="flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1 text-[11px] text-foreground transition-colors hover:bg-muted/40">
+                <Upload size={11} />CSV
                 <input type="file" accept=".csv,.txt" className="hidden" onChange={handleCSV} />
               </label>
 
               <button
                 onClick={async () => { setRefreshing(true); await refresh(); setRefreshing(false); }}
                 title="Atualizar pipeline"
-                className="flex items-center justify-center rounded-xl border border-border bg-background p-2 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+                className="flex items-center justify-center rounded-lg border border-border bg-background p-1.5 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
               >
-                <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+                <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
               </button>
             </div>
           </div>
@@ -539,29 +537,29 @@ export function PipelinePanel() {
             </div>
           )}
 
-          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar lead por nome, telefone ou origem"
-                className="w-full rounded-xl border border-border bg-background py-2.5 pl-10 pr-10 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+                placeholder="Buscar lead..."
+                className="w-full rounded-lg border border-border bg-background py-1.5 pl-8 pr-8 text-xs text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               )}
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1">
               {([
                 { key: "all", label: "Todos", count: visibleCards.length, roles: ["admin", "dual", "closer"] },
                 { key: "sdr", label: "SDR", count: sdrCount, roles: ["admin", "sdr", "dual", "closer"] },
@@ -577,13 +575,13 @@ export function PipelinePanel() {
                   key={pipe.key}
                   onClick={() => setActivePipe(pipe.key as any)}
                   className={cn(
-                    "rounded-xl border px-4 py-2 text-sm font-medium transition-all",
+                    "rounded-lg border px-2.5 py-1 text-xs font-medium transition-all",
                     activePipe === pipe.key
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border bg-background text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  {pipe.label} <span className="text-xs">({pipe.count})</span>
+                  {pipe.label} <span className="text-[10px]">({pipe.count})</span>
                 </button>
               ))}
             </div>
@@ -612,16 +610,16 @@ export function PipelinePanel() {
         </div>
       )}
 
-      <div className="flex gap-1.5 bg-muted/30 rounded-2xl p-1.5 overflow-x-auto">
+      <div className="flex gap-1 bg-muted/30 rounded-xl p-1 overflow-x-auto">
         {SUB_TABS.map(tab => {
           const Icon = tab.icon;
           const badge = tab.key === "hoje" ? todayPending : 0;
           return (
             <button key={tab.key} onClick={() => setSubTab(tab.key)}
-              className={cn("flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap relative",
+              className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap relative",
                 subTab === tab.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
-              <Icon size={18} strokeWidth={2.25} />{tab.label}
-              {badge > 0 && <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center shadow">{badge}</span>}
+              <Icon size={14} strokeWidth={2.25} />{tab.label}
+              {badge > 0 && <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center shadow">{badge}</span>}
             </button>
           );
         })}
@@ -630,7 +628,7 @@ export function PipelinePanel() {
       {subTab === "kanban" && (
         <>
           <PipelineFiltersBar filters={filters} onChange={setFilters} onExport={() => exportCSV(visibleCards, tasks)} closerOptions={ownerOptions} />
-          <div className="flex gap-3 overflow-x-auto rounded-2xl border border-border bg-muted/20 p-3 pb-4">
+          <div className="flex gap-2 overflow-x-auto rounded-xl border border-border bg-muted/20 p-2 pb-2">
             {getStages().map(s => (
               <StageColumn key={s} stageKey={s} cards={getCardsForStage(s)} tasks={tasks}
                 getCardLabels={getCardLabels}

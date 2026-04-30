@@ -46,7 +46,7 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
   return (
     <div
       className={cn(
-        "flex w-[300px] min-w-[300px] max-w-[300px] flex-col rounded-lg border transition-colors",
+        "flex w-[240px] min-w-[240px] max-w-[240px] flex-col rounded-lg border transition-colors",
         dragOver ? "border-primary/50 bg-primary/5" : "border-border bg-card/50"
       )}
       onDragOver={e => { e.preventDefault(); setDragOver(true); }}
@@ -79,7 +79,7 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
           </div>
         )}
       </div>
-      <div className="flex-1 space-y-2 overflow-y-auto p-2 max-h-[62vh]">
+      <div className="flex-1 space-y-1.5 overflow-y-auto p-1.5 max-h-[72vh]">
         {cards.map(card => (
           <div
             key={card.id}
