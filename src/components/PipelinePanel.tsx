@@ -537,29 +537,29 @@ export function PipelinePanel() {
             </div>
           )}
 
-          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar lead por nome, telefone ou origem"
-                className="w-full rounded-xl border border-border bg-background py-2.5 pl-10 pr-10 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+                placeholder="Buscar lead..."
+                className="w-full rounded-lg border border-border bg-background py-1.5 pl-8 pr-8 text-xs text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               )}
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1">
               {([
                 { key: "all", label: "Todos", count: visibleCards.length, roles: ["admin", "dual", "closer"] },
                 { key: "sdr", label: "SDR", count: sdrCount, roles: ["admin", "sdr", "dual", "closer"] },
@@ -575,13 +575,13 @@ export function PipelinePanel() {
                   key={pipe.key}
                   onClick={() => setActivePipe(pipe.key as any)}
                   className={cn(
-                    "rounded-xl border px-4 py-2 text-sm font-medium transition-all",
+                    "rounded-lg border px-2.5 py-1 text-xs font-medium transition-all",
                     activePipe === pipe.key
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border bg-background text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  {pipe.label} <span className="text-xs">({pipe.count})</span>
+                  {pipe.label} <span className="text-[10px]">({pipe.count})</span>
                 </button>
               ))}
             </div>
