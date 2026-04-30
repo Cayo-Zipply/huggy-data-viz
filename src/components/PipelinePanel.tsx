@@ -404,7 +404,7 @@ export function PipelinePanel() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {pendingHandoff && (
         <HandoffChecklist
           leadName={cards.find(c => c.id === pendingHandoff.cardId)?.nome || ""}
@@ -413,19 +413,17 @@ export function PipelinePanel() {
         />
       )}
 
-      <div className="rounded-2xl border border-border bg-card shadow-sm">
-        <div className="flex flex-col gap-4 p-4 sm:p-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-2">
-              <div>
-                <h2 className="text-xl font-bold tracking-tight text-foreground">Pipeline de Vendas</h2>
-                <p className="text-sm text-muted-foreground">
-                  {cards.length} leads totais · {visibleCards.length} visíveis · visão de {viewLabel}
-                </p>
-              </div>
+      <div className="rounded-xl border border-border bg-card shadow-sm">
+        <div className="flex flex-col gap-2 p-2.5 sm:p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="min-w-0">
+              <h2 className="text-sm font-bold tracking-tight text-foreground leading-tight">Pipeline de Vendas</h2>
+              <p className="text-[11px] text-muted-foreground leading-tight">
+                {cards.length} totais · {visibleCards.length} visíveis · {viewLabel}
+              </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-1 flex-wrap items-center justify-end gap-1.5">
               {isAdmin ? (
                 <label className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
                   <UserCircle size={14} className="text-primary" />
