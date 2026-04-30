@@ -58,7 +58,11 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
           <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground flex-1 truncate">{cfg.label}</span>
           <span className="text-[11px] font-medium text-muted-foreground tabular-nums">{cards.length}</span>
           {slaBreached > 0 && (
-            <span className="text-[10px] font-medium bg-red-50 text-red-700 border border-red-200 rounded-md px-1.5 py-0.5 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900">
+            <span
+              title={`${slaBreached} lead(s) com SLA estourado (${slaHoras}h)`}
+              className="inline-flex items-center gap-1 text-[10px] font-bold bg-red-500 text-white border border-red-600 rounded-md px-1.5 py-0.5 shadow-[0_0_0_2px_rgba(239,68,68,0.15)] animate-pulse dark:bg-red-600 dark:border-red-500"
+            >
+              <AlertTriangle size={10} className="shrink-0" />
               {slaBreached} SLA
             </span>
           )}
