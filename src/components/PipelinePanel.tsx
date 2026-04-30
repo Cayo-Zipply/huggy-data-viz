@@ -425,8 +425,8 @@ export function PipelinePanel() {
 
             <div className="flex flex-1 flex-wrap items-center justify-end gap-1.5">
               {isAdmin ? (
-                <label className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
-                  <UserCircle size={14} className="text-primary" />
+                <label className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground">
+                  <UserCircle size={12} className="text-primary" />
                   <span>Visão</span>
                   <select
                     value={activeUser}
@@ -438,11 +438,11 @@ export function PipelinePanel() {
                       <option key={owner} value={owner}>{owner}</option>
                     ))}
                   </select>
-                  <ChevronDown size={12} className="text-muted-foreground" />
+                  <ChevronDown size={10} className="text-muted-foreground" />
                 </label>
               ) : (
-                <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
-                  <UserCircle size={14} className="text-primary" />
+                <div className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground">
+                  <UserCircle size={12} className="text-primary" />
                   <span className="font-medium text-foreground">{currentUserName}</span>
                 </div>
               )}
@@ -450,30 +450,30 @@ export function PipelinePanel() {
               {isAdmin && !bulkMode && (
                 <button
                   onClick={() => setBulkMode(true)}
-                  className="flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  className="flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <CheckSquare size={12} />Selecionar
+                  <CheckSquare size={11} />Selecionar
                 </button>
               )}
 
               <button
                 onClick={() => setShowNewLead(!showNewLead)}
-                className="flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-2 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                className="flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground transition-opacity hover:opacity-90"
               >
-                <Plus size={12} />Novo Lead
+                <Plus size={11} />Novo Lead
               </button>
 
-              <label className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-border bg-background px-3.5 py-2 text-xs text-foreground transition-colors hover:bg-muted/40">
-                <Upload size={12} />Importar CSV
+              <label className="flex cursor-pointer items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1 text-[11px] text-foreground transition-colors hover:bg-muted/40">
+                <Upload size={11} />CSV
                 <input type="file" accept=".csv,.txt" className="hidden" onChange={handleCSV} />
               </label>
 
               <button
                 onClick={async () => { setRefreshing(true); await refresh(); setRefreshing(false); }}
                 title="Atualizar pipeline"
-                className="flex items-center justify-center rounded-xl border border-border bg-background p-2 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+                className="flex items-center justify-center rounded-lg border border-border bg-background p-1.5 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
               >
-                <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+                <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
               </button>
             </div>
           </div>
