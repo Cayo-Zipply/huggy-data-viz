@@ -166,13 +166,19 @@ async function fetchLeadsStats(monthYYYYMM: string): Promise<LeadsStats> {
     );
   });
 
-  // reuniões realizadas: pela data_reuniao real (NÃO por etapa_atual + created_at)
-  const { data: reunRealizadasRows } = await supabaseExt
-    .from("leads")
-    .select("closer, data_reuniao")
-    .not("data_reuniao", "is", null)
-    .gte("data_reuniao", inicioIso)
-    .lte("data_reuniao", fimIso);
+  // reuniões realizadas: leads do mês cuja etapa atual é "Reunião Realizada",
+  // "Link Enviado" ou que viraram venda (Contrato Assinado / ganho).
+  // Usamos created_at do lead para limitar ao mês selecionado.
+  const reunRealizadasRows = (reunMarcadasRows ?? []).filter((r: any) => {
+    const e = String(r.etapa_atual ?? "").toLowerCase().trim();
+    return (
+      e.includes("reuni") && e.includes("realiz") ||
+      e.includes("link enviado") ||
+      e.includes("proposta") ||
+      e.includes("contrato assinado") ||
+      e === "ganho"
+    );
+  });
 
   // vendas e faturamento por data_venda no mês
   const { data: vendasRows } = await supabaseExt
