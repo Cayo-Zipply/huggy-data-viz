@@ -23,8 +23,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 const NAV_ITEMS = [
   { key: "/pipeline", label: "Pipeline", icon: Kanban, roles: ["admin", "sdr", "closer"] },
-  { key: "/marketing", label: "Marketing", icon: BarChart3, roles: ["admin"] },
-  { key: "/comercial", label: "Comercial", icon: Users, roles: ["admin"] },
+  { key: "/marketing", label: "Dashboard", icon: BarChart3, roles: ["admin"] },
   { key: "/comparativo", label: "Comparativo", icon: GitCompare, roles: ["admin"] },
   { key: "/rentabilidade", label: "Rentabilidade", icon: DollarSign, roles: ["admin"] },
   { key: "/consolidado", label: "Consolidado", icon: PieChart, roles: ["admin"] },
