@@ -209,8 +209,9 @@ const Index = () => {
             />
           </div>
 
-          {/* Marketing Tab — kept mounted */}
-          <div className={activeTab === "marketing" ? "" : "hidden"}>
+          {/* Dashboard Tab (Marketing + Comercial unificados) — kept mounted */}
+          <div className={activeTab === "marketing" || activeTab === "comercial" ? "" : "hidden"}>
+            <h2 className="text-base sm:text-lg font-semibold text-foreground mb-4">Marketing</h2>
             {/* Metricas principais */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 mb-4 sm:mb-6">
               <MetricCard title="Investimento" value={formatCurrency(investimentoView)} variation={getVariation(investimentoView, prevInvestimentoView)} invertColors delay={0} />
@@ -242,10 +243,10 @@ const Index = () => {
               investimento={investimentoView}
               faturamento={effectiveFaturamento}
             />
-          </div>
 
-          {/* Comercial Tab — kept mounted */}
-          <div className={activeTab === "comercial" ? "" : "hidden"}>
+            {/* ===== Bloco Comercial ===== */}
+            <div className="mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-border">
+              <h2 className="text-base sm:text-lg font-semibold text-foreground mb-4">Comercial</h2>
             {isHardcoded ? (
               currentData && (
                 <div className="grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-2">
@@ -290,6 +291,7 @@ const Index = () => {
                 />
               </div>
             )}
+            </div>
           </div>
 
           {/* Rentabilidade Tab — kept mounted */}
