@@ -139,19 +139,36 @@ export default function Login() {
             disabled={loading}
             className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {loading ? "Carregando..." : isSignUp ? "Criar conta" : "Entrar"}
+            {loading
+              ? "Carregando..."
+              : forgotMode
+                ? "Enviar link de recuperação"
+                : isSignUp
+                  ? "Criar conta"
+                  : "Entrar"}
           </button>
         </form>
 
-        <p className="text-sm text-muted-foreground text-center mt-6">
-          {isSignUp ? "Já tem conta?" : "Não tem conta?"}{" "}
-          <button
-            onClick={() => { setIsSignUp(!isSignUp); setMessage(null); }}
-            className="text-primary hover:underline font-medium"
-          >
-            {isSignUp ? "Fazer login" : "Criar conta"}
-          </button>
-        </p>
+        {forgotMode ? (
+          <p className="text-sm text-muted-foreground text-center mt-6">
+            <button
+              onClick={() => { setForgotMode(false); setMessage(null); }}
+              className="text-primary hover:underline font-medium"
+            >
+              Voltar para o login
+            </button>
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground text-center mt-6">
+            {isSignUp ? "Já tem conta?" : "Não tem conta?"}{" "}
+            <button
+              onClick={() => { setIsSignUp(!isSignUp); setMessage(null); }}
+              className="text-primary hover:underline font-medium"
+            >
+              {isSignUp ? "Fazer login" : "Criar conta"}
+            </button>
+          </p>
+        )}
       </div>
     </div>
   );
