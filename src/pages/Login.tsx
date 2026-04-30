@@ -70,11 +70,15 @@ export default function Login() {
             O Farol
         </h1>
         <p className="text-sm text-muted-foreground text-center mb-8">
-          {isSignUp ? "Crie sua conta para acessar o painel" : "Acesse o painel com suas credenciais"}
+          {forgotMode
+            ? "Informe seu e-mail para receber o link de recuperação"
+            : isSignUp
+              ? "Crie sua conta para acessar o painel"
+              : "Acesse o painel com suas credenciais"}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {isSignUp && (
+          {isSignUp && !forgotMode && (
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">Nome</label>
               <input
@@ -100,18 +104,29 @@ export default function Login() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">Senha</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-              placeholder="Mínimo 6 caracteres"
-            />
-          </div>
+          {!forgotMode && (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Senha</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                placeholder="Mínimo 6 caracteres"
+              />
+              {!isSignUp && (
+                <button
+                  type="button"
+                  onClick={() => { setForgotMode(true); setMessage(null); }}
+                  className="text-xs text-primary hover:underline font-medium mt-2"
+                >
+                  Esqueci minha senha
+                </button>
+              )}
+            </div>
+          )}
 
           {message && (
             <p className={`text-sm text-center ${message.type === "error" ? "text-destructive" : "text-green-600"}`}>
