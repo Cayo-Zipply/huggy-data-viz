@@ -610,16 +610,16 @@ export function PipelinePanel() {
         </div>
       )}
 
-      <div className="flex gap-1.5 bg-muted/30 rounded-2xl p-1.5 overflow-x-auto">
+      <div className="flex gap-1 bg-muted/30 rounded-xl p-1 overflow-x-auto">
         {SUB_TABS.map(tab => {
           const Icon = tab.icon;
           const badge = tab.key === "hoje" ? todayPending : 0;
           return (
             <button key={tab.key} onClick={() => setSubTab(tab.key)}
-              className={cn("flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap relative",
+              className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap relative",
                 subTab === tab.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
-              <Icon size={18} strokeWidth={2.25} />{tab.label}
-              {badge > 0 && <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center shadow">{badge}</span>}
+              <Icon size={14} strokeWidth={2.25} />{tab.label}
+              {badge > 0 && <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center shadow">{badge}</span>}
             </button>
           );
         })}
