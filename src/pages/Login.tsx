@@ -6,6 +6,7 @@ import { Navigate } from "react-router-dom";
 export default function Login() {
   const { user, loading: authLoading } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("");
   const [nome, setNome] = useState("");
@@ -27,7 +28,16 @@ export default function Login() {
         throw new Error("Apenas e-mails @penaquadros.com são permitidos.");
       }
 
-      if (isSignUp) {
+      if (forgotMode) {
+        const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        setMessage({
+          type: "success",
+          text: "Se o e-mail existir, enviamos um link de recuperação. Verifique sua caixa de entrada e spam.",
+        });
+      } else if (isSignUp) {
         const { error } = await supabase.auth.signUp({
           email: normalizedEmail,
           password,
@@ -37,7 +47,6 @@ export default function Login() {
           },
         });
         if (error) throw error;
-        // Auto-confirm is enabled, user will be logged in automatically
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
         if (error) throw error;
