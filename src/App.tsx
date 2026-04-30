@@ -169,7 +169,7 @@ const App = () => (
             <Route element={<AuthLayout />}>
               <Route path="/pipeline" element={null} />
               <Route path="/marketing" element={null} />
-              <Route path="/comercial" element={null} />
+              <Route path="/comercial" element={<Navigate to="/marketing" replace />} />
               <Route path="/comparativo" element={null} />
               <Route path="/rentabilidade" element={null} />
               <Route path="/consolidado" element={null} />
