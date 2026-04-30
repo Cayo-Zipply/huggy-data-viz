@@ -79,7 +79,7 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
           </div>
         )}
       </div>
-      <div className="flex-1 space-y-2 overflow-y-auto p-2 max-h-[62vh]">
+      <div className="flex-1 space-y-1.5 overflow-y-auto p-1.5 max-h-[72vh]">
         {cards.map(card => (
           <div
             key={card.id}
