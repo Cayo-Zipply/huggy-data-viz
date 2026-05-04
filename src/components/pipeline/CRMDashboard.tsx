@@ -179,14 +179,55 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
   const currentCards = useMemo(() => filterByMonth(vis, currentMonth), [vis, currentMonth]);
   const prevCards = useMemo(() => filterByMonth(vis, compareMonth), [vis, compareMonth]);
 
-  const ativos = vis.filter(c => c.lead_status === "aberto");
-  const ganhos = vis.filter(c => c.lead_status === "ganho");
-  const perdidos = vis.filter(c => c.lead_status === "perdido");
+  // Escopo do mês: leads criados no mês OU fechados (ganho/perdido) no mês
+  const visMes = useMemo(() => {
+    const { start, end } = getMonthRange(currentMonth);
+    return vis.filter(c => {
+      const created = new Date(c.created_at);
+      if (created >= start && created <= end) return true;
+      if (c.lead_status === "ganho") {
+        const ref = c.data_venda || c.stage_changed_at;
+        const d = new Date(ref);
+        if (d >= start && d <= end) return true;
+      }
+      if (c.lead_status === "perdido") {
+        const ref = (c as any).data_perda || c.stage_changed_at;
+        const d = new Date(ref);
+        if (d >= start && d <= end) return true;
+      }
+      return false;
+    });
+  }, [vis, currentMonth]);
+
+  const { start: mStart, end: mEnd } = getMonthRange(currentMonth);
+  const ativos = visMes.filter(c => c.lead_status === "aberto");
+  const ganhos = filterGanhosByMonth(vis, currentMonth);
+  const perdidos = vis.filter(c => {
+    if (c.lead_status !== "perdido") return false;
+    const ref = (c as any).data_perda || c.stage_changed_at;
+    const d = new Date(ref);
+    return d >= mStart && d <= mEnd;
+  });
   const valorGanhos = ganhos.reduce((s, c) => s + (c.deal_value || 0), 0);
   const valorBrutoPipe = ativos.reduce((s, c) => s + (c.deal_value || 0), 0);
   const valorPondPipe = ativos.reduce((s, c) => s + (c.deal_value || 0) * (STAGE_CONFIG[c.stage]?.probability || 0), 0);
-  const taxaPerda = vis.length ? ((perdidos.length / vis.length) * 100).toFixed(1) : "0";
-  const taxaConv = vis.length ? ((ganhos.length / vis.length) * 100).toFixed(1) : "0";
+  const baseFechados = ganhos.length + perdidos.length;
+  const taxaPerda = baseFechados ? ((perdidos.length / baseFechados) * 100).toFixed(1) : "0";
+  const taxaConv = baseFechados ? ((ganhos.length / baseFechados) * 100).toFixed(1) : "0";
+
+  // Ciclo médio de venda (dias entre criação e fechamento) para vendas do mês
+  const cicloVenda = useMemo(() => {
+    const dias = ganhos
+      .map(c => {
+        const close = new Date(c.data_venda || c.stage_changed_at);
+        const open = new Date(c.created_at);
+        return (close.getTime() - open.getTime()) / (1000 * 60 * 60 * 24);
+      })
+      .filter(d => Number.isFinite(d) && d >= 0);
+    if (!dias.length) return null;
+    const avg = dias.reduce((a, b) => a + b, 0) / dias.length;
+    return Math.round(avg * 10) / 10;
+  }, [ganhos]);
 
   const lossData = useMemo(() => {
     const counts: Record<string, number> = {};
