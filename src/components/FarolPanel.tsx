@@ -197,7 +197,8 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   const inboundData = useMemo(() => {
     const rows = closerRows
       .map(closer => {
-        const ganhos = ganhosMes.filter(c => c.owner === closer);
+        // "Vendas" e "Contratos" são a mesma métrica — usamos contratos como fonte única de verdade
+        const ganhos = contratosMes.filter(c => c.owner === closer);
         const vendas = ganhos.length;
         const realizado = ganhos.reduce((s, c) => s + (c.deal_value || 0), 0);
         const goal = goals.find(g => g.closer === closer && g.month === monthKey);
