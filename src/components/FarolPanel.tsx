@@ -6,12 +6,18 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { AlertTriangle, Settings, Target } from "lucide-react";
+import { AlertTriangle, Settings, Target, CalendarDays, DollarSign, Users, Percent, FileSignature } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTeamMembers, type TeamMember } from "@/hooks/useTeamMembers";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+
+// Status de contrato considerados como "fechado" para meta de contratos
+const CONTRATO_FECHADO_STATUS = new Set(["enviado", "enviado_whatsapp", "gerado", "assinado"]);
+function getContratoDate(c: PipelineCard): string | null {
+  return c.zapsign_signed_at || c.contrato_preparado_em || null;
+}
 
 interface Props {
   cards: PipelineCard[];
