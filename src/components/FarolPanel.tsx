@@ -189,7 +189,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     const nsSem = noShowsMes.filter(c => !c.owner).length;
     if (rmSem || rrSem || nsSem) {
       rows.push({
-        sdr: "Sem responsável",
+        sdr: "Sem responsável", vendas: 0,
         reunioesMarcadas: rmSem, reunioesRealizadas: rrSem, meta: 0, projecao: 0, falta: 0, projetado: 0,
         pctMeta: 0, conv: 0, noShows: nsSem, unassigned: rmSem + rrSem + nsSem,
       });
