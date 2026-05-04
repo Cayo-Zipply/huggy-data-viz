@@ -459,7 +459,7 @@ function EditGoalsDialog({
   const [draft, setDraft] = useState<Record<string, PipelineGoal>>(initial);
 
   // reset when dialog opens
-  useMemo(() => { if (open) setDraft(initial); }, [open, initial]);
+  useEffect(() => { if (open) setDraft(initial); }, [open, initial]);
 
   const upd = (name: string, key: keyof PipelineGoal, val: number) => {
     setDraft(prev => ({ ...prev, [name]: { ...prev[name], [key]: val } }));
