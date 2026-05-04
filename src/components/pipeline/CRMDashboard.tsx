@@ -283,24 +283,25 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
 
     const leads = sellers.map(s => ({
       name: s,
-      value: vis.filter(c => c.owner === s).length,
+      value: visMes.filter(c => c.owner === s).length,
     }));
     const ganhosArr = sellers.map(s => ({
       name: s,
-      value: vis.filter(c => c.owner === s && c.lead_status === "ganho").length,
+      value: ganhos.filter(c => c.owner === s).length,
     }));
     const fatArr = sellers.map(s => ({
       name: s,
-      value: vis.filter(c => c.owner === s && c.lead_status === "ganho").reduce((sum, c) => sum + (c.deal_value || 0), 0),
+      value: ganhos.filter(c => c.owner === s).reduce((sum, c) => sum + (c.deal_value || 0), 0),
     }));
     const convArr = sellers.map(s => {
-      const total = vis.filter(c => c.owner === s).length;
-      const won = vis.filter(c => c.owner === s && c.lead_status === "ganho").length;
-      return { name: s, value: total > 0 ? Math.round((won / total) * 100) : 0 };
+      const g = ganhos.filter(c => c.owner === s).length;
+      const p = perdidos.filter(c => c.owner === s).length;
+      const base = g + p;
+      return { name: s, value: base > 0 ? Math.round((g / base) * 100) : 0 };
     });
 
     return { leads, ganhos: ganhosArr, faturamento: fatArr, conversao: convArr, sellers };
-  }, [vis, owners]);
+  }, [visMes, ganhos, perdidos, owners]);
 
   // Available months selector: mês atual + 23 meses anteriores
   const availableMonths = useMemo(() => {
