@@ -516,6 +516,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         <div className="px-4 py-3 border-b border-border bg-primary/5">
           <h2 className="text-sm font-bold text-foreground">📞 INBOUND (Closers)</h2>
         </div>
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -523,10 +524,12 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
               <TableHead className="text-[10px] text-center">Vendas</TableHead>
               <TableHead className="text-[10px] text-right">Realizado</TableHead>
               <TableHead className="text-[10px] text-right">Meta</TableHead>
+              <TableHead className="text-[10px] text-right">Meta até {dataAlvoLabel}</TableHead>
               <TableHead className="text-[10px] text-right">Projeção</TableHead>
+              <TableHead className="text-[10px] text-center">Atingimento</TableHead>
               <TableHead className="text-[10px] text-center">Falta</TableHead>
-              <TableHead className="text-[10px] text-right">Diferença</TableHead>
-              <TableHead className="text-[10px] text-center">%Meta</TableHead>
+              <TableHead className="text-[10px] text-center">Contratos</TableHead>
+              <TableHead className="text-[10px] text-right">Tkt Méd Proj</TableHead>
               <TableHead className="text-[10px] text-center">Conv%</TableHead>
               <TableHead className="text-[10px] text-right">Ticket Médio</TableHead>
               <TableHead className="text-[10px] text-center">Status</TableHead>
@@ -548,15 +551,15 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
                 <TableCell className="text-xs text-center">{d.vendas}</TableCell>
                 <TableCell className="text-xs text-right">{formatBRL(d.realizado)}</TableCell>
                 <TableCell className="text-xs text-right">{formatBRL(d.meta)}</TableCell>
+                <TableCell className="text-xs text-right text-muted-foreground">{formatBRL(d.metaAteAlvo)}</TableCell>
                 <TableCell className="text-xs text-right">{formatBRL(d.projecao)}</TableCell>
+                <TableCell className="text-xs text-center">{d.atingTotal}%</TableCell>
                 <TableCell className="text-xs text-center">{d.falta}</TableCell>
-                <TableCell className={cn("text-xs text-right", d.diferenca >= 0 ? "text-green-400" : "text-red-400")}>
-                  {formatBRL(d.diferenca)}
-                </TableCell>
-                <TableCell className="text-xs text-center">{d.pctMeta}%</TableCell>
+                <TableCell className="text-xs text-center">{d.contratos}</TableCell>
+                <TableCell className="text-xs text-right">{d.tktProjetado > 0 ? formatBRL(d.tktProjetado) : "—"}</TableCell>
                 <TableCell className="text-xs text-center">{d.conv}%</TableCell>
                 <TableCell className="text-xs text-right">{formatBRL(d.ticket)}</TableCell>
-                <TableCell className="text-center">{d.meta > 0 && <Semaphore pct={d.pctMeta} />}</TableCell>
+                <TableCell className="text-center">{d.meta > 0 && <Semaphore pct={d.atingTotal} />}</TableCell>
               </TableRow>
             ))}
             <TableRow className="bg-muted/30 font-bold">
@@ -564,18 +567,19 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
               <TableCell className="text-xs text-center font-bold">{inboundTotal.vendas}</TableCell>
               <TableCell className="text-xs text-right font-bold">{formatBRL(inboundTotal.realizado)}</TableCell>
               <TableCell className="text-xs text-right font-bold">{formatBRL(inboundTotal.meta)}</TableCell>
+              <TableCell className="text-xs text-right font-bold text-muted-foreground">{formatBRL(inboundTotal.metaAteAlvo)}</TableCell>
               <TableCell className="text-xs text-right font-bold">{formatBRL(inboundTotal.projecao)}</TableCell>
+              <TableCell className="text-xs text-center font-bold">{inboundTotal.atingTotal}%</TableCell>
               <TableCell className="text-xs text-center font-bold">{inboundTotal.falta}</TableCell>
-              <TableCell className={cn("text-xs text-right font-bold", inboundTotal.diferenca >= 0 ? "text-green-400" : "text-red-400")}>
-                {formatBRL(inboundTotal.diferenca)}
-              </TableCell>
-              <TableCell className="text-xs text-center font-bold">{inboundTotal.pctMeta}%</TableCell>
+              <TableCell className="text-xs text-center font-bold">{inboundTotal.contratos}</TableCell>
+              <TableCell className="text-xs text-right font-bold">—</TableCell>
               <TableCell className="text-xs text-center font-bold">{inboundTotal.conv}%</TableCell>
               <TableCell className="text-xs text-right font-bold">{formatBRL(inboundTotal.ticket)}</TableCell>
-              <TableCell className="text-center"><Semaphore pct={inboundTotal.pctMeta} /></TableCell>
+              <TableCell className="text-center"><Semaphore pct={inboundTotal.atingTotal} /></TableCell>
             </TableRow>
           </TableBody>
         </Table>
+        </div>
       </div>
 
       {/* PRÉ-VENDAS */}
