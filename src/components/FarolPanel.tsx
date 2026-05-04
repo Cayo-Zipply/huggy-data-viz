@@ -710,6 +710,60 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
 }
 
 // ── Edit Goals Dialog ──
+// ── Hero Card ──
+function HeroCard({
+  icon, title, value, metaLabel, subLabel, progress, progressLabel, footerLeft, footerRight,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  value: string;
+  metaLabel: string;
+  subLabel?: string;
+  progress: number;
+  progressLabel?: string;
+  footerLeft: { label: string; value: string };
+  footerRight: { label: string; value: string; tone?: "red" | "green" };
+}) {
+  const pct = Math.max(0, Math.min(100, Math.round(progress)));
+  const tone = footerRight.tone === "red" ? "text-red-400" : footerRight.tone === "green" ? "text-green-400" : "text-foreground";
+  return (
+    <div className="rounded-xl border border-primary/20 bg-card p-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] uppercase tracking-[0.2em] text-primary flex items-center gap-1.5">
+          {icon}{title}
+        </span>
+      </div>
+      <div>
+        <div className="font-serif-display text-2xl text-foreground leading-none">{value}</div>
+        <div className="text-[11px] text-muted-foreground mt-1">{metaLabel}</div>
+        {subLabel && <div className="text-[10px] text-muted-foreground/80 mt-0.5">{subLabel}</div>}
+      </div>
+      <div>
+        <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+          <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+        </div>
+        {progressLabel && (
+          <div className="text-[10px] text-muted-foreground mt-1 flex justify-between">
+            <span>{progressLabel}</span>
+            <span>{pct}%</span>
+          </div>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/50">
+        <div>
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">{footerLeft.label}</div>
+          <div className="text-xs font-medium text-foreground">{footerLeft.value}</div>
+        </div>
+        <div>
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground">{footerRight.label}</div>
+          <div className={cn("text-xs font-medium", tone)}>{footerRight.value}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Edit Goals Dialog ──
 function EditGoalsDialog({
   open, onOpenChange, monthKey, monthLabel, closers, sdrs, goals, onSave,
 }: {
