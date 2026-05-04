@@ -202,14 +202,20 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         const realizado = ganhos.reduce((s, c) => s + (c.deal_value || 0), 0);
         const goal = goals.find(g => g.closer === closer && g.month === monthKey);
         const meta = goal?.faturamento_meta || 0;
+        const metaAteAlvo = meta * fatorPace;
         const projecao = passedBD > 0 ? Math.round(realizado * ratio) : 0;
         const ticket = vendas > 0 ? realizado / vendas : 0;
+        const tktProjetado = (goal?.ticket_medio_meta && goal.ticket_medio_meta > 0)
+          ? goal.ticket_medio_meta
+          : (goal?.vendas_meta && goal.vendas_meta > 0 && meta > 0 ? meta / goal.vendas_meta : 0);
         const falta = ticket > 0 ? Math.max(0, Math.ceil((meta - realizado) / ticket)) : 0;
         const diferenca = projecao - meta;
         const pctMeta = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
+        const atingTotal = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
         const rrCloser = reunioesRealizadas.filter(c => c.owner === closer).length;
         const conv = rrCloser > 0 ? Math.round((vendas / rrCloser) * 100) : 0;
-        return { closer, vendas, realizado, meta, projecao, falta, diferenca, pctMeta, conv, ticket, unassigned: 0 };
+        const contratos = contratosMes.filter(c => c.owner === closer).length;
+        return { closer, vendas, realizado, meta, metaAteAlvo, projecao, falta, diferenca, pctMeta, atingTotal, conv, ticket, tktProjetado, contratos, unassigned: 0 };
       })
       .filter(r => visibleByName(r.closer, r.vendas > 0));
 
@@ -221,13 +227,13 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
       rows.push({
         closer: "Sem responsável",
         vendas: semOwnerGanhos.length,
-        realizado, meta: 0, projecao: 0, falta: 0, diferenca: 0, pctMeta: 0,
-        conv: 0, ticket: 0,
+        realizado, meta: 0, metaAteAlvo: 0, projecao: 0, falta: 0, diferenca: 0, pctMeta: 0, atingTotal: 0,
+        conv: 0, ticket: 0, tktProjetado: 0, contratos: contratosMes.filter(c => !c.owner).length,
         unassigned: semOwnerGanhos.length + semOwnerReuniao.length,
       });
     }
     return rows;
-  }, [closerRows, ganhosMes, reunioesRealizadas, goals, monthKey, passedBD, ratio]);
+  }, [closerRows, ganhosMes, reunioesRealizadas, contratosMes, goals, monthKey, passedBD, ratio, fatorPace]);
 
   const inboundTotal = useMemo(() => {
     const vendas = inboundData.reduce((s, d) => s + d.vendas, 0);
