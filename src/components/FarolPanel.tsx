@@ -215,13 +215,13 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         const atingTotal = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
         const rrCloser = reunioesRealizadas.filter(c => c.owner === closer).length;
         const conv = rrCloser > 0 ? Math.round((vendas / rrCloser) * 100) : 0;
-        const contratos = contratosMes.filter(c => c.owner === closer).length;
+        const contratos = vendas; // mesma métrica
         return { closer, vendas, realizado, meta, metaAteAlvo, projecao, falta, diferenca, pctMeta, atingTotal, conv, ticket, tktProjetado, contratos, unassigned: 0 };
       })
       .filter(r => visibleByName(r.closer, r.vendas > 0));
 
     // Sem responsável (closer)
-    const semOwnerGanhos = ganhosMes.filter(c => !c.owner);
+    const semOwnerGanhos = contratosMes.filter(c => !c.owner);
     const semOwnerReuniao = reunioesRealizadas.filter(c => !c.owner);
     if (semOwnerGanhos.length || semOwnerReuniao.length) {
       const realizado = semOwnerGanhos.reduce((s, c) => s + (c.deal_value || 0), 0);
@@ -229,12 +229,12 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         closer: "Sem responsável",
         vendas: semOwnerGanhos.length,
         realizado, meta: 0, metaAteAlvo: 0, projecao: 0, falta: 0, diferenca: 0, pctMeta: 0, atingTotal: 0,
-        conv: 0, ticket: 0, tktProjetado: 0, contratos: contratosMes.filter(c => !c.owner).length,
+        conv: 0, ticket: 0, tktProjetado: 0, contratos: semOwnerGanhos.length,
         unassigned: semOwnerGanhos.length + semOwnerReuniao.length,
       });
     }
     return rows;
-  }, [closerRows, ganhosMes, reunioesRealizadas, contratosMes, goals, monthKey, passedBD, ratio, fatorPace]);
+  }, [closerRows, contratosMes, reunioesRealizadas, goals, monthKey, passedBD, ratio, fatorPace]);
 
   const inboundTotal = useMemo(() => {
     const vendas = inboundData.reduce((s, d) => s + d.vendas, 0);
