@@ -97,25 +97,41 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     });
   }, [cards, start, end]);
 
+  // Regras de visibilidade no Farol:
+  // - Stephanie nunca aparece
+  // - Fabrício e Henrique só aparecem se tiverem venda no mês
+  const HIDDEN_ALWAYS = ["stephanie"];
+  const ONLY_WITH_SALE = ["fabricio", "fabrício", "henrique"];
+  const norm = (s: string) =>
+    (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  const visibleByName = (name: string, hasSale: boolean) => {
+    const n = norm(name);
+    if (HIDDEN_ALWAYS.some(h => n.includes(h))) return false;
+    if (ONLY_WITH_SALE.some(h => n.includes(h)) && !hasSale) return false;
+    return true;
+  };
+
   // ── INBOUND (closers) — vendas/faturamento por closer ──
   const closerRows = useMemo(() => closerNames, [closerNames]);
 
   const inboundData = useMemo(() => {
-    const rows = closerRows.map(closer => {
-      const ganhos = ganhosMes.filter(c => c.owner === closer);
-      const vendas = ganhos.length;
-      const realizado = ganhos.reduce((s, c) => s + (c.deal_value || 0), 0);
-      const goal = goals.find(g => g.closer === closer && g.month === monthKey);
-      const meta = goal?.faturamento_meta || 0;
-      const projecao = passedBD > 0 ? Math.round(realizado * ratio) : 0;
-      const ticket = vendas > 0 ? realizado / vendas : 0;
-      const falta = ticket > 0 ? Math.max(0, Math.ceil((meta - realizado) / ticket)) : 0;
-      const diferenca = projecao - meta;
-      const pctMeta = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
-      const rrCloser = reunioesRealizadas.filter(c => c.owner === closer).length;
-      const conv = rrCloser > 0 ? Math.round((vendas / rrCloser) * 100) : 0;
-      return { closer, vendas, realizado, meta, projecao, falta, diferenca, pctMeta, conv, ticket, unassigned: 0 };
-    });
+    const rows = closerRows
+      .map(closer => {
+        const ganhos = ganhosMes.filter(c => c.owner === closer);
+        const vendas = ganhos.length;
+        const realizado = ganhos.reduce((s, c) => s + (c.deal_value || 0), 0);
+        const goal = goals.find(g => g.closer === closer && g.month === monthKey);
+        const meta = goal?.faturamento_meta || 0;
+        const projecao = passedBD > 0 ? Math.round(realizado * ratio) : 0;
+        const ticket = vendas > 0 ? realizado / vendas : 0;
+        const falta = ticket > 0 ? Math.max(0, Math.ceil((meta - realizado) / ticket)) : 0;
+        const diferenca = projecao - meta;
+        const pctMeta = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
+        const rrCloser = reunioesRealizadas.filter(c => c.owner === closer).length;
+        const conv = rrCloser > 0 ? Math.round((vendas / rrCloser) * 100) : 0;
+        return { closer, vendas, realizado, meta, projecao, falta, diferenca, pctMeta, conv, ticket, unassigned: 0 };
+      })
+      .filter(r => visibleByName(r.closer, r.vendas > 0));
 
     // Sem responsável (closer)
     const semOwnerGanhos = ganhosMes.filter(c => !c.owner);
