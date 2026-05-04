@@ -167,19 +167,22 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   const sdrRows = useMemo(() => sdrNames, [sdrNames]);
 
   const preVendasData = useMemo(() => {
-    const rows = sdrRows.map(sdr => {
-      const rm = reunioesMarcadas.filter(c => c.owner === sdr).length;
-      const rr = reunioesRealizadas.filter(c => c.owner === sdr).length;
-      const ns = noShowsMes.filter(c => c.owner === sdr).length;
-      const goal = goals.find(g => g.closer === sdr && g.month === monthKey);
-      const meta = goal?.reunioes_marcadas_meta || 0;
-      const projecao = passedBD > 0 ? Math.round(rm * ratio) : 0;
-      const falta = Math.max(0, meta - rm);
-      const projetado = passedBD > 0 ? Math.round(rr * ratio) : 0;
-      const pctMeta = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
-      const conv = rm > 0 ? Math.round((rr / rm) * 100) : 0;
-      return { sdr, reunioesMarcadas: rm, reunioesRealizadas: rr, meta, projecao, falta, projetado, pctMeta, conv, noShows: ns, unassigned: 0 };
-    });
+    const rows = sdrRows
+      .map(sdr => {
+        const rm = reunioesMarcadas.filter(c => c.owner === sdr).length;
+        const rr = reunioesRealizadas.filter(c => c.owner === sdr).length;
+        const ns = noShowsMes.filter(c => c.owner === sdr).length;
+        const vendas = ganhosMes.filter(c => c.owner === sdr).length;
+        const goal = goals.find(g => g.closer === sdr && g.month === monthKey);
+        const meta = goal?.reunioes_marcadas_meta || 0;
+        const projecao = passedBD > 0 ? Math.round(rm * ratio) : 0;
+        const falta = Math.max(0, meta - rm);
+        const projetado = passedBD > 0 ? Math.round(rr * ratio) : 0;
+        const pctMeta = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
+        const conv = rm > 0 ? Math.round((rr / rm) * 100) : 0;
+        return { sdr, vendas, reunioesMarcadas: rm, reunioesRealizadas: rr, meta, projecao, falta, projetado, pctMeta, conv, noShows: ns, unassigned: 0 };
+      })
+      .filter(r => visibleByName(r.sdr, r.vendas > 0));
 
     const rmSem = reunioesMarcadas.filter(c => !c.owner).length;
     const rrSem = reunioesRealizadas.filter(c => !c.owner).length;
