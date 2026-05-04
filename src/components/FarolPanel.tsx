@@ -330,6 +330,72 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
 
   const monthLabel = selectedMonth.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
+  // ── HERO globais (acima das tabelas) ──
+  const globais = useMemo(() => {
+    const metaFatTotal = inboundData.reduce((s, d) => s + (d.meta || 0), 0);
+    const metaContratosTotal = closerRows.reduce((s, c) => {
+      const g = goals.find(x => x.closer === c && x.month === monthKey);
+      return s + (g?.contratos_meta || 0);
+    }, 0);
+    const metaConvAlvo = (() => {
+      const vals = closerRows
+        .map(c => goals.find(x => x.closer === c && x.month === monthKey)?.conversao_meta || 0)
+        .filter(v => v > 0);
+      if (!vals.length) return 0;
+      return vals.reduce((s, v) => s + v, 0) / vals.length;
+    })();
+
+    const realizadoFat = inboundTotal.realizado;
+    const projecaoFat = passedBD > 0 ? Math.round(realizadoFat * ratio) : 0;
+    const fatMetaAteAlvo = metaFatTotal * fatorPace;
+    const fatPacePct = metaFatTotal > 0 ? (realizadoFat / metaFatTotal) * 100 : 0;
+    const fatFaltaPace = Math.max(0, fatMetaAteAlvo - realizadoFat);
+    const fatAtingTotal = metaFatTotal > 0 ? (projecaoFat / metaFatTotal) * 100 : 0;
+
+    const rrTotal = preVendasTotal.rr;
+    const metaRRTotal = preVendasTotal.metaRR;
+    const rrMetaAteAlvo = metaRRTotal * fatorPace;
+    const rrPaceDiario = (metaRRTotal > 0 && du.restantes > 0)
+      ? Math.max(0, Math.ceil((metaRRTotal - rrTotal) / du.restantes))
+      : 0;
+    const rrProjecao = passedBD > 0 ? Math.round(rrTotal * ratio) : 0;
+    const rrGap = rrTotal - rrMetaAteAlvo;
+
+    const totalVendas = inboundTotal.vendas;
+    const convAtual = rrTotal > 0 ? (totalVendas / rrTotal) * 100 : 0;
+    const convPctAlvo = metaConvAlvo > 0 ? (convAtual / metaConvAlvo) * 100 : 0;
+    const convGap = convAtual - metaConvAlvo;
+    const ticketMedio = totalVendas > 0 ? realizadoFat / totalVendas : 0;
+    const topCloser = inboundData
+      .filter(d => d.closer !== "Sem responsável")
+      .reduce<{ closer: string; conv: number } | null>((acc, d) => (!acc || d.conv > acc.conv ? { closer: d.closer, conv: d.conv } : acc), null);
+
+    const contratosFech = contratosMes.length;
+    const contMetaAteAlvo = metaContratosTotal * fatorPace;
+    const contGap = contratosFech - contMetaAteAlvo;
+    const contProjecao = passedBD > 0 ? Math.round(contratosFech * ratio) : 0;
+
+    return {
+      faturamento: {
+        realizado: realizadoFat, meta: metaFatTotal, metaAteAlvo: fatMetaAteAlvo,
+        pacePct: fatPacePct, faltaPace: fatFaltaPace, projecao: projecaoFat, atingTotal: fatAtingTotal,
+      },
+      reunioes: {
+        realizadas: rrTotal, meta: metaRRTotal, metaAteAlvo: rrMetaAteAlvo,
+        paceDiarioRR: rrPaceDiario, taxaShow: preVendasTotal.taxaShow, projecao: rrProjecao, gap: rrGap,
+      },
+      conversao: {
+        atual: convAtual, esperada: metaConvAlvo, pctDoAlvo: convPctAlvo,
+        gapPp: convGap, vendas: totalVendas, ticketMedio, topCloser,
+      },
+      contratos: {
+        fechados: contratosFech, enviados: contratosEnviados, assinados: contratosAssinados,
+        meta: metaContratosTotal, metaAteAlvo: contMetaAteAlvo, gap: contGap, projecao: contProjecao,
+      },
+    };
+  }, [inboundData, inboundTotal, preVendasTotal, closerRows, goals, monthKey, passedBD, ratio, fatorPace, du.restantes, contratosMes.length, contratosEnviados, contratosAssinados]);
+
+
   return (
     <div className="p-4 lg:p-8 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
