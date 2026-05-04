@@ -134,6 +134,9 @@ function dbRowToGoal(row: any): PipelineGoal {
     reunioes_realizadas_meta: row.meta_reunioes_realizadas || 0,
     faturamento_meta: row.meta_faturamento || 0,
     conversao_meta: row.meta_conversao || 0,
+    vendas_meta: row.meta_vendas || 0,
+    ticket_medio_meta: row.meta_ticket_medio || 0,
+    contratos_meta: row.meta_contratos || 0,
   };
 }
 
