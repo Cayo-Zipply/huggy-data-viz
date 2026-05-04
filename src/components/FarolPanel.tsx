@@ -522,7 +522,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
           <TableHeader>
             <TableRow>
               <TableHead className="text-[10px]">Closer</TableHead>
-              <TableHead className="text-[10px] text-center">Vendas</TableHead>
+              
               <TableHead className="text-[10px] text-right">Realizado</TableHead>
               <TableHead className="text-[10px] text-right">Meta</TableHead>
               <TableHead className="text-[10px] text-right">Meta até {dataAlvoLabel}</TableHead>
