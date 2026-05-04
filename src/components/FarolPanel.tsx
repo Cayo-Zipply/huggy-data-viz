@@ -168,12 +168,20 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
       return d >= start && d <= end;
     });
   }, [cards, start, end]);
+  // Métricas auxiliares (independentes de "fechado") para o card de contratos
   const contratosEnviados = useMemo(
-    () => contratosMes.filter(c => c.contrato_status === "enviado" || c.contrato_status === "enviado_whatsapp" || c.contrato_status === "gerado").length,
-    [contratosMes]
+    () => cards.filter(c => {
+      const st = c.contrato_status;
+      if (st !== "enviado" && st !== "enviado_whatsapp" && st !== "gerado") return false;
+      const ref = getContratoDate(c);
+      if (!ref) return false;
+      const d = new Date(ref);
+      return d >= start && d <= end;
+    }).length,
+    [cards, start, end]
   );
   const contratosAssinados = useMemo(
-    () => contratosMes.filter(c => c.contrato_status === "assinado" || !!c.zapsign_signed_at).length,
+    () => contratosMes.length,
     [contratosMes]
   );
 
