@@ -72,12 +72,21 @@ function diasUteisDoMes(year: number, month: number, dataAlvo: Date) {
 const REUNIAO_STAGES: Stage[] = ["reuniao_marcada", "reuniao_agendada", "no_show", "reuniao_realizada", "link_enviado", "contrato_assinado"];
 
 // Counts cards that "reached" a given stage during [start, end] — based on history events
+// OR cards currently at the stage with stage_changed_at within the window (fallback when history is missing).
 function reachedInMonth(cards: PipelineCard[], stages: Stage[], start: Date, end: Date): PipelineCard[] {
+  const set = new Set(stages);
   return cards.filter(c => {
-    return c.history.some(h => stages.includes(h.to as Stage) && (() => {
+    const inHistory = (c.history || []).some(h => {
+      if (!set.has(h.to as Stage)) return false;
       const d = new Date(h.at);
       return d >= start && d <= end;
-    })());
+    });
+    if (inHistory) return true;
+    if (set.has(c.stage as Stage)) {
+      const ref = c.stage_changed_at ? new Date(c.stage_changed_at) : new Date(c.created_at);
+      return ref >= start && ref <= end;
+    }
+    return false;
   });
 }
 
