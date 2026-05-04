@@ -179,14 +179,55 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
   const currentCards = useMemo(() => filterByMonth(vis, currentMonth), [vis, currentMonth]);
   const prevCards = useMemo(() => filterByMonth(vis, compareMonth), [vis, compareMonth]);
 
-  const ativos = vis.filter(c => c.lead_status === "aberto");
-  const ganhos = vis.filter(c => c.lead_status === "ganho");
-  const perdidos = vis.filter(c => c.lead_status === "perdido");
+  // Escopo do mês: leads criados no mês OU fechados (ganho/perdido) no mês
+  const visMes = useMemo(() => {
+    const { start, end } = getMonthRange(currentMonth);
+    return vis.filter(c => {
+      const created = new Date(c.created_at);
+      if (created >= start && created <= end) return true;
+      if (c.lead_status === "ganho") {
+        const ref = c.data_venda || c.stage_changed_at;
+        const d = new Date(ref);
+        if (d >= start && d <= end) return true;
+      }
+      if (c.lead_status === "perdido") {
+        const ref = (c as any).data_perda || c.stage_changed_at;
+        const d = new Date(ref);
+        if (d >= start && d <= end) return true;
+      }
+      return false;
+    });
+  }, [vis, currentMonth]);
+
+  const { start: mStart, end: mEnd } = getMonthRange(currentMonth);
+  const ativos = visMes.filter(c => c.lead_status === "aberto");
+  const ganhos = filterGanhosByMonth(vis, currentMonth);
+  const perdidos = vis.filter(c => {
+    if (c.lead_status !== "perdido") return false;
+    const ref = (c as any).data_perda || c.stage_changed_at;
+    const d = new Date(ref);
+    return d >= mStart && d <= mEnd;
+  });
   const valorGanhos = ganhos.reduce((s, c) => s + (c.deal_value || 0), 0);
   const valorBrutoPipe = ativos.reduce((s, c) => s + (c.deal_value || 0), 0);
   const valorPondPipe = ativos.reduce((s, c) => s + (c.deal_value || 0) * (STAGE_CONFIG[c.stage]?.probability || 0), 0);
-  const taxaPerda = vis.length ? ((perdidos.length / vis.length) * 100).toFixed(1) : "0";
-  const taxaConv = vis.length ? ((ganhos.length / vis.length) * 100).toFixed(1) : "0";
+  const baseFechados = ganhos.length + perdidos.length;
+  const taxaPerda = baseFechados ? ((perdidos.length / baseFechados) * 100).toFixed(1) : "0";
+  const taxaConv = baseFechados ? ((ganhos.length / baseFechados) * 100).toFixed(1) : "0";
+
+  // Ciclo médio de venda (dias entre criação e fechamento) para vendas do mês
+  const cicloVenda = useMemo(() => {
+    const dias = ganhos
+      .map(c => {
+        const close = new Date(c.data_venda || c.stage_changed_at);
+        const open = new Date(c.created_at);
+        return (close.getTime() - open.getTime()) / (1000 * 60 * 60 * 24);
+      })
+      .filter(d => Number.isFinite(d) && d >= 0);
+    if (!dias.length) return null;
+    const avg = dias.reduce((a, b) => a + b, 0) / dias.length;
+    return Math.round(avg * 10) / 10;
+  }, [ganhos]);
 
   const lossData = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -197,21 +238,21 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
   const timeData = useMemo(() => {
     return STAGE_ORDER.map(s => {
       const durations: number[] = [];
-      vis.forEach(c => {
+      visMes.forEach(c => {
         c.history.filter(h => h.from === s && h.duration_days != null).forEach(h => durations.push(h.duration_days!));
         if (c.stage === s && c.lead_status === "aberto") durations.push(daysDiff(c.stage_changed_at));
       });
       const avg = durations.length ? durations.reduce((a, b) => a + b, 0) / durations.length : 0;
       return { name: STAGE_CONFIG[s].label, dias: Math.round(avg * 10) / 10 };
     });
-  }, [vis]);
+  }, [visMes]);
 
   const funnelData = useMemo(() => {
     return STAGE_ORDER.map(s => ({
       stage: STAGE_CONFIG[s].label,
-      count: cardsReachedStage(vis, s).length,
+      count: cardsReachedStage(visMes, s).length,
     }));
-  }, [vis]);
+  }, [visMes]);
   const maxFunnel = funnelData[0]?.count || 1;
 
   const barColors = ["hsl(207,90%,54%)", "hsl(270,70%,60%)", "hsl(142,76%,36%)", "hsl(207,90%,54%)", "hsl(45,93%,47%)", "hsl(25,95%,53%)", "hsl(142,76%,50%)"];
@@ -242,24 +283,25 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
 
     const leads = sellers.map(s => ({
       name: s,
-      value: vis.filter(c => c.owner === s).length,
+      value: visMes.filter(c => c.owner === s).length,
     }));
     const ganhosArr = sellers.map(s => ({
       name: s,
-      value: vis.filter(c => c.owner === s && c.lead_status === "ganho").length,
+      value: ganhos.filter(c => c.owner === s).length,
     }));
     const fatArr = sellers.map(s => ({
       name: s,
-      value: vis.filter(c => c.owner === s && c.lead_status === "ganho").reduce((sum, c) => sum + (c.deal_value || 0), 0),
+      value: ganhos.filter(c => c.owner === s).reduce((sum, c) => sum + (c.deal_value || 0), 0),
     }));
     const convArr = sellers.map(s => {
-      const total = vis.filter(c => c.owner === s).length;
-      const won = vis.filter(c => c.owner === s && c.lead_status === "ganho").length;
-      return { name: s, value: total > 0 ? Math.round((won / total) * 100) : 0 };
+      const g = ganhos.filter(c => c.owner === s).length;
+      const p = perdidos.filter(c => c.owner === s).length;
+      const base = g + p;
+      return { name: s, value: base > 0 ? Math.round((g / base) * 100) : 0 };
     });
 
     return { leads, ganhos: ganhosArr, faturamento: fatArr, conversao: convArr, sellers };
-  }, [vis, owners]);
+  }, [visMes, ganhos, perdidos, owners]);
 
   // Available months selector: mês atual + 23 meses anteriores
   const availableMonths = useMemo(() => {
@@ -296,13 +338,14 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
         </label>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-3">
         <MetricBox label="Leads Ativos" value={ativos.length.toString()} />
         <MetricBox label="Valor Bruto" value={formatBRL(valorBrutoPipe)} />
         <MetricBox label="Valor Ponderado" value={formatBRL(valorPondPipe)} />
         <MetricBox label="Ganhos" value={ganhos.length.toString()} sub={formatBRL(valorGanhos)} />
         <MetricBox label="Perdidos" value={perdidos.length.toString()} sub={`${taxaPerda}% de perda`} />
         <MetricBox label="Conversão" value={`${taxaConv}%`} />
+        <MetricBox label="Ciclo de Venda" value={cicloVenda != null ? `${cicloVenda} dias` : "—"} sub="criação → fechamento" />
       </div>
 
       {/* Month comparison */}
@@ -440,7 +483,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
       {/* Weekend conversion card */}
       <div className="bg-card border border-border rounded-xl p-4">
         <h4 className="text-sm font-semibold text-foreground mb-3">Conversão: Dia útil vs. Fim de semana</h4>
-        <WeekendConversionCard cards={vis} />
+        <WeekendConversionCard cards={visMes} />
       </div>
 
       {/* CPF vs CNPJ metrics */}
@@ -506,7 +549,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
 
       {/* Tag conversion */}
       {labels.length > 0 && (
-        <TagConversion cards={vis} labels={labels} getCardLabels={getCardLabels} />
+        <TagConversion cards={visMes} labels={labels} getCardLabels={getCardLabels} />
       )}
       </div>
 
