@@ -401,7 +401,9 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-bold text-foreground">🚦 Farol de Metas</h1>
-          <p className="text-xs text-muted-foreground capitalize">{monthLabel} — {passedBD}/{totalBD} dias úteis</p>
+          <p className="text-xs text-muted-foreground capitalize">
+            {monthLabel} — {passedBD}/{totalBD} dias úteis até {dataAlvoLabel}
+          </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {isAdmin && (
@@ -420,6 +422,26 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
               {unassignedCards.length} sem responsável
             </Button>
           )}
+          <div className="flex items-center gap-1.5 text-xs">
+            <CalendarDays className="w-3.5 h-3.5 text-primary" />
+            <span className="uppercase tracking-wider text-muted-foreground hidden sm:inline">Projeção até</span>
+            <input
+              type="date"
+              value={fmtISO(dataAlvo)}
+              min={fmtISO(start)}
+              max={fmtISO(new Date(year, month + 1, 0))}
+              onChange={(e) => {
+                const [y, m, d] = e.target.value.split("-").map(Number);
+                setDataAlvo(new Date(y, m - 1, d));
+              }}
+              className="border border-border rounded-md px-2 py-1 bg-background text-foreground"
+            />
+            {!isToday && (
+              <button onClick={() => setDataAlvo(new Date())} className="text-[10px] text-primary underline">
+                hoje
+              </button>
+            )}
+          </div>
           <select
             value={selectedMonth.toISOString()}
             onChange={e => setSelectedMonth(new Date(e.target.value))}
@@ -433,6 +455,61 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
           </select>
         </div>
       </div>
+
+      {!isToday && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-xs text-foreground">
+          📅 Visualizando projeção até <strong>{dataAlvo.toLocaleDateString("pt-BR")}</strong>. Os números abaixo mostram quanto você precisa ter atingido até essa data para estar em pace.
+        </div>
+      )}
+
+      {/* HERO CARDS GLOBAIS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <HeroCard
+          icon={<DollarSign className="w-4 h-4" />}
+          title="Faturamento"
+          value={formatBRL(globais.faturamento.realizado)}
+          metaLabel={globais.faturamento.meta > 0 ? `/ ${formatBRL(globais.faturamento.meta)}` : "meta não cadastrada"}
+          subLabel={`meta até ${dataAlvoLabel}: ${formatBRL(globais.faturamento.metaAteAlvo)}`}
+          progress={globais.faturamento.pacePct}
+          progressLabel={`Pace ${Math.round(globais.faturamento.pacePct)}%`}
+          footerLeft={{ label: "Projeção", value: formatBRL(globais.faturamento.projecao) }}
+          footerRight={{ label: "Falta p/ pace", value: formatBRL(globais.faturamento.faltaPace), tone: globais.faturamento.faltaPace > 0 ? "red" : "green" }}
+        />
+        <HeroCard
+          icon={<Users className="w-4 h-4" />}
+          title="Reuniões realizadas"
+          value={String(globais.reunioes.realizadas)}
+          metaLabel={globais.reunioes.meta > 0 ? `/ ${globais.reunioes.meta}` : "meta não cadastrada"}
+          subLabel={`meta até ${dataAlvoLabel}: ${Math.round(globais.reunioes.metaAteAlvo)}`}
+          progress={globais.reunioes.meta > 0 ? (globais.reunioes.realizadas / globais.reunioes.meta) * 100 : 0}
+          progressLabel={`Pace diário · ${globais.reunioes.paceDiarioRR} RR`}
+          footerLeft={{ label: "Projeção", value: String(globais.reunioes.projecao) }}
+          footerRight={{ label: "Taxa show", value: `${globais.reunioes.taxaShow}%` }}
+        />
+        <HeroCard
+          icon={<Percent className="w-4 h-4" />}
+          title="Taxa de conversão"
+          value={`${globais.conversao.atual.toFixed(1)}%`}
+          metaLabel={globais.conversao.esperada > 0 ? `/ ${globais.conversao.esperada.toFixed(0)}%` : "meta não cadastrada"}
+          subLabel={globais.conversao.esperada > 0 ? `${Math.round(globais.conversao.pctDoAlvo)}% do alvo` : ""}
+          progress={globais.conversao.pctDoAlvo}
+          progressLabel={`Vendas · ${globais.conversao.vendas}`}
+          footerLeft={{ label: "Top closer", value: globais.conversao.topCloser ? `${globais.conversao.topCloser.closer} · ${globais.conversao.topCloser.conv}%` : "—" }}
+          footerRight={{ label: "Ticket médio", value: globais.conversao.ticketMedio > 0 ? formatBRL(globais.conversao.ticketMedio) : "—" }}
+        />
+        <HeroCard
+          icon={<FileSignature className="w-4 h-4" />}
+          title="Contratos"
+          value={String(globais.contratos.fechados)}
+          metaLabel={globais.contratos.meta > 0 ? `/ ${globais.contratos.meta}` : "meta não cadastrada"}
+          subLabel={`meta até ${dataAlvoLabel}: ${Math.round(globais.contratos.metaAteAlvo)}`}
+          progress={globais.contratos.meta > 0 ? (globais.contratos.fechados / globais.contratos.meta) * 100 : 0}
+          progressLabel={`Pace até ${dataAlvoLabel}`}
+          footerLeft={{ label: "Enviados", value: String(globais.contratos.enviados) }}
+          footerRight={{ label: "Assinados", value: String(globais.contratos.assinados) }}
+        />
+      </div>
+
 
       {/* INBOUND */}
       <div className="bg-card border border-border rounded-xl overflow-hidden">
