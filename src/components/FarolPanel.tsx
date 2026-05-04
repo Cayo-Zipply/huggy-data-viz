@@ -587,6 +587,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         <div className="px-4 py-3 border-b border-border bg-blue-500/5">
           <h2 className="text-sm font-bold text-foreground">🎯 PRÉ-VENDAS (SDR)</h2>
         </div>
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -594,10 +595,11 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
               <TableHead className="text-[10px] text-center">Reuniões</TableHead>
               <TableHead className="text-[10px] text-center">Realizadas</TableHead>
               <TableHead className="text-[10px] text-center">Meta</TableHead>
+              <TableHead className="text-[10px] text-center">Meta até {dataAlvoLabel}</TableHead>
               <TableHead className="text-[10px] text-center">Projeção</TableHead>
+              <TableHead className="text-[10px] text-center">Atingimento</TableHead>
+              <TableHead className="text-[10px] text-center">Pace/dia</TableHead>
               <TableHead className="text-[10px] text-center">Falta</TableHead>
-              <TableHead className="text-[10px] text-center">Projetado</TableHead>
-              <TableHead className="text-[10px] text-center">%Meta</TableHead>
               <TableHead className="text-[10px] text-center">Conv%</TableHead>
               <TableHead className="text-[10px] text-center">No Shows</TableHead>
               <TableHead className="text-[10px] text-center">Status</TableHead>
@@ -619,13 +621,14 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
                 <TableCell className="text-xs text-center">{d.reunioesMarcadas}</TableCell>
                 <TableCell className="text-xs text-center">{d.reunioesRealizadas}</TableCell>
                 <TableCell className="text-xs text-center">{d.meta}</TableCell>
+                <TableCell className="text-xs text-center text-muted-foreground">{Math.round(d.metaAteAlvo)}</TableCell>
                 <TableCell className="text-xs text-center">{d.projecao}</TableCell>
+                <TableCell className="text-xs text-center">{d.atingTotal}%</TableCell>
+                <TableCell className="text-xs text-center">{du.restantes > 0 ? d.paceDiarioRR : "—"}</TableCell>
                 <TableCell className="text-xs text-center">{d.falta}</TableCell>
-                <TableCell className="text-xs text-center">{d.projetado}</TableCell>
-                <TableCell className="text-xs text-center">{d.pctMeta}%</TableCell>
                 <TableCell className="text-xs text-center">{d.conv}%</TableCell>
                 <TableCell className="text-xs text-center">{d.noShows}</TableCell>
-                <TableCell className="text-center">{d.meta > 0 && <Semaphore pct={d.pctMeta} />}</TableCell>
+                <TableCell className="text-center">{d.meta > 0 && <Semaphore pct={d.atingTotal || d.pctMeta} />}</TableCell>
               </TableRow>
             ))}
             <TableRow className="bg-muted/30 font-bold">
@@ -633,16 +636,18 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
               <TableCell className="text-xs text-center font-bold">{preVendasTotal.rm}</TableCell>
               <TableCell className="text-xs text-center font-bold">{preVendasTotal.rr}</TableCell>
               <TableCell className="text-xs text-center font-bold">{preVendasTotal.meta}</TableCell>
+              <TableCell className="text-xs text-center font-bold text-muted-foreground">{Math.round(preVendasTotal.metaAteAlvo)}</TableCell>
               <TableCell className="text-xs text-center font-bold">{preVendasTotal.projecao}</TableCell>
+              <TableCell className="text-xs text-center font-bold">{preVendasTotal.atingTotal}%</TableCell>
+              <TableCell className="text-xs text-center font-bold">{du.restantes > 0 ? preVendasTotal.paceDiarioRR : "—"}</TableCell>
               <TableCell className="text-xs text-center font-bold">{preVendasTotal.falta}</TableCell>
-              <TableCell className="text-xs text-center font-bold">{preVendasTotal.projetado}</TableCell>
-              <TableCell className="text-xs text-center font-bold">{preVendasTotal.pctMeta}%</TableCell>
               <TableCell className="text-xs text-center font-bold">{preVendasTotal.conv}%</TableCell>
               <TableCell className="text-xs text-center font-bold">{preVendasTotal.noShows}</TableCell>
-              <TableCell className="text-center"><Semaphore pct={preVendasTotal.pctMeta} /></TableCell>
+              <TableCell className="text-center"><Semaphore pct={preVendasTotal.atingTotal || preVendasTotal.pctMeta} /></TableCell>
             </TableRow>
           </TableBody>
         </Table>
+        </div>
         <div className="px-4 py-2 border-t border-border flex gap-6 text-xs text-muted-foreground">
           <span>Taxa de Show: <strong className="text-foreground">{preVendasTotal.taxaShow}%</strong></span>
         </div>
