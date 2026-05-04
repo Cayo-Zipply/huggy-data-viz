@@ -134,6 +134,9 @@ function dbRowToGoal(row: any): PipelineGoal {
     reunioes_realizadas_meta: row.meta_reunioes_realizadas || 0,
     faturamento_meta: row.meta_faturamento || 0,
     conversao_meta: row.meta_conversao || 0,
+    vendas_meta: row.meta_vendas || 0,
+    ticket_medio_meta: row.meta_ticket_medio || 0,
+    contratos_meta: row.meta_contratos || 0,
   };
 }
 
@@ -625,6 +628,9 @@ export function usePipelineData(actorName: string) {
       meta_reunioes_realizadas: goal.reunioes_realizadas_meta,
       meta_faturamento: goal.faturamento_meta,
       meta_conversao: goal.conversao_meta,
+      meta_vendas: goal.vendas_meta ?? 0,
+      meta_ticket_medio: goal.ticket_medio_meta ?? 0,
+      meta_contratos: goal.contratos_meta ?? 0,
     }, { onConflict: "closer,mes" });
 
     updateGoalsState(prev => {
