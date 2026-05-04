@@ -34,7 +34,7 @@ const Index = () => {
   const activeTab = location.pathname.replace("/", "") || "pipeline";
   const { profile } = useAuth();
   const pipelineName = profile?.nome ?? "Admin";
-  const { cards, goals } = usePipelineData(pipelineName);
+  const { cards, goals, upsertGoal } = usePipelineData(pipelineName);
   const pipelineOwners = [...new Set(cards.map(c => c.owner).filter(Boolean))] as string[];
 
   // Marketing overrides from internal DB
@@ -316,7 +316,7 @@ const Index = () => {
 
           {/* Farol Tab — kept mounted to preserve state and avoid reload flicker */}
           <div className={activeTab === "farol" ? "" : "hidden"}>
-            <FarolPanel cards={cards} goals={goals} owners={pipelineOwners} />
+            <FarolPanel cards={cards} goals={goals} owners={pipelineOwners} onSaveGoal={upsertGoal} />
           </div>
 
           {/* Ajuda Tab — kept mounted */}
