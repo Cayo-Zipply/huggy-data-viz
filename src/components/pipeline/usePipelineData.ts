@@ -628,6 +628,9 @@ export function usePipelineData(actorName: string) {
       meta_reunioes_realizadas: goal.reunioes_realizadas_meta,
       meta_faturamento: goal.faturamento_meta,
       meta_conversao: goal.conversao_meta,
+      meta_vendas: goal.vendas_meta ?? 0,
+      meta_ticket_medio: goal.ticket_medio_meta ?? 0,
+      meta_contratos: goal.contratos_meta ?? 0,
     }, { onConflict: "closer,mes" });
 
     updateGoalsState(prev => {
