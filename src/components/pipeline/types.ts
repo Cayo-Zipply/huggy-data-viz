@@ -91,6 +91,9 @@ export interface PipelineGoal {
   reunioes_realizadas_meta: number;
   faturamento_meta: number;
   conversao_meta: number;
+  vendas_meta?: number;
+  ticket_medio_meta?: number;
+  contratos_meta?: number;
 }
 
 export const CLOSERS = ["Cayo", "Stephanie", "Fillipe"] as const;
