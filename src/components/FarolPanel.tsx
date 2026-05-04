@@ -759,9 +759,12 @@ function EditGoalsDialog({
               <tr className="border-b border-border">
                 <th className="text-left p-2">Pessoa</th>
                 <th className="text-right p-2">Faturamento</th>
-                <th className="text-right p-2">Reuniões Marcadas</th>
-                <th className="text-right p-2">Reuniões Realizadas</th>
-                <th className="text-right p-2">Conversão %</th>
+                <th className="text-right p-2">R. Marcadas</th>
+                <th className="text-right p-2">R. Realizadas</th>
+                <th className="text-right p-2">Conv %</th>
+                <th className="text-right p-2">Vendas</th>
+                <th className="text-right p-2">Tkt Médio</th>
+                <th className="text-right p-2">Contratos</th>
               </tr>
             </thead>
             <tbody>
@@ -769,9 +772,12 @@ function EditGoalsDialog({
                 <tr key={n} className="border-b border-border/50">
                   <td className="p-2 font-medium">{n}</td>
                   <td className="p-2"><input type="number" className="w-28 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.faturamento_meta || 0} onChange={e => upd(n, "faturamento_meta", Number(e.target.value))} /></td>
-                  <td className="p-2"><input type="number" className="w-20 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.reunioes_marcadas_meta || 0} onChange={e => upd(n, "reunioes_marcadas_meta", Number(e.target.value))} /></td>
-                  <td className="p-2"><input type="number" className="w-20 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.reunioes_realizadas_meta || 0} onChange={e => upd(n, "reunioes_realizadas_meta", Number(e.target.value))} /></td>
-                  <td className="p-2"><input type="number" className="w-20 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.conversao_meta || 0} onChange={e => upd(n, "conversao_meta", Number(e.target.value))} /></td>
+                  <td className="p-2"><input type="number" className="w-16 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.reunioes_marcadas_meta || 0} onChange={e => upd(n, "reunioes_marcadas_meta", Number(e.target.value))} /></td>
+                  <td className="p-2"><input type="number" className="w-16 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.reunioes_realizadas_meta || 0} onChange={e => upd(n, "reunioes_realizadas_meta", Number(e.target.value))} /></td>
+                  <td className="p-2"><input type="number" className="w-16 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.conversao_meta || 0} onChange={e => upd(n, "conversao_meta", Number(e.target.value))} /></td>
+                  <td className="p-2"><input type="number" className="w-16 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.vendas_meta || 0} onChange={e => upd(n, "vendas_meta" as any, Number(e.target.value))} /></td>
+                  <td className="p-2"><input type="number" className="w-24 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.ticket_medio_meta || 0} onChange={e => upd(n, "ticket_medio_meta" as any, Number(e.target.value))} /></td>
+                  <td className="p-2"><input type="number" className="w-16 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.contratos_meta || 0} onChange={e => upd(n, "contratos_meta" as any, Number(e.target.value))} /></td>
                 </tr>
               ))}
             </tbody>
