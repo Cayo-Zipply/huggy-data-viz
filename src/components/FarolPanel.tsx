@@ -79,8 +79,9 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     () => reachedInMonth(cards, ["reuniao_marcada"], start, end),
     [cards, start, end]
   );
+  // Tudo que entrou em reuniao_realizada OU passou para frente (link_enviado/contrato_assinado) conta como reunião realizada
   const reunioesRealizadas = useMemo(
-    () => reachedInMonth(cards, ["reuniao_realizada", "reuniao_agendada"], start, end),
+    () => reachedInMonth(cards, ["reuniao_realizada", "link_enviado", "contrato_assinado"], start, end),
     [cards, start, end]
   );
   const noShowsMes = useMemo(
