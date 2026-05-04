@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 // Status de contrato considerados como "fechado" para meta de contratos
-const CONTRATO_FECHADO_STATUS = new Set(["enviado", "enviado_whatsapp", "gerado", "assinado"]);
+const CONTRATO_FECHADO_STATUS = new Set(["assinado"]);
 function getContratoDate(c: PipelineCard): string | null {
   return c.zapsign_signed_at || c.contrato_preparado_em || null;
 }
@@ -168,12 +168,20 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
       return d >= start && d <= end;
     });
   }, [cards, start, end]);
+  // Métricas auxiliares (independentes de "fechado") para o card de contratos
   const contratosEnviados = useMemo(
-    () => contratosMes.filter(c => c.contrato_status === "enviado" || c.contrato_status === "enviado_whatsapp" || c.contrato_status === "gerado").length,
-    [contratosMes]
+    () => cards.filter(c => {
+      const st = c.contrato_status;
+      if (st !== "enviado" && st !== "enviado_whatsapp" && st !== "gerado") return false;
+      const ref = getContratoDate(c);
+      if (!ref) return false;
+      const d = new Date(ref);
+      return d >= start && d <= end;
+    }).length,
+    [cards, start, end]
   );
   const contratosAssinados = useMemo(
-    () => contratosMes.filter(c => c.contrato_status === "assinado" || !!c.zapsign_signed_at).length,
+    () => contratosMes.length,
     [contratosMes]
   );
 
@@ -197,7 +205,8 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   const inboundData = useMemo(() => {
     const rows = closerRows
       .map(closer => {
-        const ganhos = ganhosMes.filter(c => c.owner === closer);
+        // "Vendas" e "Contratos" são a mesma métrica — usamos contratos como fonte única de verdade
+        const ganhos = contratosMes.filter(c => c.owner === closer);
         const vendas = ganhos.length;
         const realizado = ganhos.reduce((s, c) => s + (c.deal_value || 0), 0);
         const goal = goals.find(g => g.closer === closer && g.month === monthKey);
@@ -214,13 +223,13 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         const atingTotal = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
         const rrCloser = reunioesRealizadas.filter(c => c.owner === closer).length;
         const conv = rrCloser > 0 ? Math.round((vendas / rrCloser) * 100) : 0;
-        const contratos = contratosMes.filter(c => c.owner === closer).length;
+        const contratos = vendas; // mesma métrica
         return { closer, vendas, realizado, meta, metaAteAlvo, projecao, falta, diferenca, pctMeta, atingTotal, conv, ticket, tktProjetado, contratos, unassigned: 0 };
       })
       .filter(r => visibleByName(r.closer, r.vendas > 0));
 
     // Sem responsável (closer)
-    const semOwnerGanhos = ganhosMes.filter(c => !c.owner);
+    const semOwnerGanhos = contratosMes.filter(c => !c.owner);
     const semOwnerReuniao = reunioesRealizadas.filter(c => !c.owner);
     if (semOwnerGanhos.length || semOwnerReuniao.length) {
       const realizado = semOwnerGanhos.reduce((s, c) => s + (c.deal_value || 0), 0);
@@ -228,12 +237,12 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         closer: "Sem responsável",
         vendas: semOwnerGanhos.length,
         realizado, meta: 0, metaAteAlvo: 0, projecao: 0, falta: 0, diferenca: 0, pctMeta: 0, atingTotal: 0,
-        conv: 0, ticket: 0, tktProjetado: 0, contratos: contratosMes.filter(c => !c.owner).length,
+        conv: 0, ticket: 0, tktProjetado: 0, contratos: semOwnerGanhos.length,
         unassigned: semOwnerGanhos.length + semOwnerReuniao.length,
       });
     }
     return rows;
-  }, [closerRows, ganhosMes, reunioesRealizadas, contratosMes, goals, monthKey, passedBD, ratio, fatorPace]);
+  }, [closerRows, contratosMes, reunioesRealizadas, goals, monthKey, passedBD, ratio, fatorPace]);
 
   const inboundTotal = useMemo(() => {
     const vendas = inboundData.reduce((s, d) => s + d.vendas, 0);
@@ -261,7 +270,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         const rm = reunioesMarcadas.filter(c => c.owner === sdr).length;
         const rr = reunioesRealizadas.filter(c => c.owner === sdr).length;
         const ns = noShowsMes.filter(c => c.owner === sdr).length;
-        const vendas = ganhosMes.filter(c => c.owner === sdr).length;
+        const vendas = contratosMes.filter(c => c.owner === sdr).length;
         const goal = goals.find(g => g.closer === sdr && g.month === monthKey);
         const meta = goal?.reunioes_marcadas_meta || 0;
         const metaRR = goal?.reunioes_realizadas_meta || 0;
@@ -521,7 +530,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
           <TableHeader>
             <TableRow>
               <TableHead className="text-[10px]">Closer</TableHead>
-              <TableHead className="text-[10px] text-center">Vendas</TableHead>
+              
               <TableHead className="text-[10px] text-right">Realizado</TableHead>
               <TableHead className="text-[10px] text-right">Meta</TableHead>
               <TableHead className="text-[10px] text-right">Meta até {dataAlvoLabel}</TableHead>
@@ -548,7 +557,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
                     {d.closer}
                   </div>
                 </TableCell>
-                <TableCell className="text-xs text-center">{d.vendas}</TableCell>
+                
                 <TableCell className="text-xs text-right">{formatBRL(d.realizado)}</TableCell>
                 <TableCell className="text-xs text-right">{formatBRL(d.meta)}</TableCell>
                 <TableCell className="text-xs text-right text-muted-foreground">{formatBRL(d.metaAteAlvo)}</TableCell>
@@ -564,7 +573,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
             ))}
             <TableRow className="bg-muted/30 font-bold">
               <TableCell className="text-xs font-bold">Total</TableCell>
-              <TableCell className="text-xs text-center font-bold">{inboundTotal.vendas}</TableCell>
+              
               <TableCell className="text-xs text-right font-bold">{formatBRL(inboundTotal.realizado)}</TableCell>
               <TableCell className="text-xs text-right font-bold">{formatBRL(inboundTotal.meta)}</TableCell>
               <TableCell className="text-xs text-right font-bold text-muted-foreground">{formatBRL(inboundTotal.metaAteAlvo)}</TableCell>
