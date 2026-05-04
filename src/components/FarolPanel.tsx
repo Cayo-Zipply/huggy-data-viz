@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 // Status de contrato considerados como "fechado" para meta de contratos
-const CONTRATO_FECHADO_STATUS = new Set(["enviado", "enviado_whatsapp", "gerado", "assinado"]);
+const CONTRATO_FECHADO_STATUS = new Set(["assinado"]);
 function getContratoDate(c: PipelineCard): string | null {
   return c.zapsign_signed_at || c.contrato_preparado_em || null;
 }
