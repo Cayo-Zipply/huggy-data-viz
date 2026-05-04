@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 128" fill="none">
+  <rect x="8" y="8" width="112" height="112" rx="14" fill="#0A0A0A"/>
+  <path d="M20 20 H44 M20 20 V44 M108 108 H84 M108 108 V84" stroke="#B68B57" stroke-width="4"/>
+  <g stroke="#F5F1EA" stroke-width="2.2" fill="none" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M44 100 H84"/>
+    <path d="M50 100 L54 74 H74 L78 100"/>
+    <rect x="57" y="56" width="14" height="16"/>
+  </g>
+  <rect x="58.5" y="58" width="11" height="12" fill="#B68B57"/>
+  <path d="M55 56 L64 46 L73 56 Z" fill="#F5F1EA"/>
+  <circle cx="64" cy="42" r="2" fill="#B68B57"/>
+  <text x="148" y="74" font-family="'Cormorant Garamond', Georgia, serif" font-size="42" font-weight="500" letter-spacing="8" fill="#F5F1EA">O FAROL</text>
+  <text x="150" y="98" font-family="Inter, sans-serif" font-size="11" letter-spacing="4" fill="#B68B57">PENA QUADROS · PAINEL COMERCIAL</text>
+</svg>

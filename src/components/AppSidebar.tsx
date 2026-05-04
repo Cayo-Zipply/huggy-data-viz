@@ -54,10 +54,13 @@ export function AppSidebar() {
   return (
     <aside className="w-56 shrink-0 bg-sidebar-background border-r border-sidebar-border flex flex-col h-screen sticky top-0">
       {/* Logo */}
-      <div className="p-4 border-b border-sidebar-border">
-        <h1 className="text-base font-bold text-sidebar-foreground tracking-tight">
-          O Farol
-        </h1>
+      <div className="p-4 border-b border-sidebar-border flex items-center gap-3">
+        <img src="/brand/farol-icon.svg" alt="" className="h-8 w-8 hidden dark:block" />
+        <img src="/brand/farol-icon-mono.svg" alt="" className="h-8 w-8 dark:hidden block" />
+        <div className="leading-tight">
+          <h1 className="font-serif-display text-base text-sidebar-foreground">O FAROL</h1>
+          <p className="text-[9px] uppercase tracking-[0.2em] text-primary">Pena Quadros</p>
+        </div>
       </div>
 
       {/* Nav */}

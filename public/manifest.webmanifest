@@ -1,0 +1,10 @@
+{
+  "name": "O Farol",
+  "short_name": "O Farol",
+  "icons": [
+    { "src": "/brand/farol-icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "background_color": "#0A0A0A",
+  "theme_color": "#B68B57",
+  "display": "standalone"
+}

@@ -59,16 +59,34 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[hsl(var(--primary)/0.1)] to-background">
-      <div className="bg-card border border-border rounded-2xl p-10 max-w-[420px] w-full mx-4 shadow-xl">
-        {/* Brand */}
-        <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-6 text-primary-foreground text-2xl font-bold">
-              OF
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
+      {/* L-frame bronze */}
+      <div className="pointer-events-none absolute inset-6 sm:inset-10">
+        <div className="absolute top-0 left-0 w-24 h-px bg-primary" />
+        <div className="absolute top-0 left-0 h-24 w-px bg-primary" />
+        <div className="absolute bottom-0 right-0 w-24 h-px bg-primary" />
+        <div className="absolute bottom-0 right-0 h-24 w-px bg-primary" />
+      </div>
 
-        <h1 className="text-2xl font-bold text-foreground text-center mb-1">
-            O Farol
+      <div className="bg-card border border-primary/30 rounded-lg p-10 max-w-[420px] w-full mx-4 shadow-2xl relative">
+        {/* Brand */}
+        <img
+          src="/brand/farol-icon.svg"
+          alt="O Farol"
+          className="w-16 h-16 mx-auto mb-6 dark:block hidden"
+        />
+        <img
+          src="/brand/farol-icon-mono.svg"
+          alt="O Farol"
+          className="w-16 h-16 mx-auto mb-6 dark:hidden block"
+        />
+
+        <h1 className="font-serif-display text-3xl text-foreground text-center mb-2">
+          O FAROL
         </h1>
+        <p className="text-[10px] uppercase tracking-[0.3em] text-primary text-center mb-2">
+          Pena Quadros · Painel Comercial
+        </p>
         <p className="text-sm text-muted-foreground text-center mb-8">
           {forgotMode
             ? "Informe seu e-mail para receber o link de recuperação"
