@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -14,90 +12,109 @@ html {
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    /* Tema CLARO — creme + bronze */
+    --background: 45 30% 95%;
+    --foreground: 0 0% 4%;
 
-    --card: 0 0% 98%;
-    --card-foreground: 222 47% 11%;
+    --card: 45 30% 97%;
+    --card-foreground: 0 0% 4%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover: 45 30% 97%;
+    --popover-foreground: 0 0% 4%;
 
-    --primary: 207 90% 54%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 29 36% 53%;
+    --primary-foreground: 45 30% 97%;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 45 20% 90%;
+    --secondary-foreground: 0 0% 10%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 45 15% 88%;
+    --muted-foreground: 29 20% 35%;
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 29 36% 53%;
+    --accent-foreground: 45 30% 97%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 70% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 76% 36%;
+    --success: 135 40% 35%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 222 47% 6%;
+    --warning: 38 80% 45%;
+    --warning-foreground: 0 0% 4%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 207 90% 54%;
+    --border: 29 20% 80%;
+    --input: 29 20% 85%;
+    --ring: 29 36% 53%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    --chart-blue: 207 90% 54%;
-    --chart-orange: 25 95% 53%;
-    --chart-green: 142 76% 36%;
-    --chart-yellow: 45 93% 47%;
-    --chart-cyan: 187 92% 42%;
+    --chart-blue: 29 36% 53%;
+    --chart-orange: 25 70% 50%;
+    --chart-green: 135 40% 35%;
+    --chart-yellow: 38 80% 45%;
+    --chart-cyan: 29 30% 65%;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 207 90% 54%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 207 90% 54%;
+    --sidebar-background: 45 30% 97%;
+    --sidebar-foreground: 0 0% 4%;
+    --sidebar-primary: 29 36% 53%;
+    --sidebar-primary-foreground: 45 30% 97%;
+    --sidebar-accent: 45 20% 90%;
+    --sidebar-accent-foreground: 0 0% 4%;
+    --sidebar-border: 29 20% 80%;
+    --sidebar-ring: 29 36% 53%;
   }
 
   .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 207 90% 54%;
-    --primary-foreground: 222 47% 6%;
-    --secondary: 222 47% 14%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 222 47% 14%;
-    --muted-foreground: 215 20% 55%;
-    --accent: 207 90% 54%;
-    --accent-foreground: 222 47% 6%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 40% 98%;
-    --success: 142 76% 36%;
-    --success-foreground: 210 40% 98%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 222 47% 6%;
-    --border: 222 47% 16%;
-    --input: 222 47% 16%;
-    --ring: 207 90% 54%;
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 207 90% 54%;
-    --sidebar-primary-foreground: 222 47% 6%;
-    --sidebar-accent: 222 47% 14%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 47% 16%;
-    --sidebar-ring: 207 90% 54%;
+    /* Tema ESCURO — preto + bronze */
+    --background: 0 0% 4%;
+    --foreground: 45 30% 95%;
+
+    --card: 0 0% 7%;
+    --card-foreground: 45 30% 95%;
+
+    --popover: 0 0% 7%;
+    --popover-foreground: 45 30% 95%;
+
+    --primary: 29 36% 53%;
+    --primary-foreground: 0 0% 4%;
+
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 45 30% 95%;
+
+    --muted: 0 0% 12%;
+    --muted-foreground: 29 30% 70%;
+
+    --accent: 29 36% 53%;
+    --accent-foreground: 0 0% 4%;
+
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 135 35% 50%;
+    --success-foreground: 0 0% 4%;
+
+    --warning: 38 75% 55%;
+    --warning-foreground: 0 0% 4%;
+
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 29 36% 53%;
+
+    --chart-blue: 29 36% 53%;
+    --chart-orange: 25 75% 60%;
+    --chart-green: 135 35% 50%;
+    --chart-yellow: 38 75% 55%;
+    --chart-cyan: 29 30% 70%;
+
+    --sidebar-background: 0 0% 4%;
+    --sidebar-foreground: 45 30% 95%;
+    --sidebar-primary: 29 36% 53%;
+    --sidebar-primary-foreground: 0 0% 4%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 45 30% 95%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 29 36% 53%;
   }
 }
 
@@ -108,12 +125,19 @@ html {
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
   }
 }
 
 @layer utilities {
   .gradient-funnel {
-    background: linear-gradient(180deg, hsl(var(--chart-cyan)) 0%, hsl(var(--primary)) 100%);
+    background: linear-gradient(180deg, hsl(var(--primary) / 0.7) 0%, hsl(var(--primary)) 100%);
+  }
+  .font-serif-display {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    letter-spacing: 0.3em;
+  }
+  .label-eyebrow {
+    @apply text-xs uppercase tracking-[0.2em] text-primary;
   }
 }
