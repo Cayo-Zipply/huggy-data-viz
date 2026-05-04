@@ -175,6 +175,7 @@ export function ContractTab({ card, onUpdate }: Props) {
             contrato_status: "gerado" as ContractStatus,
             contrato_file_url: data.file_url,
             contrato_preparado_em: new Date().toISOString(),
+            stage: "link_enviado" as Stage,
           });
         }
       } else if (action === "download") {
