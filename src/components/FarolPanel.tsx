@@ -158,6 +158,25 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     });
   }, [cards, start, end]);
 
+  // ── Contratos no mês (status enviado/gerado/assinado, datado por zapsign_signed_at || contrato_preparado_em) ──
+  const contratosMes = useMemo(() => {
+    return cards.filter(c => {
+      if (!c.contrato_status || !CONTRATO_FECHADO_STATUS.has(c.contrato_status)) return false;
+      const ref = getContratoDate(c);
+      if (!ref) return false;
+      const d = new Date(ref);
+      return d >= start && d <= end;
+    });
+  }, [cards, start, end]);
+  const contratosEnviados = useMemo(
+    () => contratosMes.filter(c => c.contrato_status === "enviado" || c.contrato_status === "enviado_whatsapp" || c.contrato_status === "gerado").length,
+    [contratosMes]
+  );
+  const contratosAssinados = useMemo(
+    () => contratosMes.filter(c => c.contrato_status === "assinado" || !!c.zapsign_signed_at).length,
+    [contratosMes]
+  );
+
   // Regras de visibilidade no Farol:
   // - Stephanie nunca aparece
   // - Fabrício e Henrique só aparecem se tiverem venda no mês
