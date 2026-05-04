@@ -239,15 +239,18 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     const vendas = inboundData.reduce((s, d) => s + d.vendas, 0);
     const realizado = inboundData.reduce((s, d) => s + d.realizado, 0);
     const meta = inboundData.reduce((s, d) => s + d.meta, 0);
+    const metaAteAlvo = meta * fatorPace;
     const projecao = inboundData.reduce((s, d) => s + d.projecao, 0);
     const falta = inboundData.reduce((s, d) => s + d.falta, 0);
     const diferenca = projecao - meta;
     const pctMeta = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
+    const atingTotal = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
     const rrTotal = reunioesRealizadas.length;
     const conv = rrTotal > 0 ? Math.round((vendas / rrTotal) * 100) : 0;
     const ticket = vendas > 0 ? realizado / vendas : 0;
-    return { vendas, realizado, meta, projecao, falta, diferenca, pctMeta, conv, ticket };
-  }, [inboundData, reunioesRealizadas]);
+    const contratos = inboundData.reduce((s, d) => s + d.contratos, 0);
+    return { vendas, realizado, meta, metaAteAlvo, projecao, falta, diferenca, pctMeta, atingTotal, conv, ticket, contratos };
+  }, [inboundData, reunioesRealizadas, fatorPace]);
 
   // ── PRÉ-VENDAS (SDR) ──
   const sdrRows = useMemo(() => sdrNames, [sdrNames]);
