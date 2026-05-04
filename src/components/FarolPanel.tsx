@@ -373,7 +373,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     const fatFaltaPace = Math.max(0, fatMetaAteAlvo - realizadoFat);
     const fatAtingTotal = metaFatTotal > 0 ? (projecaoFat / metaFatTotal) * 100 : 0;
 
-    const rrTotal = preVendasTotal.rr;
+    const rrTotal = reunioesRealizadas.length;
     const metaRRTotal = preVendasTotal.metaRR;
     const rrMetaAteAlvo = metaRRTotal * fatorPace;
     const rrPaceDiario = (metaRRTotal > 0 && du.restantes > 0)
@@ -414,7 +414,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         meta: metaContratosTotal, metaAteAlvo: contMetaAteAlvo, gap: contGap, projecao: contProjecao,
       },
     };
-  }, [inboundData, inboundTotal, preVendasTotal, closerRows, goals, monthKey, passedBD, ratio, fatorPace, du.restantes, contratosMes.length, contratosEnviados, contratosAssinados]);
+  }, [inboundData, inboundTotal, preVendasTotal, reunioesRealizadas.length, closerRows, goals, monthKey, passedBD, ratio, fatorPace, du.restantes, contratosMes.length, contratosEnviados, contratosAssinados]);
 
 
   return (
