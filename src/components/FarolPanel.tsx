@@ -727,7 +727,7 @@ function EditGoalsDialog({
     const map: Record<string, PipelineGoal> = {};
     allNames.forEach(n => {
       const g = goals.find(x => x.closer === n && x.month === monthKey);
-      map[n] = g || { closer: n, month: monthKey, reunioes_marcadas_meta: 0, reunioes_realizadas_meta: 0, faturamento_meta: 0, conversao_meta: 0 };
+      map[n] = g || { closer: n, month: monthKey, reunioes_marcadas_meta: 0, reunioes_realizadas_meta: 0, faturamento_meta: 0, conversao_meta: 0, vendas_meta: 0, ticket_medio_meta: 0, contratos_meta: 0 };
     });
     return map;
   }, [allNames, goals, monthKey]);
