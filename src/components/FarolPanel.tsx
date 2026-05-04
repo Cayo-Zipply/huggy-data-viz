@@ -565,7 +565,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
             ))}
             <TableRow className="bg-muted/30 font-bold">
               <TableCell className="text-xs font-bold">Total</TableCell>
-              <TableCell className="text-xs text-center font-bold">{inboundTotal.vendas}</TableCell>
+              
               <TableCell className="text-xs text-right font-bold">{formatBRL(inboundTotal.realizado)}</TableCell>
               <TableCell className="text-xs text-right font-bold">{formatBRL(inboundTotal.meta)}</TableCell>
               <TableCell className="text-xs text-right font-bold text-muted-foreground">{formatBRL(inboundTotal.metaAteAlvo)}</TableCell>
