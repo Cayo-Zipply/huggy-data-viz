@@ -264,12 +264,20 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         const vendas = ganhosMes.filter(c => c.owner === sdr).length;
         const goal = goals.find(g => g.closer === sdr && g.month === monthKey);
         const meta = goal?.reunioes_marcadas_meta || 0;
+        const metaRR = goal?.reunioes_realizadas_meta || 0;
+        const metaAteAlvo = (metaRR || meta) * fatorPace;
         const projecao = passedBD > 0 ? Math.round(rm * ratio) : 0;
+        const projecaoRR = passedBD > 0 ? Math.round(rr * ratio) : 0;
         const falta = Math.max(0, meta - rm);
         const projetado = passedBD > 0 ? Math.round(rr * ratio) : 0;
         const pctMeta = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
+        const atingTotal = metaRR > 0 ? Math.round((projecaoRR / metaRR) * 100) : 0;
+        const restantes = du.restantes;
+        const paceDiarioRR = (metaRR > 0 && restantes > 0)
+          ? Math.max(0, Math.ceil((metaRR - rr) / restantes))
+          : 0;
         const conv = rm > 0 ? Math.round((rr / rm) * 100) : 0;
-        return { sdr, vendas, reunioesMarcadas: rm, reunioesRealizadas: rr, meta, projecao, falta, projetado, pctMeta, conv, noShows: ns, unassigned: 0 };
+        return { sdr, vendas, reunioesMarcadas: rm, reunioesRealizadas: rr, meta, metaRR, metaAteAlvo, projecao, falta, projetado, pctMeta, atingTotal, paceDiarioRR, conv, noShows: ns, unassigned: 0 };
       })
       .filter(r => visibleByName(r.sdr, r.vendas > 0));
 
@@ -279,25 +287,31 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     if (rmSem || rrSem || nsSem) {
       rows.push({
         sdr: "Sem responsável", vendas: 0,
-        reunioesMarcadas: rmSem, reunioesRealizadas: rrSem, meta: 0, projecao: 0, falta: 0, projetado: 0,
-        pctMeta: 0, conv: 0, noShows: nsSem, unassigned: rmSem + rrSem + nsSem,
+        reunioesMarcadas: rmSem, reunioesRealizadas: rrSem, meta: 0, metaRR: 0, metaAteAlvo: 0, projecao: 0, falta: 0, projetado: 0,
+        pctMeta: 0, atingTotal: 0, paceDiarioRR: 0, conv: 0, noShows: nsSem, unassigned: rmSem + rrSem + nsSem,
       });
     }
     return rows;
-  }, [sdrRows, reunioesMarcadas, reunioesRealizadas, noShowsMes, ganhosMes, goals, monthKey, passedBD, ratio]);
+  }, [sdrRows, reunioesMarcadas, reunioesRealizadas, noShowsMes, ganhosMes, goals, monthKey, passedBD, ratio, fatorPace, du.restantes]);
 
   const preVendasTotal = useMemo(() => {
     const rm = preVendasData.reduce((s, d) => s + d.reunioesMarcadas, 0);
     const rr = preVendasData.reduce((s, d) => s + d.reunioesRealizadas, 0);
     const meta = preVendasData.reduce((s, d) => s + d.meta, 0);
+    const metaRR = preVendasData.reduce((s, d) => s + d.metaRR, 0);
     const projecao = preVendasData.reduce((s, d) => s + d.projecao, 0);
     const falta = preVendasData.reduce((s, d) => s + d.falta, 0);
     const projetado = preVendasData.reduce((s, d) => s + d.projetado, 0);
     const pctMeta = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
+    const atingTotal = metaRR > 0 ? Math.round((projetado / metaRR) * 100) : 0;
     const conv = rm > 0 ? Math.round((rr / rm) * 100) : 0;
     const noShows = preVendasData.reduce((s, d) => s + d.noShows, 0);
     const taxaShow = rm > 0 ? ((rr / rm) * 100).toFixed(1) : "0";
-    return { rm, rr, meta, projecao, falta, projetado, pctMeta, conv, noShows, taxaShow };
+    const metaAteAlvo = (metaRR || meta) * fatorPace;
+    const paceDiarioRR = (metaRR > 0 && du.restantes > 0)
+      ? Math.max(0, Math.ceil((metaRR - rr) / du.restantes))
+      : 0;
+    return { rm, rr, meta, metaRR, metaAteAlvo, projecao, falta, projetado, pctMeta, atingTotal, paceDiarioRR, conv, noShows, taxaShow };
   }, [preVendasData]);
 
   // ── Cards sem responsável (lista para o modal) ──
