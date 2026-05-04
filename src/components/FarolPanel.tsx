@@ -262,7 +262,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         const rm = reunioesMarcadas.filter(c => c.owner === sdr).length;
         const rr = reunioesRealizadas.filter(c => c.owner === sdr).length;
         const ns = noShowsMes.filter(c => c.owner === sdr).length;
-        const vendas = ganhosMes.filter(c => c.owner === sdr).length;
+        const vendas = contratosMes.filter(c => c.owner === sdr).length;
         const goal = goals.find(g => g.closer === sdr && g.month === monthKey);
         const meta = goal?.reunioes_marcadas_meta || 0;
         const metaRR = goal?.reunioes_realizadas_meta || 0;
