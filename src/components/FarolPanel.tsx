@@ -88,6 +88,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
 
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1));
+  const [dataAlvo, setDataAlvo] = useState<Date>(() => new Date());
   const [editGoalsOpen, setEditGoalsOpen] = useState(false);
   const [manageTeamOpen, setManageTeamOpen] = useState(false);
   const [unassignedOpen, setUnassignedOpen] = useState(false);
@@ -97,9 +98,29 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   const month = selectedMonth.getMonth();
   const start = useMemo(() => new Date(year, month, 1), [year, month]);
   const end = useMemo(() => new Date(year, month + 1, 0, 23, 59, 59), [year, month]);
-  const totalBD = getBusinessDays(year, month);
-  const passedBD = getBusinessDaysPassed(year, month, now);
+
+  // Reseta dataAlvo quando o mês muda (vai pro último dia se mês passado, hoje se mês atual)
+  useEffect(() => {
+    const today = new Date();
+    if (year === today.getFullYear() && month === today.getMonth()) {
+      setDataAlvo(new Date());
+    } else if (new Date(year, month + 1, 0) < today) {
+      setDataAlvo(new Date(year, month + 1, 0));
+    } else {
+      setDataAlvo(new Date(year, month, 1));
+    }
+  }, [year, month]);
+
+  const du = useMemo(() => diasUteisDoMes(year, month, dataAlvo), [year, month, dataAlvo]);
+  const totalBD = du.total;
+  const passedBD = du.ateAlvo;
   const ratio = passedBD > 0 ? totalBD / passedBD : 1;
+  const fatorPace = du.fatorPace;
+  const isToday = (() => {
+    const t = new Date();
+    return dataAlvo.getDate() === t.getDate() && dataAlvo.getMonth() === t.getMonth() && dataAlvo.getFullYear() === t.getFullYear();
+  })();
+  const dataAlvoLabel = dataAlvo.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 
   const months = useMemo(() => {
     const arr: Date[] = [];
