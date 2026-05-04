@@ -84,8 +84,15 @@ export default function Login() {
         <h1 className="font-serif-display text-3xl text-foreground text-center mb-2">
           O FAROL
         </h1>
-        <p className="text-[10px] uppercase tracking-[0.3em] text-primary text-center mb-8">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-primary text-center mb-2">
           Pena Quadros · Painel Comercial
+        </p>
+        <p className="text-sm text-muted-foreground text-center mb-8">
+          {forgotMode
+            ? "Informe seu e-mail para receber o link de recuperação"
+            : isSignUp
+              ? "Crie sua conta para acessar o painel"
+              : "Acesse o painel com suas credenciais"}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
