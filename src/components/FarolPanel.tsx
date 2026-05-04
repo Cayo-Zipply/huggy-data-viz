@@ -414,7 +414,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         meta: metaContratosTotal, metaAteAlvo: contMetaAteAlvo, gap: contGap, projecao: contProjecao,
       },
     };
-  }, [inboundData, inboundTotal, preVendasTotal, closerRows, goals, monthKey, passedBD, ratio, fatorPace, du.restantes, contratosMes.length, contratosEnviados, contratosAssinados]);
+  }, [inboundData, inboundTotal, preVendasTotal, reunioesRealizadas.length, closerRows, goals, monthKey, passedBD, ratio, fatorPace, du.restantes, contratosMes.length, contratosEnviados, contratosAssinados]);
 
 
   return (
