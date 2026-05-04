@@ -549,7 +549,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
                     {d.closer}
                   </div>
                 </TableCell>
-                <TableCell className="text-xs text-center">{d.vendas}</TableCell>
+                
                 <TableCell className="text-xs text-right">{formatBRL(d.realizado)}</TableCell>
                 <TableCell className="text-xs text-right">{formatBRL(d.meta)}</TableCell>
                 <TableCell className="text-xs text-right text-muted-foreground">{formatBRL(d.metaAteAlvo)}</TableCell>
