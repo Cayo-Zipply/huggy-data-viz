@@ -35,6 +35,40 @@ function getMonthKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
+const FERIADOS_BR_2026 = new Set([
+  "2026-01-01","2026-02-16","2026-02-17","2026-04-03",
+  "2026-04-21","2026-05-01","2026-06-04","2026-09-07",
+  "2026-10-12","2026-11-02","2026-11-15","2026-12-25",
+]);
+
+function fmtISO(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
+function diasUteisDoMes(year: number, month: number, dataAlvo: Date) {
+  const inicio = new Date(year, month, 1);
+  const fim = new Date(year, month + 1, 0);
+  const ref = dataAlvo < inicio ? inicio : dataAlvo > fim ? fim : dataAlvo;
+  let total = 0, ateAlvo = 0;
+  const d = new Date(year, month, 1);
+  while (d.getMonth() === month) {
+    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+    const isHoliday = FERIADOS_BR_2026.has(fmtISO(d));
+    if (!isWeekend && !isHoliday) {
+      total++;
+      if (d <= ref) ateAlvo++;
+    }
+    d.setDate(d.getDate() + 1);
+  }
+  return {
+    total,
+    ateAlvo,
+    restantes: Math.max(0, total - ateAlvo),
+    fatorPace: total > 0 ? ateAlvo / total : 0,
+    refDate: ref,
+  };
+}
+
 const REUNIAO_STAGES: Stage[] = ["reuniao_marcada", "reuniao_agendada", "no_show", "reuniao_realizada", "link_enviado", "contrato_assinado"];
 
 // Counts cards that "reached" a given stage during [start, end] — based on history events
