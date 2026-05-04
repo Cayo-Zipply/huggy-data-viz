@@ -22,13 +22,13 @@ import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const NAV_ITEMS = [
+  { key: "/farol", label: "Farol", icon: Gauge, roles: ["admin"] },
   { key: "/pipeline", label: "Pipeline", icon: Kanban, roles: ["admin", "sdr", "closer"] },
   { key: "/marketing", label: "Dashboard", icon: BarChart3, roles: ["admin"] },
   { key: "/comparativo", label: "Comparativo", icon: GitCompare, roles: ["admin"] },
   { key: "/rentabilidade", label: "Rentabilidade", icon: DollarSign, roles: ["admin"] },
   { key: "/consolidado", label: "Consolidado", icon: PieChart, roles: ["admin"] },
   { key: "/contratos", label: "Contratos", icon: FileText, roles: ["admin"] },
-  { key: "/farol", label: "Farol", icon: Gauge, roles: ["admin"] },
   { key: "/usuarios", label: "Usuários", icon: UsersRound, roles: ["admin"] },
   { key: "/configuracoes", label: "Configurações", icon: Settings, roles: ["admin"] },
   { key: "/feedbacks", label: "Feedbacks", icon: MessageSquarePlus, roles: ["admin"] },
