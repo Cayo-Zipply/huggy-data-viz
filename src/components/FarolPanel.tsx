@@ -167,11 +167,14 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     });
   }, [cards, start, end]);
 
-  // ── Contratos no mês (status enviado/gerado/assinado, datado por zapsign_signed_at || contrato_preparado_em) ──
+  // ── Contratos fechados no mês (mesma métrica que "vendas"): lead em ganho OU stage contrato_assinado ──
   const contratosMes = useMemo(() => {
     return cards.filter(c => {
-      if (!c.contrato_status || !CONTRATO_FECHADO_STATUS.has(c.contrato_status)) return false;
-      const ref = getContratoDate(c);
+      const isGanho = c.lead_status === "ganho";
+      const isContratoAssinadoStage = c.stage === "contrato_assinado";
+      const isStatusAssinado = c.contrato_status && CONTRATO_FECHADO_STATUS.has(c.contrato_status);
+      if (!isGanho && !isContratoAssinadoStage && !isStatusAssinado) return false;
+      const ref = c.data_venda || c.zapsign_signed_at || c.contrato_preparado_em || c.stage_changed_at || c.created_at;
       if (!ref) return false;
       const d = new Date(ref);
       return d >= start && d <= end;
