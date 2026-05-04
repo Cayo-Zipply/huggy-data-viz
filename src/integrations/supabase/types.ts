@@ -387,6 +387,9 @@ export type Database = {
           created_at: string | null
           faturamento_meta: number | null
           id: string
+          meta_contratos: number | null
+          meta_ticket_medio: number | null
+          meta_vendas: number | null
           month: string
           reunioes_marcadas_meta: number | null
           reunioes_realizadas_meta: number | null
@@ -398,6 +401,9 @@ export type Database = {
           created_at?: string | null
           faturamento_meta?: number | null
           id?: string
+          meta_contratos?: number | null
+          meta_ticket_medio?: number | null
+          meta_vendas?: number | null
           month: string
           reunioes_marcadas_meta?: number | null
           reunioes_realizadas_meta?: number | null
@@ -409,6 +415,9 @@ export type Database = {
           created_at?: string | null
           faturamento_meta?: number | null
           id?: string
+          meta_contratos?: number | null
+          meta_ticket_medio?: number | null
+          meta_vendas?: number | null
           month?: string
           reunioes_marcadas_meta?: number | null
           reunioes_realizadas_meta?: number | null
