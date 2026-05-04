@@ -483,7 +483,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
       {/* Weekend conversion card */}
       <div className="bg-card border border-border rounded-xl p-4">
         <h4 className="text-sm font-semibold text-foreground mb-3">Conversão: Dia útil vs. Fim de semana</h4>
-        <WeekendConversionCard cards={vis} />
+        <WeekendConversionCard cards={visMes} />
       </div>
 
       {/* CPF vs CNPJ metrics */}
@@ -549,7 +549,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
 
       {/* Tag conversion */}
       {labels.length > 0 && (
-        <TagConversion cards={vis} labels={labels} getCardLabels={getCardLabels} />
+        <TagConversion cards={visMes} labels={labels} getCardLabels={getCardLabels} />
       )}
       </div>
 
