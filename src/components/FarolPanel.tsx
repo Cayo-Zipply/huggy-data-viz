@@ -195,7 +195,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
       });
     }
     return rows;
-  }, [sdrRows, reunioesMarcadas, reunioesRealizadas, noShowsMes, goals, monthKey, passedBD, ratio]);
+  }, [sdrRows, reunioesMarcadas, reunioesRealizadas, noShowsMes, ganhosMes, goals, monthKey, passedBD, ratio]);
 
   const preVendasTotal = useMemo(() => {
     const rm = preVendasData.reduce((s, d) => s + d.reunioesMarcadas, 0);
