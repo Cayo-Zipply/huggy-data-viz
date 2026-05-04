@@ -171,7 +171,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   const contratosMes = useMemo(() => {
     return cards.filter(c => {
       const isGanho = c.lead_status === "ganho";
-      const isContratoAssinadoStage = c.stage === "contrato_assinado" || c.sdr_stage === "contrato_assinado" || c.closer_stage === "contrato_assinado";
+      const isContratoAssinadoStage = c.stage === "contrato_assinado";
       const isStatusAssinado = c.contrato_status && CONTRATO_FECHADO_STATUS.has(c.contrato_status);
       if (!isGanho && !isContratoAssinadoStage && !isStatusAssinado) return false;
       const ref = c.data_venda || c.zapsign_signed_at || c.contrato_preparado_em || c.stage_changed_at || c.created_at;
