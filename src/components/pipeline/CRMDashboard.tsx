@@ -238,21 +238,21 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
   const timeData = useMemo(() => {
     return STAGE_ORDER.map(s => {
       const durations: number[] = [];
-      vis.forEach(c => {
+      visMes.forEach(c => {
         c.history.filter(h => h.from === s && h.duration_days != null).forEach(h => durations.push(h.duration_days!));
         if (c.stage === s && c.lead_status === "aberto") durations.push(daysDiff(c.stage_changed_at));
       });
       const avg = durations.length ? durations.reduce((a, b) => a + b, 0) / durations.length : 0;
       return { name: STAGE_CONFIG[s].label, dias: Math.round(avg * 10) / 10 };
     });
-  }, [vis]);
+  }, [visMes]);
 
   const funnelData = useMemo(() => {
     return STAGE_ORDER.map(s => ({
       stage: STAGE_CONFIG[s].label,
-      count: cardsReachedStage(vis, s).length,
+      count: cardsReachedStage(visMes, s).length,
     }));
-  }, [vis]);
+  }, [visMes]);
   const maxFunnel = funnelData[0]?.count || 1;
 
   const barColors = ["hsl(207,90%,54%)", "hsl(270,70%,60%)", "hsl(142,76%,36%)", "hsl(207,90%,54%)", "hsl(45,93%,47%)", "hsl(25,95%,53%)", "hsl(142,76%,50%)"];
