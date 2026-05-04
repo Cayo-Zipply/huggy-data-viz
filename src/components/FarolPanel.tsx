@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { PipelineCard, PipelineGoal, Stage } from "./pipeline/types";
 import { formatBRL, getBusinessDays, getBusinessDaysPassed } from "./pipeline/types";
@@ -44,7 +44,6 @@ function reachedInMonth(cards: PipelineCard[], stages: Stage[], start: Date, end
 export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
-  const { toast } = useToast();
   const { members, closerNames, sdrNames, refetch } = useTeamMembers();
 
   const now = new Date();
