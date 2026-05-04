@@ -338,13 +338,14 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
         </label>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-3">
         <MetricBox label="Leads Ativos" value={ativos.length.toString()} />
         <MetricBox label="Valor Bruto" value={formatBRL(valorBrutoPipe)} />
         <MetricBox label="Valor Ponderado" value={formatBRL(valorPondPipe)} />
         <MetricBox label="Ganhos" value={ganhos.length.toString()} sub={formatBRL(valorGanhos)} />
         <MetricBox label="Perdidos" value={perdidos.length.toString()} sub={`${taxaPerda}% de perda`} />
         <MetricBox label="Conversão" value={`${taxaConv}%`} />
+        <MetricBox label="Ciclo de Venda" value={cicloVenda != null ? `${cicloVenda} dias` : "—"} sub="criação → fechamento" />
       </div>
 
       {/* Month comparison */}
