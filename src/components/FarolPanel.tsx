@@ -70,6 +70,35 @@ function diasUteisDoMes(year: number, month: number, dataAlvo: Date) {
 }
 
 const REUNIAO_STAGES: Stage[] = ["reuniao_marcada", "reuniao_agendada", "no_show", "reuniao_realizada", "link_enviado", "contrato_assinado"];
+const REUNIAO_REALIZADA_CURRENT_STAGES = new Set<Stage>(["reuniao_realizada", "link_enviado", "contrato_assinado"]);
+
+function normalizeStageName(stage: string | null | undefined): Stage | null {
+  const value = (stage || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, "_");
+  if (value === "fez_contato" || value === "lead") return "fez_contato";
+  if (value === "conectado") return "conectado";
+  if (value === "sql" || value === "contestado") return "sql";
+  if (value === "reuniao_marcada") return "reuniao_marcada";
+  if (value === "reuniao_agendada") return "reuniao_agendada";
+  if (value === "no_show") return "no_show";
+  if (value === "reuniao_realizada") return "reuniao_realizada";
+  if (value === "link_enviado") return "link_enviado";
+  if (value === "contrato_assinado") return "contrato_assinado";
+  return null;
+}
+
+function dateInRange(dateLike: string | null | undefined, start: Date, end: Date) {
+  if (!dateLike) return false;
+  const d = new Date(dateLike);
+  return !Number.isNaN(d.getTime()) && d >= start && d <= end;
+}
+
+function getReuniaoRealizadaDate(c: PipelineCard): string | null {
+  const historyHit = (c.history || []).find(h => normalizeStageName(h.to) === "reuniao_realizada");
+  if (historyHit?.at) return historyHit.at;
+  if (c.data_reuniao) return c.data_reuniao;
+  if (c.stage === "reuniao_realizada") return c.stage_changed_at || c.created_at;
+  return null;
+}
 
 // Counts cards that "reached" a given stage during [start, end] — based on history events
 // OR cards currently at the stage with stage_changed_at within the window (fallback when history is missing).
@@ -77,14 +106,14 @@ function reachedInMonth(cards: PipelineCard[], stages: Stage[], start: Date, end
   const set = new Set(stages);
   return cards.filter(c => {
     const inHistory = (c.history || []).some(h => {
-      if (!set.has(h.to as Stage)) return false;
-      const d = new Date(h.at);
-      return d >= start && d <= end;
+      const to = normalizeStageName(h.to);
+      if (!to || !set.has(to)) return false;
+      return dateInRange(h.at, start, end);
     });
     if (inHistory) return true;
     if (set.has(c.stage as Stage)) {
-      const ref = c.stage_changed_at ? new Date(c.stage_changed_at) : new Date(c.created_at);
-      return ref >= start && ref <= end;
+      const ref = c.stage_changed_at || c.created_at;
+      return dateInRange(ref, start, end);
     }
     return false;
   });
@@ -149,11 +178,11 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     () => reachedInMonth(cards, ["reuniao_marcada"], start, end),
     [cards, start, end]
   );
-  // Fiel ao pipe: cards ATUALMENTE em reuniao_realizada / link_enviado / contrato_assinado
-  // (mesmo critério visual das colunas do Kanban — sem filtro de data)
+  // Fiel ao pipe + ao mês: cards ATUALMENTE em reunião realizada ou etapas à frente,
+  // mas só quando a data da reunião realizada pertence ao mês selecionado.
   const reunioesRealizadas = useMemo(
-    () => cards.filter(c => c.stage === "reuniao_realizada" || c.stage === "link_enviado" || c.stage === "contrato_assinado"),
-    [cards]
+    () => cards.filter(c => REUNIAO_REALIZADA_CURRENT_STAGES.has(c.stage) && dateInRange(getReuniaoRealizadaDate(c), start, end)),
+    [cards, start, end]
   );
   const noShowsMes = useMemo(
     () => reachedInMonth(cards, ["no_show"], start, end),
