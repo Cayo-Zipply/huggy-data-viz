@@ -130,12 +130,49 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   const [editGoalsOpen, setEditGoalsOpen] = useState(false);
   const [manageTeamOpen, setManageTeamOpen] = useState(false);
   const [unassignedOpen, setUnassignedOpen] = useState(false);
+  const [weekFilter, setWeekFilter] = useState<string>("all"); // "all" | "1".."5"
 
   const monthKey = getMonthKey(selectedMonth);
   const year = selectedMonth.getFullYear();
   const month = selectedMonth.getMonth();
-  const start = useMemo(() => new Date(year, month, 1), [year, month]);
-  const end = useMemo(() => new Date(year, month + 1, 0, 23, 59, 59), [year, month]);
+
+  // Recorte semanal opcional: divide o mês em janelas de 7 dias (1-7, 8-14, ...).
+  const weekRanges = useMemo(() => {
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const ranges: { idx: number; start: Date; end: Date; label: string }[] = [];
+    let day = 1, idx = 1;
+    while (day <= lastDay) {
+      const sDay = day;
+      const eDay = Math.min(day + 6, lastDay);
+      ranges.push({
+        idx,
+        start: new Date(year, month, sDay),
+        end: new Date(year, month, eDay, 23, 59, 59),
+        label: `Sem ${idx} (${String(sDay).padStart(2, "0")}–${String(eDay).padStart(2, "0")})`,
+      });
+      day = eDay + 1; idx++;
+    }
+    return ranges;
+  }, [year, month]);
+
+  const activeWeek = weekFilter !== "all" ? weekRanges.find(w => String(w.idx) === weekFilter) : null;
+  const start = useMemo(
+    () => activeWeek ? activeWeek.start : new Date(year, month, 1),
+    [year, month, activeWeek]
+  );
+  const end = useMemo(
+    () => activeWeek ? activeWeek.end : new Date(year, month + 1, 0, 23, 59, 59),
+    [year, month, activeWeek]
+  );
+
+  // Persistir filtro de semana por mês
+  useEffect(() => {
+    const saved = localStorage.getItem(`farol_week_${monthKey}`);
+    setWeekFilter(saved || "all");
+  }, [monthKey]);
+  useEffect(() => {
+    localStorage.setItem(`farol_week_${monthKey}`, weekFilter);
+  }, [monthKey, weekFilter]);
 
   // Reseta dataAlvo quando o mês muda (vai pro último dia se mês passado, hoje se mês atual)
   useEffect(() => {
