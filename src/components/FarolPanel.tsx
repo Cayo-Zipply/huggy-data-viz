@@ -408,7 +408,10 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     const fatAtingTotal = metaFatTotal > 0 ? (projecaoFat / metaFatTotal) * 100 : 0;
 
     const rrTotal = reunioesRealizadas.length;
-    const metaRRTotal = preVendasTotal.metaRR;
+    const metaRRTotal = closerRows.reduce((s, c) => {
+      const g = goals.find(x => x.closer === c && x.month === monthKey);
+      return s + (g?.reunioes_realizadas_meta || 0);
+    }, 0);
     const rrMetaAteAlvo = metaRRTotal * fatorPace;
     const rrPaceDiario = (metaRRTotal > 0 && du.restantes > 0)
       ? Math.max(0, Math.ceil((metaRRTotal - rrTotal) / du.restantes))
@@ -870,7 +873,6 @@ function EditGoalsDialog({
               <tr className="border-b border-border">
                 <th className="text-left p-2">Pessoa</th>
                 <th className="text-right p-2">Faturamento</th>
-                <th className="text-right p-2">R. Marcadas</th>
                 <th className="text-right p-2">R. Realizadas</th>
                 <th className="text-right p-2">Conv %</th>
                 <th className="text-right p-2">Tkt Médio</th>
@@ -882,7 +884,7 @@ function EditGoalsDialog({
                 <tr key={n} className="border-b border-border/50">
                   <td className="p-2 font-medium">{n}</td>
                   <td className="p-2"><input type="number" className="w-28 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.faturamento_meta || 0} onChange={e => upd(n, "faturamento_meta", Number(e.target.value))} /></td>
-                  <td className="p-2"><input type="number" className="w-16 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.reunioes_marcadas_meta || 0} onChange={e => upd(n, "reunioes_marcadas_meta", Number(e.target.value))} /></td>
+                  
                   <td className="p-2"><input type="number" className="w-16 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.reunioes_realizadas_meta || 0} onChange={e => upd(n, "reunioes_realizadas_meta", Number(e.target.value))} /></td>
                   <td className="p-2"><input type="number" className="w-16 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.conversao_meta || 0} onChange={e => upd(n, "conversao_meta", Number(e.target.value))} /></td>
                   <td className="p-2"><input type="number" className="w-24 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.ticket_medio_meta || 0} onChange={e => upd(n, "ticket_medio_meta" as any, Number(e.target.value))} /></td>
