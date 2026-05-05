@@ -798,7 +798,20 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
                   </div>
                 </TableCell>
                 <TableCell className="text-xs text-center">{d.reunioesMarcadas}</TableCell>
-                <TableCell className="text-xs text-center">{d.reunioesRealizadas}</TableCell>
+                <TableCell className="text-xs text-center">
+                  <button
+                    className="hover:underline hover:text-primary disabled:hover:no-underline disabled:hover:text-inherit"
+                    disabled={d.reunioesRealizadas === 0}
+                    onClick={() => {
+                      const owner = d.sdr;
+                      const list = reunioesRealizadas.filter(c => (c.owner || "Sem responsável") === owner);
+                      setDebugRR({ owner, cards: list });
+                    }}
+                    title="Ver leads contados"
+                  >
+                    {d.reunioesRealizadas}
+                  </button>
+                </TableCell>
                 <TableCell className="text-xs text-center">{d.metaRR || d.meta}</TableCell>
                 <TableCell className="text-xs text-center text-muted-foreground">{Math.round(d.metaAteAlvo)}</TableCell>
                 <TableCell className="text-xs text-center">{d.projecao}</TableCell>
