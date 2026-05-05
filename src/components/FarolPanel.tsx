@@ -216,8 +216,11 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   // O closer corrige essas informações antes da reunião, então o pipe Closer é a fonte confiável.
   const closerCards = useMemo(() => cards.filter(c => c.pipe === "closer"), [cards]);
 
+  // Reuniões marcadas (no contexto de PRÉ-VENDAS / SDR): qualquer card que
+  // entrou em "reunião agendada" no pipe Closer também conta como "reunião marcada".
+  // Critério: união de quem alcançou reuniao_marcada OU reuniao_agendada no pipe Closer.
   const reunioesMarcadas = useMemo(
-    () => reachedInMonth(closerCards, ["reuniao_marcada"], start, end),
+    () => reachedInMonth(closerCards, ["reuniao_marcada", "reuniao_agendada"], start, end),
     [closerCards, start, end]
   );
   const reunioesRealizadas = useMemo(
