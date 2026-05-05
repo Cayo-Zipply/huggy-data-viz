@@ -149,10 +149,11 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     () => reachedInMonth(cards, ["reuniao_marcada"], start, end),
     [cards, start, end]
   );
-  // Tudo que entrou em reuniao_realizada OU passou para frente (link_enviado/contrato_assinado) conta como reunião realizada
+  // Fiel ao pipe: cards ATUALMENTE em reuniao_realizada / link_enviado / contrato_assinado
+  // (mesmo critério visual das colunas do Kanban — sem filtro de data)
   const reunioesRealizadas = useMemo(
-    () => reachedInMonth(cards, ["reuniao_realizada", "link_enviado", "contrato_assinado"], start, end),
-    [cards, start, end]
+    () => cards.filter(c => c.stage === "reuniao_realizada" || c.stage === "link_enviado" || c.stage === "contrato_assinado"),
+    [cards]
   );
   const noShowsMes = useMemo(
     () => reachedInMonth(cards, ["no_show"], start, end),
