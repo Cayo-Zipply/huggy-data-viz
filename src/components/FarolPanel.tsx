@@ -130,12 +130,49 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   const [editGoalsOpen, setEditGoalsOpen] = useState(false);
   const [manageTeamOpen, setManageTeamOpen] = useState(false);
   const [unassignedOpen, setUnassignedOpen] = useState(false);
+  const [weekFilter, setWeekFilter] = useState<string>("all"); // "all" | "1".."5"
 
   const monthKey = getMonthKey(selectedMonth);
   const year = selectedMonth.getFullYear();
   const month = selectedMonth.getMonth();
-  const start = useMemo(() => new Date(year, month, 1), [year, month]);
-  const end = useMemo(() => new Date(year, month + 1, 0, 23, 59, 59), [year, month]);
+
+  // Recorte semanal opcional: divide o mês em janelas de 7 dias (1-7, 8-14, ...).
+  const weekRanges = useMemo(() => {
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    const ranges: { idx: number; start: Date; end: Date; label: string }[] = [];
+    let day = 1, idx = 1;
+    while (day <= lastDay) {
+      const sDay = day;
+      const eDay = Math.min(day + 6, lastDay);
+      ranges.push({
+        idx,
+        start: new Date(year, month, sDay),
+        end: new Date(year, month, eDay, 23, 59, 59),
+        label: `Sem ${idx} (${String(sDay).padStart(2, "0")}–${String(eDay).padStart(2, "0")})`,
+      });
+      day = eDay + 1; idx++;
+    }
+    return ranges;
+  }, [year, month]);
+
+  const activeWeek = weekFilter !== "all" ? weekRanges.find(w => String(w.idx) === weekFilter) : null;
+  const start = useMemo(
+    () => activeWeek ? activeWeek.start : new Date(year, month, 1),
+    [year, month, activeWeek]
+  );
+  const end = useMemo(
+    () => activeWeek ? activeWeek.end : new Date(year, month + 1, 0, 23, 59, 59),
+    [year, month, activeWeek]
+  );
+
+  // Persistir filtro de semana por mês
+  useEffect(() => {
+    const saved = localStorage.getItem(`farol_week_${monthKey}`);
+    setWeekFilter(saved || "all");
+  }, [monthKey]);
+  useEffect(() => {
+    localStorage.setItem(`farol_week_${monthKey}`, weekFilter);
+  }, [monthKey, weekFilter]);
 
   // Reseta dataAlvo quando o mês muda (vai pro último dia se mês passado, hoje se mês atual)
   useEffect(() => {
@@ -512,6 +549,17 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
               </option>
             ))}
           </select>
+          <select
+            value={weekFilter}
+            onChange={e => setWeekFilter(e.target.value)}
+            className="text-xs border border-border rounded-lg px-2 py-1.5 bg-background text-foreground"
+            title="Recorte semanal dentro do mês"
+          >
+            <option value="all">Mês inteiro</option>
+            {weekRanges.map(w => (
+              <option key={w.idx} value={String(w.idx)}>{w.label}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -844,10 +892,33 @@ function EditGoalsDialog({
     });
     return map;
   }, [allNames, goals, monthKey]);
+  const draftKey = `farol_goals_draft_${monthKey}`;
   const [draft, setDraft] = useState<Record<string, PipelineGoal>>(initial);
 
-  // reset when dialog opens
-  useEffect(() => { if (open) setDraft(initial); }, [open, initial]);
+  // Ao abrir: carrega rascunho do localStorage (se houver) ou usa valores atuais
+  useEffect(() => {
+    if (!open) return;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // mescla com initial para garantir que todos os nomes existam
+        const merged: Record<string, PipelineGoal> = { ...initial };
+        Object.keys(parsed || {}).forEach(k => {
+          if (merged[k]) merged[k] = { ...merged[k], ...parsed[k] };
+        });
+        setDraft(merged);
+        return;
+      }
+    } catch {}
+    setDraft(initial);
+  }, [open, initial, draftKey]);
+
+  // Persiste rascunho a cada alteração (só enquanto o diálogo está aberto)
+  useEffect(() => {
+    if (!open) return;
+    try { localStorage.setItem(draftKey, JSON.stringify(draft)); } catch {}
+  }, [draft, open, draftKey]);
 
   const upd = (name: string, key: keyof PipelineGoal, val: number) => {
     setDraft(prev => ({ ...prev, [name]: { ...prev[name], [key]: val } }));
@@ -859,6 +930,7 @@ function EditGoalsDialog({
       const g = { ...draft[name], vendas_meta: draft[name]?.contratos_meta ?? 0 } as PipelineGoal;
       await onSave(g);
     }
+    try { localStorage.removeItem(draftKey); } catch {}
     onOpenChange(false);
   };
 
