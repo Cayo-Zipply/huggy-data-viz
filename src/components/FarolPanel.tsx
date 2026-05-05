@@ -276,8 +276,12 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     ),
     [closerCards, start, end]
   );
+  // Reuniões realizadas: TODO card no pipe Closer que tenha PASSADO pela etapa
+  // "reuniao_realizada" (ou avançou para link_enviado / contrato_assinado) dentro
+  // do mês — mesma lógica de "marcadas", para que cards que avançaram/voltaram
+  // continuem sendo contabilizados.
   const reunioesRealizadas = useMemo(
-    () => closerCards.filter(c => REUNIAO_REALIZADA_CURRENT_STAGES.has(c.stage) && dateInRange(getReuniaoRealizadaDate(c), start, end)),
+    () => reachedInMonth(closerCards, ["reuniao_realizada", "link_enviado", "contrato_assinado"], start, end),
     [closerCards, start, end]
   );
   const noShowsMes = useMemo(
