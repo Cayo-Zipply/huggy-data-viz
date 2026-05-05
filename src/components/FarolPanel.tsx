@@ -230,7 +230,9 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         const tktProjetado = (goal?.ticket_medio_meta && goal.ticket_medio_meta > 0)
           ? goal.ticket_medio_meta
           : (goal?.vendas_meta && goal.vendas_meta > 0 && meta > 0 ? meta / goal.vendas_meta : 0);
-        const falta = ticket > 0 ? Math.max(0, Math.ceil((meta - realizado) / ticket)) : 0;
+        // Falta = nº de vendas necessárias para atingir a META ATÉ HOJE, usando o Ticket Médio Projetado
+        const tktParaFalta = tktProjetado > 0 ? tktProjetado : ticket;
+        const falta = tktParaFalta > 0 ? Math.max(0, Math.ceil((metaAteAlvo - realizado) / tktParaFalta)) : 0;
         const diferenca = projecao - meta;
         const pctMeta = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
         const atingTotal = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
