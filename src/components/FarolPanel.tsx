@@ -851,7 +851,9 @@ function EditGoalsDialog({
 
   const save = async () => {
     for (const name of allNames) {
-      await onSave(draft[name]);
+      // Vendas e Contratos são a mesma métrica — espelha contratos_meta em vendas_meta
+      const g = { ...draft[name], vendas_meta: draft[name]?.contratos_meta ?? 0 } as PipelineGoal;
+      await onSave(g);
     }
     onOpenChange(false);
   };
