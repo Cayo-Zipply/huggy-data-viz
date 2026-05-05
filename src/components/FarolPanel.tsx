@@ -264,28 +264,33 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   // O closer corrige essas informações antes da reunião, então o pipe Closer é a fonte confiável.
   const closerCards = useMemo(() => cards.filter(c => c.pipe === "closer"), [cards]);
 
-  // Reuniões marcadas (PRÉ-VENDAS / SDR): TODO card no pipe Closer que tenha
-  // passado por "reunião agendada" conta — incluindo os que avançaram para
-  // no_show, realizada, link_enviado ou contrato_assinado (passaram pela agendada).
+  // Espelho do pipe: contamos pelo ESTADO ATUAL do card (não pelo histórico).
+  // Se um card voltar de "realizada" para "agendada", ele deixa de contar como realizada.
+  const currentStageInMonth = (stages: Stage[]) => {
+    const set = new Set(stages);
+    return closerCards.filter(c => {
+      if (!set.has(c.stage as Stage)) return false;
+      const ref = c.stage_changed_at || c.data_reuniao || c.created_at;
+      return dateInRange(ref, start, end);
+    });
+  };
+
+  // Reuniões marcadas (PRÉ-VENDAS / SDR): card atualmente em qualquer etapa que
+  // já passou da agendada (inclui no_show, realizada, link_enviado, contrato_assinado).
   const reunioesMarcadas = useMemo(
-    () => reachedInMonth(
-      closerCards,
-      ["reuniao_marcada", "reuniao_agendada", "no_show", "reuniao_realizada", "link_enviado", "contrato_assinado"],
-      start,
-      end
-    ),
+    () => currentStageInMonth([
+      "reuniao_marcada", "reuniao_agendada", "no_show",
+      "reuniao_realizada", "link_enviado", "contrato_assinado"
+    ]),
     [closerCards, start, end]
   );
-  // Reuniões realizadas: TODO card no pipe Closer que tenha PASSADO pela etapa
-  // "reuniao_realizada" (ou avançou para link_enviado / contrato_assinado) dentro
-  // do mês — mesma lógica de "marcadas", para que cards que avançaram/voltaram
-  // continuem sendo contabilizados.
+  // Reuniões realizadas: card atualmente em realizada/link_enviado/contrato_assinado.
   const reunioesRealizadas = useMemo(
-    () => reachedInMonth(closerCards, ["reuniao_realizada", "link_enviado", "contrato_assinado"], start, end),
+    () => currentStageInMonth(["reuniao_realizada", "link_enviado", "contrato_assinado"]),
     [closerCards, start, end]
   );
   const noShowsMes = useMemo(
-    () => reachedInMonth(closerCards, ["no_show"], start, end),
+    () => currentStageInMonth(["no_show"]),
     [closerCards, start, end]
   );
   const ganhosMes = useMemo(() => {
