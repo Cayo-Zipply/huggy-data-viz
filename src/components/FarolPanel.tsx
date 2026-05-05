@@ -349,7 +349,13 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   }, [inboundData, reunioesRealizadas, fatorPace]);
 
   // ── PRÉ-VENDAS (SDR) ──
-  const sdrRows = useMemo(() => sdrNames, [sdrNames]);
+  // Em PRÉ-VENDAS contamos também os closers: assim que um card recebe um closer
+  // como responsável (no pipe Closer), aquele closer ganha +1 "reunião marcada"
+  // somente nesta tabela. Por isso unificamos sdrs + closers como linhas de pré-vendas.
+  const sdrRows = useMemo(
+    () => Array.from(new Set([...sdrNames, ...closerNames])),
+    [sdrNames, closerNames]
+  );
 
   const preVendasData = useMemo(() => {
     const rows = sdrRows
