@@ -884,7 +884,7 @@ function EditGoalsDialog({
                 <tr key={n} className="border-b border-border/50">
                   <td className="p-2 font-medium">{n}</td>
                   <td className="p-2"><input type="number" className="w-28 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.faturamento_meta || 0} onChange={e => upd(n, "faturamento_meta", Number(e.target.value))} /></td>
-                  <td className="p-2"><input type="number" className="w-16 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.reunioes_marcadas_meta || 0} onChange={e => upd(n, "reunioes_marcadas_meta", Number(e.target.value))} /></td>
+                  
                   <td className="p-2"><input type="number" className="w-16 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.reunioes_realizadas_meta || 0} onChange={e => upd(n, "reunioes_realizadas_meta", Number(e.target.value))} /></td>
                   <td className="p-2"><input type="number" className="w-16 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.conversao_meta || 0} onChange={e => upd(n, "conversao_meta", Number(e.target.value))} /></td>
                   <td className="p-2"><input type="number" className="w-24 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.ticket_medio_meta || 0} onChange={e => upd(n, "ticket_medio_meta" as any, Number(e.target.value))} /></td>
