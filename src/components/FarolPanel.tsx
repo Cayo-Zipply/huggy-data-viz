@@ -549,6 +549,17 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
               </option>
             ))}
           </select>
+          <select
+            value={weekFilter}
+            onChange={e => setWeekFilter(e.target.value)}
+            className="text-xs border border-border rounded-lg px-2 py-1.5 bg-background text-foreground"
+            title="Recorte semanal dentro do mês"
+          >
+            <option value="all">Mês inteiro</option>
+            {weekRanges.map(w => (
+              <option key={w.idx} value={String(w.idx)}>{w.label}</option>
+            ))}
+          </select>
         </div>
       </div>
 
