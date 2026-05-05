@@ -808,7 +808,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
               <TableCell className="text-xs font-bold">Total</TableCell>
               <TableCell className="text-xs text-center font-bold">{preVendasTotal.rm}</TableCell>
               <TableCell className="text-xs text-center font-bold">{preVendasTotal.rr}</TableCell>
-              <TableCell className="text-xs text-center font-bold">{preVendasTotal.meta}</TableCell>
+              <TableCell className="text-xs text-center font-bold">{preVendasTotal.metaRR || preVendasTotal.meta}</TableCell>
               <TableCell className="text-xs text-center font-bold text-muted-foreground">{Math.round(preVendasTotal.metaAteAlvo)}</TableCell>
               <TableCell className="text-xs text-center font-bold">{preVendasTotal.projecao}</TableCell>
               <TableCell className="text-xs text-center font-bold">{preVendasTotal.atingTotal}%</TableCell>
