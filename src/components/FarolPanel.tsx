@@ -260,7 +260,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         const ticket = vendas > 0 ? realizado / vendas : 0;
         const tktProjetado = (goal?.ticket_medio_meta && goal.ticket_medio_meta > 0)
           ? goal.ticket_medio_meta
-          : (goal?.vendas_meta && goal.vendas_meta > 0 && meta > 0 ? meta / goal.vendas_meta : 0);
+          : (goal?.contratos_meta && goal.contratos_meta > 0 && meta > 0 ? meta / goal.contratos_meta : (goal?.vendas_meta && goal.vendas_meta > 0 && meta > 0 ? meta / goal.vendas_meta : 0));
         // Falta = nº de vendas necessárias para atingir a META ATÉ HOJE, usando o Ticket Médio Projetado
         const tktParaFalta = tktProjetado > 0 ? tktProjetado : ticket;
         const falta = tktParaFalta > 0 ? Math.max(0, Math.ceil((metaAteAlvo - realizado) / tktParaFalta)) : 0;
@@ -851,7 +851,9 @@ function EditGoalsDialog({
 
   const save = async () => {
     for (const name of allNames) {
-      await onSave(draft[name]);
+      // Vendas e Contratos são a mesma métrica — espelha contratos_meta em vendas_meta
+      const g = { ...draft[name], vendas_meta: draft[name]?.contratos_meta ?? 0 } as PipelineGoal;
+      await onSave(g);
     }
     onOpenChange(false);
   };
@@ -871,7 +873,6 @@ function EditGoalsDialog({
                 <th className="text-right p-2">R. Marcadas</th>
                 <th className="text-right p-2">R. Realizadas</th>
                 <th className="text-right p-2">Conv %</th>
-                <th className="text-right p-2">Vendas</th>
                 <th className="text-right p-2">Tkt Médio</th>
                 <th className="text-right p-2">Contratos</th>
               </tr>
@@ -884,7 +885,6 @@ function EditGoalsDialog({
                   <td className="p-2"><input type="number" className="w-16 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.reunioes_marcadas_meta || 0} onChange={e => upd(n, "reunioes_marcadas_meta", Number(e.target.value))} /></td>
                   <td className="p-2"><input type="number" className="w-16 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.reunioes_realizadas_meta || 0} onChange={e => upd(n, "reunioes_realizadas_meta", Number(e.target.value))} /></td>
                   <td className="p-2"><input type="number" className="w-16 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.conversao_meta || 0} onChange={e => upd(n, "conversao_meta", Number(e.target.value))} /></td>
-                  <td className="p-2"><input type="number" className="w-16 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.vendas_meta || 0} onChange={e => upd(n, "vendas_meta" as any, Number(e.target.value))} /></td>
                   <td className="p-2"><input type="number" className="w-24 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.ticket_medio_meta || 0} onChange={e => upd(n, "ticket_medio_meta" as any, Number(e.target.value))} /></td>
                   <td className="p-2"><input type="number" className="w-16 bg-muted/50 border border-border rounded px-2 py-1 text-right" value={draft[n]?.contratos_meta || 0} onChange={e => upd(n, "contratos_meta" as any, Number(e.target.value))} /></td>
                 </tr>
