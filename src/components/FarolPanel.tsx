@@ -873,7 +873,6 @@ function EditGoalsDialog({
               <tr className="border-b border-border">
                 <th className="text-left p-2">Pessoa</th>
                 <th className="text-right p-2">Faturamento</th>
-                <th className="text-right p-2">R. Marcadas</th>
                 <th className="text-right p-2">R. Realizadas</th>
                 <th className="text-right p-2">Conv %</th>
                 <th className="text-right p-2">Tkt Médio</th>
