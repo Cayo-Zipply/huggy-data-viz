@@ -276,8 +276,12 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     ),
     [closerCards, start, end]
   );
+  // Reuniões realizadas: TODO card no pipe Closer que tenha PASSADO pela etapa
+  // "reuniao_realizada" (ou avançou para link_enviado / contrato_assinado) dentro
+  // do mês — mesma lógica de "marcadas", para que cards que avançaram/voltaram
+  // continuem sendo contabilizados.
   const reunioesRealizadas = useMemo(
-    () => closerCards.filter(c => REUNIAO_REALIZADA_CURRENT_STAGES.has(c.stage) && dateInRange(getReuniaoRealizadaDate(c), start, end)),
+    () => reachedInMonth(closerCards, ["reuniao_realizada", "link_enviado", "contrato_assinado"], start, end),
     [closerCards, start, end]
   );
   const noShowsMes = useMemo(
@@ -789,7 +793,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
                 </TableCell>
                 <TableCell className="text-xs text-center">{d.reunioesMarcadas}</TableCell>
                 <TableCell className="text-xs text-center">{d.reunioesRealizadas}</TableCell>
-                <TableCell className="text-xs text-center">{d.meta}</TableCell>
+                <TableCell className="text-xs text-center">{d.metaRR || d.meta}</TableCell>
                 <TableCell className="text-xs text-center text-muted-foreground">{Math.round(d.metaAteAlvo)}</TableCell>
                 <TableCell className="text-xs text-center">{d.projecao}</TableCell>
                 <TableCell className="text-xs text-center">{d.atingTotal}%</TableCell>
@@ -804,7 +808,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
               <TableCell className="text-xs font-bold">Total</TableCell>
               <TableCell className="text-xs text-center font-bold">{preVendasTotal.rm}</TableCell>
               <TableCell className="text-xs text-center font-bold">{preVendasTotal.rr}</TableCell>
-              <TableCell className="text-xs text-center font-bold">{preVendasTotal.meta}</TableCell>
+              <TableCell className="text-xs text-center font-bold">{preVendasTotal.metaRR || preVendasTotal.meta}</TableCell>
               <TableCell className="text-xs text-center font-bold text-muted-foreground">{Math.round(preVendasTotal.metaAteAlvo)}</TableCell>
               <TableCell className="text-xs text-center font-bold">{preVendasTotal.projecao}</TableCell>
               <TableCell className="text-xs text-center font-bold">{preVendasTotal.atingTotal}%</TableCell>
