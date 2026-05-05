@@ -892,10 +892,33 @@ function EditGoalsDialog({
     });
     return map;
   }, [allNames, goals, monthKey]);
+  const draftKey = `farol_goals_draft_${monthKey}`;
   const [draft, setDraft] = useState<Record<string, PipelineGoal>>(initial);
 
-  // reset when dialog opens
-  useEffect(() => { if (open) setDraft(initial); }, [open, initial]);
+  // Ao abrir: carrega rascunho do localStorage (se houver) ou usa valores atuais
+  useEffect(() => {
+    if (!open) return;
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // mescla com initial para garantir que todos os nomes existam
+        const merged: Record<string, PipelineGoal> = { ...initial };
+        Object.keys(parsed || {}).forEach(k => {
+          if (merged[k]) merged[k] = { ...merged[k], ...parsed[k] };
+        });
+        setDraft(merged);
+        return;
+      }
+    } catch {}
+    setDraft(initial);
+  }, [open, initial, draftKey]);
+
+  // Persiste rascunho a cada alteração (só enquanto o diálogo está aberto)
+  useEffect(() => {
+    if (!open) return;
+    try { localStorage.setItem(draftKey, JSON.stringify(draft)); } catch {}
+  }, [draft, open, draftKey]);
 
   const upd = (name: string, key: keyof PipelineGoal, val: number) => {
     setDraft(prev => ({ ...prev, [name]: { ...prev[name], [key]: val } }));
@@ -907,6 +930,7 @@ function EditGoalsDialog({
       const g = { ...draft[name], vendas_meta: draft[name]?.contratos_meta ?? 0 } as PipelineGoal;
       await onSave(g);
     }
+    try { localStorage.removeItem(draftKey); } catch {}
     onOpenChange(false);
   };
 
