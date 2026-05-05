@@ -173,22 +173,23 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     navigate("/pipeline");
   };
 
-  // ── Reuniões marcadas/realizadas/no-show no mês ──
-  // Critério único para SDR e Closer: considera TODOS os cards (qualquer pipe),
-  // independentemente de terem proprietário atribuído.
-  // - Marcadas: cards que passaram por "reuniao_marcada" no mês
-  // - Realizadas: cards atualmente em "reuniao_realizada" ou estágios posteriores no mês
+  // ── Reuniões marcadas/realizadas/no-show no mês (somente cards no pipe Closer) ──
+  // Critério único para SDR e Closer: usa SOMENTE cards já no pipe Closer,
+  // pois no pipe SDR os dados (nome, e-mail, CNPJ) ainda costumam estar incompletos.
+  // O closer corrige essas informações antes da reunião, então o pipe Closer é a fonte confiável.
+  const closerCards = useMemo(() => cards.filter(c => c.pipe === "closer"), [cards]);
+
   const reunioesMarcadas = useMemo(
-    () => reachedInMonth(cards, ["reuniao_marcada"], start, end),
-    [cards, start, end]
+    () => reachedInMonth(closerCards, ["reuniao_marcada"], start, end),
+    [closerCards, start, end]
   );
   const reunioesRealizadas = useMemo(
-    () => cards.filter(c => REUNIAO_REALIZADA_CURRENT_STAGES.has(c.stage) && dateInRange(getReuniaoRealizadaDate(c), start, end)),
-    [cards, start, end]
+    () => closerCards.filter(c => REUNIAO_REALIZADA_CURRENT_STAGES.has(c.stage) && dateInRange(getReuniaoRealizadaDate(c), start, end)),
+    [closerCards, start, end]
   );
   const noShowsMes = useMemo(
-    () => reachedInMonth(cards, ["no_show"], start, end),
-    [cards, start, end]
+    () => reachedInMonth(closerCards, ["no_show"], start, end),
+    [closerCards, start, end]
   );
   const ganhosMes = useMemo(() => {
     return cards.filter(c => {
