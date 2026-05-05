@@ -159,19 +159,19 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
       const flagKey = `farol_preset_applied_${monthKey}_${name}`;
       if (localStorage.getItem(flagKey)) return;
       const merged: PipelineGoal = {
-        closer: name,
-        month: monthKey,
-        reunioes_marcadas_meta: existing?.reunioes_marcadas_meta || 0,
+        reunioes_marcadas_meta: 0,
         reunioes_realizadas_meta: 0,
         faturamento_meta: 0,
         conversao_meta: 0,
         vendas_meta: 0,
         ticket_medio_meta: 0,
         contratos_meta: 0,
-        ...existing,
+        ...(existing || {}),
+        closer: name,
+        month: monthKey,
         ...preset.data,
         vendas_meta: preset.data.contratos_meta || 0,
-      };
+      } as PipelineGoal;
       Promise.resolve(onSaveGoal(merged)).then(() => {
         try { localStorage.setItem(flagKey, "1"); } catch {}
       });
