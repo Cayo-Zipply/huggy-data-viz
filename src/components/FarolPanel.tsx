@@ -133,6 +133,51 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   const [weekFilter, setWeekFilter] = useState<string>("all"); // "all" | "1".."5"
 
   const monthKey = getMonthKey(selectedMonth);
+
+  // Auto-aplicar metas fixas de Maio/2026 (Cayo, Café, Fillipe) — uma única vez
+  // por closer/mês. Se já existir meta no banco para o closer no mês, NÃO sobrescreve.
+  // Assim o admin não precisa abrir "Editar Metas" todo mês para reaplicar.
+  useEffect(() => {
+    if (!isAdmin || !onSaveGoal) return;
+    if (monthKey !== "2026-05") return;
+    if (!closerNames.length) return;
+    const presets: { match: (n: string) => boolean; data: Partial<PipelineGoal> }[] = [
+      { match: n => /fillipe|filipe/i.test(n), data: { faturamento_meta: 31500, reunioes_realizadas_meta: 60, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 18 } },
+      { match: n => /caf[ée]/i.test(n),       data: { faturamento_meta: 14080, reunioes_realizadas_meta: 40, conversao_meta: 22, ticket_medio_meta: 1600, contratos_meta: 9 } },
+      { match: n => /cayo/i.test(n),          data: { faturamento_meta: 10500, reunioes_realizadas_meta: 20, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 6 } },
+    ];
+    closerNames.forEach(name => {
+      const preset = presets.find(p => p.match(name));
+      if (!preset) return;
+      const existing = goals.find(g => g.closer === name && g.month === monthKey);
+      const hasAny = existing && (
+        (existing.faturamento_meta || 0) > 0 ||
+        (existing.reunioes_realizadas_meta || 0) > 0 ||
+        (existing.contratos_meta || 0) > 0
+      );
+      if (hasAny) return;
+      const flagKey = `farol_preset_applied_${monthKey}_${name}`;
+      if (localStorage.getItem(flagKey)) return;
+      const merged: PipelineGoal = {
+        closer: name,
+        month: monthKey,
+        reunioes_marcadas_meta: existing?.reunioes_marcadas_meta || 0,
+        reunioes_realizadas_meta: 0,
+        faturamento_meta: 0,
+        conversao_meta: 0,
+        vendas_meta: 0,
+        ticket_medio_meta: 0,
+        contratos_meta: 0,
+        ...existing,
+        ...preset.data,
+        vendas_meta: preset.data.contratos_meta || 0,
+      };
+      Promise.resolve(onSaveGoal(merged)).then(() => {
+        try { localStorage.setItem(flagKey, "1"); } catch {}
+      });
+    });
+  }, [isAdmin, onSaveGoal, monthKey, closerNames, goals]);
+
   const year = selectedMonth.getFullYear();
   const month = selectedMonth.getMonth();
 
