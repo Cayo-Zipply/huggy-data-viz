@@ -131,6 +131,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   const [manageTeamOpen, setManageTeamOpen] = useState(false);
   const [unassignedOpen, setUnassignedOpen] = useState(false);
   const [weekFilter, setWeekFilter] = useState<string>("all"); // "all" | "1".."5"
+  const [debugRR, setDebugRR] = useState<{ owner: string; cards: PipelineCard[] } | null>(null);
 
   const monthKey = getMonthKey(selectedMonth);
 
@@ -797,7 +798,20 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
                   </div>
                 </TableCell>
                 <TableCell className="text-xs text-center">{d.reunioesMarcadas}</TableCell>
-                <TableCell className="text-xs text-center">{d.reunioesRealizadas}</TableCell>
+                <TableCell className="text-xs text-center">
+                  <button
+                    className="hover:underline hover:text-primary disabled:hover:no-underline disabled:hover:text-inherit"
+                    disabled={d.reunioesRealizadas === 0}
+                    onClick={() => {
+                      const owner = d.sdr;
+                      const list = reunioesRealizadas.filter(c => (c.owner || "Sem responsável") === owner);
+                      setDebugRR({ owner, cards: list });
+                    }}
+                    title="Ver leads contados"
+                  >
+                    {d.reunioesRealizadas}
+                  </button>
+                </TableCell>
                 <TableCell className="text-xs text-center">{d.metaRR || d.meta}</TableCell>
                 <TableCell className="text-xs text-center text-muted-foreground">{Math.round(d.metaAteAlvo)}</TableCell>
                 <TableCell className="text-xs text-center">{d.projecao}</TableCell>
@@ -880,6 +894,34 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
                 <AlertTriangle className="w-4 h-4 text-destructive" />
               </button>
             ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Debug — leads contados como Reuniões Realizadas */}
+      <Dialog open={!!debugRR} onOpenChange={(o) => !o && setDebugRR(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Reuniões Realizadas — {debugRR?.owner} · {monthLabel}</DialogTitle>
+          </DialogHeader>
+          <div className="text-[11px] text-muted-foreground mb-2">
+            {debugRR?.cards.length} card(s) · stage atual em <code>reuniao_realizada</code>, <code>link_enviado</code> ou <code>contrato_assinado</code> com data dentro do mês.
+          </div>
+          <div className="max-h-[60vh] overflow-auto space-y-1">
+            {debugRR?.cards.map(c => {
+              const ref = c.stage_changed_at || c.data_reuniao || c.created_at;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => { setDebugRR(null); openCard(c.id); }}
+                  className="w-full text-left p-3 border border-border rounded-lg hover:bg-accent transition"
+                >
+                  <div className="text-sm font-medium">{c.nome}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    stage: <strong>{c.stage.replace(/_/g, " ")}</strong> · owner: {c.owner || "—"} · {ref ? new Date(ref).toLocaleString("pt-BR") : "sem data"}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>
