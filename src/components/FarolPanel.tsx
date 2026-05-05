@@ -408,7 +408,10 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     const fatAtingTotal = metaFatTotal > 0 ? (projecaoFat / metaFatTotal) * 100 : 0;
 
     const rrTotal = reunioesRealizadas.length;
-    const metaRRTotal = preVendasTotal.metaRR;
+    const metaRRTotal = closerRows.reduce((s, c) => {
+      const g = goals.find(x => x.closer === c && x.month === monthKey);
+      return s + (g?.reunioes_realizadas_meta || 0);
+    }, 0);
     const rrMetaAteAlvo = metaRRTotal * fatorPace;
     const rrPaceDiario = (metaRRTotal > 0 && du.restantes > 0)
       ? Math.max(0, Math.ceil((metaRRTotal - rrTotal) / du.restantes))
