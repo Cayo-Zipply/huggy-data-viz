@@ -871,7 +871,6 @@ function EditGoalsDialog({
                 <th className="text-right p-2">R. Marcadas</th>
                 <th className="text-right p-2">R. Realizadas</th>
                 <th className="text-right p-2">Conv %</th>
-                <th className="text-right p-2">Vendas</th>
                 <th className="text-right p-2">Tkt Médio</th>
                 <th className="text-right p-2">Contratos</th>
               </tr>
