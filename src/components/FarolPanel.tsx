@@ -897,6 +897,34 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
           </div>
         </DialogContent>
       </Dialog>
+      {/* Debug — leads contados como Reuniões Realizadas */}
+      <Dialog open={!!debugRR} onOpenChange={(o) => !o && setDebugRR(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Reuniões Realizadas — {debugRR?.owner} · {monthLabel}</DialogTitle>
+          </DialogHeader>
+          <div className="text-[11px] text-muted-foreground mb-2">
+            {debugRR?.cards.length} card(s) · stage atual em <code>reuniao_realizada</code>, <code>link_enviado</code> ou <code>contrato_assinado</code> com data dentro do mês.
+          </div>
+          <div className="max-h-[60vh] overflow-auto space-y-1">
+            {debugRR?.cards.map(c => {
+              const ref = c.stage_changed_at || c.data_reuniao || c.created_at;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => { setDebugRR(null); openCard(c.id); }}
+                  className="w-full text-left p-3 border border-border rounded-lg hover:bg-accent transition"
+                >
+                  <div className="text-sm font-medium">{c.nome}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    stage: <strong>{c.stage.replace(/_/g, " ")}</strong> · owner: {c.owner || "—"} · {ref ? new Date(ref).toLocaleString("pt-BR") : "sem data"}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
