@@ -158,7 +158,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
       if (hasAny) return;
       const flagKey = `farol_preset_applied_${monthKey}_${name}`;
       if (localStorage.getItem(flagKey)) return;
-      const merged: PipelineGoal = {
+      const base: PipelineGoal = {
         reunioes_marcadas_meta: 0,
         reunioes_realizadas_meta: 0,
         faturamento_meta: 0,
@@ -169,6 +169,9 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         ...(existing || {}),
         closer: name,
         month: monthKey,
+      } as PipelineGoal;
+      const merged: PipelineGoal = {
+        ...base,
         ...preset.data,
         vendas_meta: preset.data.contratos_meta || 0,
       } as PipelineGoal;
