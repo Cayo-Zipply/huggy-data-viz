@@ -131,9 +131,30 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   const [manageTeamOpen, setManageTeamOpen] = useState(false);
   const [unassignedOpen, setUnassignedOpen] = useState(false);
   const [weekFilter, setWeekFilter] = useState<string>("all"); // "all" | "1".."5"
-  const [debugRR, setDebugRR] = useState<{ owner: string; cards: PipelineCard[] } | null>(null);
+  const [debugRR, setDebugRR] = useState<{ owner: string } | null>(null);
+  const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
 
   const monthKey = getMonthKey(selectedMonth);
+  const excludedKey = `farol_excluded_rr_${monthKey}`;
+
+  // Load excluded card ids from localStorage when month changes
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(excludedKey);
+      setExcludedIds(new Set(raw ? JSON.parse(raw) : []));
+    } catch {
+      setExcludedIds(new Set());
+    }
+  }, [excludedKey]);
+
+  const toggleExcluded = (id: string) => {
+    setExcludedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      try { localStorage.setItem(excludedKey, JSON.stringify(Array.from(next))); } catch {}
+      return next;
+    });
+  };
 
   // Auto-aplicar metas fixas de Maio/2026 (Cayo, Café, Fillipe) — uma única vez
   // por closer/mês. Se já existir meta no banco para o closer no mês, NÃO sobrescreve.
@@ -287,8 +308,9 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   );
   // Reuniões realizadas: card atualmente em realizada/link_enviado/contrato_assinado.
   const reunioesRealizadas = useMemo(
-    () => currentStageInMonth(["reuniao_realizada", "link_enviado", "contrato_assinado"]),
-    [closerCards, start, end]
+    () => currentStageInMonth(["reuniao_realizada", "link_enviado", "contrato_assinado"])
+      .filter(c => !excludedIds.has(c.id)),
+    [closerCards, start, end, excludedIds]
   );
   const noShowsMes = useMemo(
     () => currentStageInMonth(["no_show"]),
@@ -800,13 +822,8 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
                 <TableCell className="text-xs text-center">{d.reunioesMarcadas}</TableCell>
                 <TableCell className="text-xs text-center">
                   <button
-                    className="hover:underline hover:text-primary disabled:hover:no-underline disabled:hover:text-inherit"
-                    disabled={d.reunioesRealizadas === 0}
-                    onClick={() => {
-                      const owner = d.sdr;
-                      const list = reunioesRealizadas.filter(c => (c.owner || "Sem responsável") === owner);
-                      setDebugRR({ owner, cards: list });
-                    }}
+                    className="hover:underline hover:text-primary"
+                    onClick={() => setDebugRR({ owner: d.sdr })}
                     title="Ver leads contados"
                   >
                     {d.reunioesRealizadas}
@@ -903,26 +920,56 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
           <DialogHeader>
             <DialogTitle>Reuniões Realizadas — {debugRR?.owner} · {monthLabel}</DialogTitle>
           </DialogHeader>
-          <div className="text-[11px] text-muted-foreground mb-2">
-            {debugRR?.cards.length} card(s) · stage atual em <code>reuniao_realizada</code>, <code>link_enviado</code> ou <code>contrato_assinado</code> com data dentro do mês.
-          </div>
-          <div className="max-h-[60vh] overflow-auto space-y-1">
-            {debugRR?.cards.map(c => {
-              const ref = c.stage_changed_at || c.data_reuniao || c.created_at;
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => { setDebugRR(null); openCard(c.id); }}
-                  className="w-full text-left p-3 border border-border rounded-lg hover:bg-accent transition"
-                >
-                  <div className="text-sm font-medium">{c.nome}</div>
-                  <div className="text-[11px] text-muted-foreground">
-                    stage: <strong>{c.stage.replace(/_/g, " ")}</strong> · owner: {c.owner || "—"} · {ref ? new Date(ref).toLocaleString("pt-BR") : "sem data"}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+          {(() => {
+            const ownerKey = debugRR?.owner;
+            const all = ownerKey
+              ? closerCards.filter(c => {
+                  if (!["reuniao_realizada","link_enviado","contrato_assinado"].includes(c.stage)) return false;
+                  const ref = c.stage_changed_at || c.data_reuniao || c.created_at;
+                  if (!dateInRange(ref, start, end)) return false;
+                  return (c.owner || "Sem responsável") === ownerKey;
+                })
+              : [];
+            const counted = all.filter(c => !excludedIds.has(c.id)).length;
+            return (
+              <>
+                <div className="text-[11px] text-muted-foreground mb-2">
+                  {counted} contadas / {all.length} total · clique em "Excluir" para tirar do mês (ex.: reunião feita no mês anterior)
+                </div>
+                <div className="max-h-[60vh] overflow-auto space-y-1">
+                  {all.map(c => {
+                    const ref = c.stage_changed_at || c.data_reuniao || c.created_at;
+                    const isExcluded = excludedIds.has(c.id);
+                    return (
+                      <div
+                        key={c.id}
+                        className={`w-full p-3 border rounded-lg flex items-center justify-between gap-2 ${isExcluded ? "border-dashed opacity-60 bg-muted/30" : "border-border"}`}
+                      >
+                        <button
+                          onClick={() => { setDebugRR(null); openCard(c.id); }}
+                          className="flex-1 text-left hover:underline"
+                        >
+                          <div className="text-sm font-medium">{c.nome} {isExcluded && <span className="text-[10px] text-muted-foreground">(excluído do mês)</span>}</div>
+                          <div className="text-[11px] text-muted-foreground">
+                            stage: <strong>{c.stage.replace(/_/g, " ")}</strong> · {ref ? new Date(ref).toLocaleString("pt-BR") : "sem data"}
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => toggleExcluded(c.id)}
+                          className="text-[11px] px-2 py-1 rounded border border-border hover:bg-accent"
+                        >
+                          {isExcluded ? "Incluir" : "Excluir do mês"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                  {all.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">Nenhum card.</p>
+                  )}
+                </div>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>

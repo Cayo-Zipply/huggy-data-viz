@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const NAV_ITEMS = [
-  { key: "/farol", label: "Farol", icon: Gauge, roles: ["admin"] },
+  { key: "/farol", label: "Farol", icon: Gauge, roles: ["admin", "sdr", "closer"] },
   { key: "/pipeline", label: "Pipeline", icon: Kanban, roles: ["admin", "sdr", "closer"] },
   { key: "/marketing", label: "Dashboard", icon: BarChart3, roles: ["admin"] },
   { key: "/comparativo", label: "Comparativo", icon: GitCompare, roles: ["admin"] },
