@@ -135,6 +135,26 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
 
   const monthKey = getMonthKey(selectedMonth);
+  const excludedKey = `farol_excluded_rr_${monthKey}`;
+
+  // Load excluded card ids from localStorage when month changes
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(excludedKey);
+      setExcludedIds(new Set(raw ? JSON.parse(raw) : []));
+    } catch {
+      setExcludedIds(new Set());
+    }
+  }, [excludedKey]);
+
+  const toggleExcluded = (id: string) => {
+    setExcludedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      try { localStorage.setItem(excludedKey, JSON.stringify(Array.from(next))); } catch {}
+      return next;
+    });
+  };
 
   // Auto-aplicar metas fixas de Maio/2026 (Cayo, Café, Fillipe) — uma única vez
   // por closer/mês. Se já existir meta no banco para o closer no mês, NÃO sobrescreve.
