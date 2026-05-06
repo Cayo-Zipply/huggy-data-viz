@@ -33,11 +33,13 @@ interface Props {
 export function ContractTab({ card, onUpdate }: Props) {
   const isGenerated = card.contrato_status && card.contrato_status !== "pendente";
 
-  const [tipo, setTipo] = useState<ContractType | "">(card.tipo_contrato || "");
-  const [form, setForm] = useState({
+  // Pré-preenche campos do contrato a partir dos dados do card.
+  // Se o usuário editar e salvar, as edições são refletidas. Tudo continua editável.
+  const buildInitialForm = () => ({
     empresa: card.empresa || "",
     cnpj: card.cnpj || "",
-    representante_nome: card.representante_nome || "",
+    // Sem representante cadastrado? usa o nome do lead como sugestão.
+    representante_nome: card.representante_nome || card.nome || "",
     representante_cpf: card.representante_cpf || "",
     email: card.email || "",
     telefone: card.telefone || "",
@@ -52,6 +54,9 @@ export function ContractTab({ card, onUpdate }: Props) {
     prazo_entrega_relatorios: card.prazo_entrega_relatorios?.toString() || "",
     prazo_contrato: card.prazo_contrato || "",
   });
+
+  const [tipo, setTipo] = useState<ContractType | "">(card.tipo_contrato || "");
+  const [form, setForm] = useState(buildInitialForm);
   const [valorMensalidade, setValorMensalidade] = useState<number | null>(card.valor_mensalidade ?? null);
   const [valorDivida, setValorDivida] = useState<number | null>(card.valor_divida ?? null);
   const [valorProposta, setValorProposta] = useState<number | null>(card.valor_proposta ?? null);
@@ -61,29 +66,41 @@ export function ContractTab({ card, onUpdate }: Props) {
 
   useEffect(() => {
     setTipo(card.tipo_contrato || "");
-    setForm({
-      empresa: card.empresa || "",
-      cnpj: card.cnpj || "",
-      representante_nome: card.representante_nome || "",
-      representante_cpf: card.representante_cpf || "",
-      email: card.email || "",
-      telefone: card.telefone || "",
-      endereco: card.endereco || "",
-      cidade: card.cidade || "",
-      estado: card.estado || "",
-      cep: card.cep || "",
-      qtd_salarios_minimos: card.qtd_salarios_minimos || "",
-      porcentagem_exito: card.porcentagem_exito || "",
-      data_primeiro_pagamento: card.data_primeiro_pagamento || "",
-      dia_demais_pagamentos: card.dia_demais_pagamentos || "",
-      prazo_entrega_relatorios: card.prazo_entrega_relatorios?.toString() || "",
-      prazo_contrato: card.prazo_contrato || "",
-    });
+    setForm(buildInitialForm());
     setValorMensalidade(card.valor_mensalidade ?? null);
     setValorDivida(card.valor_divida ?? null);
     setValorProposta(card.valor_proposta ?? null);
     setLastResult(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card.id]);
+
+  // Quando o card é atualizado (ex.: usuário preencheu CNPJ na aba Dados),
+  // sincroniza qualquer campo que ainda esteja vazio no formulário,
+  // sem sobrescrever edições já feitas pelo usuário.
+  useEffect(() => {
+    setForm(prev => ({
+      empresa: prev.empresa || card.empresa || "",
+      cnpj: prev.cnpj || card.cnpj || "",
+      representante_nome: prev.representante_nome || card.representante_nome || card.nome || "",
+      representante_cpf: prev.representante_cpf || card.representante_cpf || "",
+      email: prev.email || card.email || "",
+      telefone: prev.telefone || card.telefone || "",
+      endereco: prev.endereco || card.endereco || "",
+      cidade: prev.cidade || card.cidade || "",
+      estado: prev.estado || card.estado || "",
+      cep: prev.cep || card.cep || "",
+      qtd_salarios_minimos: prev.qtd_salarios_minimos || card.qtd_salarios_minimos || "",
+      porcentagem_exito: prev.porcentagem_exito || card.porcentagem_exito || "",
+      data_primeiro_pagamento: prev.data_primeiro_pagamento || card.data_primeiro_pagamento || "",
+      dia_demais_pagamentos: prev.dia_demais_pagamentos || card.dia_demais_pagamentos || "",
+      prazo_entrega_relatorios: prev.prazo_entrega_relatorios || card.prazo_entrega_relatorios?.toString() || "",
+      prazo_contrato: prev.prazo_contrato || card.prazo_contrato || "",
+    }));
+    setValorMensalidade(prev => prev ?? card.valor_mensalidade ?? null);
+    setValorDivida(prev => prev ?? card.valor_divida ?? null);
+    setValorProposta(prev => prev ?? card.valor_proposta ?? null);
+  }, [card.empresa, card.cnpj, card.representante_nome, card.representante_cpf, card.email, card.telefone, card.endereco, card.cidade, card.estado, card.cep, card.qtd_salarios_minimos, card.porcentagem_exito, card.data_primeiro_pagamento, card.dia_demais_pagamentos, card.prazo_entrega_relatorios, card.prazo_contrato, card.valor_mensalidade, card.valor_divida, card.valor_proposta, card.nome]);
+
 
   const isCNPJType = tipo === "tributario_cnpj" || tipo === "empresarial_completo";
 
