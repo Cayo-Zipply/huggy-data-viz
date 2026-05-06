@@ -308,8 +308,9 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   );
   // Reuniões realizadas: card atualmente em realizada/link_enviado/contrato_assinado.
   const reunioesRealizadas = useMemo(
-    () => currentStageInMonth(["reuniao_realizada", "link_enviado", "contrato_assinado"]),
-    [closerCards, start, end]
+    () => currentStageInMonth(["reuniao_realizada", "link_enviado", "contrato_assinado"])
+      .filter(c => !excludedIds.has(c.id)),
+    [closerCards, start, end, excludedIds]
   );
   const noShowsMes = useMemo(
     () => currentStageInMonth(["no_show"]),
