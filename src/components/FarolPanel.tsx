@@ -156,12 +156,16 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     });
   };
 
-  // Auto-aplicar metas fixas de Maio/2026 (Cayo, Café, Fillipe) — uma única vez
-  // por closer/mês. Se já existir meta no banco para o closer no mês, NÃO sobrescreve.
-  // Assim o admin não precisa abrir "Editar Metas" todo mês para reaplicar.
+  // Auto-aplicar metas fixas (Cayo, Café, Fillipe) para o mês atual em diante.
+  // Se já existir meta no banco para o closer no mês, NÃO sobrescreve.
+  // Roda para qualquer usuário (admin, closer, sdr) — assim a meta fica espelhada
+  // pra todo mundo sem precisar reaplicar todos os meses.
   useEffect(() => {
-    if (!isAdmin || !onSaveGoal) return;
-    if (monthKey !== "2026-05") return;
+    if (!onSaveGoal) return;
+    // só aplica do mês atual em diante (não mexe em meses passados)
+    const today = new Date();
+    const currentKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+    if (monthKey < currentKey) return;
     if (!closerNames.length) return;
     const presets: { match: (n: string) => boolean; data: Partial<PipelineGoal> }[] = [
       { match: n => /fillipe|filipe/i.test(n), data: { faturamento_meta: 31500, reunioes_realizadas_meta: 60, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 18 } },
@@ -201,7 +205,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         try { localStorage.setItem(flagKey, "1"); } catch {}
       });
     });
-  }, [isAdmin, onSaveGoal, monthKey, closerNames, goals]);
+  }, [onSaveGoal, monthKey, closerNames, goals]);
 
   const year = selectedMonth.getFullYear();
   const month = selectedMonth.getMonth();
