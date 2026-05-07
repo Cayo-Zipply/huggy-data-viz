@@ -205,7 +205,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         try { localStorage.setItem(flagKey, "1"); } catch {}
       });
     });
-  }, [isAdmin, onSaveGoal, monthKey, closerNames, goals]);
+  }, [onSaveGoal, monthKey, closerNames, goals]);
 
   const year = selectedMonth.getFullYear();
   const month = selectedMonth.getMonth();
