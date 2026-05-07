@@ -583,7 +583,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
       },
       conversao: {
         atual: convAtual, esperada: metaConvAlvo, pctDoAlvo: convPctAlvo,
-        gapPp: convGap, vendas: totalVendas, ticketMedio, topCloser,
+        gapPp: convGap, vendas: totalVendas, ticketMedio, topClosers,
       },
       contratos: {
         fechados: contratosFech, enviados: contratosEnviados, assinados: contratosAssinados,
