@@ -459,7 +459,9 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         const metaAteAlvo = (metaRR || meta) * fatorPace;
         const projecao = passedBD > 0 ? Math.round(rm * ratio) : 0;
         const projecaoRR = passedBD > 0 ? Math.round(rr * ratio) : 0;
-        const falta = Math.max(0, meta - rm);
+        // Falta = quantas reuniões realizadas ainda faltam para bater a meta do mês
+        const faltaBase = metaRR > 0 ? metaRR : meta;
+        const falta = Math.max(0, faltaBase - rr);
         const projetado = passedBD > 0 ? Math.round(rr * ratio) : 0;
         const pctMeta = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
         const atingTotal = metaRR > 0 ? Math.round((projecaoRR / metaRR) * 100) : 0;
