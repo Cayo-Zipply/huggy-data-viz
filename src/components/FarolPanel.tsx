@@ -702,7 +702,19 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
           subLabel={globais.conversao.esperada > 0 ? `${Math.round(globais.conversao.pctDoAlvo)}% do alvo` : ""}
           progress={globais.conversao.pctDoAlvo}
           progressLabel={`Vendas · ${globais.conversao.vendas}`}
-          footerLeft={{ label: "Top closer", value: globais.conversao.topCloser ? `${globais.conversao.topCloser.closer} · ${globais.conversao.topCloser.conv}%` : "—" }}
+          footerLeft={{ label: "Top closers", value: globais.conversao.topClosers.length > 0 ? (
+            <div className="flex flex-col gap-0.5">
+              {globais.conversao.topClosers.map((t, i) => {
+                const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉";
+                const first = t.closer.split(" ")[0];
+                return (
+                  <span key={t.closer} className="text-xs font-medium text-foreground tabular-nums">
+                    {medal} {first} · {t.conv}%
+                  </span>
+                );
+              })}
+            </div>
+          ) : "—" }}
           footerRight={{ label: "Ticket médio", value: globais.conversao.ticketMedio > 0 ? formatBRL(globais.conversao.ticketMedio) : "—" }}
         />
         <HeroCard
