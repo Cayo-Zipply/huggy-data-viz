@@ -157,33 +157,34 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   };
 
   // Auto-aplicar metas fixas (Cayo, Café, Fillipe) para o mês atual em diante.
-  // Se já existir meta no banco para o closer no mês, NÃO sobrescreve.
-  // Roda para qualquer usuário (admin, closer, sdr) — assim a meta fica espelhada
-  // pra todo mundo sem precisar reaplicar todos os meses.
+  // Roda independente de carregar a lista de team members — usa nomes fixos como
+  // fallback. Se já existir meta no banco com valores, NÃO sobrescreve.
   useEffect(() => {
     if (!onSaveGoal) return;
-    // só aplica do mês atual em diante (não mexe em meses passados)
     const today = new Date();
     const currentKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
     if (monthKey < currentKey) return;
-    if (!closerNames.length) return;
-    const presets: { match: (n: string) => boolean; data: Partial<PipelineGoal> }[] = [
-      { match: n => /fillipe|filipe/i.test(n), data: { faturamento_meta: 31500, reunioes_realizadas_meta: 60, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 18 } },
-      { match: n => /caf[ée]/i.test(n),       data: { faturamento_meta: 14080, reunioes_realizadas_meta: 40, conversao_meta: 22, ticket_medio_meta: 1600, contratos_meta: 9 } },
-      { match: n => /cayo/i.test(n),          data: { faturamento_meta: 10500, reunioes_realizadas_meta: 20, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 6 } },
+    const presets: { name: string; data: Partial<PipelineGoal> }[] = [
+      { name: "Fillipe Amorim Oliveira Silva", data: { faturamento_meta: 31500, reunioes_realizadas_meta: 60, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 18 } },
+      { name: "Café",                          data: { faturamento_meta: 14080, reunioes_realizadas_meta: 40, conversao_meta: 22, ticket_medio_meta: 1600, contratos_meta: 9 } },
+      { name: "Cayo Bitencourt",               data: { faturamento_meta: 10500, reunioes_realizadas_meta: 20, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 6 } },
     ];
-    closerNames.forEach(name => {
-      const preset = presets.find(p => p.match(name));
-      if (!preset) return;
-      const existing = goals.find(g => g.closer === name && g.month === monthKey);
+    presets.forEach(preset => {
+      // tenta achar o nome real no time (com acentos/case corretos); senão usa o do preset
+      const matcher = (n: string) => {
+        const nn = norm(n);
+        if (preset.name.startsWith("Fillipe")) return /fillipe|filipe/.test(nn);
+        if (preset.name === "Café") return /caf[eé]/.test(nn);
+        return /cayo/.test(nn);
+      };
+      const realName = closerNames.find(matcher) || preset.name;
+      const existing = goals.find(g => g.closer === realName && g.month === monthKey);
       const hasAny = existing && (
         (existing.faturamento_meta || 0) > 0 ||
         (existing.reunioes_realizadas_meta || 0) > 0 ||
         (existing.contratos_meta || 0) > 0
       );
       if (hasAny) return;
-      const flagKey = `farol_preset_applied_${monthKey}_${name}`;
-      if (localStorage.getItem(flagKey)) return;
       const base: PipelineGoal = {
         reunioes_marcadas_meta: 0,
         reunioes_realizadas_meta: 0,
@@ -193,7 +194,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         ticket_medio_meta: 0,
         contratos_meta: 0,
         ...(existing || {}),
-        closer: name,
+        closer: realName,
         month: monthKey,
       } as PipelineGoal;
       const merged: PipelineGoal = {
@@ -201,9 +202,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         ...preset.data,
         vendas_meta: preset.data.contratos_meta || 0,
       } as PipelineGoal;
-      Promise.resolve(onSaveGoal(merged)).then(() => {
-        try { localStorage.setItem(flagKey, "1"); } catch {}
-      });
+      Promise.resolve(onSaveGoal(merged)).catch(() => {});
     });
   }, [onSaveGoal, monthKey, closerNames, goals]);
 
@@ -459,7 +458,9 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         const metaAteAlvo = (metaRR || meta) * fatorPace;
         const projecao = passedBD > 0 ? Math.round(rm * ratio) : 0;
         const projecaoRR = passedBD > 0 ? Math.round(rr * ratio) : 0;
-        const falta = Math.max(0, meta - rm);
+        // Falta = quantas reuniões realizadas ainda faltam para bater a meta do mês
+        const faltaBase = metaRR > 0 ? metaRR : meta;
+        const falta = Math.max(0, faltaBase - rr);
         const projetado = passedBD > 0 ? Math.round(rr * ratio) : 0;
         const pctMeta = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
         const atingTotal = metaRR > 0 ? Math.round((projecaoRR / metaRR) * 100) : 0;
@@ -1005,8 +1006,8 @@ function HeroCard({
         </span>
       </div>
       <div>
-        <div className="font-serif-display text-2xl text-foreground leading-none">{value}</div>
-        <div className="text-[11px] text-muted-foreground mt-1">{metaLabel}</div>
+        <div className="text-3xl font-extrabold tracking-tight text-foreground leading-none tabular-nums">{value}</div>
+        <div className="text-xs font-semibold text-muted-foreground mt-1.5">{metaLabel}</div>
         {subLabel && <div className="text-[10px] text-muted-foreground/80 mt-0.5">{subLabel}</div>}
       </div>
       <div>
