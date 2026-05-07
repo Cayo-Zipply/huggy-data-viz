@@ -561,9 +561,11 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     const convPctAlvo = metaConvAlvo > 0 ? (convAtual / metaConvAlvo) * 100 : 0;
     const convGap = convAtual - metaConvAlvo;
     const ticketMedio = totalVendas > 0 ? realizadoFat / totalVendas : 0;
-    const topCloser = inboundData
+    const topClosers = inboundData
       .filter(d => d.closer !== "Sem responsável")
-      .reduce<{ closer: string; conv: number } | null>((acc, d) => (!acc || d.conv > acc.conv ? { closer: d.closer, conv: d.conv } : acc), null);
+      .map(d => ({ closer: d.closer, conv: d.conv }))
+      .sort((a, b) => b.conv - a.conv)
+      .slice(0, 3);
 
     const contratosFech = contratosMes.length;
     const contMetaAteAlvo = metaContratosTotal * fatorPace;
@@ -581,7 +583,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
       },
       conversao: {
         atual: convAtual, esperada: metaConvAlvo, pctDoAlvo: convPctAlvo,
-        gapPp: convGap, vendas: totalVendas, ticketMedio, topCloser,
+        gapPp: convGap, vendas: totalVendas, ticketMedio, topClosers,
       },
       contratos: {
         fechados: contratosFech, enviados: contratosEnviados, assinados: contratosAssinados,
@@ -700,7 +702,19 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
           subLabel={globais.conversao.esperada > 0 ? `${Math.round(globais.conversao.pctDoAlvo)}% do alvo` : ""}
           progress={globais.conversao.pctDoAlvo}
           progressLabel={`Vendas · ${globais.conversao.vendas}`}
-          footerLeft={{ label: "Top closer", value: globais.conversao.topCloser ? `${globais.conversao.topCloser.closer} · ${globais.conversao.topCloser.conv}%` : "—" }}
+          footerLeft={{ label: "Top closers", value: globais.conversao.topClosers.length > 0 ? (
+            <div className="flex flex-col gap-0.5">
+              {globais.conversao.topClosers.map((t, i) => {
+                const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉";
+                const first = t.closer.split(" ")[0];
+                return (
+                  <span key={t.closer} className="text-xs font-medium text-foreground tabular-nums">
+                    {medal} {first} · {t.conv}%
+                  </span>
+                );
+              })}
+            </div>
+          ) : "—" }}
           footerRight={{ label: "Ticket médio", value: globais.conversao.ticketMedio > 0 ? formatBRL(globais.conversao.ticketMedio) : "—" }}
         />
         <HeroCard
@@ -993,8 +1007,8 @@ function HeroCard({
   subLabel?: string;
   progress: number;
   progressLabel?: string;
-  footerLeft: { label: string; value: string };
-  footerRight: { label: string; value: string; tone?: "red" | "green" };
+  footerLeft: { label: string; value: React.ReactNode };
+  footerRight: { label: string; value: React.ReactNode; tone?: "red" | "green" };
 }) {
   const pct = Math.max(0, Math.min(100, Math.round(progress)));
   const tone = footerRight.tone === "red" ? "text-red-400" : footerRight.tone === "green" ? "text-green-400" : "text-foreground";
