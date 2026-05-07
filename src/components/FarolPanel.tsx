@@ -561,9 +561,11 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     const convPctAlvo = metaConvAlvo > 0 ? (convAtual / metaConvAlvo) * 100 : 0;
     const convGap = convAtual - metaConvAlvo;
     const ticketMedio = totalVendas > 0 ? realizadoFat / totalVendas : 0;
-    const topCloser = inboundData
+    const topClosers = inboundData
       .filter(d => d.closer !== "Sem responsável")
-      .reduce<{ closer: string; conv: number } | null>((acc, d) => (!acc || d.conv > acc.conv ? { closer: d.closer, conv: d.conv } : acc), null);
+      .map(d => ({ closer: d.closer, conv: d.conv }))
+      .sort((a, b) => b.conv - a.conv)
+      .slice(0, 3);
 
     const contratosFech = contratosMes.length;
     const contMetaAteAlvo = metaContratosTotal * fatorPace;
