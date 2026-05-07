@@ -995,8 +995,8 @@ function HeroCard({
   subLabel?: string;
   progress: number;
   progressLabel?: string;
-  footerLeft: { label: string; value: string };
-  footerRight: { label: string; value: string; tone?: "red" | "green" };
+  footerLeft: { label: string; value: React.ReactNode };
+  footerRight: { label: string; value: React.ReactNode; tone?: "red" | "green" };
 }) {
   const pct = Math.max(0, Math.min(100, Math.round(progress)));
   const tone = footerRight.tone === "red" ? "text-red-400" : footerRight.tone === "green" ? "text-green-400" : "text-foreground";
