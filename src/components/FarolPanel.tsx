@@ -571,10 +571,26 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     const convPctAlvo = metaConvAlvo > 0 ? (convAtual / metaConvAlvo) * 100 : 0;
     const convGap = convAtual - metaConvAlvo;
     const ticketMedio = totalVendas > 0 ? realizadoFat / totalVendas : 0;
-    const topClosers = inboundData
-      .filter(d => d.closer !== "Sem responsável")
+    const realCloserRows = inboundData.filter(d => d.closer !== "Sem responsável");
+    const topClosers = realCloserRows
       .map(d => ({ closer: d.closer, conv: d.conv }))
       .sort((a, b) => b.conv - a.conv)
+      .slice(0, 3);
+    const topByFat = realCloserRows
+      .map(d => ({ closer: d.closer, value: d.realizado }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 3);
+    const topByRR = realCloserRows
+      .map(d => ({ closer: d.closer, value: reunioesRealizadas.filter(c => c.owner === d.closer).length }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 3);
+    const topByContratos = realCloserRows
+      .map(d => ({ closer: d.closer, value: d.contratos }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 3);
+    const topByTicket = realCloserRows
+      .map(d => ({ closer: d.closer, value: d.ticket }))
+      .sort((a, b) => b.value - a.value)
       .slice(0, 3);
 
     const contratosFech = contratosMes.length;
@@ -593,12 +609,14 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
       },
       conversao: {
         atual: convAtual, esperada: metaConvAlvo, pctDoAlvo: convPctAlvo,
-        gapPp: convGap, vendas: totalVendas, ticketMedio, topClosers,
+        gapPp: convGap, vendas: totalVendas, ticketMedio, topClosers, topByTicket,
       },
       contratos: {
         fechados: contratosFech, enviados: contratosEnviados, assinados: contratosAssinados,
         meta: metaContratosTotal, metaAteAlvo: contMetaAteAlvo, gap: contGap, projecao: contProjecao,
+        topByContratos,
       },
+      rankings: { topByFat, topByRR },
     };
   }, [inboundData, inboundTotal, preVendasTotal, reunioesRealizadas.length, closerRows, goals, monthKey, passedBD, ratio, fatorPace, du.restantes, contratosMes.length, contratosEnviados, contratosAssinados]);
 
@@ -690,7 +708,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
           subLabel={`meta até ${dataAlvoLabel}: ${formatBRL(globais.faturamento.metaAteAlvo)}`}
           progress={globais.faturamento.pacePct}
           progressLabel={`Pace ${Math.round(globais.faturamento.pacePct)}%`}
-          footerLeft={{ label: "Projeção", value: formatBRL(globais.faturamento.projecao) }}
+          footerLeft={{ label: "Top closers", value: <RankList items={globais.rankings.topByFat} format={(v) => formatBRL(v)} /> }}
           footerRight={{ label: "Falta p/ pace", value: formatBRL(globais.faturamento.faltaPace), tone: globais.faturamento.faltaPace > 0 ? "red" : "green" }}
         />
         <HeroCard
@@ -701,7 +719,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
           subLabel={`meta até ${dataAlvoLabel}: ${Math.round(globais.reunioes.metaAteAlvo)}`}
           progress={globais.reunioes.meta > 0 ? (globais.reunioes.realizadas / globais.reunioes.meta) * 100 : 0}
           progressLabel={`Pace diário · ${globais.reunioes.paceDiarioRR} RR`}
-          footerLeft={{ label: "Projeção", value: String(globais.reunioes.projecao) }}
+          footerLeft={{ label: "Top closers", value: <RankList items={globais.rankings.topByRR} format={(v) => String(v)} /> }}
           footerRight={{ label: "Taxa show", value: `${globais.reunioes.taxaShow}%` }}
         />
         <HeroCard
@@ -712,20 +730,8 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
           subLabel={globais.conversao.esperada > 0 ? `${Math.round(globais.conversao.pctDoAlvo)}% do alvo` : ""}
           progress={globais.conversao.pctDoAlvo}
           progressLabel={`Vendas · ${globais.conversao.vendas}`}
-          footerLeft={{ label: "Top closers", value: globais.conversao.topClosers.length > 0 ? (
-            <div className="flex flex-col gap-0.5">
-              {globais.conversao.topClosers.map((t, i) => {
-                const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉";
-                const first = t.closer.split(" ")[0];
-                return (
-                  <span key={t.closer} className="text-xs font-medium text-foreground tabular-nums">
-                    {medal} {first} · {t.conv}%
-                  </span>
-                );
-              })}
-            </div>
-          ) : "—" }}
-          footerRight={{ label: "Ticket médio", value: globais.conversao.ticketMedio > 0 ? formatBRL(globais.conversao.ticketMedio) : "—" }}
+          footerLeft={{ label: "Top closers", value: <RankList items={globais.conversao.topClosers.map(t => ({ closer: t.closer, value: t.conv }))} format={(v) => `${v}%`} /> }}
+          footerRight={{ label: "Ticket médio", value: <RankList items={globais.conversao.topByTicket} format={(v) => v > 0 ? formatBRL(v) : "—"} /> }}
         />
         <HeroCard
           icon={<FileSignature className="w-4 h-4" />}
@@ -735,7 +741,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
           subLabel={`meta até ${dataAlvoLabel}: ${Math.round(globais.contratos.metaAteAlvo)}`}
           progress={globais.contratos.meta > 0 ? (globais.contratos.fechados / globais.contratos.meta) * 100 : 0}
           progressLabel={`Pace até ${dataAlvoLabel}`}
-          footerLeft={{ label: "Enviados", value: String(globais.contratos.enviados) }}
+          footerLeft={{ label: "Top closers", value: <RankList items={globais.contratos.topByContratos} format={(v) => String(v)} /> }}
           footerRight={{ label: "Assinados", value: String(globais.contratos.assinados) }}
         />
       </div>
@@ -1030,9 +1036,9 @@ function HeroCard({
         </span>
       </div>
       <div>
-        <div className="text-5xl font-black tracking-tight text-foreground leading-none tabular-nums">{value}</div>
-        <div className="text-sm font-bold text-foreground/80 mt-2">{metaLabel}</div>
-        {subLabel && <div className="text-[11px] text-muted-foreground mt-1">{subLabel}</div>}
+        <div className="text-3xl font-extrabold tracking-tight text-foreground leading-none tabular-nums truncate">{value}</div>
+        <div className="text-xs font-semibold text-foreground/70 mt-1.5">{metaLabel}</div>
+        {subLabel && <div className="text-[10px] text-muted-foreground mt-0.5">{subLabel}</div>}
       </div>
       <div>
         <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
@@ -1055,6 +1061,23 @@ function HeroCard({
           <div className={cn("text-xs font-medium", tone)}>{footerRight.value}</div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function RankList({ items, format }: { items: { closer: string; value: number }[]; format: (v: number) => string }) {
+  if (!items || items.length === 0) return <span className="text-xs text-muted-foreground">—</span>;
+  return (
+    <div className="flex flex-col gap-0.5">
+      {items.map((t, i) => {
+        const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉";
+        const first = t.closer.split(" ")[0];
+        return (
+          <span key={t.closer} className="text-[11px] font-medium text-foreground tabular-nums leading-tight">
+            {medal} {first} · {format(t.value)}
+          </span>
+        );
+      })}
     </div>
   );
 }
