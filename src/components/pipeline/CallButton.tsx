@@ -27,7 +27,7 @@ export function CallButton({ leadId, className, size = "md" }: CallButtonProps) 
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("ipbox-click-to-call", {
+      const { data, error } = await supabaseExt.functions.invoke("ipbox-click-to-call", {
         body: { lead_id: leadId, lovable_user_id: user.id },
       });
       if (error || (data && data.error)) {
