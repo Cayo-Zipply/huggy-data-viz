@@ -1036,9 +1036,9 @@ function HeroCard({
         </span>
       </div>
       <div>
-        <div className="text-5xl font-black tracking-tight text-foreground leading-none tabular-nums">{value}</div>
-        <div className="text-sm font-bold text-foreground/80 mt-2">{metaLabel}</div>
-        {subLabel && <div className="text-[11px] text-muted-foreground mt-1">{subLabel}</div>}
+        <div className="text-3xl font-extrabold tracking-tight text-foreground leading-none tabular-nums truncate">{value}</div>
+        <div className="text-xs font-semibold text-foreground/70 mt-1.5">{metaLabel}</div>
+        {subLabel && <div className="text-[10px] text-muted-foreground mt-0.5">{subLabel}</div>}
       </div>
       <div>
         <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
