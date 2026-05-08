@@ -21,6 +21,7 @@ import { ContractTab } from "./ContractTab";
 import { AbaAnexos } from "@/components/lead/aba-anexos";
 import type { PipelineLabel } from "@/hooks/useLabels";
 import { CallButton } from "./CallButton";
+import { CallHistory } from "./CallHistory";
 
 /* ── Draft helpers (localStorage) ── */
 const DRAFT_PREFIX = "crm_draft_";
@@ -79,7 +80,7 @@ interface Props {
   ownerOptions?: string[];
 }
 
-type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "contrato" | "anexo" | "acoes";
+type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "contrato" | "anexo" | "chamadas" | "acoes";
 
 export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onSaveObservation, labels = [], cardLabels = [], onAddLabel, onRemoveLabel, ownerOptions: ownerOptionsProp }: Props) {
   const { user, isAdmin, profile } = useAuth();
@@ -249,6 +250,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
     { key: "tarefas", label: "Tarefas", icon: ListChecks },
     { key: "contrato", label: "Contrato", icon: FileSignature },
     { key: "anexo", label: "Anexo", icon: Paperclip },
+    { key: "chamadas", label: "Chamadas", icon: Phone },
     { key: "acoes", label: "Ações", icon: Zap },
   ];
 
