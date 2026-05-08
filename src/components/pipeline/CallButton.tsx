@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Phone, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseExt } from "@/lib/supabaseExternal";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
@@ -27,7 +27,7 @@ export function CallButton({ leadId, className, size = "md" }: CallButtonProps) 
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("ipbox-click-to-call", {
+      const { data, error } = await supabaseExt.functions.invoke("ipbox-click-to-call", {
         body: { lead_id: leadId, lovable_user_id: user.id },
       });
       if (error || (data && data.error)) {
