@@ -825,6 +825,11 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
               </div>
             )}
 
+            {/* CHAMADAS */}
+            {activeSection === "chamadas" && (
+              <CallHistory leadId={card.id} />
+            )}
+
             {/* AÇÕES */}
             {activeSection === "acoes" && (
               <div className="space-y-3">
