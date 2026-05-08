@@ -571,10 +571,26 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     const convPctAlvo = metaConvAlvo > 0 ? (convAtual / metaConvAlvo) * 100 : 0;
     const convGap = convAtual - metaConvAlvo;
     const ticketMedio = totalVendas > 0 ? realizadoFat / totalVendas : 0;
-    const topClosers = inboundData
-      .filter(d => d.closer !== "Sem responsável")
+    const realCloserRows = inboundData.filter(d => d.closer !== "Sem responsável");
+    const topClosers = realCloserRows
       .map(d => ({ closer: d.closer, conv: d.conv }))
       .sort((a, b) => b.conv - a.conv)
+      .slice(0, 3);
+    const topByFat = realCloserRows
+      .map(d => ({ closer: d.closer, value: d.realizado }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 3);
+    const topByRR = realCloserRows
+      .map(d => ({ closer: d.closer, value: reunioesRealizadas.filter(c => c.owner === d.closer).length }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 3);
+    const topByContratos = realCloserRows
+      .map(d => ({ closer: d.closer, value: d.contratos }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 3);
+    const topByTicket = realCloserRows
+      .map(d => ({ closer: d.closer, value: d.ticket }))
+      .sort((a, b) => b.value - a.value)
       .slice(0, 3);
 
     const contratosFech = contratosMes.length;
