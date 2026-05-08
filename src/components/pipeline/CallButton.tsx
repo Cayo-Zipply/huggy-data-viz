@@ -12,7 +12,7 @@ interface CallButtonProps {
 }
 
 export function CallButton({ leadId, className, size = "md" }: CallButtonProps) {
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const dims = size === "sm" ? "w-6 h-6" : "w-8 h-8";
@@ -21,14 +21,14 @@ export function CallButton({ leadId, className, size = "md" }: CallButtonProps) 
   async function handleCall(e: React.MouseEvent) {
     e.stopPropagation();
     e.preventDefault();
-    if (!user?.id) {
-      toast.error("Usuário não autenticado");
+    if (!profile?.id) {
+      toast.error("Perfil de usuário não encontrado");
       return;
     }
     setLoading(true);
     try {
       const { data, error } = await supabaseExt.functions.invoke("ipbox-click-to-call", {
-        body: { lead_id: leadId, lovable_user_id: user.id },
+        body: { lead_id: leadId, lovable_user_id: profile.id },
       });
       if (error || (data && data.error)) {
         toast.error(data?.error || error?.message || "Erro ao discar");
