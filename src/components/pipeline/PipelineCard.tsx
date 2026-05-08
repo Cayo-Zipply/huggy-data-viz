@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import type { PipelineCard as CardType, PipelineTask, PipeType, LossCategory } from "./types";
 import { LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
 import type { PipelineLabel } from "@/hooks/useLabels";
+import { CallButton } from "./CallButton";
 
 interface Props {
   card: CardType;
@@ -172,10 +173,13 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
 
         {/* Telefone (linha sutil) */}
         {card.telefone && (
-          <a href={wa || "#"} target="_blank" rel="noopener noreferrer"
-            className="block mt-1.5 text-[11px] text-muted-foreground hover:text-foreground truncate">
-            {card.telefone}
-          </a>
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <a href={wa || "#"} target="_blank" rel="noopener noreferrer"
+              className="flex-1 text-[11px] text-muted-foreground hover:text-foreground truncate">
+              {card.telefone}
+            </a>
+            <CallButton leadId={card.id} size="sm" />
+          </div>
         )}
 
         {/* Custom labels */}

@@ -20,6 +20,7 @@ import { LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./t
 import { ContractTab } from "./ContractTab";
 import { AbaAnexos } from "@/components/lead/aba-anexos";
 import type { PipelineLabel } from "@/hooks/useLabels";
+import { CallButton } from "./CallButton";
 
 /* ── Draft helpers (localStorage) ── */
 const DRAFT_PREFIX = "crm_draft_";
@@ -339,6 +340,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     <MessageSquare size={12} />WhatsApp
                   </a>
                 )}
+                <CallButton leadId={card.id} />
               </>
             )}
           </div>
