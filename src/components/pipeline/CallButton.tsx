@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Phone, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseExt } from "@/lib/supabaseExternal";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
