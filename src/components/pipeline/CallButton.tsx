@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Phone, PhoneOff, Loader2, ExternalLink } from "lucide-react";
+import { Phone, PhoneOff, Loader2, ExternalLink, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabaseExt } from "@/lib/supabaseExternal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,6 +7,9 @@ import { cn } from "@/lib/utils";
 
 const SOFTPHONE_URL = "https://linkfyscale.ipboxcloud.com.br:9139/ipbox/";
 const IN_CALL_TIMEOUT_MS = 5 * 60 * 1000; // 5 min
+const POLL_INTERVAL_MS = 4000;
+
+type CallState = "idle" | "dialing" | "answered";
 
 interface CallButtonProps {
   leadId: string;
@@ -15,38 +18,84 @@ interface CallButtonProps {
   onCallSynced?: () => void;
 }
 
+// Heurística: detecta se a chamada foi atendida pelo cliente
+function detectAnswered(row: any): boolean {
+  if (!row) return false;
+  if (row.atendido_em || row.answered_at || row.atendida_em) return true;
+  const status = String(row.status ?? row.estado ?? "").toUpperCase();
+  if (["ATENDIDA", "ATENDIDO", "ANSWERED", "INPROGRESS", "IN_PROGRESS", "ON_CALL"].includes(status)) {
+    return true;
+  }
+  // resultado ATENDIDO com duracao significa chamada já terminou (atendida + finalizada)
+  return false;
+}
+
+function isTerminal(row: any): boolean {
+  return !!(row && row.resultado);
+}
+
 export function CallButton({ leadId, className, size = "md", onCallSynced }: CallButtonProps) {
   const { profile } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [inCall, setInCall] = useState(false);
+  const [callState, setCallState] = useState<CallState>("idle");
   const [ending, setEnding] = useState(false);
+  const ligacaoIdRef = useRef<string | number | null>(null);
   const timeoutRef = useRef<number | null>(null);
+  const pollTimerRef = useRef<number | null>(null);
   const syncTimers = useRef<number[]>([]);
 
   const dims = size === "sm" ? "w-6 h-6" : "w-8 h-8";
   const icon = size === "sm" ? 12 : 14;
 
+  const clearAllTimers = () => {
+    if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+    if (pollTimerRef.current) window.clearTimeout(pollTimerRef.current);
+    syncTimers.current.forEach((t) => window.clearTimeout(t));
+    syncTimers.current = [];
+    timeoutRef.current = null;
+    pollTimerRef.current = null;
+  };
+
   useEffect(() => {
-    return () => {
-      if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
-      syncTimers.current.forEach((t) => window.clearTimeout(t));
-    };
+    return () => clearAllTimers();
   }, []);
 
-  const scheduleSync = (ligacaoId: string | number | undefined) => {
+  const resetCall = () => {
+    clearAllTimers();
+    ligacaoIdRef.current = null;
+    setCallState("idle");
+  };
+
+  const pollStatus = async () => {
+    const ligacaoId = ligacaoIdRef.current;
     if (!ligacaoId) return;
-    const run = async () => {
-      try {
-        await supabaseExt.functions.invoke("ipbox-update-chamada", {
-          body: { ligacao_id: ligacaoId },
-        });
+    try {
+      // pede ao backend pra buscar status atualizado no IPBOX
+      await supabaseExt.functions
+        .invoke("ipbox-update-chamada", { body: { ligacao_id: ligacaoId } })
+        .catch(() => null);
+      const { data: row } = await (supabaseExt as any)
+        .from("ipbox_chamadas")
+        .select("*")
+        .eq("ligacao_id", ligacaoId)
+        .maybeSingle();
+
+      if (isTerminal(row)) {
         onCallSynced?.();
-      } catch (err) {
-        console.error("[ipbox-update-chamada]", err);
+        resetCall();
+        return;
       }
-    };
-    syncTimers.current.push(window.setTimeout(run, 30_000));
-    syncTimers.current.push(window.setTimeout(run, 180_000));
+      if (detectAnswered(row) && callState !== "answered") {
+        setCallState("answered");
+      }
+    } catch (err) {
+      console.error("[CallButton] poll", err);
+    } finally {
+      // reagenda enquanto não estiver idle
+      if (ligacaoIdRef.current) {
+        pollTimerRef.current = window.setTimeout(pollStatus, POLL_INTERVAL_MS);
+      }
+    }
   };
 
   async function handleCall(e: React.MouseEvent) {
@@ -66,9 +115,26 @@ export function CallButton({ leadId, className, size = "md", onCallSynced }: Cal
         return;
       }
       toast.success(`Discando ${data?.numero ?? ""}... atenda no softphone`);
-      setInCall(true);
-      scheduleSync(data?.ligacao_id);
-      timeoutRef.current = window.setTimeout(() => setInCall(false), IN_CALL_TIMEOUT_MS);
+      ligacaoIdRef.current = data?.ligacao_id ?? null;
+      setCallState("dialing");
+      // safety timeout: derruba UI após 5min
+      timeoutRef.current = window.setTimeout(() => resetCall(), IN_CALL_TIMEOUT_MS);
+      // inicia polling
+      pollTimerRef.current = window.setTimeout(pollStatus, POLL_INTERVAL_MS);
+      // sync de fallback (gravação aparece com delay)
+      if (ligacaoIdRef.current) {
+        const lid = ligacaoIdRef.current;
+        syncTimers.current.push(
+          window.setTimeout(
+            () =>
+              supabaseExt.functions
+                .invoke("ipbox-update-chamada", { body: { ligacao_id: lid } })
+                .then(() => onCallSynced?.())
+                .catch(() => null),
+            180_000,
+          ),
+        );
+      }
     } catch (err: any) {
       toast.error(err?.message || "Erro ao discar");
     } finally {
@@ -76,7 +142,7 @@ export function CallButton({ leadId, className, size = "md", onCallSynced }: Cal
     }
   }
 
-  async function handleEnd(e: React.MouseEvent) {
+  async function handleEnd(e: React.MouseEvent, opts?: { silent?: boolean }) {
     e.stopPropagation();
     e.preventDefault();
     if (!profile?.id) return;
@@ -89,9 +155,11 @@ export function CallButton({ leadId, className, size = "md", onCallSynced }: Cal
         toast.error(data?.error || error?.message || "Erro ao encerrar");
         return;
       }
-      toast.success("Chamada encerrada");
-      setInCall(false);
-      if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+      if (!opts?.silent) {
+        toast.success(callState === "dialing" ? "Discagem cancelada" : "Chamada encerrada");
+      }
+      resetCall();
+      onCallSynced?.();
     } catch (err: any) {
       toast.error(err?.message || "Erro ao encerrar");
     } finally {
@@ -105,23 +173,37 @@ export function CallButton({ leadId, className, size = "md", onCallSynced }: Cal
     window.open(SOFTPHONE_URL, "_blank", "noopener,noreferrer");
   }
 
-  if (inCall) {
+  if (callState !== "idle") {
+    const isDialing = callState === "dialing";
     return (
-      <div data-in-call="true" className={cn("inline-flex items-center gap-1.5", className)} onClick={(e) => e.stopPropagation()}>
+      <div
+        data-in-call="true"
+        className={cn("inline-flex items-center gap-1.5", className)}
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
-          onClick={handleEnd}
+          onClick={(e) => handleEnd(e)}
           disabled={ending}
-          title="Encerrar chamada"
+          title={isDialing ? "Cancelar discagem" : "Encerrar chamada"}
           className={cn(
-            "inline-flex items-center justify-center rounded-full bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 transition-colors shrink-0",
+            "inline-flex items-center justify-center rounded-full text-white disabled:opacity-50 transition-colors shrink-0",
+            isDialing
+              ? "bg-muted-foreground/70 hover:bg-muted-foreground"
+              : "bg-red-600 hover:bg-red-700",
             dims,
           )}
         >
-          {ending ? <Loader2 size={icon} className="animate-spin" /> : <PhoneOff size={icon} />}
+          {ending ? (
+            <Loader2 size={icon} className="animate-spin" />
+          ) : isDialing ? (
+            <X size={icon} />
+          ) : (
+            <PhoneOff size={icon} />
+          )}
         </button>
         <button
           onClick={openSoftphone}
-          title="Abrir softphone IPBOX (mudo, espera, transferência ficam dentro do softphone)"
+          title="Abrir softphone IPBOX"
           className={cn(
             "inline-flex items-center justify-center rounded-full bg-muted hover:bg-muted/80 text-foreground transition-colors shrink-0",
             dims,
@@ -130,7 +212,16 @@ export function CallButton({ leadId, className, size = "md", onCallSynced }: Cal
           <ExternalLink size={icon} />
         </button>
         {size !== "sm" && (
-          <span className="text-[10px] text-red-600 dark:text-red-400 font-medium animate-pulse">Em chamada</span>
+          <span
+            className={cn(
+              "text-[10px] font-medium",
+              isDialing
+                ? "text-muted-foreground animate-pulse"
+                : "text-red-600 dark:text-red-400 animate-pulse",
+            )}
+          >
+            {isDialing ? "Chamando..." : "Em chamada"}
+          </span>
         )}
       </div>
     );
