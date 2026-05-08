@@ -35,7 +35,7 @@ function isTerminal(row: any): boolean {
 }
 
 export function CallButton({ leadId, className, size = "md", onCallSynced }: CallButtonProps) {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [callState, setCallState] = useState<CallState>("idle");
   const [ending, setEnding] = useState(false);
@@ -153,7 +153,10 @@ export function CallButton({ leadId, className, size = "md", onCallSynced }: Cal
     setEnding(true);
     try {
       const { data, error } = await supabaseExt.functions.invoke("ipbox-end-call", {
-        body: { lovable_user_id: profile.id },
+        body: {
+          lovable_user_id: profile?.id ?? user?.id,
+          email: profile?.email ?? user?.email,
+        },
       });
       if (error || (data && data.error)) {
         toast.error(data?.error || error?.message || "Erro ao encerrar");
