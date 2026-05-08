@@ -108,7 +108,11 @@ export function CallButton({ leadId, className, size = "md", onCallSynced }: Cal
     setLoading(true);
     try {
       const { data, error } = await supabaseExt.functions.invoke("ipbox-click-to-call", {
-        body: { lead_id: leadId, lovable_user_id: profile.id },
+        body: {
+          lead_id: leadId,
+          lovable_user_id: profile?.id ?? user?.id,
+          email: profile?.email ?? user?.email,
+        },
       });
       if (error || (data && data.error) || (data && data.ok === false)) {
         toast.error(data?.error || error?.message || "Erro ao discar");
