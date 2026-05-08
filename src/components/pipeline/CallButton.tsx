@@ -171,11 +171,14 @@ export function CallButton({ leadId, className, size = "md", onCallSynced }: Cal
     if (!profile?.id) return;
     setEnding(true);
     try {
+      const email = await resolveEmail();
+      const payload = {
+        lovable_user_id: profile?.id ?? user?.id,
+        email,
+      };
+      console.log("[CallButton] ipbox-end-call payload:", payload);
       const { data, error } = await supabaseExt.functions.invoke("ipbox-end-call", {
-        body: {
-          lovable_user_id: profile?.id ?? user?.id,
-          email: profile?.email ?? user?.email,
-        },
+        body: payload,
       });
       if (error || (data && data.error)) {
         toast.error(data?.error || error?.message || "Erro ao encerrar");
