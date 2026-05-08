@@ -339,6 +339,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     <MessageSquare size={12} />WhatsApp
                   </a>
                 )}
+                <CallButton leadId={card.id} />
               </>
             )}
           </div>
