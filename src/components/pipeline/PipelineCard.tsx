@@ -178,7 +178,11 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
               className="flex-1 text-[11px] text-muted-foreground hover:text-foreground truncate">
               {card.telefone}
             </a>
-            <CallButton leadId={card.id} size="sm" />
+            <CallButton
+              leadId={card.id}
+              size="sm"
+              className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 data-[in-call=true]:opacity-100 transition-opacity"
+            />
           </div>
         )}
 

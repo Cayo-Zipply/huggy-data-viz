@@ -446,6 +446,12 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   );
 
   const preVendasData = useMemo(() => {
+    // Soma das metas de RR cadastradas nos closers — usada como fallback de meta dos SDRs
+    const totalCloserRRMeta = closerNames.reduce((s, c) => {
+      const g = goals.find(x => x.closer === c && x.month === monthKey);
+      return s + (g?.reunioes_realizadas_meta || 0);
+    }, 0);
+
     const rows = sdrRows
       .map(sdr => {
         const rm = reunioesMarcadas.filter(c => c.owner === sdr).length;
@@ -454,7 +460,11 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         const vendas = contratosMes.filter(c => c.owner === sdr).length;
         const goal = goals.find(g => g.closer === sdr && g.month === monthKey);
         const meta = goal?.reunioes_marcadas_meta || 0;
-        const metaRR = goal?.reunioes_realizadas_meta || 0;
+        let metaRR = goal?.reunioes_realizadas_meta || 0;
+        // Fallback: se SDR não tem meta individual, divide a meta total dos closers entre os SDRs
+        if (metaRR === 0 && meta === 0 && totalCloserRRMeta > 0 && sdrNames.length > 0) {
+          metaRR = Math.round(totalCloserRRMeta / sdrNames.length);
+        }
         const metaAteAlvo = (metaRR || meta) * fatorPace;
         const projecao = passedBD > 0 ? Math.round(rm * ratio) : 0;
         const projecaoRR = passedBD > 0 ? Math.round(rr * ratio) : 0;
@@ -484,7 +494,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
       });
     }
     return rows;
-  }, [sdrRows, reunioesMarcadas, reunioesRealizadas, noShowsMes, ganhosMes, goals, monthKey, passedBD, ratio, fatorPace, du.restantes]);
+  }, [sdrRows, sdrNames, closerNames, reunioesMarcadas, reunioesRealizadas, noShowsMes, ganhosMes, goals, monthKey, passedBD, ratio, fatorPace, du.restantes]);
 
   const preVendasTotal = useMemo(() => {
     const rm = preVendasData.reduce((s, d) => s + d.reunioesMarcadas, 0);
@@ -1020,9 +1030,9 @@ function HeroCard({
         </span>
       </div>
       <div>
-        <div className="text-3xl font-extrabold tracking-tight text-foreground leading-none tabular-nums">{value}</div>
-        <div className="text-xs font-semibold text-muted-foreground mt-1.5">{metaLabel}</div>
-        {subLabel && <div className="text-[10px] text-muted-foreground/80 mt-0.5">{subLabel}</div>}
+        <div className="text-5xl font-black tracking-tight text-foreground leading-none tabular-nums">{value}</div>
+        <div className="text-sm font-bold text-foreground/80 mt-2">{metaLabel}</div>
+        {subLabel && <div className="text-[11px] text-muted-foreground mt-1">{subLabel}</div>}
       </div>
       <div>
         <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
