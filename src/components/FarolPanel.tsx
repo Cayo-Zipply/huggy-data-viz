@@ -609,12 +609,14 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
       },
       conversao: {
         atual: convAtual, esperada: metaConvAlvo, pctDoAlvo: convPctAlvo,
-        gapPp: convGap, vendas: totalVendas, ticketMedio, topClosers,
+        gapPp: convGap, vendas: totalVendas, ticketMedio, topClosers, topByTicket,
       },
       contratos: {
         fechados: contratosFech, enviados: contratosEnviados, assinados: contratosAssinados,
         meta: metaContratosTotal, metaAteAlvo: contMetaAteAlvo, gap: contGap, projecao: contProjecao,
+        topByContratos,
       },
+      rankings: { topByFat, topByRR },
     };
   }, [inboundData, inboundTotal, preVendasTotal, reunioesRealizadas.length, closerRows, goals, monthKey, passedBD, ratio, fatorPace, du.restantes, contratosMes.length, contratosEnviados, contratosAssinados]);
 
