@@ -1065,6 +1065,23 @@ function HeroCard({
   );
 }
 
+function RankList({ items, format }: { items: { closer: string; value: number }[]; format: (v: number) => string }) {
+  if (!items || items.length === 0) return <span className="text-xs text-muted-foreground">—</span>;
+  return (
+    <div className="flex flex-col gap-0.5">
+      {items.map((t, i) => {
+        const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉";
+        const first = t.closer.split(" ")[0];
+        return (
+          <span key={t.closer} className="text-[11px] font-medium text-foreground tabular-nums leading-tight">
+            {medal} {first} · {format(t.value)}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Edit Goals Dialog ──
 function EditGoalsDialog({
   open, onOpenChange, monthKey, monthLabel, closers, sdrs, goals, onSave,
