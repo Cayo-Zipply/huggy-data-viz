@@ -98,6 +98,18 @@ export function CallButton({ leadId, className, size = "md", onCallSynced }: Cal
     }
   };
 
+  async function resolveEmail(): Promise<string | null> {
+    const fromCtx = profile?.email ?? user?.email;
+    if (fromCtx) return fromCtx;
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data } = await supabase.auth.getUser();
+      return data.user?.email ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   async function handleCall(e: React.MouseEvent) {
     e.stopPropagation();
     e.preventDefault();
@@ -105,14 +117,21 @@ export function CallButton({ leadId, className, size = "md", onCallSynced }: Cal
       toast.error("Perfil de usuário não encontrado");
       return;
     }
+    const email = await resolveEmail();
+    if (!email) {
+      toast.error("Email do usuário não encontrado");
+      return;
+    }
     setLoading(true);
     try {
+      const payload = {
+        lead_id: leadId,
+        lovable_user_id: profile?.id ?? user?.id,
+        email,
+      };
+      console.log("[CallButton] ipbox-click-to-call payload:", payload);
       const { data, error } = await supabaseExt.functions.invoke("ipbox-click-to-call", {
-        body: {
-          lead_id: leadId,
-          lovable_user_id: profile?.id ?? user?.id,
-          email: profile?.email ?? user?.email,
-        },
+        body: payload,
       });
       if (error || (data && data.error) || (data && data.ok === false)) {
         toast.error(data?.error || error?.message || "Erro ao discar");
