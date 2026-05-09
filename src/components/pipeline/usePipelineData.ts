@@ -493,6 +493,7 @@ export function usePipelineData(actorName: string) {
     if (updates.estado !== undefined) dbUpdates.estado = updates.estado;
     if (updates.cep !== undefined) dbUpdates.cep = updates.cep;
     if (updates.data_venda !== undefined) dbUpdates.data_venda = updates.data_venda;
+    if (updates.assistente_juridico !== undefined) dbUpdates.assistente_juridico = updates.assistente_juridico;
 
     if (Object.keys(dbUpdates).length) {
       const { error } = await sbExt.from("leads").update(dbUpdates).eq("id", id);
