@@ -955,6 +955,14 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
           </div>
         </ScrollArea>
       </SheetContent>
+      <EmailReviewModal
+        open={!!emailModalTipo}
+        onOpenChange={(v) => !v && setEmailModalTipo(null)}
+        envio={emailModalTipo ? latestByTipo(emailModalTipo) : null}
+        tipo={emailModalTipo || "juridico"}
+        leadId={card?.id || ""}
+        onUpdated={refetchEnvios}
+      />
     </Sheet>
   );
 }
