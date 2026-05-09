@@ -105,6 +105,8 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const [anotacoes, setAnotacoes] = useState<Anotacao[]>([]);
   const [loadingAnotacoes, setLoadingAnotacoes] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionKey>("dados");
+  const [emailModalTipo, setEmailModalTipo] = useState<EmailTipo | null>(null);
+  const { items: emailEnvios, refetch: refetchEnvios, latestByTipo } = useEmailEnvios(card?.id ?? null);
 
   const fetchAnotacoes = useCallback(async () => {
     if (!card) return;
