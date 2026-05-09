@@ -109,6 +109,7 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     fim_de_semana: row.fim_de_semana === true || isWeekendSP(createdAt),
     tipo_documento: (row.tipo_documento === "cpf" || row.tipo_documento === "cnpj") ? row.tipo_documento : null,
     data_venda: row.data_venda || null,
+    assistente_juridico: row.assistente_juridico || null,
   };
 }
 
