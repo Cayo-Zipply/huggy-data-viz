@@ -490,6 +490,23 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     </div>
                   </div>
                 )}
+
+                {/* Assistente Jurídico — usado no e-mail financeiro automático */}
+                {card.lead_status === "ganho" && (
+                  <div className="flex items-center gap-3 py-2">
+                    <Scale size={16} className="text-muted-foreground flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Assistente Jurídico Responsável</p>
+                      <input
+                        type="text"
+                        value={card.assistente_juridico || ""}
+                        onChange={(e) => onUpdate(card.id, { assistente_juridico: e.target.value || null } as any)}
+                        placeholder="Nome do(a) assistente"
+                        className="w-full text-sm bg-background border border-border rounded px-2 py-1 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+                )}
                 <Separator className="my-1" />
 
                 {/* Contract */}
