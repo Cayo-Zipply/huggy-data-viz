@@ -677,7 +677,15 @@ export function PipelinePanel() {
         open={drawerOpen}
         onOpenChange={handleDrawerOpenChange}
         onUpdate={updateCard}
-        onMarkWon={markWon}
+        onMarkWon={async (cid) => {
+          await markWon(cid);
+          try {
+            await (sbExt as any).functions.invoke("gerar-rascunhos-ganho", { body: { lead_id: cid } });
+            toast({ title: "Rascunhos de e-mail gerados", description: "Revise antes de enviar." });
+          } catch (e: any) {
+            toast({ title: "Erro ao gerar rascunhos", description: e?.message || "", variant: "destructive" });
+          }
+        }}
         onMarkLost={handleLossRequest}
         onCreateTask={createTask}
         onToggleTask={toggleTask}
