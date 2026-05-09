@@ -4,7 +4,7 @@ import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
   Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap,
   X, Copy, ExternalLink, MapPin, Megaphone, MessageSquare, Save, Loader2,
-  AlertTriangle, Tag, StickyNote, FileSignature
+  AlertTriangle, Tag, StickyNote, FileSignature, Scale, Calculator
 } from "lucide-react";
 import { InputMoedaBRL } from "@/components/ui/input-moeda-brl";
 import { supabaseExt } from "@/lib/supabaseExternal";
