@@ -138,6 +138,7 @@ export default function Settings() {
     { key: "sla" as const, label: "Regras de SLA", icon: Clock },
     { key: "motivos" as const, label: "Motivos de Perda", icon: AlertTriangle },
     { key: "metricas" as const, label: "Métricas Marketing", icon: BarChart3 },
+    ...(isAdmin ? [{ key: "emails" as const, label: "Destinatários de E-mail", icon: Mail }] : []),
   ];
 
   return (
