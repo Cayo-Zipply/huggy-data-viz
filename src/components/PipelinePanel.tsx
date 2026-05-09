@@ -15,6 +15,8 @@ import { GoalsPanel } from "./pipeline/GoalsPanel";
 import { HandoffChecklist } from "./pipeline/HandoffChecklist";
 import { LeadDrawer } from "./pipeline/LeadDrawer";
 import { ConfirmarGanhoDialog } from "./pipeline/ConfirmarGanhoDialog";
+import { hasContractAttached } from "@/lib/contractCheck";
+import { sbExt } from "@/lib/supabaseExternal";
 import { SDR_STAGES, CLOSER_STAGES, STAGE_CONFIG, STAGE_ORDER } from "./pipeline/types";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import type { PipelineCard, Stage } from "./pipeline/types";
@@ -218,8 +220,15 @@ export function PipelinePanel() {
       return;
     }
     if (targetStage === "contrato_assinado") {
-      // Pede confirmação + data da venda antes de mover
-      setGanhoPending({ cardId, cardNome: card.nome });
+      // Validação: precisa ter contrato anexado
+      hasContractAttached(card).then((ok) => {
+        if (!ok) {
+          toast({ title: "Contrato obrigatório", description: "É necessário anexar o contrato assinado antes de marcar como Ganho.", variant: "destructive" });
+          return;
+        }
+        // Pede confirmação + data da venda antes de mover
+        setGanhoPending({ cardId, cardNome: card.nome });
+      });
       return;
     }
     if (card.pipe === "sdr" && STAGE_CONFIG[targetStage as Stage]?.pipe === "closer") {
@@ -245,6 +254,20 @@ export function PipelinePanel() {
     // 2. Marca como ganho com a data da venda escolhida
     await markWon(cardId, dataVenda);
     toast({ title: "Venda confirmada!", description: `Data da venda: ${new Date(`${dataVenda}T12:00:00`).toLocaleDateString("pt-BR")}` });
+
+    // 3. Gera rascunhos de e-mail (jurídico + financeiro) via edge function
+    try {
+      const { error } = await (sbExt as any).functions.invoke("gerar-rascunhos-ganho", {
+        body: { lead_id: cardId },
+      });
+      if (error) {
+        toast({ title: "Erro ao gerar rascunhos", description: error.message || "Tente novamente.", variant: "destructive" });
+      } else {
+        toast({ title: "Rascunhos de e-mail gerados", description: "Revise antes de enviar nos botões do card." });
+      }
+    } catch (e: any) {
+      toast({ title: "Erro ao gerar rascunhos", description: e?.message || "", variant: "destructive" });
+    }
   };
 
   const confirmHandoff = () => {
@@ -654,7 +677,15 @@ export function PipelinePanel() {
         open={drawerOpen}
         onOpenChange={handleDrawerOpenChange}
         onUpdate={updateCard}
-        onMarkWon={markWon}
+        onMarkWon={async (cid) => {
+          await markWon(cid);
+          try {
+            await (sbExt as any).functions.invoke("gerar-rascunhos-ganho", { body: { lead_id: cid } });
+            toast({ title: "Rascunhos de e-mail gerados", description: "Revise antes de enviar." });
+          } catch (e: any) {
+            toast({ title: "Erro ao gerar rascunhos", description: e?.message || "", variant: "destructive" });
+          }
+        }}
         onMarkLost={handleLossRequest}
         onCreateTask={createTask}
         onToggleTask={toggleTask}

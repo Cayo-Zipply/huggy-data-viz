@@ -7,7 +7,8 @@ import { useMarketingOverrides, type MarketingOverride } from "@/hooks/useMarket
 import { useMarketingData } from "@/hooks/useMarketingData";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { Navigate } from "react-router-dom";
-import { Plus, Trash2, Palette, Tag, Settings as SettingsIcon, X, Clock, AlertTriangle, Shield, BarChart3, Save, Users } from "lucide-react";
+import { Plus, Trash2, Palette, Tag, Settings as SettingsIcon, X, Clock, AlertTriangle, Shield, BarChart3, Save, Users, Mail } from "lucide-react";
+import { EmailDestinatariosSection } from "@/components/settings/EmailDestinatariosSection";
 import { cn } from "@/lib/utils";
 import { STAGE_ORDER, STAGE_CONFIG } from "@/components/pipeline/types";
 import { useToast } from "@/hooks/use-toast";
@@ -41,7 +42,7 @@ export default function Settings() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState("");
-  const [activeSection, setActiveSection] = useState<"etiquetas" | "sla" | "motivos" | "metricas" | "responsaveis">("etiquetas");
+  const [activeSection, setActiveSection] = useState<"etiquetas" | "sla" | "motivos" | "metricas" | "responsaveis" | "emails">("etiquetas");
 
   // Motivos de perda state
   const [newMotivoNome, setNewMotivoNome] = useState("");
@@ -137,6 +138,7 @@ export default function Settings() {
     { key: "sla" as const, label: "Regras de SLA", icon: Clock },
     { key: "motivos" as const, label: "Motivos de Perda", icon: AlertTriangle },
     { key: "metricas" as const, label: "Métricas Marketing", icon: BarChart3 },
+    ...(isAdmin ? [{ key: "emails" as const, label: "Destinatários de E-mail", icon: Mail }] : []),
   ];
 
   return (
@@ -460,6 +462,12 @@ export default function Settings() {
               </>
             )}
           </div>
+        </div>
+      )}
+
+      {activeSection === "emails" && isAdmin && (
+        <div className="border border-border rounded-2xl bg-card p-6">
+          <EmailDestinatariosSection />
         </div>
       )}
     </div>

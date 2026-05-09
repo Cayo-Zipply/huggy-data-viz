@@ -70,6 +70,7 @@ export interface PipelineCard {
   fim_de_semana: boolean;
   tipo_documento: "cpf" | "cnpj" | null;
   data_venda: string | null;
+  assistente_juridico: string | null;
 }
 
 export interface PipelineTask {

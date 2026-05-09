@@ -109,6 +109,7 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     fim_de_semana: row.fim_de_semana === true || isWeekendSP(createdAt),
     tipo_documento: (row.tipo_documento === "cpf" || row.tipo_documento === "cnpj") ? row.tipo_documento : null,
     data_venda: row.data_venda || null,
+    assistente_juridico: row.assistente_juridico || null,
   };
 }
 
@@ -415,6 +416,7 @@ export function usePipelineData(actorName: string) {
       fim_de_semana: isWeekendSP(data.created_at || now),
       tipo_documento: null,
       data_venda: null,
+      assistente_juridico: null,
     };
 
     const firstTask = {
@@ -491,6 +493,7 @@ export function usePipelineData(actorName: string) {
     if (updates.estado !== undefined) dbUpdates.estado = updates.estado;
     if (updates.cep !== undefined) dbUpdates.cep = updates.cep;
     if (updates.data_venda !== undefined) dbUpdates.data_venda = updates.data_venda;
+    if (updates.assistente_juridico !== undefined) dbUpdates.assistente_juridico = updates.assistente_juridico;
 
     if (Object.keys(dbUpdates).length) {
       const { error } = await sbExt.from("leads").update(dbUpdates).eq("id", id);
