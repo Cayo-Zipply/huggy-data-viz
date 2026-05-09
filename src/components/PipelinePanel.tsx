@@ -218,8 +218,15 @@ export function PipelinePanel() {
       return;
     }
     if (targetStage === "contrato_assinado") {
-      // Pede confirmação + data da venda antes de mover
-      setGanhoPending({ cardId, cardNome: card.nome });
+      // Validação: precisa ter contrato anexado
+      hasContractAttached(card).then((ok) => {
+        if (!ok) {
+          toast({ title: "Contrato obrigatório", description: "É necessário anexar o contrato assinado antes de marcar como Ganho.", variant: "destructive" });
+          return;
+        }
+        // Pede confirmação + data da venda antes de mover
+        setGanhoPending({ cardId, cardNome: card.nome });
+      });
       return;
     }
     if (card.pipe === "sdr" && STAGE_CONFIG[targetStage as Stage]?.pipe === "closer") {
