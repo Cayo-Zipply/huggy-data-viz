@@ -7,7 +7,8 @@ import { useMarketingOverrides, type MarketingOverride } from "@/hooks/useMarket
 import { useMarketingData } from "@/hooks/useMarketingData";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { Navigate } from "react-router-dom";
-import { Plus, Trash2, Palette, Tag, Settings as SettingsIcon, X, Clock, AlertTriangle, Shield, BarChart3, Save, Users } from "lucide-react";
+import { Plus, Trash2, Palette, Tag, Settings as SettingsIcon, X, Clock, AlertTriangle, Shield, BarChart3, Save, Users, Mail } from "lucide-react";
+import { EmailDestinatariosSection } from "@/components/settings/EmailDestinatariosSection";
 import { cn } from "@/lib/utils";
 import { STAGE_ORDER, STAGE_CONFIG } from "@/components/pipeline/types";
 import { useToast } from "@/hooks/use-toast";
