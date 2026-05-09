@@ -254,6 +254,20 @@ export function PipelinePanel() {
     // 2. Marca como ganho com a data da venda escolhida
     await markWon(cardId, dataVenda);
     toast({ title: "Venda confirmada!", description: `Data da venda: ${new Date(`${dataVenda}T12:00:00`).toLocaleDateString("pt-BR")}` });
+
+    // 3. Gera rascunhos de e-mail (jurídico + financeiro) via edge function
+    try {
+      const { error } = await (sbExt as any).functions.invoke("gerar-rascunhos-ganho", {
+        body: { lead_id: cardId },
+      });
+      if (error) {
+        toast({ title: "Erro ao gerar rascunhos", description: error.message || "Tente novamente.", variant: "destructive" });
+      } else {
+        toast({ title: "Rascunhos de e-mail gerados", description: "Revise antes de enviar nos botões do card." });
+      }
+    } catch (e: any) {
+      toast({ title: "Erro ao gerar rascunhos", description: e?.message || "", variant: "destructive" });
+    }
   };
 
   const confirmHandoff = () => {
