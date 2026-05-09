@@ -251,6 +251,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
     { key: "contrato", label: "Contrato", icon: FileSignature },
     { key: "anexo", label: "Anexo", icon: Paperclip },
     { key: "chamadas", label: "Chamadas", icon: Phone },
+    ...(card.lead_status === "ganho" ? [{ key: "emails" as SectionKey, label: "E-mails", icon: Mail }] : []),
     { key: "acoes", label: "Ações", icon: Zap },
   ];
 
