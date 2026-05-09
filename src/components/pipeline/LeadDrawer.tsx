@@ -22,6 +22,9 @@ import { AbaAnexos } from "@/components/lead/aba-anexos";
 import type { PipelineLabel } from "@/hooks/useLabels";
 import { CallButton } from "./CallButton";
 import { CallHistory } from "./CallHistory";
+import { EmailReviewModal } from "./EmailReviewModal";
+import { useEmailEnvios, type EmailTipo } from "@/hooks/useEmailEnvios";
+import { hasContractAttached } from "@/lib/contractCheck";
 
 /* ── Draft helpers (localStorage) ── */
 const DRAFT_PREFIX = "crm_draft_";
