@@ -15,6 +15,8 @@ import { GoalsPanel } from "./pipeline/GoalsPanel";
 import { HandoffChecklist } from "./pipeline/HandoffChecklist";
 import { LeadDrawer } from "./pipeline/LeadDrawer";
 import { ConfirmarGanhoDialog } from "./pipeline/ConfirmarGanhoDialog";
+import { hasContractAttached } from "@/lib/contractCheck";
+import { sbExt } from "@/lib/supabaseExternal";
 import { SDR_STAGES, CLOSER_STAGES, STAGE_CONFIG, STAGE_ORDER } from "./pipeline/types";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import type { PipelineCard, Stage } from "./pipeline/types";
