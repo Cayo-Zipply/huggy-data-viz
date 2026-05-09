@@ -464,6 +464,12 @@ export default function Settings() {
           </div>
         </div>
       )}
+
+      {activeSection === "emails" && isAdmin && (
+        <div className="border border-border rounded-2xl bg-card p-6">
+          <EmailDestinatariosSection />
+        </div>
+      )}
     </div>
   );
 }
