@@ -841,7 +841,14 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
               <div className="space-y-3">
                 {card.lead_status === "aberto" && (
                   <div className="flex gap-3">
-                    <button onClick={() => onMarkWon(card.id)}
+                    <button onClick={async () => {
+                      const ok = await hasContractAttached(card);
+                      if (!ok) {
+                        toast.error("É necessário anexar o contrato assinado antes de marcar como Ganho.");
+                        return;
+                      }
+                      onMarkWon(card.id);
+                    }}
                       className="flex-1 text-sm py-2.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 flex items-center justify-center gap-2 transition-colors border border-green-500/20">
                       <Trophy size={16} />Marcar como Ganho
                     </button>
