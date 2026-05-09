@@ -42,7 +42,7 @@ export default function Settings() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState("");
-  const [activeSection, setActiveSection] = useState<"etiquetas" | "sla" | "motivos" | "metricas" | "responsaveis">("etiquetas");
+  const [activeSection, setActiveSection] = useState<"etiquetas" | "sla" | "motivos" | "metricas" | "responsaveis" | "emails">("etiquetas");
 
   // Motivos de perda state
   const [newMotivoNome, setNewMotivoNome] = useState("");
