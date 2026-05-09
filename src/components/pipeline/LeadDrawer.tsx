@@ -853,7 +853,71 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
               <CallHistory leadId={card.id} />
             )}
 
-            {/* AÇÕES */}
+            {/* E-MAILS pós-ganho */}
+            {activeSection === "emails" && card.lead_status === "ganho" && (
+              <div className="space-y-4">
+                {(["juridico", "financeiro"] as EmailTipo[]).map((tipo) => {
+                  const envio = latestByTipo(tipo);
+                  const status = envio?.status;
+                  const dot = status === "enviado"
+                    ? "bg-emerald-500"
+                    : status === "rascunho"
+                      ? "bg-amber-400"
+                      : "bg-muted-foreground/40";
+                  const tooltip = status === "enviado" && envio?.enviado_em
+                    ? `Enviado em ${new Date(envio.enviado_em).toLocaleString("pt-BR")}`
+                    : status === "rascunho" ? "Rascunho pendente" : "Sem rascunho";
+                  return (
+                    <button
+                      key={tipo}
+                      onClick={() => setEmailModalTipo(tipo)}
+                      title={tooltip}
+                      className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg border border-border bg-card hover:border-primary/40 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        {tipo === "juridico" ? <Scale size={16} /> : <Calculator size={16} />}
+                        <span className="text-sm font-medium">
+                          Revisar e-mail {tipo === "juridico" ? "Jurídico" : "Financeiro"}
+                        </span>
+                      </div>
+                      <span className={cn("w-2.5 h-2.5 rounded-full", dot)} />
+                    </button>
+                  );
+                })}
+
+                {/* Histórico */}
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">E-mails enviados</p>
+                  {emailEnvios.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Nenhum envio ainda.</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {emailEnvios.map((e) => (
+                        <button
+                          key={e.id}
+                          onClick={() => setEmailModalTipo(e.tipo)}
+                          className="w-full flex items-center justify-between gap-2 text-xs px-3 py-2 rounded border border-border bg-muted/20 hover:bg-muted/40"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Mail size={12} />
+                            <span className="capitalize">{e.tipo}</span>
+                            <span className={cn(
+                              "px-1.5 py-0.5 rounded text-[10px]",
+                              e.status === "enviado" ? "bg-emerald-500/15 text-emerald-600" :
+                              e.status === "erro" ? "bg-destructive/15 text-destructive" :
+                              "bg-amber-400/15 text-amber-600"
+                            )}>{e.status}</span>
+                          </div>
+                          <span className="text-muted-foreground">
+                            {e.enviado_em ? new Date(e.enviado_em).toLocaleDateString("pt-BR") : new Date(e.created_at).toLocaleDateString("pt-BR")}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             {activeSection === "acoes" && (
               <div className="space-y-3">
                 {card.lead_status === "aberto" && (
