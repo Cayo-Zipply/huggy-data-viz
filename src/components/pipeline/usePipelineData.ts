@@ -416,6 +416,7 @@ export function usePipelineData(actorName: string) {
       fim_de_semana: isWeekendSP(data.created_at || now),
       tipo_documento: null,
       data_venda: null,
+      assistente_juridico: null,
     };
 
     const firstTask = {
