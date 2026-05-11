@@ -1065,9 +1065,7 @@ function HeroCard({
     </div>
   );
 }
-    </div>
-  );
-}
+
 
 function RankList({ items, format }: { items: { closer: string; value: number }[]; format: (v: number) => string }) {
   if (!items || items.length === 0) return <span className="text-xs text-muted-foreground">—</span>;
