@@ -99,6 +99,15 @@ export function CallHistory({ leadId }: { leadId: string }) {
         <div className="flex items-center gap-2">
           <Phone size={14} className="text-primary" />
           <p className="text-xs font-medium text-foreground uppercase tracking-wider">Chamadas</p>
+          {chamadas.length > 0 && (
+            <span className="text-[10px] text-muted-foreground">
+              · {chamadas.length} tentativa{chamadas.length === 1 ? "" : "s"}
+              {(() => {
+                const atend = chamadas.filter((c) => c.resultado === "ATENDIDO").length;
+                return atend > 0 ? ` · ${atend} atendida${atend === 1 ? "" : "s"}` : "";
+              })()}
+            </span>
+          )}
         </div>
         <button
           onClick={handleRefresh}
@@ -118,14 +127,20 @@ export function CallHistory({ leadId }: { leadId: string }) {
         <p className="text-sm text-muted-foreground text-center py-6">Nenhuma chamada registrada</p>
       ) : (
         <div className="space-y-2">
-          {chamadas.map((c) => {
+          {chamadas.map((c, idx) => {
+            const attemptNum = chamadas.length - idx;
             const dur = formatDuration(c.duracao);
             return (
               <div key={c.id} className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm text-foreground font-medium">{c.numero_discado || "—"}</p>
-                    <p className="text-[11px] text-muted-foreground">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                        Tentativa #{attemptNum}
+                      </span>
+                      <p className="text-sm text-foreground font-medium">{c.numero_discado || "—"}</p>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">
                       {formatDateTime(c.iniciado_em)}
                       {c.ipbox_user && <> · por {c.ipbox_user}</>}
                       {dur && <> · {dur}</>}

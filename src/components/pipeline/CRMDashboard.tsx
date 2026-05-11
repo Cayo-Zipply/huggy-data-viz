@@ -6,6 +6,7 @@ import type { PipelineCard } from "./types";
 import { STAGE_ORDER, STAGE_CONFIG, LOSS_CATEGORIES, formatBRL, cardsReachedStage, daysDiff } from "./types";
 import { useLabels } from "@/hooks/useLabels";
 import { MetricasTipoDocumentoCard } from "./MetricasTipoDocumentoCard";
+import { CallStatsChart } from "./CallStatsChart";
 
 /** Formata BRL compacto: R$ 36,7 mil / R$ 1,2 mi — ideal para eixos e labels de barra */
 function formatBRLCompact(value: number): string {
@@ -488,6 +489,13 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
 
       {/* CPF vs CNPJ metrics */}
       <MetricasTipoDocumentoCard />
+
+      {/* Ligações por vendedor */}
+      <CallStatsChart
+        start={getMonthRange(currentMonth).start}
+        end={getMonthRange(currentMonth).end}
+        monthLabel={getMonthLabel(currentMonth)}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {lossData.length > 0 && (
