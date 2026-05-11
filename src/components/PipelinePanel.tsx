@@ -184,12 +184,15 @@ export function PipelinePanel() {
           c.origem || '',
           c.cnpj || '',
           c.owner || '',
+          c.representante_nome || '',
+          c.representante_cpf || '',
         ].map(normalize);
         if (fields.some(f => f.includes(q))) return true;
         if (qDigits.length >= 3) {
           const phone = onlyDigits(c.telefone || '');
           const cnpj = onlyDigits(c.cnpj || '');
-          if (phone.includes(qDigits) || cnpj.includes(qDigits)) return true;
+          const cpf = onlyDigits(c.representante_cpf || '');
+          if (phone.includes(qDigits) || cnpj.includes(qDigits) || cpf.includes(qDigits)) return true;
         }
         return false;
       });
@@ -211,6 +214,29 @@ export function PipelinePanel() {
     if (!selectedCardId) return null;
     return cards.find(c => c.id === selectedCardId) || null;
   }, [cards, selectedCardId]);
+
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchSuggestions = useMemo(() => {
+    const rawQ = searchQuery.trim();
+    if (!rawQ) return [] as PipelineCard[];
+    const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    const onlyDigits = (s: string) => s.replace(/\D+/g, "");
+    const q = normalize(rawQ);
+    const qDigits = onlyDigits(rawQ);
+    const matches = cards.filter(c => {
+      const fields = [c.nome, c.empresa || '', c.email || '', c.origem || '', c.cnpj || '', c.owner || '', c.representante_nome || '', c.representante_cpf || ''].map(normalize);
+      if (fields.some(f => f.includes(q))) return true;
+      if (qDigits.length >= 3) {
+        const phone = onlyDigits(c.telefone || '');
+        const cnpj = onlyDigits(c.cnpj || '');
+        const cpf = onlyDigits(c.representante_cpf || '');
+        if (phone.includes(qDigits) || cnpj.includes(qDigits) || cpf.includes(qDigits)) return true;
+      }
+      return false;
+    });
+    matches.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return matches.slice(0, 8);
+  }, [cards, searchQuery]);
 
   const handleDrop = (cardId: string, targetStage: string) => {
     const card = cards.find(c => c.id === cardId);
@@ -567,7 +593,9 @@ export function PipelinePanel() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar lead..."
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+                placeholder="Buscar por nome, empresa, CNPJ, CPF, telefone..."
                 className="w-full rounded-lg border border-border bg-background py-1.5 pl-8 pr-8 text-xs text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
               />
               {searchQuery && (
@@ -579,6 +607,26 @@ export function PipelinePanel() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
+              )}
+              {searchFocused && searchQuery.trim() && (
+                <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-80 overflow-y-auto rounded-lg border border-border bg-popover shadow-lg">
+                  {searchSuggestions.length === 0 ? (
+                    <div className="px-3 py-2 text-xs text-muted-foreground">Nenhum lead encontrado</div>
+                  ) : (
+                    searchSuggestions.map(s => (
+                      <button
+                        key={s.id}
+                        onMouseDown={(e) => { e.preventDefault(); handleCardClick(s); setSearchFocused(false); }}
+                        className="flex w-full flex-col items-start gap-0.5 border-b border-border/50 px-3 py-2 text-left text-xs hover:bg-accent last:border-b-0"
+                      >
+                        <span className="font-medium text-foreground truncate w-full">{s.nome}</span>
+                        <span className="text-[10px] text-muted-foreground truncate w-full">
+                          {[s.empresa, s.telefone, s.cnpj || s.representante_cpf, s.owner].filter(Boolean).join(" · ")}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
               )}
             </div>
 
