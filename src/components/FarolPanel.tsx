@@ -1219,14 +1219,14 @@ function EditGoalsDialog({
             onClick={() => {
               const presets: Record<string, Partial<PipelineGoal>> = {
                 "Fillipe Amorim Oliveira Silva": { faturamento_meta: 31500, reunioes_realizadas_meta: 60, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 18 },
-                "Café": { faturamento_meta: 14080, reunioes_realizadas_meta: 40, conversao_meta: 22, ticket_medio_meta: 1600, contratos_meta: 9 },
+                "João": { faturamento_meta: 14080, reunioes_realizadas_meta: 40, conversao_meta: 22, ticket_medio_meta: 1600, contratos_meta: 9 },
                 "Cayo Bitencourt": { faturamento_meta: 10500, reunioes_realizadas_meta: 20, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 6 },
               };
               const norm = (s: string) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
               const matchKey = (name: string) => {
                 const n = norm(name);
                 if (n.includes("fillipe") || n.includes("filipe")) return "Fillipe Amorim Oliveira Silva";
-                if (n.includes("cafe") || n.includes("café")) return "Café";
+                if (n.includes("cafe") || n.includes("café") || n.includes("joao")) return "João";
                 if (n.includes("cayo")) return "Cayo Bitencourt";
                 return null;
               };
