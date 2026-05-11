@@ -421,10 +421,10 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     const rows = closerRows
       .map(closer => {
         // "Vendas" e "Contratos" são a mesma métrica — usamos contratos como fonte única de verdade
-        const ganhos = contratosMes.filter(c => c.owner === closer);
+        const ganhos = contratosMes.filter(c => canonical(c.owner) === closer);
         const vendas = ganhos.length;
         const realizado = ganhos.reduce((s, c) => s + (c.deal_value || 0), 0);
-        const goal = goals.find(g => g.closer === closer && g.month === monthKey);
+        const goal = goals.find(g => canonical(g.closer) === closer && g.month === monthKey);
         const meta = goal?.faturamento_meta || 0;
         const metaAteAlvo = meta * fatorPace;
         const projecao = passedBD > 0 ? Math.round(realizado * ratio) : 0;
@@ -438,7 +438,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         const diferenca = projecao - meta;
         const pctMeta = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
         const atingTotal = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
-        const rrCloser = reunioesRealizadas.filter(c => c.owner === closer).length;
+        const rrCloser = reunioesRealizadas.filter(c => canonical(c.owner) === closer).length;
         const conv = rrCloser > 0 ? Math.round((vendas / rrCloser) * 100) : 0;
         const contratos = vendas; // mesma métrica
         return { closer, vendas, realizado, meta, metaAteAlvo, projecao, falta, diferenca, pctMeta, atingTotal, conv, ticket, tktProjetado, contratos, unassigned: 0 };
