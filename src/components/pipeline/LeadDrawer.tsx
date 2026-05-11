@@ -85,7 +85,7 @@ interface Props {
   ownerOptions?: string[];
 }
 
-type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "contrato" | "anexo" | "chamadas" | "emails" | "acoes";
+type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "contrato" | "anexo" | "chamadas" | "reunioes" | "emails" | "acoes";
 
 export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onSaveObservation, labels = [], cardLabels = [], onAddLabel, onRemoveLabel, ownerOptions: ownerOptionsProp }: Props) {
   const { user, isAdmin, profile } = useAuth();
