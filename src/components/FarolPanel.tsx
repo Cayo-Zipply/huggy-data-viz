@@ -1023,11 +1023,12 @@ function HeroCard({
   subLabel?: string;
   progress: number;
   progressLabel?: string;
-  footerLeft: { label: string; value: React.ReactNode };
+  footerLeft: { label: string; value: React.ReactNode; tone?: "red" | "green" };
   footerRight: { label: string; value: React.ReactNode; tone?: "red" | "green" };
 }) {
   const pct = Math.max(0, Math.min(100, Math.round(progress)));
-  const tone = footerRight.tone === "red" ? "text-red-400" : footerRight.tone === "green" ? "text-green-400" : "text-foreground";
+  const toneClass = (t?: "red" | "green") =>
+    t === "red" ? "text-red-400" : t === "green" ? "text-green-400" : "text-foreground";
   return (
     <div className="rounded-xl border border-primary/20 bg-card p-4 flex flex-col gap-3">
       <div className="flex items-center justify-between">
@@ -1051,16 +1052,19 @@ function HeroCard({
           </div>
         )}
       </div>
-      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/50">
-        <div>
+      <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 pt-2 border-t border-border/50">
+        <div className="min-w-[88px]">
           <div className="text-[9px] uppercase tracking-wider text-muted-foreground">{footerLeft.label}</div>
-          <div className="text-xs font-medium text-foreground">{footerLeft.value}</div>
+          <div className={cn("text-sm font-bold tabular-nums", toneClass(footerLeft.tone))}>{footerLeft.value}</div>
         </div>
-        <div>
+        <div className="border-l border-border/50 pl-3">
           <div className="text-[9px] uppercase tracking-wider text-muted-foreground">{footerRight.label}</div>
-          <div className={cn("text-xs font-medium", tone)}>{footerRight.value}</div>
+          <div className={cn("text-xs font-medium", toneClass(footerRight.tone))}>{footerRight.value}</div>
         </div>
       </div>
+    </div>
+  );
+}
     </div>
   );
 }
