@@ -355,10 +355,19 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
             {cardLabels.map(cl => (
               <span key={cl.id} className="text-xs px-2 py-1 rounded-full font-medium" style={{ backgroundColor: cl.color + "20", color: cl.color }}>{cl.name}</span>
             ))}
+            {proximaReuniao && (() => {
+              const d = new Date(proximaReuniao.data_inicio);
+              const pad = (n: number) => String(n).padStart(2, "0");
+              return (
+                <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 font-medium flex items-center gap-1">
+                  📅 Reunião em {pad(d.getDate())}/{pad(d.getMonth() + 1)} {pad(d.getHours())}:{pad(d.getMinutes())}
+                </span>
+              );
+            })()}
           </div>
 
           {/* Quick actions */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {card.telefone && (
               <>
                 <button onClick={copyPhone} className="text-xs px-3 py-1.5 rounded-md bg-muted hover:bg-muted/80 text-foreground flex items-center gap-1.5 transition-colors">
@@ -373,6 +382,12 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                 <CallButton leadId={card.id} />
               </>
             )}
+            <button
+              onClick={() => setMeetDialogOpen(true)}
+              className="text-xs px-3 py-1.5 rounded-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 flex items-center gap-1.5 transition-colors"
+            >
+              <Video size={12} />Agendar reunião
+            </button>
           </div>
         </div>
 
