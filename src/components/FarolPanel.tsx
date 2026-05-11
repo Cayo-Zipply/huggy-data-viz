@@ -175,7 +175,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
       const matcher = (n: string) => {
         const nn = norm(n);
         if (preset.name.startsWith("Fillipe")) return /fillipe|filipe/.test(nn);
-        if (preset.name === "Café") return /caf[eé]/.test(nn);
+        if (preset.name === "João") return /caf[eé]|joao/.test(nn);
         return /cayo/.test(nn);
       };
       const realName = closerNames.find(matcher) || preset.name;
