@@ -12,6 +12,7 @@ import { useTeamMembers, type TeamMember } from "@/hooks/useTeamMembers";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabaseExt as supabase } from "@/lib/supabaseExternal";
 import { useToast } from "@/hooks/use-toast";
+import { buildCanonicalizer } from "@/lib/ownerNormalization";
 
 // Status de contrato considerados como "fechado" para meta de contratos
 const CONTRATO_FECHADO_STATUS = new Set(["assinado"]);
