@@ -374,26 +374,57 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
 
   // ── INBOUND (closers) — vendas/faturamento por closer ──
   // Une os closers cadastrados (perfis) com os owners reais que aparecem
-  // como responsáveis em cards do pipe Closer + presets fixos (Cayo, Café,
-  // Fillipe). Isso garante que mesmo quando o nome do perfil é curto
-  // ("Fillipe") e o owner do card é longo ("Fillipe Amorim Oliveira Silva"),
-  // ambos apareçam e os números batam com o Kanban.
+  // como responsáveis em cards do pipe Closer + presets fixos. Em seguida
+  // aplica uma canonicalização por PRIMEIRO NOME normalizado para colapsar
+  // variantes (ex.: "Fillipe" do perfil + "Fillipe Amorim Oliveira Silva"
+  // do card → mantém só o nome mais longo).
+  const firstTokenNorm = (s: string) => norm(s).split(/\s+/)[0] || "";
+
+  const canonical = useMemo(() => {
+    const all: string[] = [];
+    closerNames.forEach(n => n && all.push(n));
+    closerCards.forEach(c => { if (c.owner) all.push(c.owner); });
+    cards.forEach(c => { if (c.owner) all.push(c.owner); });
+    goals.forEach(g => { if (g.closer) all.push(g.closer); });
+    ["Cayo Bitencourt", "Café", "Fillipe Amorim Oliveira Silva"].forEach(n => all.push(n));
+    // Para cada primeiro-nome normalizado, escolhe o nome mais LONGO como canônico.
+    const byKey = new Map<string, string>();
+    all.forEach(n => {
+      const k = firstTokenNorm(n);
+      if (!k) return;
+      const cur = byKey.get(k);
+      if (!cur || n.length > cur.length) byKey.set(k, n);
+    });
+    const map = new Map<string, string>();
+    all.forEach(n => {
+      const k = firstTokenNorm(n);
+      const target = byKey.get(k) || n;
+      map.set(n, target);
+    });
+    const fn = (name: string | null | undefined) => {
+      if (!name) return "";
+      const k = firstTokenNorm(name);
+      return byKey.get(k) || name;
+    };
+    return fn;
+  }, [closerNames, closerCards, cards, goals]);
+
   const closerRows = useMemo(() => {
     const set = new Set<string>();
-    closerNames.forEach(n => n && set.add(n));
-    closerCards.forEach(c => { if (c.owner) set.add(c.owner); });
-    ["Cayo Bitencourt", "Café", "Fillipe Amorim Oliveira Silva"].forEach(n => set.add(n));
+    closerNames.forEach(n => n && set.add(canonical(n)));
+    closerCards.forEach(c => { if (c.owner) set.add(canonical(c.owner)); });
+    ["Cayo Bitencourt", "Café", "Fillipe Amorim Oliveira Silva"].forEach(n => set.add(canonical(n)));
     return Array.from(set);
-  }, [closerNames, closerCards]);
+  }, [closerNames, closerCards, canonical]);
 
   const inboundData = useMemo(() => {
     const rows = closerRows
       .map(closer => {
         // "Vendas" e "Contratos" são a mesma métrica — usamos contratos como fonte única de verdade
-        const ganhos = contratosMes.filter(c => c.owner === closer);
+        const ganhos = contratosMes.filter(c => canonical(c.owner) === closer);
         const vendas = ganhos.length;
         const realizado = ganhos.reduce((s, c) => s + (c.deal_value || 0), 0);
-        const goal = goals.find(g => g.closer === closer && g.month === monthKey);
+        const goal = goals.find(g => canonical(g.closer) === closer && g.month === monthKey);
         const meta = goal?.faturamento_meta || 0;
         const metaAteAlvo = meta * fatorPace;
         const projecao = passedBD > 0 ? Math.round(realizado * ratio) : 0;
@@ -407,7 +438,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         const diferenca = projecao - meta;
         const pctMeta = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
         const atingTotal = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
-        const rrCloser = reunioesRealizadas.filter(c => c.owner === closer).length;
+        const rrCloser = reunioesRealizadas.filter(c => canonical(c.owner) === closer).length;
         const conv = rrCloser > 0 ? Math.round((vendas / rrCloser) * 100) : 0;
         const contratos = vendas; // mesma métrica
         return { closer, vendas, realizado, meta, metaAteAlvo, projecao, falta, diferenca, pctMeta, atingTotal, conv, ticket, tktProjetado, contratos, unassigned: 0 };
@@ -453,27 +484,27 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   // somente nesta tabela. Por isso unificamos sdrs + closers como linhas de pré-vendas.
   const sdrRows = useMemo(() => {
     const set = new Set<string>();
-    sdrNames.forEach(n => n && set.add(n));
-    closerNames.forEach(n => n && set.add(n));
-    closerCards.forEach(c => { if (c.owner) set.add(c.owner); });
-    ["Cayo Bitencourt", "Café", "Fillipe Amorim Oliveira Silva"].forEach(n => set.add(n));
+    sdrNames.forEach(n => n && set.add(canonical(n)));
+    closerNames.forEach(n => n && set.add(canonical(n)));
+    closerCards.forEach(c => { if (c.owner) set.add(canonical(c.owner)); });
+    ["Cayo Bitencourt", "Café", "Fillipe Amorim Oliveira Silva"].forEach(n => set.add(canonical(n)));
     return Array.from(set);
-  }, [sdrNames, closerNames, closerCards]);
+  }, [sdrNames, closerNames, closerCards, canonical]);
 
   const preVendasData = useMemo(() => {
     // Soma das metas de RR cadastradas nos closers — usada como fallback de meta dos SDRs
     const totalCloserRRMeta = closerNames.reduce((s, c) => {
-      const g = goals.find(x => x.closer === c && x.month === monthKey);
+      const g = goals.find(x => canonical(x.closer) === canonical(c) && x.month === monthKey);
       return s + (g?.reunioes_realizadas_meta || 0);
     }, 0);
 
     const rows = sdrRows
       .map(sdr => {
-        const rm = reunioesMarcadas.filter(c => c.owner === sdr).length;
-        const rr = reunioesRealizadas.filter(c => c.owner === sdr).length;
-        const ns = noShowsMes.filter(c => c.owner === sdr).length;
-        const vendas = contratosMes.filter(c => c.owner === sdr).length;
-        const goal = goals.find(g => g.closer === sdr && g.month === monthKey);
+        const rm = reunioesMarcadas.filter(c => canonical(c.owner) === sdr).length;
+        const rr = reunioesRealizadas.filter(c => canonical(c.owner) === sdr).length;
+        const ns = noShowsMes.filter(c => canonical(c.owner) === sdr).length;
+        const vendas = contratosMes.filter(c => canonical(c.owner) === sdr).length;
+        const goal = goals.find(g => canonical(g.closer) === sdr && g.month === monthKey);
         const meta = goal?.reunioes_marcadas_meta || 0;
         let metaRR = goal?.reunioes_realizadas_meta || 0;
         // Fallback: se SDR não tem meta individual, divide a meta total dos closers entre os SDRs
