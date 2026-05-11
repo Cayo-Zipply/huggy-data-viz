@@ -7,6 +7,7 @@ import type { PipelineCard, PipelineTask, LeadStatus, Stage } from "./types";
 import { STAGE_ORDER, STAGE_CONFIG, formatBRL, daysDiff } from "./types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { sameOwner } from "@/lib/ownerNormalization";
 
 export interface FilterState {
   dateFrom: string;
