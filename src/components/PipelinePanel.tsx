@@ -215,6 +215,29 @@ export function PipelinePanel() {
     return cards.find(c => c.id === selectedCardId) || null;
   }, [cards, selectedCardId]);
 
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchSuggestions = useMemo(() => {
+    const rawQ = searchQuery.trim();
+    if (!rawQ) return [] as PipelineCard[];
+    const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    const onlyDigits = (s: string) => s.replace(/\D+/g, "");
+    const q = normalize(rawQ);
+    const qDigits = onlyDigits(rawQ);
+    const matches = cards.filter(c => {
+      const fields = [c.nome, c.empresa || '', c.email || '', c.origem || '', c.cnpj || '', c.owner || '', c.representante_nome || '', c.representante_cpf || ''].map(normalize);
+      if (fields.some(f => f.includes(q))) return true;
+      if (qDigits.length >= 3) {
+        const phone = onlyDigits(c.telefone || '');
+        const cnpj = onlyDigits(c.cnpj || '');
+        const cpf = onlyDigits(c.representante_cpf || '');
+        if (phone.includes(qDigits) || cnpj.includes(qDigits) || cpf.includes(qDigits)) return true;
+      }
+      return false;
+    });
+    matches.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return matches.slice(0, 8);
+  }, [cards, searchQuery]);
+
   const handleDrop = (cardId: string, targetStage: string) => {
     const card = cards.find(c => c.id === cardId);
     if (!card || card.stage === targetStage) return;
