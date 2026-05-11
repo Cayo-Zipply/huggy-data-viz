@@ -1013,6 +1013,12 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
         card={card ?? null}
         onUpdated={refetchEnvios}
       />
+      <AgendarReuniaoDialog
+        card={card}
+        open={meetDialogOpen}
+        onOpenChange={setMeetDialogOpen}
+        onCreated={() => setMeetRefreshKey(k => k + 1)}
+      />
     </Sheet>
   );
 }
