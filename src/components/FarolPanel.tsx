@@ -167,7 +167,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     if (monthKey < currentKey) return;
     const presets: { name: string; data: Partial<PipelineGoal> }[] = [
       { name: "Fillipe Amorim Oliveira Silva", data: { faturamento_meta: 31500, reunioes_realizadas_meta: 60, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 18 } },
-      { name: "Café",                          data: { faturamento_meta: 14080, reunioes_realizadas_meta: 40, conversao_meta: 22, ticket_medio_meta: 1600, contratos_meta: 9 } },
+      { name: "João",                          data: { faturamento_meta: 14080, reunioes_realizadas_meta: 40, conversao_meta: 22, ticket_medio_meta: 1600, contratos_meta: 9 } },
       { name: "Cayo Bitencourt",               data: { faturamento_meta: 10500, reunioes_realizadas_meta: 20, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 6 } },
     ];
     presets.forEach(preset => {
