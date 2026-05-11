@@ -10,7 +10,7 @@ import { AlertTriangle, Settings, Target, CalendarDays, DollarSign, Users, Perce
 import { cn } from "@/lib/utils";
 import { useTeamMembers, type TeamMember } from "@/hooks/useTeamMembers";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseExt as supabase } from "@/lib/supabaseExternal";
 import { useToast } from "@/hooks/use-toast";
 
 // Status de contrato considerados como "fechado" para meta de contratos
