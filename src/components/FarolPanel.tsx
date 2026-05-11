@@ -393,7 +393,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     const set = new Set<string>();
     closerNames.forEach(n => n && set.add(canonical(n)));
     closerCards.forEach(c => { if (c.owner) set.add(canonical(c.owner)); });
-    ["Cayo Bitencourt", "Café", "Fillipe Amorim Oliveira Silva"].forEach(n => set.add(canonical(n)));
+    ["Cayo Bitencourt", "João", "Fillipe Amorim Oliveira Silva"].forEach(n => set.add(canonical(n)));
     return Array.from(set);
   }, [closerNames, closerCards, canonical]);
 
