@@ -708,8 +708,8 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
           subLabel={`meta até ${dataAlvoLabel}: ${formatBRL(globais.faturamento.metaAteAlvo)}`}
           progress={globais.faturamento.pacePct}
           progressLabel={`Pace ${Math.round(globais.faturamento.pacePct)}%`}
-          footerLeft={{ label: "Top closers", value: <RankList items={globais.rankings.topByFat} format={(v) => formatBRL(v)} /> }}
-          footerRight={{ label: "Falta p/ pace", value: formatBRL(globais.faturamento.faltaPace), tone: globais.faturamento.faltaPace > 0 ? "red" : "green" }}
+          footerLeft={{ label: "Falta p/ pace", value: formatBRL(globais.faturamento.faltaPace), tone: globais.faturamento.faltaPace > 0 ? "red" : "green" }}
+          footerRight={{ label: "Por closer", value: <RankList items={globais.rankings.topByFat} format={(v) => formatBRL(v)} /> }}
         />
         <HeroCard
           icon={<Users className="w-4 h-4" />}
@@ -719,8 +719,8 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
           subLabel={`meta até ${dataAlvoLabel}: ${Math.round(globais.reunioes.metaAteAlvo)}`}
           progress={globais.reunioes.meta > 0 ? (globais.reunioes.realizadas / globais.reunioes.meta) * 100 : 0}
           progressLabel={`Pace diário · ${globais.reunioes.paceDiarioRR} RR`}
-          footerLeft={{ label: "Top closers", value: <RankList items={globais.rankings.topByRR} format={(v) => String(v)} /> }}
-          footerRight={{ label: "Taxa show", value: `${globais.reunioes.taxaShow}%` }}
+          footerLeft={{ label: "Taxa show geral", value: `${globais.reunioes.taxaShow}%` }}
+          footerRight={{ label: "Por closer", value: <RankList items={globais.rankings.topByRR} format={(v) => String(v)} /> }}
         />
         <HeroCard
           icon={<Percent className="w-4 h-4" />}
@@ -730,8 +730,8 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
           subLabel={globais.conversao.esperada > 0 ? `${Math.round(globais.conversao.pctDoAlvo)}% do alvo` : ""}
           progress={globais.conversao.pctDoAlvo}
           progressLabel={`Vendas · ${globais.conversao.vendas}`}
-          footerLeft={{ label: "Top closers", value: <RankList items={globais.conversao.topClosers.map(t => ({ closer: t.closer, value: t.conv }))} format={(v) => `${v}%`} /> }}
-          footerRight={{ label: "Ticket médio", value: <RankList items={globais.conversao.topByTicket} format={(v) => v > 0 ? formatBRL(v) : "—"} /> }}
+          footerLeft={{ label: "Ticket médio geral", value: globais.conversao.ticketMedio > 0 ? formatBRL(globais.conversao.ticketMedio) : "—" }}
+          footerRight={{ label: "Conv. por closer", value: <RankList items={globais.conversao.topClosers.map(t => ({ closer: t.closer, value: t.conv }))} format={(v) => `${v}%`} /> }}
         />
         <HeroCard
           icon={<FileSignature className="w-4 h-4" />}
@@ -741,8 +741,8 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
           subLabel={`meta até ${dataAlvoLabel}: ${Math.round(globais.contratos.metaAteAlvo)}`}
           progress={globais.contratos.meta > 0 ? (globais.contratos.fechados / globais.contratos.meta) * 100 : 0}
           progressLabel={`Pace até ${dataAlvoLabel}`}
-          footerLeft={{ label: "Top closers", value: <RankList items={globais.contratos.topByContratos} format={(v) => String(v)} /> }}
-          footerRight={{ label: "Assinados", value: String(globais.contratos.assinados) }}
+          footerLeft={{ label: "Assinados geral", value: String(globais.contratos.assinados) }}
+          footerRight={{ label: "Por closer", value: <RankList items={globais.contratos.topByContratos} format={(v) => String(v)} /> }}
         />
       </div>
 
