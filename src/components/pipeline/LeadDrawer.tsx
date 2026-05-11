@@ -138,6 +138,22 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
     }
   }, [card?.id, card?.owner, fetchAnotacoes]);
 
+  // Próxima reunião agendada (para badge no header)
+  useEffect(() => {
+    if (!card) { setProximaReuniao(null); return; }
+    const nowIso = new Date().toISOString();
+    (supabaseCloud as any)
+      .from("reunioes_agendadas")
+      .select("data_inicio")
+      .eq("lead_id", card.id)
+      .eq("status", "agendada")
+      .gt("data_inicio", nowIso)
+      .order("data_inicio", { ascending: true })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }: any) => setProximaReuniao(data || null));
+  }, [card?.id, meetRefreshKey]);
+
   // When starting to edit, check for draft first
   const startEdit = useCallback((f: string, v: string) => {
     if (!card) return;
