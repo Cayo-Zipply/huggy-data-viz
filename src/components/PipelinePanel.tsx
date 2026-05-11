@@ -593,7 +593,9 @@ export function PipelinePanel() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar lead..."
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+                placeholder="Buscar por nome, empresa, CNPJ, CPF, telefone..."
                 className="w-full rounded-lg border border-border bg-background py-1.5 pl-8 pr-8 text-xs text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
               />
               {searchQuery && (
@@ -605,6 +607,26 @@ export function PipelinePanel() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
+              )}
+              {searchFocused && searchQuery.trim() && (
+                <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-80 overflow-y-auto rounded-lg border border-border bg-popover shadow-lg">
+                  {searchSuggestions.length === 0 ? (
+                    <div className="px-3 py-2 text-xs text-muted-foreground">Nenhum lead encontrado</div>
+                  ) : (
+                    searchSuggestions.map(s => (
+                      <button
+                        key={s.id}
+                        onMouseDown={(e) => { e.preventDefault(); handleCardClick(s); setSearchFocused(false); }}
+                        className="flex w-full flex-col items-start gap-0.5 border-b border-border/50 px-3 py-2 text-left text-xs hover:bg-accent last:border-b-0"
+                      >
+                        <span className="font-medium text-foreground truncate w-full">{s.nome}</span>
+                        <span className="text-[10px] text-muted-foreground truncate w-full">
+                          {[s.empresa, s.telefone, s.cnpj || s.representante_cpf, s.owner].filter(Boolean).join(" · ")}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
               )}
             </div>
 
