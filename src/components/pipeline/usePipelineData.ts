@@ -208,13 +208,19 @@ export function usePipelineData(actorName: string) {
       fetchAll("lead_historico", "created_at"),
     ]);
 
+    // Log errors but DO NOT bail out — partial data is better than empty UI.
+    // Previously, a single failing table (e.g. lead_historico under RLS for a
+    // closer user) blanked the entire pipeline for that user.
     if (leadsRes.error || tasksRes.error || goalsRes.error || histRes.error) {
-      console.error("Erro ao carregar snapshot do pipeline:", {
-        leads: leadsRes.error,
-        tasks: tasksRes.error,
-        goals: goalsRes.error,
-        history: histRes.error,
+      console.warn("Pipeline snapshot — algumas tabelas falharam:", {
+        leads: leadsRes.error?.message,
+        tasks: tasksRes.error?.message,
+        goals: goalsRes.error?.message,
+        history: histRes.error?.message,
       });
+    }
+    // If the critical table (leads) failed entirely, keep cache untouched.
+    if (leadsRes.error && !leadsRes.data) {
       return;
     }
 
