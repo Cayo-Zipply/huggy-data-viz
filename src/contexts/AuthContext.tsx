@@ -250,11 +250,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user, fetchProfile]);
 
   const isAdmin = profile?.role === "admin";
-  const primaryRole = profile?.role;
-  const secondaryRole = profile?.secondary_role;
-  const hasRole = (r: string) => primaryRole === r || secondaryRole === r;
-  const isSdr = hasRole("sdr");
-  const isCloser = hasRole("closer");
+  // Fonte de verdade para gating no pipe: coluna `funcoes` (array). `role`
+  // segue existindo mas só é usada para distinguir admin. Admin enxerga tudo.
+  const funcoes = profile?.funcoes || [];
+  const hasFuncao = (f: "sdr" | "closer") =>
+    isAdmin || funcoes.includes(f) || profile?.role === f || profile?.secondary_role === f;
+  const isSdr = hasFuncao("sdr");
+  const isCloser = hasFuncao("closer");
   const isDual = isSdr && isCloser;
 
   const setRole = useCallback(async (role: "sdr" | "closer") => {
