@@ -184,12 +184,15 @@ export function PipelinePanel() {
           c.origem || '',
           c.cnpj || '',
           c.owner || '',
+          c.representante_nome || '',
+          c.representante_cpf || '',
         ].map(normalize);
         if (fields.some(f => f.includes(q))) return true;
         if (qDigits.length >= 3) {
           const phone = onlyDigits(c.telefone || '');
           const cnpj = onlyDigits(c.cnpj || '');
-          if (phone.includes(qDigits) || cnpj.includes(qDigits)) return true;
+          const cpf = onlyDigits(c.representante_cpf || '');
+          if (phone.includes(qDigits) || cnpj.includes(qDigits) || cpf.includes(qDigits)) return true;
         }
         return false;
       });
