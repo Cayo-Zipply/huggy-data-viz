@@ -14,11 +14,29 @@ export function useTeamMembers() {
   const [loading, setLoading] = useState(true);
 
   const fetchMembers = useCallback(async () => {
-    const { data } = await supabase
+    // cayo's user_profiles has only: id, nome, role, email, user_id, avatar_url
+    // (no secondary_role / pode_ser_responsavel). Query a safe column set and
+    // backfill the missing fields locally so the rest of the app keeps working.
+    const { data, error } = await supabase
       .from("user_profiles")
-      .select("id, nome, role, secondary_role, pode_ser_responsavel")
-      .or("role.in.(admin,closer,sdr),secondary_role.in.(closer,sdr)");
-    setMembers((data as TeamMember[]) ?? []);
+      .select("id, nome, role")
+      .in("role", ["admin", "closer", "sdr"]);
+
+    if (error) {
+      console.warn("useTeamMembers:", error.message);
+      setMembers([]);
+      setLoading(false);
+      return;
+    }
+
+    const normalized: TeamMember[] = (data ?? []).map((m: any) => ({
+      id: m.id,
+      nome: m.nome,
+      role: m.role ?? null,
+      secondary_role: null,
+      pode_ser_responsavel: m.role === "closer" || m.role === "sdr" || m.role === "admin",
+    }));
+    setMembers(normalized);
     setLoading(false);
   }, []);
 

@@ -373,7 +373,18 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   };
 
   // ── INBOUND (closers) — vendas/faturamento por closer ──
-  const closerRows = useMemo(() => closerNames, [closerNames]);
+  // Une os closers cadastrados (perfis) com os owners reais que aparecem
+  // como responsáveis em cards do pipe Closer + presets fixos (Cayo, Café,
+  // Fillipe). Isso garante que mesmo quando o nome do perfil é curto
+  // ("Fillipe") e o owner do card é longo ("Fillipe Amorim Oliveira Silva"),
+  // ambos apareçam e os números batam com o Kanban.
+  const closerRows = useMemo(() => {
+    const set = new Set<string>();
+    closerNames.forEach(n => n && set.add(n));
+    closerCards.forEach(c => { if (c.owner) set.add(c.owner); });
+    ["Cayo Bitencourt", "Café", "Fillipe Amorim Oliveira Silva"].forEach(n => set.add(n));
+    return Array.from(set);
+  }, [closerNames, closerCards]);
 
   const inboundData = useMemo(() => {
     const rows = closerRows
@@ -440,10 +451,14 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   // Em PRÉ-VENDAS contamos também os closers: assim que um card recebe um closer
   // como responsável (no pipe Closer), aquele closer ganha +1 "reunião marcada"
   // somente nesta tabela. Por isso unificamos sdrs + closers como linhas de pré-vendas.
-  const sdrRows = useMemo(
-    () => Array.from(new Set([...sdrNames, ...closerNames])),
-    [sdrNames, closerNames]
-  );
+  const sdrRows = useMemo(() => {
+    const set = new Set<string>();
+    sdrNames.forEach(n => n && set.add(n));
+    closerNames.forEach(n => n && set.add(n));
+    closerCards.forEach(c => { if (c.owner) set.add(c.owner); });
+    ["Cayo Bitencourt", "Café", "Fillipe Amorim Oliveira Silva"].forEach(n => set.add(n));
+    return Array.from(set);
+  }, [sdrNames, closerNames, closerCards]);
 
   const preVendasData = useMemo(() => {
     // Soma das metas de RR cadastradas nos closers — usada como fallback de meta dos SDRs
