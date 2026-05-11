@@ -12,11 +12,6 @@ export default defineConfig(({ mode }) => ({
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
     alias: {
-      // Redirect the auto-generated Supabase client (which points at the
-      // ghost xcjpoycwezdagbjrkhmq project) to the canonical "cayo" client.
-      // Guarantees a single GoTrueClient instance and avoids the
-      // "Unsupported provider: missing OAuth secret" error on Google login.
-      "@/integrations/supabase/client": path.resolve(__dirname, "./src/lib/supabaseExternal.ts"),
       "@": path.resolve(__dirname, "./src"),
     },
   },
