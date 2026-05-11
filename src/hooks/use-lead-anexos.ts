@@ -45,6 +45,15 @@ export function useUploadAnexo(leadId: string) {
       const ext = file.name.split(".").pop() ?? "bin";
       const path = `${leadId}/${crypto.randomUUID()}.${ext}`;
 
+      // Identifica usuário logado (a RLS de lead_anexos exige uploaded_by = auth.uid())
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id ?? null;
+      const userName =
+        (userData.user?.user_metadata as any)?.full_name ||
+        (userData.user?.user_metadata as any)?.name ||
+        userData.user?.email ||
+        null;
+
       const { error: upErr } = await supabase.storage
         .from("lead-anexos")
         .upload(path, file, { upsert: false, contentType: file.type });
@@ -68,6 +77,8 @@ export function useUploadAnexo(leadId: string) {
           tamanho_bytes: file.size,
           storage_path: path,
           source: "manual",
+          uploaded_by: userId,
+          uploaded_by_nome: userName,
         } as any)
         .select()
         .single();
