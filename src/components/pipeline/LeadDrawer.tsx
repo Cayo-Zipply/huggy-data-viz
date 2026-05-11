@@ -4,8 +4,10 @@ import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
   Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap,
   X, Copy, ExternalLink, MapPin, Megaphone, MessageSquare, Save, Loader2,
-  AlertTriangle, Tag, StickyNote, FileSignature, Scale, Calculator
+  AlertTriangle, Tag, StickyNote, FileSignature, Scale, Calculator, Video
 } from "lucide-react";
+import { AgendarReuniaoDialog } from "./AgendarReuniaoDialog";
+import { ReunioesAgendadasList } from "./ReunioesAgendadasList";
 import { InputMoedaBRL } from "@/components/ui/input-moeda-brl";
 import { supabaseExt } from "@/lib/supabaseExternal";
 import { supabase as supabaseCloud } from "@/integrations/supabase/client";
