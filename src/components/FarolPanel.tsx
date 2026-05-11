@@ -379,42 +379,14 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   // aplica uma canonicalização por PRIMEIRO NOME normalizado para colapsar
   // variantes (ex.: "Fillipe" do perfil + "Fillipe Amorim Oliveira Silva"
   // do card → mantém só o nome mais longo).
-  const firstTokenNorm = (s: string) => norm(s).split(/\s+/)[0] || "";
-
-  // Aliases: pessoas com nomes diferentes que são o MESMO ser humano.
-  // A chave é o primeiro nome normalizado; o valor é a chave canônica que
-  // será usada para agrupar. Ex.: "joão" e "café" → ambos viram "cafe".
-  const NAME_ALIASES: Record<string, string> = {
-    "joao": "cafe",
-    "café": "cafe",
-    "cafe": "cafe",
-  };
-  const aliasKey = (s: string) => {
-    const k = firstTokenNorm(s);
-    return NAME_ALIASES[k] || k;
-  };
-
   const canonical = useMemo(() => {
     const all: string[] = [];
     closerNames.forEach(n => n && all.push(n));
     closerCards.forEach(c => { if (c.owner) all.push(c.owner); });
     cards.forEach(c => { if (c.owner) all.push(c.owner); });
     goals.forEach(g => { if (g.closer) all.push(g.closer); });
-    ["Cayo Bitencourt", "Café", "Fillipe Amorim Oliveira Silva"].forEach(n => all.push(n));
-    // Para cada chave de alias, escolhe o nome mais LONGO como canônico.
-    const byKey = new Map<string, string>();
-    all.forEach(n => {
-      const k = aliasKey(n);
-      if (!k) return;
-      const cur = byKey.get(k);
-      if (!cur || n.length > cur.length) byKey.set(k, n);
-    });
-    const fn = (name: string | null | undefined) => {
-      if (!name) return "";
-      const k = aliasKey(name);
-      return byKey.get(k) || name;
-    };
-    return fn;
+    ["Cayo Bitencourt", "João", "Fillipe Amorim Oliveira Silva"].forEach(n => all.push(n));
+    return buildCanonicalizer(all);
   }, [closerNames, closerCards, cards, goals]);
 
   const closerRows = useMemo(() => {
