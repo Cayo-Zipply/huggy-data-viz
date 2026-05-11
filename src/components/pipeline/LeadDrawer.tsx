@@ -890,6 +890,19 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
               <CallHistory leadId={card.id} />
             )}
 
+            {/* REUNIÕES */}
+            {activeSection === "reunioes" && (
+              <div className="space-y-3">
+                <button
+                  onClick={() => setMeetDialogOpen(true)}
+                  className="w-full text-sm py-2 bg-primary/10 text-primary rounded-md hover:bg-primary/20 flex items-center justify-center gap-2"
+                >
+                  <Video size={14} />Agendar nova reunião
+                </button>
+                <ReunioesAgendadasList leadId={card.id} refreshKey={meetRefreshKey} />
+              </div>
+            )}
+
             {/* E-MAILS pós-ganho */}
             {activeSection === "emails" && card.lead_status === "ganho" && (
               <div className="space-y-4">
