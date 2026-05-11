@@ -12,6 +12,7 @@ import { useTeamMembers, type TeamMember } from "@/hooks/useTeamMembers";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabaseExt as supabase } from "@/lib/supabaseExternal";
 import { useToast } from "@/hooks/use-toast";
+import { buildCanonicalizer } from "@/lib/ownerNormalization";
 
 // Status de contrato considerados como "fechado" para meta de contratos
 const CONTRATO_FECHADO_STATUS = new Set(["assinado"]);
@@ -166,7 +167,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     if (monthKey < currentKey) return;
     const presets: { name: string; data: Partial<PipelineGoal> }[] = [
       { name: "Fillipe Amorim Oliveira Silva", data: { faturamento_meta: 31500, reunioes_realizadas_meta: 60, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 18 } },
-      { name: "Café",                          data: { faturamento_meta: 14080, reunioes_realizadas_meta: 40, conversao_meta: 22, ticket_medio_meta: 1600, contratos_meta: 9 } },
+      { name: "João",                          data: { faturamento_meta: 14080, reunioes_realizadas_meta: 40, conversao_meta: 22, ticket_medio_meta: 1600, contratos_meta: 9 } },
       { name: "Cayo Bitencourt",               data: { faturamento_meta: 10500, reunioes_realizadas_meta: 20, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 6 } },
     ];
     presets.forEach(preset => {
@@ -174,7 +175,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
       const matcher = (n: string) => {
         const nn = norm(n);
         if (preset.name.startsWith("Fillipe")) return /fillipe|filipe/.test(nn);
-        if (preset.name === "Café") return /caf[eé]/.test(nn);
+        if (preset.name === "João") return /caf[eé]|joao/.test(nn);
         return /cayo/.test(nn);
       };
       const realName = closerNames.find(matcher) || preset.name;
@@ -378,49 +379,21 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
   // aplica uma canonicalização por PRIMEIRO NOME normalizado para colapsar
   // variantes (ex.: "Fillipe" do perfil + "Fillipe Amorim Oliveira Silva"
   // do card → mantém só o nome mais longo).
-  const firstTokenNorm = (s: string) => norm(s).split(/\s+/)[0] || "";
-
-  // Aliases: pessoas com nomes diferentes que são o MESMO ser humano.
-  // A chave é o primeiro nome normalizado; o valor é a chave canônica que
-  // será usada para agrupar. Ex.: "joão" e "café" → ambos viram "cafe".
-  const NAME_ALIASES: Record<string, string> = {
-    "joao": "cafe",
-    "café": "cafe",
-    "cafe": "cafe",
-  };
-  const aliasKey = (s: string) => {
-    const k = firstTokenNorm(s);
-    return NAME_ALIASES[k] || k;
-  };
-
   const canonical = useMemo(() => {
     const all: string[] = [];
     closerNames.forEach(n => n && all.push(n));
     closerCards.forEach(c => { if (c.owner) all.push(c.owner); });
     cards.forEach(c => { if (c.owner) all.push(c.owner); });
     goals.forEach(g => { if (g.closer) all.push(g.closer); });
-    ["Cayo Bitencourt", "Café", "Fillipe Amorim Oliveira Silva"].forEach(n => all.push(n));
-    // Para cada chave de alias, escolhe o nome mais LONGO como canônico.
-    const byKey = new Map<string, string>();
-    all.forEach(n => {
-      const k = aliasKey(n);
-      if (!k) return;
-      const cur = byKey.get(k);
-      if (!cur || n.length > cur.length) byKey.set(k, n);
-    });
-    const fn = (name: string | null | undefined) => {
-      if (!name) return "";
-      const k = aliasKey(name);
-      return byKey.get(k) || name;
-    };
-    return fn;
+    ["Cayo Bitencourt", "João", "Fillipe Amorim Oliveira Silva"].forEach(n => all.push(n));
+    return buildCanonicalizer(all);
   }, [closerNames, closerCards, cards, goals]);
 
   const closerRows = useMemo(() => {
     const set = new Set<string>();
     closerNames.forEach(n => n && set.add(canonical(n)));
     closerCards.forEach(c => { if (c.owner) set.add(canonical(c.owner)); });
-    ["Cayo Bitencourt", "Café", "Fillipe Amorim Oliveira Silva"].forEach(n => set.add(canonical(n)));
+    ["Cayo Bitencourt", "João", "Fillipe Amorim Oliveira Silva"].forEach(n => set.add(canonical(n)));
     return Array.from(set);
   }, [closerNames, closerCards, canonical]);
 
@@ -494,7 +467,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     sdrNames.forEach(n => n && set.add(canonical(n)));
     closerNames.forEach(n => n && set.add(canonical(n)));
     closerCards.forEach(c => { if (c.owner) set.add(canonical(c.owner)); });
-    ["Cayo Bitencourt", "Café", "Fillipe Amorim Oliveira Silva"].forEach(n => set.add(canonical(n)));
+    ["Cayo Bitencourt", "João", "Fillipe Amorim Oliveira Silva"].forEach(n => set.add(canonical(n)));
     return Array.from(set);
   }, [sdrNames, closerNames, closerCards, canonical]);
 
@@ -1246,14 +1219,14 @@ function EditGoalsDialog({
             onClick={() => {
               const presets: Record<string, Partial<PipelineGoal>> = {
                 "Fillipe Amorim Oliveira Silva": { faturamento_meta: 31500, reunioes_realizadas_meta: 60, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 18 },
-                "Café": { faturamento_meta: 14080, reunioes_realizadas_meta: 40, conversao_meta: 22, ticket_medio_meta: 1600, contratos_meta: 9 },
+                "João": { faturamento_meta: 14080, reunioes_realizadas_meta: 40, conversao_meta: 22, ticket_medio_meta: 1600, contratos_meta: 9 },
                 "Cayo Bitencourt": { faturamento_meta: 10500, reunioes_realizadas_meta: 20, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 6 },
               };
               const norm = (s: string) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
               const matchKey = (name: string) => {
                 const n = norm(name);
                 if (n.includes("fillipe") || n.includes("filipe")) return "Fillipe Amorim Oliveira Silva";
-                if (n.includes("cafe") || n.includes("café")) return "Café";
+                if (n.includes("cafe") || n.includes("café") || n.includes("joao")) return "João";
                 if (n.includes("cayo")) return "Cayo Bitencourt";
                 return null;
               };
