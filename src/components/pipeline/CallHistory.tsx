@@ -99,6 +99,15 @@ export function CallHistory({ leadId }: { leadId: string }) {
         <div className="flex items-center gap-2">
           <Phone size={14} className="text-primary" />
           <p className="text-xs font-medium text-foreground uppercase tracking-wider">Chamadas</p>
+          {chamadas.length > 0 && (
+            <span className="text-[10px] text-muted-foreground">
+              · {chamadas.length} tentativa{chamadas.length === 1 ? "" : "s"}
+              {(() => {
+                const atend = chamadas.filter((c) => c.resultado === "ATENDIDO").length;
+                return atend > 0 ? ` · ${atend} atendida${atend === 1 ? "" : "s"}` : "";
+              })()}
+            </span>
+          )}
         </div>
         <button
           onClick={handleRefresh}
