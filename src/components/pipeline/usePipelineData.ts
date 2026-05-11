@@ -1,10 +1,10 @@
 import { useState, useCallback, useEffect, useRef, type SetStateAction } from "react";
 import type { PipelineCard, PipelineTask, PipelineGoal, Stage, PipeType, StageChange } from "./types";
 import { DEFAULT_DEAL_VALUE, STAGE_CONFIG, AUTO_TASKS, addDays } from "./types";
-import { sbExt as _sbExt } from "@/lib/supabaseExternal";
+import { supabaseData } from "@/lib/supabaseExternal";
 import { supabase } from "@/integrations/supabase/client";
 
-const sbExt = _sbExt as any;
+const sbExt = supabaseData as any;
 
 /* ── helpers: map DB etapa → local Stage ── */
 function mapEtapa(etapa: string | null): Stage {

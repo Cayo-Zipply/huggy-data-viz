@@ -21,6 +21,14 @@ export const supabase = createClient(EXTERNAL_URL, EXTERNAL_ANON_KEY, {
   },
 });
 
+export const supabaseData = createClient(EXTERNAL_URL, EXTERNAL_ANON_KEY, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+  },
+});
+
 // Backwards-compatible aliases used across the codebase.
 export const supabaseExt = supabase;
 export const sbExt = supabase;
