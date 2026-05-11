@@ -490,6 +490,13 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
       {/* CPF vs CNPJ metrics */}
       <MetricasTipoDocumentoCard />
 
+      {/* Ligações por vendedor */}
+      <CallStatsChart
+        start={getMonthRange(currentMonth).start}
+        end={getMonthRange(currentMonth).end}
+        monthLabel={getMonthLabel(currentMonth)}
+      />
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {lossData.length > 0 && (
           <div className="bg-card border border-border rounded-xl p-4">
