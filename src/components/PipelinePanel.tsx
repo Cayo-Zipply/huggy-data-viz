@@ -128,14 +128,14 @@ export function PipelinePanel() {
   }, [drawerOpen, selectedCardId]);
 
   const ownerOptions = useMemo(() => {
-    const pool = new Set<string>([
+    const raw: string[] = [
       currentUserName,
       ...(ownerNames.length > 0 ? ownerNames : teamNames),
-      ...cards.map((card) => card.owner).filter(Boolean) as string[],
-      ...tasks.map((task) => task.responsible).filter(Boolean) as string[],
+      ...(cards.map((card) => card.owner).filter(Boolean) as string[]),
+      ...(tasks.map((task) => task.responsible).filter(Boolean) as string[]),
       ...goals.map((goal) => goal.closer).filter(Boolean),
-    ]);
-    return Array.from(pool).filter(Boolean).sort((a, b) => a.localeCompare(b, "pt-BR"));
+    ];
+    return dedupeOwnerNames(raw);
   }, [cards, currentUserName, goals, tasks, teamNames, ownerNames]);
 
   const showAllOwners = isAdmin && activeUser === "all";
