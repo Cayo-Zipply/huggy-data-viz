@@ -15,6 +15,7 @@ interface UserProfile {
   email: string;
   nome: string;
   role: "admin" | "sdr" | "closer" | null;
+  funcoes: ("sdr" | "closer")[];
   secondary_role: "sdr" | "closer" | null;
   user_id: string | null;
 }
