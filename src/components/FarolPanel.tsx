@@ -1067,15 +1067,21 @@ function HeroCard({
 
 function RankList({ items, format }: { items: { closer: string; value: number }[]; format: (v: number) => string }) {
   if (!items || items.length === 0) return <span className="text-xs text-muted-foreground">—</span>;
+  const top = items.slice(0, 3);
+  const medals = ["🥇", "🥈", "🥉"];
   return (
-    <div className="flex flex-col gap-0.5">
-      {items.map((t, i) => {
-        const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉";
+    <div className="flex flex-col gap-px mt-0.5">
+      {top.map((t, i) => {
         const first = t.closer.split(" ")[0];
         return (
-          <span key={t.closer} className="text-[11px] font-medium text-foreground tabular-nums leading-tight">
-            {medal} {first} · {format(t.value)}
-          </span>
+          <div
+            key={t.closer}
+            className="grid grid-cols-[14px_1fr_auto] items-center gap-1.5 text-[11px] leading-tight tabular-nums"
+          >
+            <span className="text-[11px] leading-none">{medals[i]}</span>
+            <span className="font-medium text-foreground truncate">{first}</span>
+            <span className="font-semibold text-foreground/90">{format(t.value)}</span>
+          </div>
         );
       })}
     </div>
