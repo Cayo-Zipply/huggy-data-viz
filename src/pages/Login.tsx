@@ -183,7 +183,7 @@ export default function Login() {
                   provider: "google",
                   options: {
                     redirectTo: `${window.location.origin}/pipeline`,
-                    scopes: "https://www.googleapis.com/auth/gmail.send",
+                    scopes: "openid email profile https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/calendar.events",
                     queryParams: { access_type: "offline", prompt: "consent", hd: "penaquadros.com" },
                   },
                 });

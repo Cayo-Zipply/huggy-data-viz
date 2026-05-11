@@ -4,8 +4,10 @@ import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
   Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap,
   X, Copy, ExternalLink, MapPin, Megaphone, MessageSquare, Save, Loader2,
-  AlertTriangle, Tag, StickyNote, FileSignature, Scale, Calculator
+  AlertTriangle, Tag, StickyNote, FileSignature, Scale, Calculator, Video
 } from "lucide-react";
+import { AgendarReuniaoDialog } from "./AgendarReuniaoDialog";
+import { ReunioesAgendadasList } from "./ReunioesAgendadasList";
 import { InputMoedaBRL } from "@/components/ui/input-moeda-brl";
 import { supabaseExt } from "@/lib/supabaseExternal";
 import { supabase as supabaseCloud } from "@/integrations/supabase/client";
@@ -83,7 +85,7 @@ interface Props {
   ownerOptions?: string[];
 }
 
-type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "contrato" | "anexo" | "chamadas" | "emails" | "acoes";
+type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "contrato" | "anexo" | "chamadas" | "reunioes" | "emails" | "acoes";
 
 export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onSaveObservation, labels = [], cardLabels = [], onAddLabel, onRemoveLabel, ownerOptions: ownerOptionsProp }: Props) {
   const { user, isAdmin, profile } = useAuth();
@@ -106,6 +108,9 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const [loadingAnotacoes, setLoadingAnotacoes] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionKey>("dados");
   const [emailModalTipo, setEmailModalTipo] = useState<EmailTipo | null>(null);
+  const [meetDialogOpen, setMeetDialogOpen] = useState(false);
+  const [meetRefreshKey, setMeetRefreshKey] = useState(0);
+  const [proximaReuniao, setProximaReuniao] = useState<{ data_inicio: string } | null>(null);
   const { items: emailEnvios, refetch: refetchEnvios, latestByTipo } = useEmailEnvios(card?.id ?? null);
 
   const fetchAnotacoes = useCallback(async () => {
@@ -132,6 +137,22 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
       fetchAnotacoes();
     }
   }, [card?.id, card?.owner, fetchAnotacoes]);
+
+  // Próxima reunião agendada (para badge no header)
+  useEffect(() => {
+    if (!card) { setProximaReuniao(null); return; }
+    const nowIso = new Date().toISOString();
+    (supabaseCloud as any)
+      .from("reunioes_agendadas")
+      .select("data_inicio")
+      .eq("lead_id", card.id)
+      .eq("status", "agendada")
+      .gt("data_inicio", nowIso)
+      .order("data_inicio", { ascending: true })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }: any) => setProximaReuniao(data || null));
+  }, [card?.id, meetRefreshKey]);
 
   // When starting to edit, check for draft first
   const startEdit = useCallback((f: string, v: string) => {
@@ -256,6 +277,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
     { key: "contrato", label: "Contrato", icon: FileSignature },
     { key: "anexo", label: "Anexo", icon: Paperclip },
     { key: "chamadas", label: "Chamadas", icon: Phone },
+    { key: "reunioes", label: "Reuniões", icon: Video },
     ...(card.lead_status === "ganho" ? [{ key: "emails" as SectionKey, label: "E-mails", icon: Mail }] : []),
     { key: "acoes", label: "Ações", icon: Zap },
   ];
@@ -333,10 +355,19 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
             {cardLabels.map(cl => (
               <span key={cl.id} className="text-xs px-2 py-1 rounded-full font-medium" style={{ backgroundColor: cl.color + "20", color: cl.color }}>{cl.name}</span>
             ))}
+            {proximaReuniao && (() => {
+              const d = new Date(proximaReuniao.data_inicio);
+              const pad = (n: number) => String(n).padStart(2, "0");
+              return (
+                <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 font-medium flex items-center gap-1">
+                  📅 Reunião em {pad(d.getDate())}/{pad(d.getMonth() + 1)} {pad(d.getHours())}:{pad(d.getMinutes())}
+                </span>
+              );
+            })()}
           </div>
 
           {/* Quick actions */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {card.telefone && (
               <>
                 <button onClick={copyPhone} className="text-xs px-3 py-1.5 rounded-md bg-muted hover:bg-muted/80 text-foreground flex items-center gap-1.5 transition-colors">
@@ -351,6 +382,12 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                 <CallButton leadId={card.id} />
               </>
             )}
+            <button
+              onClick={() => setMeetDialogOpen(true)}
+              className="text-xs px-3 py-1.5 rounded-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 flex items-center gap-1.5 transition-colors"
+            >
+              <Video size={12} />Agendar reunião
+            </button>
           </div>
         </div>
 
@@ -853,6 +890,19 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
               <CallHistory leadId={card.id} />
             )}
 
+            {/* REUNIÕES */}
+            {activeSection === "reunioes" && (
+              <div className="space-y-3">
+                <button
+                  onClick={() => setMeetDialogOpen(true)}
+                  className="w-full text-sm py-2 bg-primary/10 text-primary rounded-md hover:bg-primary/20 flex items-center justify-center gap-2"
+                >
+                  <Video size={14} />Agendar nova reunião
+                </button>
+                <ReunioesAgendadasList leadId={card.id} refreshKey={meetRefreshKey} />
+              </div>
+            )}
+
             {/* E-MAILS pós-ganho */}
             {activeSection === "emails" && card.lead_status === "ganho" && (
               <div className="space-y-4">
@@ -962,6 +1012,12 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
         leadId={card?.id || ""}
         card={card ?? null}
         onUpdated={refetchEnvios}
+      />
+      <AgendarReuniaoDialog
+        card={card}
+        open={meetDialogOpen}
+        onOpenChange={setMeetDialogOpen}
+        onCreated={() => setMeetRefreshKey(k => k + 1)}
       />
     </Sheet>
   );
