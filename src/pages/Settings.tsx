@@ -12,7 +12,7 @@ import { EmailDestinatariosSection } from "@/components/settings/EmailDestinatar
 import { cn } from "@/lib/utils";
 import { STAGE_ORDER, STAGE_CONFIG } from "@/components/pipeline/types";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseExt as supabase } from "@/lib/supabaseExternal";
 
 const PRESET_COLORS = [
   "#ef4444", "#f97316", "#f59e0b", "#22c55e", "#14b8a6",

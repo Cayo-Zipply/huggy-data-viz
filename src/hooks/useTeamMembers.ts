@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseExt as supabase } from "@/lib/supabaseExternal";
 
 export interface TeamMember {
   id: string;
