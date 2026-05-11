@@ -374,17 +374,48 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
 
   // ── INBOUND (closers) — vendas/faturamento por closer ──
   // Une os closers cadastrados (perfis) com os owners reais que aparecem
-  // como responsáveis em cards do pipe Closer + presets fixos (Cayo, Café,
-  // Fillipe). Isso garante que mesmo quando o nome do perfil é curto
-  // ("Fillipe") e o owner do card é longo ("Fillipe Amorim Oliveira Silva"),
-  // ambos apareçam e os números batam com o Kanban.
+  // como responsáveis em cards do pipe Closer + presets fixos. Em seguida
+  // aplica uma canonicalização por PRIMEIRO NOME normalizado para colapsar
+  // variantes (ex.: "Fillipe" do perfil + "Fillipe Amorim Oliveira Silva"
+  // do card → mantém só o nome mais longo).
+  const firstTokenNorm = (s: string) => norm(s).split(/\s+/)[0] || "";
+
+  const canonical = useMemo(() => {
+    const all: string[] = [];
+    closerNames.forEach(n => n && all.push(n));
+    closerCards.forEach(c => { if (c.owner) all.push(c.owner); });
+    cards.forEach(c => { if (c.owner) all.push(c.owner); });
+    goals.forEach(g => { if (g.closer) all.push(g.closer); });
+    ["Cayo Bitencourt", "Café", "Fillipe Amorim Oliveira Silva"].forEach(n => all.push(n));
+    // Para cada primeiro-nome normalizado, escolhe o nome mais LONGO como canônico.
+    const byKey = new Map<string, string>();
+    all.forEach(n => {
+      const k = firstTokenNorm(n);
+      if (!k) return;
+      const cur = byKey.get(k);
+      if (!cur || n.length > cur.length) byKey.set(k, n);
+    });
+    const map = new Map<string, string>();
+    all.forEach(n => {
+      const k = firstTokenNorm(n);
+      const target = byKey.get(k) || n;
+      map.set(n, target);
+    });
+    const fn = (name: string | null | undefined) => {
+      if (!name) return "";
+      const k = firstTokenNorm(name);
+      return byKey.get(k) || name;
+    };
+    return fn;
+  }, [closerNames, closerCards, cards, goals]);
+
   const closerRows = useMemo(() => {
     const set = new Set<string>();
-    closerNames.forEach(n => n && set.add(n));
-    closerCards.forEach(c => { if (c.owner) set.add(c.owner); });
-    ["Cayo Bitencourt", "Café", "Fillipe Amorim Oliveira Silva"].forEach(n => set.add(n));
+    closerNames.forEach(n => n && set.add(canonical(n)));
+    closerCards.forEach(c => { if (c.owner) set.add(canonical(c.owner)); });
+    ["Cayo Bitencourt", "Café", "Fillipe Amorim Oliveira Silva"].forEach(n => set.add(canonical(n)));
     return Array.from(set);
-  }, [closerNames, closerCards]);
+  }, [closerNames, closerCards, canonical]);
 
   const inboundData = useMemo(() => {
     const rows = closerRows
