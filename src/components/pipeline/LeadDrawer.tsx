@@ -108,6 +108,9 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const [loadingAnotacoes, setLoadingAnotacoes] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionKey>("dados");
   const [emailModalTipo, setEmailModalTipo] = useState<EmailTipo | null>(null);
+  const [meetDialogOpen, setMeetDialogOpen] = useState(false);
+  const [meetRefreshKey, setMeetRefreshKey] = useState(0);
+  const [proximaReuniao, setProximaReuniao] = useState<{ data_inicio: string } | null>(null);
   const { items: emailEnvios, refetch: refetchEnvios, latestByTipo } = useEmailEnvios(card?.id ?? null);
 
   const fetchAnotacoes = useCallback(async () => {
