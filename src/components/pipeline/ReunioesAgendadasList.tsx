@@ -13,7 +13,7 @@ interface Reuniao {
   html_link: string | null;
   status: string;
   criado_por_nome: string | null;
-  convidados: string[] | null;
+  convidados: Array<string | { email?: string }> | null;
 }
 
 const statusStyle: Record<string, string> = {
@@ -95,9 +95,13 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
 
           {r.convidados && r.convidados.length > 0 && (
             <div className="flex flex-wrap gap-1 pt-1 border-t border-border">
-              {r.convidados.map(e => (
-                <span key={e} className="text-[10px] px-1.5 py-0.5 bg-muted rounded text-muted-foreground">{e}</span>
-              ))}
+              {r.convidados.map((c, i) => {
+                const email = typeof c === "string" ? c : c?.email ?? "";
+                if (!email) return null;
+                return (
+                  <span key={`${email}-${i}`} className="text-[10px] px-1.5 py-0.5 bg-muted rounded text-muted-foreground">{email}</span>
+                );
+              })}
             </div>
           )}
         </div>

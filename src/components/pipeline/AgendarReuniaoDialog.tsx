@@ -152,9 +152,11 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
             <div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Convidados</p>
               <div className="flex flex-wrap gap-1.5">
-                {resultado.convidados.map(e => (
-                  <span key={e} className="text-xs px-2 py-1 bg-muted rounded-full">{e}</span>
-                ))}
+                {resultado.convidados.map((c: any, i) => {
+                  const email = typeof c === "string" ? c : c?.email ?? "";
+                  if (!email) return null;
+                  return <span key={`${email}-${i}`} className="text-xs px-2 py-1 bg-muted rounded-full">{email}</span>;
+                })}
               </div>
             </div>
             <button onClick={() => onOpenChange(false)} className="w-full py-2 bg-muted text-foreground rounded-md text-sm hover:bg-muted/80">
