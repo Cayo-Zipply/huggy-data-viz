@@ -572,6 +572,21 @@ export function usePipelineData(actorName: string) {
       ? new Date(`${dataVenda}T12:00:00`).toISOString()
       : new Date().toISOString();
 
+    // Garante que o lead passe por "Reunião Realizada" e termine em "Contrato Assinado"
+    // (todo ganho conta como reunião realizada e fica na coluna correta).
+    const card = cards.find(c => c.id === id);
+    if (card) {
+      const reachedRealizada =
+        ["reuniao_realizada", "link_enviado", "contrato_assinado"].includes(card.stage) ||
+        (card.history || []).some(h => h.to === "reuniao_realizada");
+      if (!reachedRealizada && card.stage !== "contrato_assinado") {
+        await moveCard(id, "reuniao_realizada" as Stage);
+      }
+      if (card.stage !== "contrato_assinado") {
+        await moveCard(id, "contrato_assinado" as Stage);
+      }
+    }
+
     const update: any = { status: "ganho", data_venda: dataVendaIso };
     await sbExt.from("leads").update(update).eq("id", id);
 
@@ -588,7 +603,7 @@ export function usePipelineData(actorName: string) {
         valor_anterior: "aberto", valor_novo: "ganho", usuario_nome: actorName,
       } as any);
     } catch (e) { console.warn("lead_history insert error:", e); }
-  }, [actorName, updateCardsState]);
+  }, [cards, actorName, moveCard, updateCardsState]);
 
   const markLost = useCallback(async (id: string, category: string, reason: string) => {
     const card = cards.find(c => c.id === id);
