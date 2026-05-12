@@ -32,6 +32,8 @@ function fmt(iso: string) {
 export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; refreshKey?: number }) {
   const [items, setItems] = useState<Reuniao[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Reuniao | null>(null);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
