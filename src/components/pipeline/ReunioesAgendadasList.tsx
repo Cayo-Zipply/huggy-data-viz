@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabaseExternal";
-import { Calendar, Copy, ExternalLink, Loader2, Video } from "lucide-react";
+import { Calendar, Copy, ExternalLink, Loader2, Pencil, Video, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { EditarReuniaoDialog } from "./EditarReuniaoDialog";
 
 interface Reuniao {
   id: string;
@@ -31,6 +32,8 @@ function fmt(iso: string) {
 export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; refreshKey?: number }) {
   const [items, setItems] = useState<Reuniao[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Reuniao | null>(null);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -46,6 +49,26 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
   useEffect(() => { fetchItems(); }, [fetchItems, refreshKey]);
 
   const copy = (s: string) => navigator.clipboard.writeText(s).then(() => toast.success("Copiado!"));
+
+  const cancelar = async (r: Reuniao) => {
+    if (!confirm(`Cancelar a reunião "${r.titulo}"? Os convidados serão notificados.`)) return;
+    setCancelingId(r.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("cancelar-reuniao-meet", {
+        body: { reuniao_id: r.id },
+      });
+      if (error || (data as any)?.error) {
+        toast.error(`Erro: ${(data as any)?.error || error?.message || "desconhecido"}`);
+        return;
+      }
+      toast.success("Reunião cancelada.");
+      fetchItems();
+    } catch (e: any) {
+      toast.error(`Erro: ${e?.message || e}`);
+    } finally {
+      setCancelingId(null);
+    }
+  };
 
   if (loading) {
     return <div className="flex items-center justify-center py-6 text-muted-foreground"><Loader2 size={16} className="animate-spin" /></div>;
@@ -91,6 +114,18 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
                 <Video size={11} /><Copy size={10} />Meet
               </button>
             )}
+            {r.status === "agendada" && (
+              <>
+                <button onClick={() => setEditing(r)}
+                  className="text-xs px-2 py-1 bg-muted text-foreground rounded-md hover:bg-muted/80 flex items-center gap-1">
+                  <Pencil size={11} />Editar
+                </button>
+                <button onClick={() => cancelar(r)} disabled={cancelingId === r.id}
+                  className="text-xs px-2 py-1 bg-destructive/10 text-destructive rounded-md hover:bg-destructive/20 disabled:opacity-50 flex items-center gap-1">
+                  {cancelingId === r.id ? <Loader2 size={11} className="animate-spin" /> : <X size={11} />}Cancelar
+                </button>
+              </>
+            )}
           </div>
 
           {r.convidados && r.convidados.length > 0 && (
@@ -106,6 +141,12 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
           )}
         </div>
       ))}
+      <EditarReuniaoDialog
+        reuniao={editing}
+        open={!!editing}
+        onOpenChange={(o) => !o && setEditing(null)}
+        onUpdated={fetchItems}
+      />
     </div>
   );
 }
