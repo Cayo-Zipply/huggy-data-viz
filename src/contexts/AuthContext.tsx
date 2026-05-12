@@ -36,6 +36,31 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+async function persistGoogleToken(session: Session | null) {
+  if (!session?.user?.id) return;
+  const providerToken = (session as any).provider_token as string | undefined;
+  const refreshToken = (session as any).provider_refresh_token as string | undefined;
+  const expiresIn = (session as any).expires_in as number | undefined;
+  if (!providerToken && !refreshToken) return;
+
+  const payload: any = {
+    user_id: session.user.id,
+    email: session.user.email,
+  };
+  if (providerToken) {
+    payload.access_token = providerToken;
+    payload.expires_at = new Date(Date.now() + (expiresIn ?? 3600) * 1000).toISOString();
+  }
+  if (refreshToken) {
+    payload.refresh_token = refreshToken;
+  }
+
+  const { error } = await (supabase as any)
+    .from("user_google_tokens")
+    .upsert(payload, { onConflict: "user_id" });
+  if (error) console.error("[persistGoogleToken] erro:", error.message);
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -180,6 +205,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       applySessionState(newSession);
 
+      if (event === "SIGNED_IN" && newSession) {
+        void persistGoogleToken(newSession);
+      }
+
       if (event === "TOKEN_REFRESHED") {
         setLoading(false);
         return;
@@ -215,6 +244,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       applySessionState(restored);
+      void persistGoogleToken(restored);
 
       if (!restored.user.email) {
         setProfile(null);

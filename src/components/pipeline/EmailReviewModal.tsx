@@ -296,17 +296,11 @@ export function EmailReviewModal({ open, onOpenChange, tipo, leadId, card, onUpd
     try {
       await db.from("email_envios").update(buildPatch()).eq("id", envio.id);
       const { data: { session } } = await supabaseCloud.auth.getSession();
-      const providerToken = (session as any)?.provider_token;
       const userEmail = session?.user?.email;
       const userMeta: any = session?.user?.user_metadata || {};
       const userName = userMeta.full_name || userMeta.name || null;
-      if (!providerToken) {
-        toast.error("Sessão Google expirada. Faça logout e login com Google novamente para autorizar o envio pelo Gmail.");
-        setSending(false);
-        return;
-      }
       const { error } = await db.functions.invoke("enviar-email-gmail", {
-        body: { envio_id: envio.id, provider_token: providerToken, remetente_email: userEmail, remetente_nome: userName },
+        body: { envio_id: envio.id, remetente_email: userEmail, remetente_nome: userName },
       });
       if (error) {
         const msg = error.message || "";
