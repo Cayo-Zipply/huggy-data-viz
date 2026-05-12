@@ -38,7 +38,7 @@ function buildSkeleton(tipo: EmailTipo, card: PipelineCard | null): { assunto: s
 
   if (tipo === "juridico") {
     return {
-      assunto: `Novo cliente fechado — ${empresaOuNome} — Detalhes para ação jurídica`,
+      assunto: `Fechamento de Contrato (JURÍDICO) – ${empresaOuNome}`,
       corpo: `1. Situação fiscal identificada:
 [preencher]
 
@@ -64,7 +64,7 @@ Closer responsável: ${closer}`,
   const docNF = (card.tipo_documento || "").toLowerCase().includes("cnpj") ? "CNPJ" : "CPF sócio";
 
   return {
-    assunto: `Fechamento de contrato — ${empresaOuNome}`,
+    assunto: `Fechamento de Contrato (FINANCEIRO) – ${empresaOuNome}`,
     corpo: `Bom dia!
 Segue fechamento de contrato para conhecimento e providências.
 
@@ -144,7 +144,12 @@ export function EmailReviewModal({ open, onOpenChange, tipo, leadId, card, onUpd
       setAnexoNome(null); setAnexoUrl(null);
       return;
     }
-    setAssunto(e.assunto || "");
+    // Padrão de assunto fixo (sobrescreve o vindo da edge function)
+    const empresaOuNome = card?.empresa || card?.nome || "—";
+    const assuntoPadrao = tipo === "juridico"
+      ? `Fechamento de Contrato (JURÍDICO) – ${empresaOuNome}`
+      : `Fechamento de Contrato (FINANCEIRO) – ${empresaOuNome}`;
+    setAssunto(assuntoPadrao);
     setCorpo(e.corpo || "");
     setDestinatarios((e.destinatarios || []).map((d) => ({ ...d, selecionado: d.selecionado !== false })));
     setAnexoNome(e.anexo_nome);
