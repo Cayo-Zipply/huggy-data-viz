@@ -7,11 +7,8 @@ const EXTERNAL_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // external project where ALL data, auth providers, edge functions and
 // secrets live.
 //
-// The auto-generated file at src/integrations/supabase/client.ts is
-// remapped via a Vite alias (see vite.config.ts) to this module, so
-// importing from "@/integrations/supabase/client" resolves here too.
-// This guarantees a SINGLE GoTrueClient instance and avoids the default
-// template client from being instantiated in the bundle.
+// Legacy generated-client imports are remapped via Vite alias to this module.
+// This guarantees a SINGLE GoTrueClient instance in the bundle.
 export const supabase = createClient(EXTERNAL_URL, EXTERNAL_ANON_KEY, {
   auth: {
     storage: typeof window !== "undefined" ? window.localStorage : undefined,
