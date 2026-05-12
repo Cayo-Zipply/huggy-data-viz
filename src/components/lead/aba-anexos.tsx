@@ -77,11 +77,10 @@ export function AbaAnexos({ leadId }: { leadId: string }) {
           </span>
         </div>
         <div>
-          <input ref={fileRef} type="file" className="hidden" onChange={handleFileSelect} />
           <Button
             variant="outline"
             size="sm"
-            onClick={() => fileRef.current?.click()}
+            onClick={abrirModal}
             disabled={upload.isPending}
           >
             <Upload size={14} className="mr-1.5" />
