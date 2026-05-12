@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabaseExternal";
-import { Calendar, Copy, ExternalLink, Loader2, Video } from "lucide-react";
+import { Calendar, Copy, ExternalLink, Loader2, Pencil, Video, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { EditarReuniaoDialog } from "./EditarReuniaoDialog";
 
 interface Reuniao {
   id: string;
