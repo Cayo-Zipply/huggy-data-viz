@@ -13,7 +13,7 @@ interface Reuniao {
   html_link: string | null;
   status: string;
   criado_por_nome: string | null;
-  convidados: string[] | null;
+  convidados: Array<string | { email?: string }> | null;
 }
 
 const statusStyle: Record<string, string> = {
