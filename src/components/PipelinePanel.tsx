@@ -637,11 +637,10 @@ export function PipelinePanel() {
                 { key: "sdr", label: "SDR", count: sdrCount, roles: ["admin", "sdr", "dual", "closer"] },
                 { key: "closer", label: "Closer", count: closerCount, roles: ["admin", "closer", "dual"] },
               ] as const).filter(pipe => {
-                const role = profile?.role || "closer";
-                const secondaryRole = profile?.secondary_role;
-                const hasDual = (role === "sdr" && secondaryRole === "closer") || (role === "closer" && secondaryRole === "sdr");
-                if (hasDual) return (pipe.roles as readonly string[]).includes("dual");
-                return (pipe.roles as readonly string[]).includes(role);
+                if (pipe.key === "all") return isAdmin || isDual || isCloser;
+                if (pipe.key === "sdr") return isAdmin || isSdr || isCloser;
+                if (pipe.key === "closer") return isAdmin || isDual || isCloser;
+                return false;
               }).map((pipe) => (
                 <button
                   key={pipe.key}
