@@ -41,11 +41,10 @@ export function useLeadAnexos(leadId: string | null | undefined) {
 export function useUploadAnexo(leadId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async ({ file, tipo }: { file: File; tipo?: string }) => {
       const ext = file.name.split(".").pop() ?? "bin";
       const path = `${leadId}/${crypto.randomUUID()}.${ext}`;
 
-      // Identifica usuário logado (a RLS de lead_anexos exige uploaded_by = auth.uid())
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData.user?.id ?? null;
       const userName =
@@ -59,20 +58,14 @@ export function useUploadAnexo(leadId: string) {
         .upload(path, file, { upsert: false, contentType: file.type });
       if (upErr) throw upErr;
 
-      const tipo = file.type.startsWith("image/")
-        ? "imagem"
-        : file.type === "application/pdf"
-        ? "documento"
-        : file.name.toLowerCase().endsWith(".txt")
-        ? "transcricao"
-        : "documento";
+      const tipoFinal = tipo ?? "documento";
 
       const { data, error } = await supabase
         .from("lead_anexos")
         .insert({
           lead_id: leadId,
           nome_arquivo: file.name,
-          tipo,
+          tipo: tipoFinal,
           mime_type: file.type || null,
           tamanho_bytes: file.size,
           storage_path: path,
