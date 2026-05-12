@@ -144,7 +144,12 @@ export function EmailReviewModal({ open, onOpenChange, tipo, leadId, card, onUpd
       setAnexoNome(null); setAnexoUrl(null);
       return;
     }
-    setAssunto(e.assunto || "");
+    // Padrão de assunto fixo (sobrescreve o vindo da edge function)
+    const empresaOuNome = card?.empresa || card?.nome || "—";
+    const assuntoPadrao = tipo === "juridico"
+      ? `Fechamento de Contrato (JURÍDICO) – ${empresaOuNome}`
+      : `Fechamento de Contrato (FINANCEIRO) – ${empresaOuNome}`;
+    setAssunto(assuntoPadrao);
     setCorpo(e.corpo || "");
     setDestinatarios((e.destinatarios || []).map((d) => ({ ...d, selecionado: d.selecionado !== false })));
     setAnexoNome(e.anexo_nome);
