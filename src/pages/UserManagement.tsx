@@ -70,8 +70,22 @@ export default function UserManagement() {
       const current = u.funcoes || [];
       if (!current.includes(newRole)) update.funcoes = Array.from(new Set([...current, newRole]));
     }
-    const { error } = await (supabase as any).from("user_profiles").update(update).eq("id", u.id);
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+    const { data: updated, error } = await (supabase as any)
+      .from("user_profiles")
+      .update(update)
+      .eq("id", u.id)
+      .select("id");
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else if (!updated || updated.length === 0) {
+      toast({
+        title: "Permissão negada",
+        description: "Sua sessão não tem permissão de admin para alterar este usuário (RLS bloqueou a atualização).",
+        variant: "destructive",
+      });
+    } else {
+      toast({ title: "Atualizado", description: `Role alterada para ${newRole || "sem papel"}.` });
+    }
     await fetchUsers();
     setUpdating(null);
   };
@@ -91,11 +105,20 @@ export default function UserManagement() {
       return;
     }
     setUpdating(u.id);
-    const { error } = await (supabase as any)
+    const { data: updated, error } = await (supabase as any)
       .from("user_profiles")
       .update({ funcoes: next })
-      .eq("id", u.id);
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
+      .eq("id", u.id)
+      .select("id");
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else if (!updated || updated.length === 0) {
+      toast({
+        title: "Permissão negada",
+        description: "RLS bloqueou: sua sessão não tem privilégio de admin para alterar este perfil.",
+        variant: "destructive",
+      });
+    }
     await fetchUsers();
     setUpdating(null);
   };
