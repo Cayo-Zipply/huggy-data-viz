@@ -38,7 +38,7 @@ function buildSkeleton(tipo: EmailTipo, card: PipelineCard | null): { assunto: s
 
   if (tipo === "juridico") {
     return {
-      assunto: `Novo cliente fechado — ${empresaOuNome} — Detalhes para ação jurídica`,
+      assunto: `Fechamento de Contrato (JURÍDICO) – ${empresaOuNome}`,
       corpo: `1. Situação fiscal identificada:
 [preencher]
 
