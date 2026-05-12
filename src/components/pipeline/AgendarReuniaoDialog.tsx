@@ -83,14 +83,6 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
 
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const providerToken = (session as any)?.provider_token;
-      if (!providerToken) {
-        toast.error("Sessão Google expirada. Faça logout/login para autorizar.");
-        setLoading(false);
-        return;
-      }
-
       const inicioISO = new Date(dataHora).toISOString();
 
       const { data, error } = await supabase.functions.invoke("criar-reuniao-meet", {
