@@ -10,7 +10,7 @@ import { AgendarReuniaoDialog } from "./AgendarReuniaoDialog";
 import { ReunioesAgendadasList } from "./ReunioesAgendadasList";
 import { InputMoedaBRL } from "@/components/ui/input-moeda-brl";
 import { supabaseExt } from "@/lib/supabaseExternal";
-import { supabase as supabaseCloud } from "@/integrations/supabase/client";
+import { supabase as supabaseCloud } from "@/lib/supabaseExternal";
 import { useAuth } from "@/contexts/AuthContext";
 import { ObservacaoItem, type Anotacao } from "./ObservacaoItem";
 import { toast } from "sonner";

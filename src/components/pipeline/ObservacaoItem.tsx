@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pencil, Loader2, Save, X } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseExternal";
 
 interface Anotacao {
   id: string;

@@ -12,9 +12,8 @@ export default defineConfig(({ mode }) => ({
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
     alias: [
-      // Force the auto-generated Supabase client to resolve to the external
-      // (riyfdcmmabvpcubusujw) client. This eliminates the ghost
-      // xcjpoycwezdagbjrkhmq client from the bundle entirely.
+      // Force any legacy import of the generated client to resolve to the
+      // canonical external CRM client instead of the managed project client.
       {
         find: /^@\/integrations\/supabase\/client$/,
         replacement: path.resolve(__dirname, "./src/lib/supabaseExternal.ts"),

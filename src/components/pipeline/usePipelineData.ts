@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef, type SetStateAction } from "r
 import type { PipelineCard, PipelineTask, PipelineGoal, Stage, PipeType, StageChange } from "./types";
 import { DEFAULT_DEAL_VALUE, STAGE_CONFIG, AUTO_TASKS, addDays } from "./types";
 import { supabaseData } from "@/lib/supabaseExternal";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseExternal";
 
 const sbExt = supabaseData as any;
 
