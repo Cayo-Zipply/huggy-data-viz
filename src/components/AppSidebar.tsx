@@ -36,13 +36,16 @@ const NAV_ITEMS = [
 ];
 
 export function AppSidebar() {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, isSdr, isCloser, isAdmin } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   const role = profile?.role ?? "closer";
   const secondaryRole = profile?.secondary_role;
   const filtered = NAV_ITEMS.filter((item) => {
+    if (item.roles.includes("admin") && isAdmin) return true;
+    if (item.roles.includes("sdr") && isSdr) return true;
+    if (item.roles.includes("closer") && isCloser) return true;
     if (item.roles.includes(role)) return true;
     if (secondaryRole && item.roles.includes(secondaryRole)) return true;
     return false;
