@@ -64,7 +64,7 @@ Closer responsável: ${closer}`,
   const docNF = (card.tipo_documento || "").toLowerCase().includes("cnpj") ? "CNPJ" : "CPF sócio";
 
   return {
-    assunto: `Fechamento de contrato — ${empresaOuNome}`,
+    assunto: `Fechamento de Contrato (FINANCEIRO) – ${empresaOuNome}`,
     corpo: `Bom dia!
 Segue fechamento de contrato para conhecimento e providências.
 
