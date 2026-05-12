@@ -219,6 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       applySessionState(restored);
+      void persistGoogleToken(restored);
 
       if (!restored.user.email) {
         setProfile(null);
