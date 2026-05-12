@@ -60,32 +60,26 @@ export default function UserManagement() {
     setLoading(false);
   };
 
+  const adminUpdate = async (id: string, updates: Record<string, any>) => {
+    const { data, error } = await (supabase as any).functions.invoke("admin-update-user", {
+      body: { id, updates },
+    });
+    if (error) return { ok: false, message: error.message };
+    if (data?.error) return { ok: false, message: data.error };
+    return { ok: true };
+  };
+
   const updateRole = async (u: UserRow, newRole: string) => {
     setUpdating(u.id);
     const update: any = { role: newRole || null };
-    // Admin sempre pode tudo — marca ambas funcoes
     if (newRole === "admin") update.funcoes = ["sdr", "closer"];
-    // Se mudou para sdr/closer e funcoes está vazio, garante consistência
     else if (newRole === "sdr" || newRole === "closer") {
       const current = u.funcoes || [];
       if (!current.includes(newRole)) update.funcoes = Array.from(new Set([...current, newRole]));
     }
-    const { data: updated, error } = await (supabase as any)
-      .from("user_profiles")
-      .update(update)
-      .eq("id", u.id)
-      .select("id");
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-    } else if (!updated || updated.length === 0) {
-      toast({
-        title: "Permissão negada",
-        description: "Sua sessão não tem permissão de admin para alterar este usuário (RLS bloqueou a atualização).",
-        variant: "destructive",
-      });
-    } else {
-      toast({ title: "Atualizado", description: `Role alterada para ${newRole || "sem papel"}.` });
-    }
+    const res = await adminUpdate(u.id, update);
+    if (!res.ok) toast({ title: "Erro", description: res.message, variant: "destructive" });
+    else toast({ title: "Atualizado", description: `Role alterada para ${newRole || "sem papel"}.` });
     await fetchUsers();
     setUpdating(null);
   };
@@ -95,7 +89,6 @@ export default function UserManagement() {
     if (current.has(funcao)) current.delete(funcao);
     else current.add(funcao);
     const next = Array.from(current);
-    // Validação: role sdr/closer precisa ter a função correspondente
     if ((u.role === "sdr" || u.role === "closer") && !next.includes(u.role)) {
       toast({
         title: "Função obrigatória",
@@ -105,20 +98,8 @@ export default function UserManagement() {
       return;
     }
     setUpdating(u.id);
-    const { data: updated, error } = await (supabase as any)
-      .from("user_profiles")
-      .update({ funcoes: next })
-      .eq("id", u.id)
-      .select("id");
-    if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
-    } else if (!updated || updated.length === 0) {
-      toast({
-        title: "Permissão negada",
-        description: "RLS bloqueou: sua sessão não tem privilégio de admin para alterar este perfil.",
-        variant: "destructive",
-      });
-    }
+    const res = await adminUpdate(u.id, { funcoes: next });
+    if (!res.ok) toast({ title: "Erro", description: res.message, variant: "destructive" });
     await fetchUsers();
     setUpdating(null);
   };
