@@ -50,6 +50,26 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
 
   const copy = (s: string) => navigator.clipboard.writeText(s).then(() => toast.success("Copiado!"));
 
+  const cancelar = async (r: Reuniao) => {
+    if (!confirm(`Cancelar a reunião "${r.titulo}"? Os convidados serão notificados.`)) return;
+    setCancelingId(r.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("cancelar-reuniao-meet", {
+        body: { reuniao_id: r.id },
+      });
+      if (error || (data as any)?.error) {
+        toast.error(`Erro: ${(data as any)?.error || error?.message || "desconhecido"}`);
+        return;
+      }
+      toast.success("Reunião cancelada.");
+      fetchItems();
+    } catch (e: any) {
+      toast.error(`Erro: ${e?.message || e}`);
+    } finally {
+      setCancelingId(null);
+    }
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center py-6 text-muted-foreground"><Loader2 size={16} className="animate-spin" /></div>;
   }
