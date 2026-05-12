@@ -11,8 +11,15 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
+    alias: [
+      // Force the auto-generated Supabase client to resolve to the external
+      // (riyfdcmmabvpcubusujw) client. This eliminates the ghost
+      // xcjpoycwezdagbjrkhmq client from the bundle entirely.
+      {
+        find: /^@\/integrations\/supabase\/client$/,
+        replacement: path.resolve(__dirname, "./src/lib/supabaseExternal.ts"),
+      },
+      { find: "@", replacement: path.resolve(__dirname, "./src") },
+    ],
   },
 }));
