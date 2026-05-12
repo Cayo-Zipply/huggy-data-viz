@@ -3,7 +3,6 @@ import { MessageSquarePlus, Bug, Lightbulb, Send, X, Image, Loader2, ChevronDown
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabaseExternal";
-import { supabaseExt } from "@/lib/supabaseExternal";
 
 type FeedbackStatus = "pendente" | "visto" | "concluido";
 
