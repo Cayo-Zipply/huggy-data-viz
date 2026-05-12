@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseExternal";
 import { Navigate } from "react-router-dom";
 import { Bug, Lightbulb, Clock, Eye, CheckCircle2, Loader2, MessageSquare, Send } from "lucide-react";
 import { toast } from "sonner";

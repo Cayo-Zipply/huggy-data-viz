@@ -102,7 +102,7 @@ export function CallButton({ leadId, className, size = "md", onCallSynced }: Cal
     const fromCtx = profile?.email ?? user?.email;
     if (fromCtx) return fromCtx;
     try {
-      const { supabase } = await import("@/integrations/supabase/client");
+      const { supabase } = await import("@/lib/supabaseExternal");
       const { data } = await supabase.auth.getUser();
       return data.user?.email ?? null;
     } catch {

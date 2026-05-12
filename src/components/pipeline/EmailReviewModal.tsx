@@ -12,7 +12,7 @@ import {
   AlertTriangle, Loader2, Paperclip, Mail, FileText, RefreshCw, Sparkles,
   PencilLine, MoreVertical, RotateCcw,
 } from "lucide-react";
-import { supabase as supabaseCloud } from "@/integrations/supabase/client";
+import { supabase as supabaseCloud } from "@/lib/supabaseExternal";
 import { sbExt } from "@/lib/supabaseExternal";
 import type { EmailEnvio, EmailEnvioDestinatario, EmailTipo } from "@/hooks/useEmailEnvios";
 import type { PipelineCard } from "./types";

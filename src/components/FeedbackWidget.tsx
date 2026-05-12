@@ -2,8 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { MessageSquarePlus, Bug, Lightbulb, Send, X, Image, Loader2, ChevronDown, ChevronUp, Clock, Eye, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { supabaseExt } from "@/lib/supabaseExternal";
+import { supabase } from "@/lib/supabaseExternal";
 
 type FeedbackStatus = "pendente" | "visto" | "concluido";
 

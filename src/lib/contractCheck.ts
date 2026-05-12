@@ -1,5 +1,5 @@
 import { sbExt } from "@/lib/supabaseExternal";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseExternal";
 import type { PipelineCard } from "@/components/pipeline/types";
 
 const CONTRACT_PREFIX = "crm_contract_";
