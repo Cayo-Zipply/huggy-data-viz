@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { FileText, Video, Image as ImageIcon, Upload, Trash2, Download, Eye } from "lucide-react";
+import { FileText, Video, Image as ImageIcon, Upload, Trash2, Download, Eye, FileSignature, FileQuestion } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   useLeadAnexos,
@@ -17,10 +18,23 @@ import {
   type LeadAnexo,
 } from "@/hooks/use-lead-anexos";
 
-function iconePorTipo(a: LeadAnexo) {
-  if (a.tipo === "transcricao") return <Video size={16} className="text-blue-400" />;
-  if (a.tipo === "imagem") return <ImageIcon size={16} className="text-green-400" />;
-  return <FileText size={16} className="text-muted-foreground" />;
+const TIPO_OPTIONS = [
+  { value: "contrato_assinado", label: "Contrato assinado" },
+  { value: "transcricao", label: "Transcrição" },
+  { value: "documento", label: "Documento" },
+  { value: "outro", label: "Outro" },
+];
+
+const TIPO_META: Record<string, { label: string; cls: string; Icon: any }> = {
+  contrato_assinado: { label: "Contrato assinado", cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-500", Icon: FileSignature },
+  transcricao: { label: "Transcrição", cls: "border-blue-500/40 bg-blue-500/10 text-blue-400", Icon: Video },
+  documento: { label: "Documento", cls: "border-slate-500/40 bg-slate-500/10 text-slate-300", Icon: FileText },
+  imagem: { label: "Imagem", cls: "border-green-500/40 bg-green-500/10 text-green-400", Icon: ImageIcon },
+  outro: { label: "Outro", cls: "border-amber-500/40 bg-amber-500/10 text-amber-400", Icon: FileQuestion },
+};
+
+function metaPorTipo(tipo: string) {
+  return TIPO_META[tipo] ?? TIPO_META.documento;
 }
 
 function formatarTamanho(bytes: number | null) {
@@ -35,13 +49,23 @@ export function AbaAnexos({ leadId }: { leadId: string }) {
   const upload = useUploadAnexo(leadId);
   const remove = useDeleteAnexo(leadId);
   const [previewing, setPreviewing] = useState<LeadAnexo | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [tipoSel, setTipoSel] = useState<string>("documento");
+  const [fileSel, setFileSel] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    upload.mutate(file);
-    e.target.value = "";
+  function abrirModal() {
+    setTipoSel("documento");
+    setFileSel(null);
+    setModalOpen(true);
+  }
+
+  function handleConfirmUpload() {
+    if (!fileSel) return;
+    upload.mutate(
+      { file: fileSel, tipo: tipoSel },
+      { onSuccess: () => { setModalOpen(false); setFileSel(null); } }
+    );
   }
 
   return (
