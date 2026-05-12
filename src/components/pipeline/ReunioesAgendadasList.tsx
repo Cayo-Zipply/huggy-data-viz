@@ -114,6 +114,18 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
                 <Video size={11} /><Copy size={10} />Meet
               </button>
             )}
+            {r.status === "agendada" && (
+              <>
+                <button onClick={() => setEditing(r)}
+                  className="text-xs px-2 py-1 bg-muted text-foreground rounded-md hover:bg-muted/80 flex items-center gap-1">
+                  <Pencil size={11} />Editar
+                </button>
+                <button onClick={() => cancelar(r)} disabled={cancelingId === r.id}
+                  className="text-xs px-2 py-1 bg-destructive/10 text-destructive rounded-md hover:bg-destructive/20 disabled:opacity-50 flex items-center gap-1">
+                  {cancelingId === r.id ? <Loader2 size={11} className="animate-spin" /> : <X size={11} />}Cancelar
+                </button>
+              </>
+            )}
           </div>
 
           {r.convidados && r.convidados.length > 0 && (
