@@ -101,42 +101,90 @@ export function AbaAnexos({ leadId }: { leadId: string }) {
       )}
 
       <div className="space-y-2">
-        {anexos?.map((a) => (
-          <div key={a.id} className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/20">
-            <div className="mt-0.5 flex-shrink-0">{iconePorTipo(a)}</div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-medium text-foreground truncate">{a.nome_arquivo}</span>
-                <Badge variant="secondary" className="text-[10px]">{a.tipo}</Badge>
-                {a.source === "readai" && (
-                  <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-500">Read.ai</Badge>
-                )}
+        {anexos?.map((a) => {
+          const meta = metaPorTipo(a.tipo);
+          const Icon = meta.Icon;
+          return (
+            <div key={a.id} className="flex items-start gap-3 p-3 rounded-lg border border-border bg-muted/20">
+              <div className="mt-0.5 flex-shrink-0"><Icon size={16} className={meta.cls.split(" ").find(c => c.startsWith("text-"))} /></div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-medium text-foreground truncate">{a.nome_arquivo}</span>
+                  <Badge variant="outline" className={`text-[10px] ${meta.cls}`}>{meta.label}</Badge>
+                  {a.source === "readai" && (
+                    <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-500">Read.ai</Badge>
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  {formatarTamanho(a.tamanho_bytes)}
+                  {a.tamanho_bytes ? " · " : ""}
+                  {new Date(a.created_at).toLocaleDateString("pt-BR")}
+                  {a.uploaded_by_nome ? ` · ${a.uploaded_by_nome}` : ""}
+                </p>
               </div>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                {formatarTamanho(a.tamanho_bytes)}
-                {a.tamanho_bytes ? " · " : ""}
-                {new Date(a.created_at).toLocaleDateString("pt-BR")}
-                {a.uploaded_by_nome ? ` · ${a.uploaded_by_nome}` : ""}
-              </p>
-            </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              {a.conteudo_texto && (
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPreviewing(a)} title="Visualizar">
-                  <Eye size={14} />
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {a.conteudo_texto && (
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPreviewing(a)} title="Visualizar">
+                    <Eye size={14} />
+                  </Button>
+                )}
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => downloadAnexo(a)} title="Baixar">
+                  <Download size={14} />
                 </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => {
+                  if (confirm(`Remover "${a.nome_arquivo}"?`)) remove.mutate(a);
+                }} title="Remover">
+                  <Trash2 size={14} />
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adicionar anexo</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1.5">Tipo do anexo</label>
+              <select
+                value={tipoSel}
+                onChange={(e) => setTipoSel(e.target.value)}
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              >
+                {TIPO_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1.5">Arquivo</label>
+              <input
+                ref={fileRef}
+                type="file"
+                onChange={(e) => setFileSel(e.target.files?.[0] ?? null)}
+                className="w-full text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-primary file:text-primary-foreground file:text-xs file:font-medium hover:file:opacity-90"
+              />
+              {fileSel && (
+                <p className="text-[11px] text-muted-foreground mt-1.5 truncate">
+                  {fileSel.name} · {formatarTamanho(fileSel.size)}
+                </p>
               )}
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => downloadAnexo(a)} title="Baixar">
-                <Download size={14} />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => {
-                if (confirm(`Remover "${a.nome_arquivo}"?`)) remove.mutate(a);
-              }} title="Remover">
-                <Trash2 size={14} />
-              </Button>
             </div>
           </div>
-        ))}
-      </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setModalOpen(false)} disabled={upload.isPending}>
+              Cancelar
+            </Button>
+            <Button size="sm" onClick={handleConfirmUpload} disabled={!fileSel || upload.isPending}>
+              {upload.isPending ? "Enviando..." : "Enviar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!previewing} onOpenChange={(open) => !open && setPreviewing(null)}>
         <DialogContent className="max-w-2xl max-h-[80vh]">
