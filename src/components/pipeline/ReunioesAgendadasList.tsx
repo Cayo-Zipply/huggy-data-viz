@@ -141,6 +141,12 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
           )}
         </div>
       ))}
+      <EditarReuniaoDialog
+        reuniao={editing}
+        open={!!editing}
+        onOpenChange={(o) => !o && setEditing(null)}
+        onUpdated={fetchItems}
+      />
     </div>
   );
 }
