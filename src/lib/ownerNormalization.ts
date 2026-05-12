@@ -11,6 +11,16 @@ const norm = (s: string) =>
 
 const firstTokenNorm = (s: string) => norm(s).split(/\s+/)[0] || "";
 
+// Aliases por NOME COMPLETO normalizado (verificados ANTES do primeiro token).
+// Use quando o primeiro nome conflita com outra pessoa (ex.: "João Felipe" é o
+// Fillipe, mas "João" sozinho é o João).
+const FULL_NAME_TO_GROUP: Record<string, string> = {
+  "joao felipe": "fillipe",
+  "joao felipe amorim": "fillipe",
+  "joao felipe amorim oliveira": "fillipe",
+  "joao felipe amorim oliveira silva": "fillipe",
+};
+
 // Aliases: chave = primeiro nome normalizado, valor = grupo canônico (key)
 // Vários aliases podem mapear para o mesmo grupo (ex.: "joao" e "cafe" → "joao").
 const ALIAS_TO_GROUP: Record<string, string> = {
@@ -18,6 +28,7 @@ const ALIAS_TO_GROUP: Record<string, string> = {
   cafe: "joao",
   fillipe: "fillipe",
   filipe: "fillipe",
+  carlos: "fillipe",
 };
 
 // Nome canônico exibido para cada grupo conhecido. Quem não estiver listado
@@ -28,6 +39,8 @@ const GROUP_DISPLAY: Record<string, string> = {
 };
 
 function groupKey(name: string | null | undefined): string {
+  const full = norm(name || "");
+  if (full && FULL_NAME_TO_GROUP[full]) return FULL_NAME_TO_GROUP[full];
   const k = firstTokenNorm(name || "");
   return ALIAS_TO_GROUP[k] || k;
 }

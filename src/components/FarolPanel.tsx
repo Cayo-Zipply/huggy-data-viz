@@ -607,7 +607,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
       .sort((a, b) => b.value - a.value)
       .slice(0, 3);
     const topByRR = realCloserRows
-      .map(d => ({ closer: d.closer, value: reunioesRealizadas.filter(c => c.owner === d.closer).length }))
+      .map(d => ({ closer: d.closer, value: reunioesRealizadas.filter(c => canonical(c.owner) === d.closer).length }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 3);
     const topByContratos = realCloserRows
