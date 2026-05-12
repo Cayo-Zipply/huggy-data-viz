@@ -25,6 +25,36 @@ const STATUS_BADGES: Record<string, { label: string; color: string }> = {
   recusado: { label: "❌ Contrato recusado", color: "bg-red-500/20 text-red-400" },
 };
 
+const CONTRACT_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-contract-docx`;
+const CONTRACT_FUNCTION_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+type ContractFunctionResult = {
+  success?: boolean;
+  message?: string;
+  zapsign_sent?: boolean;
+  file_url?: string;
+  sign_url?: string;
+  whatsapp_url?: string;
+};
+
+async function invokeContractFunction(body: { lead_id: string; action: "zapsign" | "download" | "whatsapp" }) {
+  const res = await fetch(CONTRACT_FUNCTION_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: CONTRACT_FUNCTION_KEY,
+      Authorization: `Bearer ${CONTRACT_FUNCTION_KEY}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.message || "Erro ao gerar contrato");
+  }
+  return data as ContractFunctionResult;
+}
+
 interface Props {
   card: CardType;
   onUpdate: (id: string, u: Partial<CardType>) => void;
@@ -62,7 +92,7 @@ export function ContractTab({ card, onUpdate }: Props) {
   const [valorProposta, setValorProposta] = useState<number | null>(card.valor_proposta ?? null);
   const [actionLoading, setActionLoading] = useState<"zapsign" | "download" | "whatsapp" | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
-  const [lastResult, setLastResult] = useState<{ action: string; data: any } | null>(null);
+  const [lastResult, setLastResult] = useState<{ action: string; data: ContractFunctionResult } | null>(null);
 
   useEffect(() => {
     setTipo(card.tipo_contrato || "");
@@ -164,12 +194,10 @@ export function ContractTab({ card, onUpdate }: Props) {
       await saveFields();
       await new Promise(r => setTimeout(r, 500));
 
-      const { data, error } = await supabase.functions.invoke("generate-contract-docx", {
-        body: { lead_id: card.id, action },
-      });
+      const data = await invokeContractFunction({ lead_id: card.id, action });
 
-      if (error || !data?.success) {
-        toast.error(data?.message || error?.message || "Erro ao gerar contrato");
+      if (!data?.success) {
+        toast.error(data?.message || "Erro ao gerar contrato");
         setActionLoading(null);
         return;
       }
@@ -232,8 +260,8 @@ export function ContractTab({ card, onUpdate }: Props) {
           stage: "link_enviado" as Stage,
         });
       }
-    } catch (e: any) {
-      toast.error(e.message || "Erro ao gerar contrato");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Erro ao gerar contrato");
     } finally {
       setActionLoading(null);
     }
