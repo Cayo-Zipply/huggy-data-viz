@@ -180,6 +180,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       applySessionState(newSession);
 
+      if (event === "SIGNED_IN" && newSession) {
+        void persistGoogleToken(newSession);
+      }
+
       if (event === "TOKEN_REFRESHED") {
         setLoading(false);
         return;
