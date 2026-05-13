@@ -40,18 +40,21 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
   const [ntDate, setNtDate] = useState(new Date().toISOString().split("T")[0]);
   const [ntResp, setNtResp] = useState(card.owner || "");
 
-  const stale = isStale(card);
   const isLost = card.lead_status === "perdido";
   const isWon = card.lead_status === "ganho";
   const wa = card.telefone ? `https://wa.me/55${card.telefone.replace(/\D/g, "")}` : null;
   const cardTasks = tasks.filter(t => t.card_id === card.id);
   const pendingCount = cardTasks.filter(t => t.status === "pendente").length;
+  const hasPendingTask = pendingCount > 0;
   const staleDays = daysDiff(card.stage_changed_at);
   const ownerOptions = ownerOptionsProp || Array.from(new Set([card.owner, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
 
+  // Tarefa pendente indica ação → suprime indicadores de "lead parado" e SLA
+  const stale = !hasPendingTask && isStale(card);
+
   // SLA status
   const hoursInStage = staleDays * 24;
-  const slaStatus = slaHoras && card.lead_status === "aberto"
+  const slaStatus = slaHoras && card.lead_status === "aberto" && !hasPendingTask
     ? hoursInStage >= slaHoras ? "estourado" : hoursInStage >= slaHoras * 0.75 ? "proximo" : "dentro"
     : "dentro";
 
