@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabaseExternal";
+// motivos_perda lives na base do Lovable Cloud (não na externa).
+import { supabase } from "@/integrations/supabase/client";
 
 export interface MotivoPerda {
   id: string;
