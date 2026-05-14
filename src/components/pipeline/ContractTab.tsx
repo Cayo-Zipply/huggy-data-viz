@@ -291,6 +291,33 @@ export function ContractTab({ card, onUpdate }: Props) {
     setLastResult(null);
   };
 
+  const handlePreview = async () => {
+    if (!tipo) {
+      toast.error("Selecione o tipo de contrato primeiro");
+      return;
+    }
+    setActionLoading("preview");
+    try {
+      await saveFields();
+      await new Promise(r => setTimeout(r, 400));
+      const data = await invokeContractFunction({ lead_id: card.id, action: "preview" });
+      if (!data?.success) {
+        toast.error(data?.message || "Erro ao gerar prévia");
+        return;
+      }
+      const url = data.share_url || data.file_url;
+      if (url) {
+        setPreviewUrl(url);
+      } else {
+        toast.error("Prévia não disponível");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao gerar prévia");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const updateField = (key: string, value: string) => {
     setForm(prev => ({ ...prev, [key]: value }));
   };
