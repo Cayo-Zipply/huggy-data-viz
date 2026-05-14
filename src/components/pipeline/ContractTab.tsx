@@ -38,7 +38,7 @@ type ContractFunctionResult = {
   whatsapp_url?: string;
 };
 
-async function invokeContractFunction(body: { lead_id: string; action: "zapsign" | "download" | "whatsapp" }) {
+async function invokeContractFunction(body: { lead_id: string; action: "zapsign" | "download" | "whatsapp" | "preview" }) {
   const res = await fetch(CONTRACT_FUNCTION_URL, {
     method: "POST",
     headers: {
