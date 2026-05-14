@@ -565,13 +565,44 @@ export function usePipelineData(actorName: string) {
     updateCardsState(prev => prev.map(c => c.id === cardId ? updated : c));
 
     // Handoff automático SDR → Closer: ao chegar em "Reunião Marcada"
-    // o lead também aparece no pipe do Closer como "Reunião Agendada".
+    // o lead também avança para "Reunião Agendada" no pipe do Closer.
     if (targetStage === "reuniao_marcada") {
-      setTimeout(() => { moveCardRef.current?.(cardId, "reuniao_agendada" as Stage); }, 0);
+      const handoffStage: Stage = "reuniao_agendada";
+      const now2 = new Date().toISOString();
+      await sbExt.from("leads").update({
+        etapa_atual: stageToEtapa(handoffStage),
+        ultima_etapa: stageToEtapa(targetStage),
+        data_ultima_mudanca_etapa: now2,
+      }).eq("id", cardId);
+      await sbExt.from("lead_historico").insert({
+        lead_id: cardId,
+        etapa_de: stageToEtapa(targetStage),
+        etapa_para: stageToEtapa(handoffStage),
+        evento: "handoff automático SDR → Closer",
+        closer: actorName,
+      });
+      try {
+        await supabase.from("lead_history").insert({
+          lead_id: cardId, tipo: "etapa",
+          descricao: `Handoff automático: ${STAGE_CONFIG[targetStage].label} → ${STAGE_CONFIG[handoffStage].label}`,
+          valor_anterior: targetStage, valor_novo: handoffStage, usuario_nome: actorName,
+        } as any);
+      } catch (e) { console.warn("lead_history insert error:", e); }
+      const handoffCard: PipelineCard = {
+        ...updated, stage: handoffStage, pipe: STAGE_CONFIG[handoffStage].pipe as PipeType,
+        stage_changed_at: now2, updated_at: now2,
+        history: [...updated.history, { from: targetStage, to: handoffStage, at: now2, by: actorName, duration_days: 0 }],
+      };
+      const handoffTasks = genAutoTasks(handoffCard, handoffStage);
+      if (handoffTasks.length) {
+        await sbExt.from("tarefas").insert(handoffTasks.map(t => ({
+          id: t.id, lead_id: t.card_id, titulo: t.title, data_tarefa: t.due_date,
+          status: "pendente", pipeline: t.pipe_context, closer: t.responsible, auto: true,
+        })));
+      }
+      updateCardsState(prev => prev.map(c => c.id === cardId ? handoffCard : c));
     }
   }, [cards, actorName, genAutoTasks, updateCardsState]);
-  const moveCardRef = useRef<((id: string, s: Stage) => Promise<void>) | null>(null);
-  moveCardRef.current = moveCard;
 
   /* ── mark won/lost ── */
   const markWon = useCallback(async (id: string, dataVenda?: string | null) => {
