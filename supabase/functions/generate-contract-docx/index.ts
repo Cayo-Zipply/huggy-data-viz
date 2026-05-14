@@ -276,23 +276,32 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Validate required fields
+    // Validate required fields (skipped for preview action)
     const missing: string[] = [];
-    if (!lead.tipo_contrato) missing.push("tipo_contrato");
-    if (!lead.representante_nome) missing.push("representante_nome");
-    if (!lead.representante_cpf) missing.push("representante_cpf");
-    if (!lead.email) missing.push("email");
-    if (!lead.valor_mensalidade) missing.push("valor_mensalidade");
-    if (!lead.qtd_salarios_minimos) missing.push("qtd_salarios_minimos");
-    if (!lead.porcentagem_exito) missing.push("porcentagem_exito");
-    if (!lead.data_primeiro_pagamento) missing.push("data_primeiro_pagamento");
-    if (!lead.dia_demais_pagamentos) missing.push("dia_demais_pagamentos");
-    if (!lead.prazo_entrega_relatorios) missing.push("prazo_entrega_relatorios");
+    if (action !== "preview" && !lead.tipo_contrato) missing.push("tipo_contrato");
+    if (action !== "preview") {
+      if (!lead.representante_nome) missing.push("representante_nome");
+      if (!lead.representante_cpf) missing.push("representante_cpf");
+      if (!lead.email) missing.push("email");
+      if (!lead.valor_mensalidade) missing.push("valor_mensalidade");
+      if (!lead.qtd_salarios_minimos) missing.push("qtd_salarios_minimos");
+      if (!lead.porcentagem_exito) missing.push("porcentagem_exito");
+      if (!lead.data_primeiro_pagamento) missing.push("data_primeiro_pagamento");
+      if (!lead.dia_demais_pagamentos) missing.push("dia_demais_pagamentos");
+      if (!lead.prazo_entrega_relatorios) missing.push("prazo_entrega_relatorios");
 
-    const isCNPJ = lead.tipo_contrato === "tributario_cnpj" || lead.tipo_contrato === "empresarial_completo";
-    if (isCNPJ) {
-      if (!lead.empresa) missing.push("empresa");
-      if (!lead.cnpj) missing.push("cnpj");
+      const isCNPJ = lead.tipo_contrato === "tributario_cnpj" || lead.tipo_contrato === "empresarial_completo";
+      if (isCNPJ) {
+        if (!lead.empresa) missing.push("empresa");
+        if (!lead.cnpj) missing.push("cnpj");
+      }
+    } else {
+      // Preview needs at least the contract type
+      if (!lead.tipo_contrato) {
+        return new Response(JSON.stringify({ success: false, message: "Selecione o tipo de contrato para visualizar a prévia" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     if (missing.length > 0) {
@@ -335,6 +344,21 @@ Deno.serve(async (req) => {
     const isCPF = lead.tipo_contrato === "tributario_cpf";
     const empresaName = isCPF ? (lead.representante_nome || "Cliente") : (lead.empresa || "Empresa");
     const contractName = `CONTRATO PQA & ${empresaName}`;
+
+    // ── ACTION: PREVIEW ──
+    if (action === "preview") {
+      const { data: signedUrl } = await sbInternal.storage
+        .from("contracts")
+        .createSignedUrl(fileName, 60 * 60); // 1 hour
+      return new Response(JSON.stringify({
+        success: true,
+        action: "preview",
+        file_url: fileUrl,
+        file_name: fileName,
+        share_url: signedUrl?.signedUrl || fileUrl,
+        message: "Prévia gerada",
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     // ── ACTION: DOWNLOAD ──
     if (action === "download") {

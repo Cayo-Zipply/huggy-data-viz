@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink, MessageCircle } from "lucide-react";
+import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink, MessageCircle, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { InputMoedaBRL } from "@/components/ui/input-moeda-brl";
 import { toast } from "sonner";
 import type { PipelineCard as CardType, ContractType, ContractStatus, Stage } from "./types";
@@ -35,9 +36,10 @@ type ContractFunctionResult = {
   file_url?: string;
   sign_url?: string;
   whatsapp_url?: string;
+  share_url?: string;
 };
 
-async function invokeContractFunction(body: { lead_id: string; action: "zapsign" | "download" | "whatsapp" }) {
+async function invokeContractFunction(body: { lead_id: string; action: "zapsign" | "download" | "whatsapp" | "preview" }) {
   const res = await fetch(CONTRACT_FUNCTION_URL, {
     method: "POST",
     headers: {
@@ -90,9 +92,10 @@ export function ContractTab({ card, onUpdate }: Props) {
   const [valorMensalidade, setValorMensalidade] = useState<number | null>(card.valor_mensalidade ?? null);
   const [valorDivida, setValorDivida] = useState<number | null>(card.valor_divida ?? null);
   const [valorProposta, setValorProposta] = useState<number | null>(card.valor_proposta ?? null);
-  const [actionLoading, setActionLoading] = useState<"zapsign" | "download" | "whatsapp" | null>(null);
+  const [actionLoading, setActionLoading] = useState<"zapsign" | "download" | "whatsapp" | "preview" | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [lastResult, setLastResult] = useState<{ action: string; data: ContractFunctionResult } | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     setTipo(card.tipo_contrato || "");
@@ -287,6 +290,33 @@ export function ContractTab({ card, onUpdate }: Props) {
   const handleRegenerate = () => {
     onUpdate(card.id, { contrato_status: "pendente" as ContractStatus, contrato_file_url: null, contract_url: null });
     setLastResult(null);
+  };
+
+  const handlePreview = async () => {
+    if (!tipo) {
+      toast.error("Selecione o tipo de contrato primeiro");
+      return;
+    }
+    setActionLoading("preview");
+    try {
+      await saveFields();
+      await new Promise(r => setTimeout(r, 400));
+      const data = await invokeContractFunction({ lead_id: card.id, action: "preview" });
+      if (!data?.success) {
+        toast.error(data?.message || "Erro ao gerar prévia");
+        return;
+      }
+      const url = data.share_url || data.file_url;
+      if (url) {
+        setPreviewUrl(url);
+      } else {
+        toast.error("Prévia não disponível");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao gerar prévia");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const updateField = (key: string, value: string) => {
@@ -512,9 +542,17 @@ export function ContractTab({ card, onUpdate }: Props) {
 
           {/* Actions - 3 buttons */}
           <div className="pt-2 space-y-3">
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <button onClick={saveFields} className="text-sm px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground transition-colors border border-border">
                 Salvar Dados
+              </button>
+              <button
+                onClick={handlePreview}
+                disabled={!tipo || actionLoading !== null}
+                className="text-sm px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20 flex items-center gap-2 disabled:opacity-40"
+              >
+                {actionLoading === "preview" ? <Loader2 size={14} className="animate-spin" /> : <Eye size={14} />}
+                {actionLoading === "preview" ? "Gerando prévia..." : "Visualizar Prévia"}
               </button>
             </div>
 
@@ -613,6 +651,36 @@ export function ContractTab({ card, onUpdate }: Props) {
           )}
         </>
       )}
+
+      <Dialog open={!!previewUrl} onOpenChange={(open) => !open && setPreviewUrl(null)}>
+        <DialogContent className="max-w-5xl w-[95vw] h-[90vh] flex flex-col p-4">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between gap-3">
+              <span>Prévia do Contrato</span>
+              {previewUrl && (
+                <a
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-normal text-primary hover:underline flex items-center gap-1 mr-8"
+                >
+                  <ExternalLink size={12} /> Abrir em nova aba
+                </a>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          {previewUrl && (
+            <iframe
+              src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(previewUrl)}`}
+              className="w-full flex-1 rounded border border-border bg-white"
+              title="Prévia do contrato"
+            />
+          )}
+          <p className="text-[11px] text-muted-foreground">
+            ⓘ Prévia renderizada via Office Online. Pode levar alguns segundos para carregar. Os campos não preenchidos aparecem como "_______________".
+          </p>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
