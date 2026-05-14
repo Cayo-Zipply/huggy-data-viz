@@ -276,9 +276,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Validate required fields
+    // Validate required fields (skipped for preview action)
     const missing: string[] = [];
-    if (!lead.tipo_contrato) missing.push("tipo_contrato");
+    if (action !== "preview" && !lead.tipo_contrato) missing.push("tipo_contrato");
     if (!lead.representante_nome) missing.push("representante_nome");
     if (!lead.representante_cpf) missing.push("representante_cpf");
     if (!lead.email) missing.push("email");
