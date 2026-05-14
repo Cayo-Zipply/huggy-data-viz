@@ -542,9 +542,17 @@ export function ContractTab({ card, onUpdate }: Props) {
 
           {/* Actions - 3 buttons */}
           <div className="pt-2 space-y-3">
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <button onClick={saveFields} className="text-sm px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground transition-colors border border-border">
                 Salvar Dados
+              </button>
+              <button
+                onClick={handlePreview}
+                disabled={!tipo || actionLoading !== null}
+                className="text-sm px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20 flex items-center gap-2 disabled:opacity-40"
+              >
+                {actionLoading === "preview" ? <Loader2 size={14} className="animate-spin" /> : <Eye size={14} />}
+                {actionLoading === "preview" ? "Gerando prévia..." : "Visualizar Prévia"}
               </button>
             </div>
 
