@@ -564,13 +564,13 @@ export function usePipelineData(actorName: string) {
     // optimistic
     updateCardsState(prev => prev.map(c => c.id === cardId ? updated : c));
 
-    // Handoff automático SDR → Closer: quando lead chega em "Reunião Marcada"
-    // ele precisa aparecer no pipe do Closer como "Reunião Agendada".
+    // Handoff automático SDR → Closer: ao chegar em "Reunião Marcada"
+    // o lead também aparece no pipe do Closer como "Reunião Agendada".
     if (targetStage === "reuniao_marcada") {
       setTimeout(() => { moveCardRef.current?.(cardId, "reuniao_agendada" as Stage); }, 0);
     }
   }, [cards, actorName, genAutoTasks, updateCardsState]);
-  const moveCardRef = (globalThis as any).__moveCardRef ||= { current: null as null | ((id: string, s: Stage) => Promise<void>) };
+  const moveCardRef = useRef<((id: string, s: Stage) => Promise<void>) | null>(null);
   moveCardRef.current = moveCard;
 
   /* ── mark won/lost ── */
