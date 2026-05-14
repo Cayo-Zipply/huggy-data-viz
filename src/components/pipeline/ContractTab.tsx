@@ -36,6 +36,7 @@ type ContractFunctionResult = {
   file_url?: string;
   sign_url?: string;
   whatsapp_url?: string;
+  share_url?: string;
 };
 
 async function invokeContractFunction(body: { lead_id: string; action: "zapsign" | "download" | "whatsapp" | "preview" }) {
