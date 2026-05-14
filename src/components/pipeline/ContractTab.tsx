@@ -651,6 +651,36 @@ export function ContractTab({ card, onUpdate }: Props) {
           )}
         </>
       )}
+
+      <Dialog open={!!previewUrl} onOpenChange={(open) => !open && setPreviewUrl(null)}>
+        <DialogContent className="max-w-5xl w-[95vw] h-[90vh] flex flex-col p-4">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between gap-3">
+              <span>Prévia do Contrato</span>
+              {previewUrl && (
+                <a
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-normal text-primary hover:underline flex items-center gap-1 mr-8"
+                >
+                  <ExternalLink size={12} /> Abrir em nova aba
+                </a>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          {previewUrl && (
+            <iframe
+              src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(previewUrl)}`}
+              className="w-full flex-1 rounded border border-border bg-white"
+              title="Prévia do contrato"
+            />
+          )}
+          <p className="text-[11px] text-muted-foreground">
+            ⓘ Prévia renderizada via Office Online. Pode levar alguns segundos para carregar. Os campos não preenchidos aparecem como "_______________".
+          </p>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
