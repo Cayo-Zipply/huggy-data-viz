@@ -345,6 +345,21 @@ Deno.serve(async (req) => {
     const empresaName = isCPF ? (lead.representante_nome || "Cliente") : (lead.empresa || "Empresa");
     const contractName = `CONTRATO PQA & ${empresaName}`;
 
+    // ── ACTION: PREVIEW ──
+    if (action === "preview") {
+      const { data: signedUrl } = await sbInternal.storage
+        .from("contracts")
+        .createSignedUrl(fileName, 60 * 60); // 1 hour
+      return new Response(JSON.stringify({
+        success: true,
+        action: "preview",
+        file_url: fileUrl,
+        file_name: fileName,
+        share_url: signedUrl?.signedUrl || fileUrl,
+        message: "Prévia gerada",
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // ── ACTION: DOWNLOAD ──
     if (action === "download") {
       await sbExt.from("leads").update({
