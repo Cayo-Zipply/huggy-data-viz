@@ -91,9 +91,10 @@ export function ContractTab({ card, onUpdate }: Props) {
   const [valorMensalidade, setValorMensalidade] = useState<number | null>(card.valor_mensalidade ?? null);
   const [valorDivida, setValorDivida] = useState<number | null>(card.valor_divida ?? null);
   const [valorProposta, setValorProposta] = useState<number | null>(card.valor_proposta ?? null);
-  const [actionLoading, setActionLoading] = useState<"zapsign" | "download" | "whatsapp" | null>(null);
+  const [actionLoading, setActionLoading] = useState<"zapsign" | "download" | "whatsapp" | "preview" | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [lastResult, setLastResult] = useState<{ action: string; data: ContractFunctionResult } | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     setTipo(card.tipo_contrato || "");
