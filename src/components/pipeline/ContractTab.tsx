@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink, MessageCircle } from "lucide-react";
+import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink, MessageCircle, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { InputMoedaBRL } from "@/components/ui/input-moeda-brl";
 import { toast } from "sonner";
 import type { PipelineCard as CardType, ContractType, ContractStatus, Stage } from "./types";
