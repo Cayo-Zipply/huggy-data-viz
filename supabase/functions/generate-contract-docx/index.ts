@@ -42,112 +42,138 @@ async function downloadTemplate(sbInternal: any, templatePath: string): Promise<
   return new Uint8Array(await data.arrayBuffer());
 }
 
-function buildReplacements(lead: any): Record<string, string> {
-  const tipo = lead.tipo_contrato || "tributario_cnpj";
-  const isCPF = tipo === "tributario_cpf";
+// ── Replacement rules tied to text patterns inside the actual templates ──
+// The templates use generic filler like "(NOME DO CLIENTE)", "xxx.xxx.xxx-xx",
+// "R$ xxxxx (valor por extenso)", "x% (valor por extenso)" etc., so we replace
+// those patterns within paragraphs anchored by surrounding wording.
 
-  const endereco = lead.endereco || "_______________";
-  const cidade = lead.cidade || "_______________";
-  const estado = lead.estado || "_______________";
-  const cep = lead.cep || "_______________";
-  const enderecoCompleto = `${endereco}, CEP nº ${cep}, ${cidade}/${estado}`;
-
-  const valorMensalidade = lead.valor_mensalidade ? formatBRL(Number(lead.valor_mensalidade)) : "_______________";
-  const porcentagemExito = lead.porcentagem_exito ? `${lead.porcentagem_exito}%` : "____%";
-  const dataPrimeiroPagamento = lead.data_primeiro_pagamento ? formatDateExtended(lead.data_primeiro_pagamento) : "_______________";
-  const diaDemais = lead.dia_demais_pagamentos || "___";
-  const prazoRelatorios = lead.prazo_entrega_relatorios || "___";
-  const hoje = formatDateExtended(new Date().toISOString().split("T")[0]);
-
-  const replacements: Record<string, string> = {
-    "[NOME COMPLETO REPRESENTANTE]": lead.representante_nome || "_______________",
-    "[CPF]": lead.representante_cpf || "_______________",
-    "[ENDEREÇO COMPLETO]": enderecoCompleto,
-    "[VALOR DA MENSALIDADE]": valorMensalidade,
-    "[QUANTIDADE DE SALÁRIO-MÍNIMOS]": lead.qtd_salarios_minimos || "___",
-    "[QUANTIDADE DE SALÁRIO-MÍNIMO]": lead.qtd_salarios_minimos || "___",
-    "[PORCENTAGEM DE ÊXITO]": porcentagemExito,
-    "[PORCENTAGEM DE ÉXITO]": porcentagemExito,
-    "[DE ÉXITO]": porcentagemExito,
-    "[DATA DO PRIMEIRO PAGAMENTO]": dataPrimeiroPagamento,
-    "[DIA DOS DEMAIS PAGAMENTOS]": diaDemais,
-    "[PRAZO DE ENTREGA DOS RELATÓRIOS]": prazoRelatorios,
-    "[DIA de MÊS de 202X]": hoje,
-    "[DIA de MÉS de 202X]": hoje,
-  };
-
-  if (!isCPF) {
-    replacements["[NOME DA EMPRESA]"] = lead.empresa || "_______________";
-    replacements["[CNPJ]"] = lead.cnpj || "_______________";
-  }
-
-  return replacements;
+interface PatternRule {
+  anchor: RegExp;
+  replacements: Array<[RegExp, string]>;
 }
 
-function replaceInXml(xml: string, replacements: Record<string, string>): string {
-  let result = xml;
+function buildEnderecoCompleto(lead: any): string {
+  const endereco = (lead.endereco || "").trim();
+  const cidade = (lead.cidade || "").trim();
+  const estado = (lead.estado || "").trim();
+  const cep = (lead.cep || "").trim();
+  if (!endereco && !cidade && !cep) return "Rua XXXXXX, nº XXXXX, Bairro, CEP nº XX.XXX-XXX, Cidade/UF";
+  const parts: string[] = [];
+  if (endereco) parts.push(endereco);
+  if (cep) parts.push(`CEP nº ${cep}`);
+  const loc = [cidade, estado].filter(Boolean).join("/");
+  if (loc) parts.push(loc);
+  return parts.join(", ");
+}
 
-  for (const [placeholder, value] of Object.entries(replacements)) {
-    const escapedValue = escapeXml(value);
-    result = result.split(placeholder).join(escapedValue);
-    const escapedPlaceholder = escapeXml(placeholder);
-    if (escapedPlaceholder !== placeholder) {
-      result = result.split(escapedPlaceholder).join(escapedValue);
-    }
-  }
+function buildPatternRules(lead: any): PatternRule[] {
+  const tipo = lead.tipo_contrato || "tributario_cnpj";
+  // tributario_cnpj template uses CPF for the client (pessoa física)
+  // tributario_cpf and empresarial_completo use CNPJ for the client (pessoa jurídica)
+  const clientIsPF = tipo === "tributario_cnpj";
 
-  result = result.replace(/<w:p[ >][\s\S]*?<\/w:p>/g, (paragraph) => {
-    let fullText = "";
+  const clientName = clientIsPF
+    ? (lead.representante_nome || lead.nome || "NOME DO CLIENTE")
+    : (lead.empresa || lead.nome || "NOME DO CLIENTE");
+  const cpf = lead.representante_cpf || "xxx.xxx.xxx-xx";
+  const cnpj = lead.cnpj || "xx.xxx.xxx/xxxx-xx";
+  const enderecoFull = buildEnderecoCompleto(lead);
+
+  const valorMensal = lead.valor_mensalidade
+    ? formatBRL(Number(lead.valor_mensalidade))
+    : "R$ xxxxx";
+  const qtdSal = lead.qtd_salarios_minimos ? String(lead.qtd_salarios_minimos) : "xx";
+  const exito = lead.porcentagem_exito ? `${lead.porcentagem_exito}%` : "x%";
+
+  const socioNome = lead.representante_nome || "[NOME DO SÓCIO]";
+  const socioCpf = lead.representante_cpf || "[número]";
+
+  return [
+    // Cliente — parágrafo de qualificação
+    {
+      anchor: /doravante denominado[^<]*CONTRATANTE/i,
+      replacements: [
+        [/\(NOME DO CLIENTE\)/g, clientName],
+        [/(?<![A-Za-zÀ-ÿ])NOME DO CLIENTE(?![A-Za-zÀ-ÿ])/g, clientName],
+        [/xxx\.xxx\.xxx-xx/g, cpf],
+        [/xx\.xxx\.xxx\/xxxx-xx/g, cnpj],
+        [/Rua XXXXXX, nº XXXXX, Bairro, CEP nº XX\.XXX-XXX, Cidade\/UF/g, enderecoFull],
+      ],
+    },
+    // Honorários mensais
+    {
+      anchor: /pagar[ãa]o mensalmente [àa] CONTRATADA/i,
+      replacements: [
+        [/R\$ xxxxx \(valor por extenso\)/g, valorMensal],
+        [/xx salários-mínimos/g, `${qtdSal} salários-mínimos`],
+      ],
+    },
+    // Honorários de êxito (vários parágrafos)
+    {
+      anchor: /honorários de êxito|rescis[ãa]o contratual/i,
+      replacements: [
+        [/x% \(valor por extenso\)/g, exito],
+      ],
+    },
+    // Sócio coobrigado
+    {
+      anchor: /denominado sócio coobrigado/i,
+      replacements: [
+        [/\[NOME DO SÓCIO\]/g, socioNome],
+        [/\[número\]/g, socioCpf],
+      ],
+    },
+  ];
+}
+
+function applyPatternRules(xml: string, rules: PatternRule[]): string {
+  return xml.replace(/<w:p[ >][\s\S]*?<\/w:p>/g, (paragraph) => {
     const textParts: { match: string; text: string }[] = [];
-
     const tRegex = /<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g;
     let m;
+    let fullText = "";
     while ((m = tRegex.exec(paragraph)) !== null) {
       textParts.push({ match: m[0], text: m[1] });
       fullText += m[1];
     }
-
     if (textParts.length === 0) return paragraph;
 
-    let needsReplacement = false;
-    for (const [placeholder] of Object.entries(replacements)) {
-      const ep = escapeXml(placeholder);
-      if (fullText.includes(placeholder) || fullText.includes(ep)) {
-        needsReplacement = true;
-        break;
+    // Decode XML entities for matching/replacement, re-escape on write
+    const decoded = fullText
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'");
+
+    let working = decoded;
+    let changed = false;
+    for (const rule of rules) {
+      if (!rule.anchor.test(decoded)) continue;
+      for (const [pattern, value] of rule.replacements) {
+        const next = working.replace(pattern, value);
+        if (next !== working) {
+          working = next;
+          changed = true;
+        }
       }
     }
 
-    if (!needsReplacement) return paragraph;
+    if (!changed) return paragraph;
 
-    let replacedText = fullText;
-    for (const [placeholder, value] of Object.entries(replacements)) {
-      const escapedValue = escapeXml(value);
-      replacedText = replacedText.split(placeholder).join(escapedValue);
-      const ep = escapeXml(placeholder);
-      if (ep !== placeholder) {
-        replacedText = replacedText.split(ep).join(escapedValue);
-      }
-    }
-
-    if (replacedText === fullText) return paragraph;
-
+    const newText = escapeXml(working);
     let firstReplaced = false;
     let result = paragraph;
     for (const part of textParts) {
       if (!firstReplaced) {
-        const newT = `<w:t xml:space="preserve">${replacedText}</w:t>`;
-        result = result.replace(part.match, newT);
+        result = result.replace(part.match, `<w:t xml:space="preserve">${newText}</w:t>`);
         firstReplaced = true;
       } else {
-        const emptyT = `<w:t xml:space="preserve"></w:t>`;
-        result = result.replace(part.match, emptyT);
+        result = result.replace(part.match, `<w:t xml:space="preserve"></w:t>`);
       }
     }
     return result;
   });
-
-  return result;
 }
 
 async function generateFromTemplate(sbInternal: any, lead: any): Promise<Uint8Array> {
@@ -162,7 +188,7 @@ async function generateFromTemplate(sbInternal: any, lead: any): Promise<Uint8Ar
   const fflate = await import("https://esm.sh/fflate@0.8.2");
   const unzipped = fflate.unzipSync(templateBytes);
 
-  const replacements = buildReplacements(lead);
+  const rules = buildPatternRules(lead);
 
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
@@ -184,7 +210,7 @@ async function generateFromTemplate(sbInternal: any, lead: any): Promise<Uint8Ar
       xmlContent = xmlContent.replace(/<w:shd[^>]*w:fill="FFFF00"[^>]*\/>/g, "");
       xmlContent = xmlContent.replace(/<w:shd[^>]*w:fill="FFD966"[^>]*\/>/g, "");
       xmlContent = xmlContent.replace(/<w:shd[^>]*w:fill="FFF2CC"[^>]*\/>/g, "");
-      const replacedXml = replaceInXml(xmlContent, replacements);
+      const replacedXml = applyPatternRules(xmlContent, rules);
       zipInput[name] = [encoder.encode(replacedXml), { level: 6 }];
     } else if (name.endsWith(".xml") || name.endsWith(".rels")) {
       zipInput[name] = [data as Uint8Array, { level: 6 }];
