@@ -188,7 +188,7 @@ async function generateFromTemplate(sbInternal: any, lead: any): Promise<Uint8Ar
   const fflate = await import("https://esm.sh/fflate@0.8.2");
   const unzipped = fflate.unzipSync(templateBytes);
 
-  const replacements = buildReplacements(lead);
+  const rules = buildPatternRules(lead);
 
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
@@ -210,7 +210,7 @@ async function generateFromTemplate(sbInternal: any, lead: any): Promise<Uint8Ar
       xmlContent = xmlContent.replace(/<w:shd[^>]*w:fill="FFFF00"[^>]*\/>/g, "");
       xmlContent = xmlContent.replace(/<w:shd[^>]*w:fill="FFD966"[^>]*\/>/g, "");
       xmlContent = xmlContent.replace(/<w:shd[^>]*w:fill="FFF2CC"[^>]*\/>/g, "");
-      const replacedXml = replaceInXml(xmlContent, replacements);
+      const replacedXml = applyPatternRules(xmlContent, rules);
       zipInput[name] = [encoder.encode(replacedXml), { level: 6 }];
     } else if (name.endsWith(".xml") || name.endsWith(".rels")) {
       zipInput[name] = [data as Uint8Array, { level: 6 }];
