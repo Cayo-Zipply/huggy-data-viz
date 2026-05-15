@@ -385,6 +385,37 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
             >
               <Video size={12} />Agendar reunião
             </button>
+            {card.lead_status === "aberto" && (
+              <>
+                <button
+                  onClick={async () => {
+                    const ok = await hasContractAttached(card);
+                    if (!ok) {
+                      toast.error("É necessário anexar o contrato assinado antes de marcar como Ganho.");
+                      return;
+                    }
+                    onMarkWon(card.id);
+                  }}
+                  className="text-xs px-3 py-1.5 rounded-md bg-green-500/10 text-green-400 hover:bg-green-500/20 flex items-center gap-1.5 transition-colors border border-green-500/20"
+                >
+                  <Trophy size={12} />Ganho
+                </button>
+                <button
+                  onClick={() => onMarkLost(card.id, "", "")}
+                  className="text-xs px-3 py-1.5 rounded-md bg-destructive/10 text-red-400 hover:bg-destructive/20 flex items-center gap-1.5 transition-colors border border-destructive/20"
+                >
+                  <XCircle size={12} />Perdido
+                </button>
+              </>
+            )}
+            {card.lead_status !== "aberto" && (
+              <button
+                onClick={() => { onUpdate(card.id, { lead_status: "aberto", loss_reason: null, loss_category: null, last_stage: null } as any); }}
+                className="text-xs px-3 py-1.5 rounded-md bg-muted hover:bg-muted/80 text-muted-foreground flex items-center gap-1.5 transition-colors"
+              >
+                Reabrir lead
+              </button>
+            )}
           </div>
         </div>
 
