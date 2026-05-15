@@ -276,10 +276,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
     { key: "tarefas", label: "Tarefas", icon: ListChecks },
     { key: "contrato", label: "Contrato", icon: FileSignature },
     { key: "anexo", label: "Anexo", icon: Paperclip },
-    { key: "chamadas", label: "Chamadas", icon: Phone },
-    { key: "reunioes", label: "Reuniões", icon: Video },
     ...(card.lead_status === "ganho" ? [{ key: "emails" as SectionKey, label: "E-mails", icon: Mail }] : []),
-    { key: "acoes", label: "Ações", icon: Zap },
   ];
 
   const renderEditableField = (field: string, label: string, icon: React.ReactNode, currentValue: string | null | undefined, type: string = "text") => (
