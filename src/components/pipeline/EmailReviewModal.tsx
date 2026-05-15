@@ -36,10 +36,26 @@ function buildSkeleton(tipo: EmailTipo, card: PipelineCard | null): { assunto: s
   const closer = card.owner || "—";
   const assistente = card.assistente_juridico || "—";
 
+  const enderecoJ = [card.endereco, card.cidade, card.estado, card.cep].filter(Boolean).join(", ") || "—";
+
   if (tipo === "juridico") {
     return {
       assunto: `Fechamento de Contrato (JURÍDICO) – ${empresaOuNome}`,
-      corpo: `1. Situação fiscal identificada:
+      corpo: `Closer responsável: ${closer}
+Assistente Jurídico Responsável: ${assistente}
+
+EMPRESA:
+Nome da empresa: ${card.empresa || "—"}
+CNPJ: ${card.cnpj || "—"}
+Endereço: ${enderecoJ}
+
+SÓCIO:
+Nome do sócio: ${card.representante_nome || "—"}
+CPF: ${card.representante_cpf || "—"}
+Telefone: ${card.telefone || "—"}
+E-mail: ${card.email || "—"}
+
+1. Situação fiscal identificada:
 [preencher]
 
 2. Prioridades e expectativas do cliente:
@@ -49,9 +65,7 @@ function buildSkeleton(tipo: EmailTipo, card: PipelineCard | null): { assunto: s
 [preencher]
 
 4. Próximos passos:
-[preencher]
-
-Closer responsável: ${closer}`,
+[preencher]`,
     };
   }
 
