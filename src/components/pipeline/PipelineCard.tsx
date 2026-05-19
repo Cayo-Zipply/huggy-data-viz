@@ -3,13 +3,18 @@ import { cn } from "@/lib/utils";
 import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
   ChevronDown, ChevronUp, Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap,
-  AlertTriangle, Calendar, User
+  AlertTriangle, Calendar, User, Trash2, Copy as CopyIcon
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { PipelineCard as CardType, PipelineTask, PipeType, LossCategory } from "./types";
 import { LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
 import type { PipelineLabel } from "@/hooks/useLabels";
+import type { DuplicateInfo } from "@/hooks/useDuplicateLeads";
 import { CallButton } from "./CallButton";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
 
 interface Props {
   card: CardType;
@@ -17,17 +22,19 @@ interface Props {
   cardLabels?: PipelineLabel[];
   slaHoras?: number;
   ownerOptions?: string[];
+  duplicates?: DuplicateInfo[];
   onUpdate: (id: string, u: Partial<CardType>) => void;
   onMarkWon: (id: string) => void;
   onMarkLost: (id: string, cat: string, reason: string) => void;
   onCreateTask: (task: Omit<PipelineTask, "id" | "created_at">) => void;
   onToggleTask: (id: string) => void;
   onCardClick?: (card: CardType) => void;
+  onDelete?: (id: string) => void;
 }
 
 type Tab = "info" | "historico" | "tarefas" | "acoes";
 
-export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, ownerOptions: ownerOptionsProp, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick }: Props) {
+export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, ownerOptions: ownerOptionsProp, duplicates = [], onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick, onDelete }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [tab, setTab] = useState<Tab>("info");
   const [editing, setEditing] = useState<string | null>(null);
