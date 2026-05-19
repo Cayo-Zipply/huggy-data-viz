@@ -117,9 +117,9 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
                 {selectedIds?.has(card.id) && "✓"}
               </div>
             )}
-            <PipelineCardItem card={card} tasks={tasks} cardLabels={getCardLabels?.(card.id) || []} slaHoras={slaRule?.sla_horas} ownerOptions={ownerOptions} onUpdate={onUpdate}
+            <PipelineCardItem card={card} tasks={tasks} cardLabels={getCardLabels?.(card.id) || []} slaHoras={slaRule?.sla_horas} ownerOptions={ownerOptions} duplicates={duplicatesMap?.get(card.id) || []} onUpdate={onUpdate}
               onMarkWon={onMarkWon} onMarkLost={onMarkLost} onCreateTask={onCreateTask} onToggleTask={onToggleTask}
-              onCardClick={onCardClick} />
+              onCardClick={onCardClick} onDelete={onDelete} />
           </div>
         ))}
         {cards.length === 0 && <p className="text-xs text-muted-foreground text-center py-8">Nenhum lead</p>}
