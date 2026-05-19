@@ -139,6 +139,22 @@ export function PipelinePanel() {
     return dedupeOwnerNames(raw);
   }, [cards, currentUserName, goals, tasks, teamNames, ownerNames]);
 
+  // Detecção de leads duplicados (telefone, e-mail ou CNPJ).
+  const duplicatesMap = useDuplicateLeads(cards);
+
+  // Auto-move: leads com contrato "em assinatura" devem estar em "Link Enviado".
+  // Reaplica para leads existentes que ainda não foram movidos.
+  useEffect(() => {
+    cards.forEach((c) => {
+      const inSig = c.contrato_status === "enviado" || c.contrato_status === "enviado_whatsapp";
+      const alreadyPast = c.stage === "link_enviado" || c.stage === "contrato_assinado";
+      if (inSig && !alreadyPast && c.lead_status === "aberto") {
+        moveCard(c.id, "link_enviado" as Stage);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cards.length]);
+
   const showAllOwners = isAdmin && activeUser === "all";
 
   const visibleCards = useMemo(() => {
