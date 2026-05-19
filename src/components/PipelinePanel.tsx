@@ -762,6 +762,14 @@ export function PipelinePanel() {
         onAddLabel={addLabelToCard}
         onRemoveLabel={removeLabelFromCard}
         ownerOptions={ownerOptions}
+        duplicates={selectedCard ? duplicatesMap.get(selectedCard.id) || [] : []}
+        onDelete={async (id) => {
+          await deleteCard(id);
+          setDrawerOpen(false);
+          setSelectedCardId(null);
+          toast({ title: "Lead excluído" });
+        }}
+        onOpenLead={(id) => { setSelectedCardId(id); setDrawerOpen(true); }}
       />
 
       {/* No Show date popup */}
