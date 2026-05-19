@@ -145,6 +145,14 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
             {card.contrato_status === "assinado" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900">Assinado</span>}
             {card.contrato_status === "enviado" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900">Em assinatura</span>}
             {card.contrato_status === "gerado" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900">Contrato</span>}
+            {duplicates.length > 0 && (
+              <span
+                title={`Possível duplicado de: ${duplicates.map(d => `${d.nome} (${d.matches.join(", ")})`).join(" · ")}`}
+                className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-900 inline-flex items-center gap-0.5"
+              >
+                <CopyIcon size={9} />Duplicado ({duplicates.length})
+              </span>
+            )}
             {card.contrato_status === "recusado" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900">Recusado</span>}
           </div>
         )}
