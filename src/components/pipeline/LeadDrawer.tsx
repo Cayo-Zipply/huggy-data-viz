@@ -27,6 +27,12 @@ import { CallHistory } from "./CallHistory";
 import { EmailReviewModal } from "./EmailReviewModal";
 import { useEmailEnvios, type EmailTipo } from "@/hooks/useEmailEnvios";
 import { hasContractAttached } from "@/lib/contractCheck";
+import type { DuplicateInfo } from "@/hooks/useDuplicateLeads";
+import { Trash2, Copy as CopyDup } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
 
 /* ── Draft helpers (localStorage) ── */
 const DRAFT_PREFIX = "crm_draft_";
