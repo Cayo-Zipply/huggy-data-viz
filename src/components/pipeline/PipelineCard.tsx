@@ -385,6 +385,29 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
                   <button onClick={() => onUpdate(card.id, { lead_status: "aberto", loss_reason: null, loss_category: null, last_stage: null })}
                     className="w-full text-xs py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground">Reabrir lead</button>
                 )}
+                {onDelete && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button className="w-full text-xs py-1.5 rounded-lg bg-destructive/10 text-red-500 hover:bg-destructive/20 border border-destructive/20 flex items-center justify-center gap-1">
+                        <Trash2 size={12} />Excluir card
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir este lead?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          O lead <strong>{card.nome}</strong> e todo o seu histórico, tarefas e anexos serão removidos. Essa ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => onDelete(card.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </div>
             )}
           </div>
