@@ -425,6 +425,29 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                 Reabrir lead
               </button>
             )}
+            {onDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button className="text-xs px-3 py-1.5 rounded-md bg-destructive/10 text-red-500 hover:bg-destructive/20 border border-destructive/20 flex items-center gap-1.5 transition-colors">
+                    <Trash2 size={12} />Excluir
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir este lead?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      O lead <strong>{card.nome}</strong> e todo o seu histórico, tarefas e anexos serão removidos. Essa ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onDelete(card.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Excluir
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         </div>
 
