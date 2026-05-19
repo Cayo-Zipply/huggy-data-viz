@@ -6,6 +6,7 @@ import { STAGE_CONFIG, formatBRL, daysDiff } from "./types";
 import { PipelineCardItem } from "./PipelineCard";
 import type { PipelineLabel } from "@/hooks/useLabels";
 import type { SlaRule } from "@/hooks/useSlaRules";
+import type { DuplicateInfo } from "@/hooks/useDuplicateLeads";
 
 interface Props {
   stageKey: Stage;
@@ -22,11 +23,13 @@ interface Props {
   onCreateTask: (task: Omit<PipelineTask, "id" | "created_at">) => void;
   onToggleTask: (id: string) => void;
   onCardClick?: (card: PipelineCard) => void;
+  onDelete?: (id: string) => void;
   slaRule?: SlaRule;
   ownerOptions?: string[];
+  duplicatesMap?: Map<string, DuplicateInfo[]>;
 }
 
-export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, selectedIds, onToggleSelect, onUpdate, onDrop, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick, slaRule, ownerOptions }: Props) {
+export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, selectedIds, onToggleSelect, onUpdate, onDrop, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick, onDelete, slaRule, ownerOptions, duplicatesMap }: Props) {
   const cfg = STAGE_CONFIG[stageKey];
   const Icon = cfg.icon;
   const [dragOver, setDragOver] = useState(false);
@@ -114,9 +117,9 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
                 {selectedIds?.has(card.id) && "✓"}
               </div>
             )}
-            <PipelineCardItem card={card} tasks={tasks} cardLabels={getCardLabels?.(card.id) || []} slaHoras={slaRule?.sla_horas} ownerOptions={ownerOptions} onUpdate={onUpdate}
+            <PipelineCardItem card={card} tasks={tasks} cardLabels={getCardLabels?.(card.id) || []} slaHoras={slaRule?.sla_horas} ownerOptions={ownerOptions} duplicates={duplicatesMap?.get(card.id) || []} onUpdate={onUpdate}
               onMarkWon={onMarkWon} onMarkLost={onMarkLost} onCreateTask={onCreateTask} onToggleTask={onToggleTask}
-              onCardClick={onCardClick} />
+              onCardClick={onCardClick} onDelete={onDelete} />
           </div>
         ))}
         {cards.length === 0 && <p className="text-xs text-muted-foreground text-center py-8">Nenhum lead</p>}

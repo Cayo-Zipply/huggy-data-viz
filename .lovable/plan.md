@@ -1,28 +1,42 @@
-## Ajustes no Farol de Metas
+## Mudanças solicitadas
 
-### 1. Remover coluna "R. Marcadas" do diálogo "Editar Metas"
-Em `src/components/FarolPanel.tsx`, no `EditGoalsDialog`:
-- Remover o `<th>R. Marcadas</th>` do cabeçalho.
-- Remover o `<td>` correspondente (input de `reunioes_marcadas_meta`) de cada linha.
-- Manter o campo no objeto `PipelineGoal` salvo (apenas não editável pela UI), preservando valores existentes no banco.
+### 1. Excluir card (todos os usuários)
+- Adicionar botão "Excluir card" no `PipelineCardItem` (aba Ações) e também no `LeadDrawer` (rodapé), disponível para qualquer usuário autenticado.
+- Confirmação via `AlertDialog` antes da exclusão para evitar exclusão acidental.
+- Exclusão em cascata: remover o lead em `pipeline_cards` (já tem RLS público para DELETE) + tasks relacionadas em `pipeline_tasks` + histórico em `lead_history` + labels em `pipeline_card_labels`.
+- Registrar a exclusão em log (opcional, em `lead_history` antes do delete cascata) com nome do usuário que excluiu.
+- Atualizar estado local no `usePipelineData` removendo o card sem precisar de refetch.
 
-### 2. Corrigir meta de "Reuniões Realizadas" no hero card (6/120 e não 6/60)
+### 2. Contrato "Em assinatura" → mover automaticamente para "Link enviado"
+- Hoje, ao marcar contrato como `enviado` (em assinatura via ZapSign/WhatsApp), o card permanece na etapa atual.
+- Ajustar `ContractTab.tsx` (e qualquer fluxo que seta `contrato_status = "enviado"`) para também mover o card para o estágio `link_enviado` no pipe do Closer via `moveCard`.
+- Mesma lógica para o callback de webhook do ZapSign caso exista (verificar `generate-contract-docx`).
+- Registrar no histórico (`lead_historico`) a transição automática com motivo "Contrato enviado para assinatura".
 
-**Problema atual:** O card pega `globais.reunioes.meta` de `preVendasTotal.metaRR`, que soma `reunioes_realizadas_meta` dos **SDRs**. Como as metas de R. Realizadas (20, 40, 60) foram cadastradas nos **closers** (Cayo, Café, Fillipe), o total exibido fica zerado/incorreto — caindo para o valor de um único closer (60) em vez da soma 120.
+### 3. Indicador de lead duplicado
+- Critério: telefone (últimos 8 dígitos), e-mail (lowercase) ou CNPJ — qualquer um que coincida com outro card existente conta como duplicado. Nome NÃO é critério.
+- Implementar um hook utilitário `useDuplicateLeads(cards)` que retorna, para cada card, o array de IDs duplicados encontrados.
+- No `PipelineCardItem`:
+  - Mostrar badge discreta "Duplicado" (vermelho/âmbar) ao lado das outras badges.
+  - Tooltip ao passar o mouse listando os leads duplicados (nome + dono + etapa) com link para abrir.
+- No `LeadDrawer`: seção "Possíveis duplicados" exibindo a lista completa com botão para abrir cada um.
 
-**Correção:** No `useMemo` `globais` (≈ linha 388–451), calcular `metaRRTotal` como a soma de `reunioes_realizadas_meta` de **todos os closers** (`closerRows`) para o `monthKey` atual:
+## Detalhes técnicos
 
-```ts
-const metaRRTotal = closerRows.reduce((s, c) => {
-  const g = goals.find(x => x.closer === c && x.month === monthKey);
-  return s + (g?.reunioes_realizadas_meta || 0);
-}, 0);
-```
+- **Arquivos a editar:**
+  - `src/components/pipeline/PipelineCardItem.tsx` (botão excluir + badge duplicado)
+  - `src/components/pipeline/LeadDrawer.tsx` (botão excluir + seção duplicados)
+  - `src/components/pipeline/ContractTab.tsx` (mover para link_enviado ao enviar)
+  - `src/components/pipeline/usePipelineData.ts` (função `deleteCard`, expor para componentes)
+  - `src/hooks/useDuplicateLeads.ts` (novo)
+  - `src/components/pipeline/StageColumn.tsx` / `PipelinePanel.tsx` (encaminhar prop `onDelete` e duplicados)
 
-Substituindo a leitura atual `preVendasTotal.metaRR`. Assim, com Cayo=20 + Café=40 + Fillipe=60, o card exibirá **6 / 120**, refletindo o total da equipe de closers.
+- **Banco:** nenhuma migração necessária. RLS já permite DELETE público em `pipeline_cards`. Tasks/histórico também têm acesso público.
 
-O restante do cálculo (pace diário, projeção, gap) já usa `metaRRTotal` e ficará automaticamente correto.
+- **Normalização para duplicados:**
+  - Telefone: `telefone.replace(/\D/g,"").slice(-8)`
+  - E-mail: `email.trim().toLowerCase()`
+  - CNPJ: `cnpj.replace(/\D/g,"")`
+  - Ignorar valores vazios/nulos ao comparar.
 
-### Resultado esperado
-- Diálogo "Editar Metas" não mostra mais coluna "R. Marcadas".
-- Hero card "Reuniões Realizadas" mostra `6 / 120` (soma das metas dos 3 closers) em vez de `6 / 60`.
+- **Mover ao enviar contrato:** reaproveitar `moveCard(cardId, "link_enviado")` já existente em `usePipelineData`, garantindo que só dispare quando o status muda de outro estado para `enviado` (evitar loop).

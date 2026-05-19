@@ -3,13 +3,18 @@ import { cn } from "@/lib/utils";
 import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
   ChevronDown, ChevronUp, Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap,
-  AlertTriangle, Calendar, User
+  AlertTriangle, Calendar, User, Trash2, Copy as CopyIcon
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { PipelineCard as CardType, PipelineTask, PipeType, LossCategory } from "./types";
 import { LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
 import type { PipelineLabel } from "@/hooks/useLabels";
+import type { DuplicateInfo } from "@/hooks/useDuplicateLeads";
 import { CallButton } from "./CallButton";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
 
 interface Props {
   card: CardType;
@@ -17,17 +22,19 @@ interface Props {
   cardLabels?: PipelineLabel[];
   slaHoras?: number;
   ownerOptions?: string[];
+  duplicates?: DuplicateInfo[];
   onUpdate: (id: string, u: Partial<CardType>) => void;
   onMarkWon: (id: string) => void;
   onMarkLost: (id: string, cat: string, reason: string) => void;
   onCreateTask: (task: Omit<PipelineTask, "id" | "created_at">) => void;
   onToggleTask: (id: string) => void;
   onCardClick?: (card: CardType) => void;
+  onDelete?: (id: string) => void;
 }
 
 type Tab = "info" | "historico" | "tarefas" | "acoes";
 
-export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, ownerOptions: ownerOptionsProp, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick }: Props) {
+export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, ownerOptions: ownerOptionsProp, duplicates = [], onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick, onDelete }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [tab, setTab] = useState<Tab>("info");
   const [editing, setEditing] = useState<string | null>(null);
@@ -138,6 +145,14 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
             {card.contrato_status === "assinado" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900">Assinado</span>}
             {card.contrato_status === "enviado" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900">Em assinatura</span>}
             {card.contrato_status === "gerado" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900">Contrato</span>}
+            {duplicates.length > 0 && (
+              <span
+                title={`Possível duplicado de: ${duplicates.map(d => `${d.nome} (${d.matches.join(", ")})`).join(" · ")}`}
+                className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-900 inline-flex items-center gap-0.5"
+              >
+                <CopyIcon size={9} />Duplicado ({duplicates.length})
+              </span>
+            )}
             {card.contrato_status === "recusado" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900">Recusado</span>}
           </div>
         )}
@@ -369,6 +384,29 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
                 {card.lead_status !== "aberto" && (
                   <button onClick={() => onUpdate(card.id, { lead_status: "aberto", loss_reason: null, loss_category: null, last_stage: null })}
                     className="w-full text-xs py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground">Reabrir lead</button>
+                )}
+                {onDelete && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button className="w-full text-xs py-1.5 rounded-lg bg-destructive/10 text-red-500 hover:bg-destructive/20 border border-destructive/20 flex items-center justify-center gap-1">
+                        <Trash2 size={12} />Excluir card
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir este lead?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          O lead <strong>{card.nome}</strong> e todo o seu histórico, tarefas e anexos serão removidos. Essa ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => onDelete(card.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 )}
               </div>
             )}
