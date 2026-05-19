@@ -372,6 +372,27 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
             })()}
           </div>
 
+          {duplicates.length > 0 && (
+            <div className="mb-3 rounded-md border border-orange-300/60 bg-orange-50 dark:bg-orange-950/30 dark:border-orange-900/60 px-3 py-2">
+              <div className="flex items-center gap-1.5 text-xs font-medium text-orange-700 dark:text-orange-300 mb-1">
+                <CopyDup size={12} />Possível duplicado ({duplicates.length})
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {duplicates.map((d) => (
+                  <button
+                    key={d.id}
+                    onClick={() => onOpenLead?.(d.id)}
+                    className="text-[11px] px-2 py-1 rounded bg-white dark:bg-orange-900/40 border border-orange-200 dark:border-orange-900 text-orange-800 dark:text-orange-200 hover:bg-orange-100 dark:hover:bg-orange-900/60 transition-colors"
+                    title={`Coincide em: ${d.matches.join(", ")}`}
+                  >
+                    {d.nome} <span className="text-orange-500/70">· {d.matches.join("/")}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+
           {/* Quick actions */}
           <div className="flex gap-2 flex-wrap">
             {card.telefone && (
