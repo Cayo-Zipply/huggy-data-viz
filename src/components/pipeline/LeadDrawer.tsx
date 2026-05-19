@@ -89,11 +89,14 @@ interface Props {
   onAddLabel?: (cardId: string, labelId: string) => void;
   onRemoveLabel?: (cardId: string, labelId: string) => void;
   ownerOptions?: string[];
+  duplicates?: DuplicateInfo[];
+  onDelete?: (id: string) => void | Promise<void>;
+  onOpenLead?: (id: string) => void;
 }
 
 type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "contrato" | "anexo" | "chamadas" | "reunioes" | "emails" | "acoes";
 
-export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onSaveObservation, labels = [], cardLabels = [], onAddLabel, onRemoveLabel, ownerOptions: ownerOptionsProp }: Props) {
+export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onSaveObservation, labels = [], cardLabels = [], onAddLabel, onRemoveLabel, ownerOptions: ownerOptionsProp, duplicates = [], onDelete, onOpenLead }: Props) {
   const { user, isAdmin, profile } = useAuth();
   const db = supabaseExt as any;
   const [editing, setEditing] = useState<string | null>(null);
