@@ -33,13 +33,16 @@ export function useDuplicateLeads(cards: PipelineCard[]) {
     const byEmail = new Map<string, string[]>();
     const byCnpj = new Map<string, string[]>();
 
+    // Indexa por pipe para não considerar mirrors SDR↔Closer como duplicados
+    const k = (pipe: string | undefined, v: string) => `${pipe ?? ""}::${v}`;
+
     cards.forEach((c) => {
       const p = normPhone(c.telefone);
       const e = normEmail(c.email);
       const cn = normCnpj(c.cnpj);
-      if (p) byPhone.set(p, [...(byPhone.get(p) || []), c.id]);
-      if (e) byEmail.set(e, [...(byEmail.get(e) || []), c.id]);
-      if (cn) byCnpj.set(cn, [...(byCnpj.get(cn) || []), c.id]);
+      if (p) byPhone.set(k(c.pipe, p), [...(byPhone.get(k(c.pipe, p)) || []), c.id]);
+      if (e) byEmail.set(k(c.pipe, e), [...(byEmail.get(k(c.pipe, e)) || []), c.id]);
+      if (cn) byCnpj.set(k(c.pipe, cn), [...(byCnpj.get(k(c.pipe, cn)) || []), c.id]);
     });
 
     const result = new Map<string, DuplicateInfo[]>();
@@ -50,19 +53,19 @@ export function useDuplicateLeads(cards: PipelineCard[]) {
       const p = normPhone(c.telefone);
       const e = normEmail(c.email);
       const cn = normCnpj(c.cnpj);
-      if (p) byPhone.get(p)?.forEach((id) => {
+      if (p) byPhone.get(k(c.pipe, p))?.forEach((id) => {
         if (id !== c.id) {
           if (!matches.has(id)) matches.set(id, new Set());
           matches.get(id)!.add("telefone");
         }
       });
-      if (e) byEmail.get(e)?.forEach((id) => {
+      if (e) byEmail.get(k(c.pipe, e))?.forEach((id) => {
         if (id !== c.id) {
           if (!matches.has(id)) matches.set(id, new Set());
           matches.get(id)!.add("email");
         }
       });
-      if (cn) byCnpj.get(cn)?.forEach((id) => {
+      if (cn) byCnpj.get(k(c.pipe, cn))?.forEach((id) => {
         if (id !== c.id) {
           if (!matches.has(id)) matches.set(id, new Set());
           matches.get(id)!.add("cnpj");
