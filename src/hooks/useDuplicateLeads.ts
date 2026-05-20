@@ -53,19 +53,19 @@ export function useDuplicateLeads(cards: PipelineCard[]) {
       const p = normPhone(c.telefone);
       const e = normEmail(c.email);
       const cn = normCnpj(c.cnpj);
-      if (p) byPhone.get(p)?.forEach((id) => {
+      if (p) byPhone.get(k(c.pipe, p))?.forEach((id) => {
         if (id !== c.id) {
           if (!matches.has(id)) matches.set(id, new Set());
           matches.get(id)!.add("telefone");
         }
       });
-      if (e) byEmail.get(e)?.forEach((id) => {
+      if (e) byEmail.get(k(c.pipe, e))?.forEach((id) => {
         if (id !== c.id) {
           if (!matches.has(id)) matches.set(id, new Set());
           matches.get(id)!.add("email");
         }
       });
-      if (cn) byCnpj.get(cn)?.forEach((id) => {
+      if (cn) byCnpj.get(k(c.pipe, cn))?.forEach((id) => {
         if (id !== c.id) {
           if (!matches.has(id)) matches.set(id, new Set());
           matches.get(id)!.add("cnpj");
