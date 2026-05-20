@@ -168,7 +168,9 @@ export function PipelinePanel() {
       return o === t || o.startsWith(t + " ") || o.includes(t);
     };
     
-    if (!isAdmin) {
+    const isFillipe = profile?.email?.toLowerCase() === "fillipe.amorim@penaquadros.com";
+
+    if (!isAdmin && !isFillipe) {
       if (isSdr && !isCloser) {
         filtered = filtered.filter((card) => ownerMatches(card.owner, currentUserName) || !card.owner || card.stage === "no_show");
       } else if (isCloser || isDual) {
@@ -183,7 +185,7 @@ export function PipelinePanel() {
       } else {
         filtered = filtered.filter((card) => ownerMatches(card.owner, currentUserName) || !card.owner);
       }
-    } else if (!showAllOwners) {
+    } else if (isAdmin && !showAllOwners) {
       filtered = filtered.filter((card) => ownerMatches(card.owner, activeUser));
     }
     filtered = applyFilters(filtered, filters);
