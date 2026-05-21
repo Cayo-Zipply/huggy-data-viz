@@ -18,13 +18,9 @@ export const supabase = createClient(EXTERNAL_URL, EXTERNAL_ANON_KEY, {
   },
 });
 
-export const supabaseData = createClient(EXTERNAL_URL, EXTERNAL_ANON_KEY, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false,
-    detectSessionInUrl: false,
-  },
-});
+// Keep legacy data imports on the same instance to avoid multiple GoTrue
+// clients racing over the same browser session during Google login.
+export const supabaseData = supabase;
 
 // Backwards-compatible aliases used across the codebase.
 export const supabaseExt = supabase;
