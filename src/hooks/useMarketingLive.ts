@@ -294,20 +294,35 @@ export function useMarketingLive(selectedMonth: string) {
     staleTime: 60_000,
   });
 
-  // 4. Leads stats (mês atual + anterior, sem filtro de campanha)
-  const leadsQuery = useQuery({
-    queryKey: ["marketing-leads-stats", selectedMonth],
-    queryFn: () => fetchLeadsStats(selectedMonth),
+  // 4. Leads (mês atual + anterior, sem filtro de campanha) — UMA única
+  //    query por mês. A agregação por closer acontece em `useMemo` abaixo,
+  //    NÃO dentro da `queryFn`, para não recalcular a cada render.
+  //    `refetchInterval: 60_000` mantém o auto-refresh de 60s já existente.
+  const leadsRawQuery = useQuery({
+    queryKey: ["marketing-leads-raw", selectedMonth],
+    queryFn: () => fetchLeadsRaw(selectedMonth),
     enabled,
     staleTime: 60_000,
+    refetchInterval: 60_000,
   });
 
-  const leadsPrevQuery = useQuery({
-    queryKey: ["marketing-leads-stats", prevMonth],
-    queryFn: () => fetchLeadsStats(prevMonth),
+  const leadsPrevRawQuery = useQuery({
+    queryKey: ["marketing-leads-raw", prevMonth],
+    queryFn: () => fetchLeadsRaw(prevMonth),
     enabled: enabled && !!prevMonth,
     staleTime: 60_000,
+    refetchInterval: 60_000,
   });
+
+  const leadsStats = useMemo<LeadsStats | undefined>(() => {
+    if (!leadsRawQuery.data) return undefined;
+    return aggregateLeads(leadsRawQuery.data, selectedMonth);
+  }, [leadsRawQuery.data, selectedMonth]);
+
+  const leadsStatsPrev = useMemo<LeadsStats | undefined>(() => {
+    if (!leadsPrevRawQuery.data || !prevMonth) return undefined;
+    return aggregateLeads(leadsPrevRawQuery.data, prevMonth);
+  }, [leadsPrevRawQuery.data, prevMonth]);
 
   // 5. Metas dos closers para o mês selecionado
   const metasQuery = useQuery({
@@ -330,12 +345,12 @@ export function useMarketingLive(selectedMonth: string) {
     setSelectedCampaigns,
     metaStats: metaQuery.data,
     metaStatsPrev: metaPrevQuery.data,
-    leadsStats: leadsQuery.data,
-    leadsStatsPrev: leadsPrevQuery.data,
+    leadsStats,
+    leadsStatsPrev,
     metasCloser: metasQuery.data ?? [],
     loading:
       campaignsQuery.isLoading ||
       metaQuery.isLoading ||
-      leadsQuery.isLoading,
+      leadsRawQuery.isLoading,
   };
 }
