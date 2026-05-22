@@ -138,24 +138,36 @@ async function fetchMetaStats(
   };
 }
 
-async function fetchLeadsStats(monthYYYYMM: string): Promise<LeadsStats> {
+/**
+ * Busca BRUTA: UMA ÚNICA query na tabela `leads`, trazendo todas as linhas
+ * que importam para o mês (criadas no mês OU vendidas no mês). Toda a
+ * agregação por closer é feita no cliente via `useMemo`, evitando N+1
+ * (uma request por vendedor).
+ */
+async function fetchLeadsRaw(monthYYYYMM: string): Promise<any[]> {
   const { inicioIso, fimIso } = monthRange(monthYYYYMM);
-
-  // mensagens = leads criados no mês
-  const { count: mensagensCount } = await supabaseExt
+  const { data, error } = await supabaseExt
     .from("leads")
-    .select("*", { count: "exact", head: true })
-    .gte("created_at", inicioIso)
-    .lte("created_at", fimIso);
+    .select("id, etapa_atual, closer, status, valor_negocio, data_venda, created_at")
+    .or(
+      `and(created_at.gte.${inicioIso},created_at.lte.${fimIso}),and(data_venda.gte.${inicioIso},data_venda.lte.${fimIso})`,
+    );
+  if (error) throw error;
+  return data ?? [];
+}
 
-  // reuniões marcadas: leads criados no mês que chegaram pelo menos à etapa de reunião
-  const { data: reunMarcadasRows } = await supabaseExt
-    .from("leads")
-    .select("etapa_atual, closer")
-    .gte("created_at", inicioIso)
-    .lte("created_at", fimIso);
+/**
+ * Agregação pura (sem I/O) — pronta para rodar dentro de `useMemo`.
+ * Espelha exatamente a lógica antiga de `fetchLeadsStats`.
+ */
+function aggregateLeads(rows: any[], monthYYYYMM: string): LeadsStats {
+  const { inicioIso, fimIso } = monthRange(monthYYYYMM);
+  const inMonth = (iso: string | null | undefined) =>
+    !!iso && iso >= inicioIso && iso <= fimIso;
 
-  const reunMarcadasNorm = (reunMarcadasRows ?? []).filter((r: any) => {
+  const createdInMonth = rows.filter((r) => inMonth(r.created_at));
+
+  const reunMarcadasNorm = createdInMonth.filter((r: any) => {
     const e = String(r.etapa_atual ?? "").toLowerCase();
     return (
       e.includes("reuni") ||
@@ -166,13 +178,10 @@ async function fetchLeadsStats(monthYYYYMM: string): Promise<LeadsStats> {
     );
   });
 
-  // reuniões realizadas: leads do mês cuja etapa atual é "Reunião Realizada",
-  // "Link Enviado" ou que viraram venda (Contrato Assinado / ganho).
-  // Usamos created_at do lead para limitar ao mês selecionado.
-  const reunRealizadasRows = (reunMarcadasRows ?? []).filter((r: any) => {
+  const reunRealizadasRows = createdInMonth.filter((r: any) => {
     const e = String(r.etapa_atual ?? "").toLowerCase().trim();
     return (
-      e.includes("reuni") && e.includes("realiz") ||
+      (e.includes("reuni") && e.includes("realiz")) ||
       e.includes("link enviado") ||
       e.includes("proposta") ||
       e.includes("contrato assinado") ||
@@ -180,21 +189,17 @@ async function fetchLeadsStats(monthYYYYMM: string): Promise<LeadsStats> {
     );
   });
 
-  // vendas e faturamento por data_venda no mês
-  const { data: vendasRows } = await supabaseExt
-    .from("leads")
-    .select("valor_negocio, data_venda, closer")
-    .eq("status", "ganho")
-    .gte("data_venda", inicioIso)
-    .lte("data_venda", fimIso);
+  const vendasRows = rows.filter(
+    (r: any) => r.status === "ganho" && inMonth(r.data_venda),
+  );
 
-  const vendas = vendasRows?.length ?? 0;
-  const faturamento = (vendasRows ?? []).reduce(
+  const vendas = vendasRows.length;
+  const faturamento = vendasRows.reduce(
     (s: number, l: any) => s + Number(l.valor_negocio ?? 0),
     0,
   );
 
-  // Breakdown por closer
+  // Breakdown por closer (agrupado client-side a partir do mesmo dataset)
   const map = new Map<string, CloserBreakdown>();
   const ensure = (name: string) => {
     const key = (name || "Sem closer").trim() || "Sem closer";
@@ -211,7 +216,7 @@ async function fetchLeadsStats(monthYYYYMM: string): Promise<LeadsStats> {
     }
     return map.get(key)!;
   };
-  (reunRealizadasRows ?? []).forEach((r: any) => {
+  reunRealizadasRows.forEach((r: any) => {
     const b = ensure(r.closer);
     b.reunioes += 1;
     b.reunioesRealizadas += 1;
@@ -219,7 +224,7 @@ async function fetchLeadsStats(monthYYYYMM: string): Promise<LeadsStats> {
   reunMarcadasNorm.forEach((r: any) => {
     ensure(r.closer).reunioesMarcadas += 1;
   });
-  (vendasRows ?? []).forEach((l: any) => {
+  vendasRows.forEach((l: any) => {
     const b = ensure(l.closer);
     b.vendas += 1;
     b.faturamento += Number(l.valor_negocio ?? 0);
@@ -232,9 +237,9 @@ async function fetchLeadsStats(monthYYYYMM: string): Promise<LeadsStats> {
     .sort((a, b) => b.faturamento - a.faturamento || b.vendas - a.vendas);
 
   return {
-    mensagens: mensagensCount ?? 0,
+    mensagens: createdInMonth.length,
     reunioesAgendadas: reunMarcadasNorm.length,
-    reunioesRealizadas: reunRealizadasRows?.length ?? 0,
+    reunioesRealizadas: reunRealizadasRows.length,
     vendas,
     faturamento,
     porCloser,
