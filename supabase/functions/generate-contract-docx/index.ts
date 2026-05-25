@@ -68,9 +68,9 @@ function buildEnderecoCompleto(lead: any): string {
 
 function buildPatternRules(lead: any): PatternRule[] {
   const tipo = lead.tipo_contrato || "tributario_cnpj";
-  // tributario_cnpj template uses CPF for the client (pessoa física)
-  // tributario_cpf and empresarial_completo use CNPJ for the client (pessoa jurídica)
-  const clientIsPF = tipo === "tributario_cnpj";
+  // tributario_cpf → cliente é pessoa física (sem empresa, sem sócio coobrigado)
+  // tributario_cnpj e empresarial_completo → cliente é pessoa jurídica (empresa + sócio coobrigado)
+  const clientIsPF = tipo === "tributario_cpf";
 
   const clientName = clientIsPF
     ? (lead.representante_nome || lead.nome || "NOME DO CLIENTE")
