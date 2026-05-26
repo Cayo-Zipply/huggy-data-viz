@@ -226,7 +226,7 @@ export function PipelinePanel() {
     return tasks.filter((task) => {
       if (task.due_date > today || task.status !== "pendente") return false;
       if (showAllOwners) return true;
-      return task.responsible === activeUser;
+      return sameOwner(task.responsible, activeUser);
     }).length;
   }, [tasks, activeUser, showAllOwners]);
 
