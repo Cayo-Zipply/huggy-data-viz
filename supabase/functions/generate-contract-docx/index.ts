@@ -9,10 +9,10 @@ const corsHeaders = {
 const EXT_URL = "https://riyfdcmmabvpcubusujw.supabase.co";
 const EXT_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpeWZkY21tYWJ2cGN1YnVzdWp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NTMyMDMsImV4cCI6MjA5MDIyOTIwM30.pCRIa4UEC9WQiBP8EwzVrO73qS1FbsQ9fvKzlUPD1Gc";
 
-// Template mapping
+// Template mapping (SWAP: arquivos no storage estão com nomes trocados, então invertemos aqui)
 const TEMPLATE_MAP: Record<string, string> = {
-  tributario_cnpj: "templates/tributario_cnpj.docx",
-  tributario_cpf: "templates/tributario_cpf.docx",
+  tributario_cnpj: "templates/tributario_cpf.docx",
+  tributario_cpf: "templates/tributario_cnpj.docx",
   empresarial_completo: "templates/empresarial_completo.docx",
 };
 
