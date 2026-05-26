@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { Check, Calendar, Clock, User, AlertCircle, ChevronRight } from "lucide-react";
 import type { PipelineCard, PipelineTask } from "./types";
 import { STAGE_CONFIG } from "./types";
+import { sameOwner } from "@/lib/ownerNormalization";
 
 interface Props {
   tasks: PipelineTask[];
@@ -19,7 +20,7 @@ export function TasksPanel({ tasks, cards, activeUser, canViewAll = false, onTog
   const in3days = new Date(Date.now() + 3 * 86400000).toISOString().split("T")[0];
   const showAll = canViewAll && activeUser === "all";
 
-  const userTasks = tasks.filter(t => showAll || t.responsible === activeUser);
+  const userTasks = tasks.filter(t => showAll || sameOwner(t.responsible, activeUser));
   const overdue = userTasks.filter(t => t.due_date < today && t.status === "pendente");
   const todayTasks = userTasks.filter(t => t.due_date === today && t.status === "pendente");
   const upcoming = userTasks.filter(t => t.due_date > today && t.due_date <= in3days && t.status === "pendente");
