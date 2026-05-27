@@ -168,9 +168,16 @@ export function PipelinePanel() {
       return o === t || o.startsWith(t + " ") || o.includes(t);
     };
     
-    const isFillipe = profile?.email?.toLowerCase() === "fillipe.amorim@penaquadros.com";
+    const email = profile?.email?.toLowerCase() || "";
+    const isFillipe = email === "fillipe.amorim@penaquadros.com";
+    // Closers com visão global (veem todos os cards de todos, inclusive No Show)
+    const GLOBAL_VIEW_EMAILS = new Set([
+      "paulo@penaquadros.com",
+      "luka@penaquadros.com",
+    ]);
+    const hasGlobalView = isFillipe || GLOBAL_VIEW_EMAILS.has(email);
 
-    if (!isAdmin && !isFillipe) {
+    if (!isAdmin && !hasGlobalView) {
       if (isSdr && !isCloser) {
         filtered = filtered.filter((card) => ownerMatches(card.owner, currentUserName) || !card.owner || card.stage === "no_show");
       } else if (isCloser || isDual) {
