@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { Info, AlertTriangle } from "lucide-react";
+import { Info, AlertTriangle, ArrowDownUp } from "lucide-react";
 import type { PipelineCard, PipelineTask, Stage } from "./types";
 import { STAGE_CONFIG, formatBRL, daysDiff } from "./types";
 import { PipelineCardItem } from "./PipelineCard";
