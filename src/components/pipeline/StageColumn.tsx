@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { Info, AlertTriangle } from "lucide-react";
+import { Info, AlertTriangle, ArrowDownUp } from "lucide-react";
 import type { PipelineCard, PipelineTask, Stage } from "./types";
 import { STAGE_CONFIG, formatBRL, daysDiff } from "./types";
 import { PipelineCardItem } from "./PipelineCard";
@@ -34,7 +34,23 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
   const Icon = cfg.icon;
   const [dragOver, setDragOver] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [sortBy, setSortBy] = useState<"stage_entry" | "created">(() => {
+    try { return (localStorage.getItem(`pipe-sort-${stageKey}`) as any) || "stage_entry"; } catch { return "stage_entry"; }
+  });
   const slaHoras = slaRule?.sla_horas ?? 24;
+
+  const sortedCards = useMemo(() => {
+    const arr = [...cards];
+    const key = sortBy === "created" ? "created_at" : "stage_changed_at";
+    arr.sort((a, b) => new Date(a[key] || a.created_at).getTime() - new Date(b[key] || b.created_at).getTime());
+    return arr;
+  }, [cards, sortBy]);
+
+  const toggleSort = () => {
+    const next = sortBy === "stage_entry" ? "created" : "stage_entry";
+    setSortBy(next);
+    try { localStorage.setItem(`pipe-sort-${stageKey}`, next); } catch {}
+  };
 
   // Count SLA breaches
   const slaBreached = cards.filter(c => {
@@ -69,9 +85,19 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
               {slaBreached} SLA
             </span>
           )}
+          <button
+            onClick={toggleSort}
+            title={sortBy === "stage_entry" ? "Ordenado por entrada na etapa (clique p/ data de criação)" : "Ordenado por data de criação (clique p/ entrada na etapa)"}
+            className={cn("text-muted-foreground hover:text-foreground", sortBy === "created" && "text-primary")}
+          >
+            <ArrowDownUp size={12} />
+          </button>
           <button onClick={() => setShowTooltip(!showTooltip)} className="text-muted-foreground hover:text-foreground">
             <Info size={12} />
           </button>
+        </div>
+        <div className="text-[10px] text-muted-foreground mt-0.5">
+          Ordem: {sortBy === "stage_entry" ? "chegada na etapa" : "data de criação"}
         </div>
         <div className="flex items-center gap-2 mt-1 text-[11px] tabular-nums">
           <span className="font-semibold text-foreground">{formatBRL(totalPonderado)}</span>
@@ -87,7 +113,7 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
         )}
       </div>
       <div className="flex-1 space-y-1.5 overflow-y-auto p-1.5 max-h-[72vh]">
-        {cards.map(card => (
+        {sortedCards.map(card => (
           <div
             key={card.id}
             draggable={!bulkMode}
