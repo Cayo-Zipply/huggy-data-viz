@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef, type SetStateAction } from "react";
+import { toast } from "sonner";
 import type { PipelineCard, PipelineTask, PipelineGoal, Stage, PipeType, StageChange } from "./types";
 import { DEFAULT_DEAL_VALUE, STAGE_CONFIG, AUTO_TASKS, addDays } from "./types";
 import { supabase } from "@/lib/supabaseExternal";
