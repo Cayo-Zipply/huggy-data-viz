@@ -172,8 +172,8 @@ export function PipelinePanel() {
     const isFillipe = email === "fillipe.amorim@penaquadros.com";
     // Closers com visão global (veem todos os cards de todos, inclusive No Show)
     const GLOBAL_VIEW_EMAILS = new Set([
-      "paulo@penaquadros.com",
-      "luka@penaquadros.com",
+      "paulo.vitor@penaquadros.com",
+      "luka.freitas@penaquadros.com",
     ]);
     const hasGlobalView = isFillipe || GLOBAL_VIEW_EMAILS.has(email);
 
