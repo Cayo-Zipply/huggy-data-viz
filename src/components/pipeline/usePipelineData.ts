@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef, type SetStateAction } from "react";
+import { toast } from "sonner";
 import type { PipelineCard, PipelineTask, PipelineGoal, Stage, PipeType, StageChange } from "./types";
 import { DEFAULT_DEAL_VALUE, STAGE_CONFIG, AUTO_TASKS, addDays } from "./types";
 import { supabase } from "@/lib/supabaseExternal";
@@ -739,10 +740,24 @@ export function usePipelineData(actorName: string) {
   }, [actorName]);
 
   const deleteCard = useCallback(async (id: string) => {
-    await sbExt.from("leads").delete().eq("id", id);
+    const { error, count } = await sbExt
+      .from("leads")
+      .delete({ count: "exact" })
+      .eq("id", id);
+    if (error) {
+      console.error("[deleteCard] supabase error:", error);
+      toast.error(`Erro ao excluir: ${error.message || error.code || "desconhecido"}`);
+      return;
+    }
+    if (count === 0) {
+      console.warn("[deleteCard] nenhuma linha removida (RLS ou id inexistente)");
+      toast.error("Nada foi removido. Verifique permissões (RLS) ou se o lead ainda existe.");
+      return;
+    }
     const nextCards = pipelineDataCache.cards.filter(c => c.id !== id);
     const nextTasks = pipelineDataCache.tasks.filter(t => t.card_id !== id);
     publishPipelineSnapshot({ cards: nextCards, tasks: nextTasks, goals: pipelineDataCache.goals, loaded: true });
+    toast.success("Lead excluído.");
   }, []);
 
   /* ── save observation as history entry ── */
