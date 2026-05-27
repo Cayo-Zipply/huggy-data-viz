@@ -114,7 +114,7 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
                 <Video size={11} /><Copy size={10} />Meet
               </button>
             )}
-            {r.status === "agendada" && (
+            {r.status !== "cancelada" && (
               <>
                 <button onClick={() => setEditing(r)}
                   className="text-xs px-2 py-1 bg-muted text-foreground rounded-md hover:bg-muted/80 flex items-center gap-1">
