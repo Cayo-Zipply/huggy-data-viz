@@ -26,9 +26,6 @@ const STATUS_BADGES: Record<string, { label: string; color: string }> = {
   recusado: { label: "❌ Contrato recusado", color: "bg-red-500/20 text-red-400" },
 };
 
-const CONTRACT_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-contract-docx`;
-const CONTRACT_FUNCTION_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
 type ContractFunctionResult = {
   success?: boolean;
   message?: string;
@@ -40,19 +37,9 @@ type ContractFunctionResult = {
 };
 
 async function invokeContractFunction(body: { lead_id: string; action: "zapsign" | "download" | "whatsapp" | "preview" }) {
-  const res = await fetch(CONTRACT_FUNCTION_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      apikey: CONTRACT_FUNCTION_KEY,
-      Authorization: `Bearer ${CONTRACT_FUNCTION_KEY}`,
-    },
-    body: JSON.stringify(body),
-  });
-
-  const data = await res.json().catch(() => null);
-  if (!res.ok) {
-    throw new Error(data?.message || "Erro ao gerar contrato");
+  const { data, error } = await supabase.functions.invoke("generate-contract-docx", { body });
+  if (error) {
+    throw new Error(error.message || "Erro ao gerar contrato");
   }
   return data as ContractFunctionResult;
 }
