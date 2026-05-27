@@ -85,9 +85,19 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
               {slaBreached} SLA
             </span>
           )}
+          <button
+            onClick={toggleSort}
+            title={sortBy === "stage_entry" ? "Ordenado por entrada na etapa (clique p/ data de criação)" : "Ordenado por data de criação (clique p/ entrada na etapa)"}
+            className={cn("text-muted-foreground hover:text-foreground", sortBy === "created" && "text-primary")}
+          >
+            <ArrowDownUp size={12} />
+          </button>
           <button onClick={() => setShowTooltip(!showTooltip)} className="text-muted-foreground hover:text-foreground">
             <Info size={12} />
           </button>
+        </div>
+        <div className="text-[10px] text-muted-foreground mt-0.5">
+          Ordem: {sortBy === "stage_entry" ? "chegada na etapa" : "data de criação"}
         </div>
         <div className="flex items-center gap-2 mt-1 text-[11px] tabular-nums">
           <span className="font-semibold text-foreground">{formatBRL(totalPonderado)}</span>
