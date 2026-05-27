@@ -34,7 +34,23 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
   const Icon = cfg.icon;
   const [dragOver, setDragOver] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [sortBy, setSortBy] = useState<"stage_entry" | "created">(() => {
+    try { return (localStorage.getItem(`pipe-sort-${stageKey}`) as any) || "stage_entry"; } catch { return "stage_entry"; }
+  });
   const slaHoras = slaRule?.sla_horas ?? 24;
+
+  const sortedCards = useMemo(() => {
+    const arr = [...cards];
+    const key = sortBy === "created" ? "created_at" : "stage_changed_at";
+    arr.sort((a, b) => new Date(a[key] || a.created_at).getTime() - new Date(b[key] || b.created_at).getTime());
+    return arr;
+  }, [cards, sortBy]);
+
+  const toggleSort = () => {
+    const next = sortBy === "stage_entry" ? "created" : "stage_entry";
+    setSortBy(next);
+    try { localStorage.setItem(`pipe-sort-${stageKey}`, next); } catch {}
+  };
 
   // Count SLA breaches
   const slaBreached = cards.filter(c => {
