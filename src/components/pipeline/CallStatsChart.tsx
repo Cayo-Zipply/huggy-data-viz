@@ -60,8 +60,8 @@ export function CallStatsChart({ start, end, monthLabel }: Props) {
     (async () => {
       const { data, error } = await (supabaseExt as any)
         .from("user_profiles")
-        .select("nome, role, secondary_role")
-        .or("role.eq.sdr,role.eq.closer,secondary_role.eq.sdr,secondary_role.eq.closer");
+        .select("nome, role")
+        .in("role", ["sdr", "closer", "admin"]);
       if (cancelled) return;
       if (error) {
         console.error("[CallStatsChart] erro vendedores:", error.message);
