@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_updates: {
+        Row: {
+          ativo: boolean
+          id: string
+          itens: string[]
+          publicado_em: string
+          titulo: string
+        }
+        Insert: {
+          ativo?: boolean
+          id?: string
+          itens?: string[]
+          publicado_em?: string
+          titulo: string
+        }
+        Update: {
+          ativo?: boolean
+          id?: string
+          itens?: string[]
+          publicado_em?: string
+          titulo?: string
+        }
+        Relationships: []
+      }
       feedbacks: {
         Row: {
           created_at: string
