@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import type { PipelineCard as CardType, ContractType, ContractStatus, Stage } from "./types";
 import { formatBRL } from "./types";
 import { supabase } from "@/lib/supabaseExternal";
+import { notifySlackGanho } from "@/lib/notifySlackGanho";
 
 const UF_OPTIONS = [
   "AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT","PA",
