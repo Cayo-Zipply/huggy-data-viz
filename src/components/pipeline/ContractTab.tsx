@@ -39,7 +39,16 @@ type ContractFunctionResult = {
 async function invokeContractFunction(body: { lead_id: string; action: "zapsign" | "download" | "whatsapp" | "preview" }) {
   const { data, error } = await supabase.functions.invoke("generate-contract-docx", { body });
   if (error) {
-    throw new Error(error.message || "Erro ao gerar contrato");
+    let msg = error.message || "Erro ao gerar contrato";
+    try {
+      const ctxBody = (error as any)?.context?.body;
+      if (ctxBody) {
+        const parsed = typeof ctxBody === "string" ? JSON.parse(ctxBody) : ctxBody;
+        if (parsed?.error) msg = parsed.error;
+        else if (parsed?.message) msg = parsed.message;
+      }
+    } catch { /* ignore */ }
+    throw new Error(msg);
   }
   return data as ContractFunctionResult;
 }
