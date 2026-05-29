@@ -14,6 +14,7 @@ import Contratos from "@/pages/Contratos";
 import Feedbacks from "@/pages/Feedbacks";
 import { AppSidebar } from "@/components/AppSidebar";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
+import { NovidadesModal } from "@/components/NovidadesModal";
 import { useState } from "react";
 import { Users, UserCheck } from "lucide-react";
 
@@ -137,6 +138,7 @@ function AuthLayout() {
         {!isTabRoute && <Outlet />}
       </main>
       <FeedbackWidget />
+      <NovidadesModal />
     </div>
   );
 }
