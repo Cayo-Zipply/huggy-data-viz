@@ -138,6 +138,7 @@ function AuthLayout() {
         {!isTabRoute && <Outlet />}
       </main>
       <FeedbackWidget />
+      <NovidadesModal />
     </div>
   );
 }
