@@ -642,6 +642,8 @@ export function usePipelineData(actorName: string) {
         valor_anterior: "aberto", valor_novo: "ganho", usuario_nome: actorName,
       } as any);
     } catch (e) { console.warn("lead_history insert error:", e); }
+    // Aviso no Slack #closer (idempotente; só envia se já houver contrato PDF anexado)
+    notifySlackGanho(id);
   }, [cards, actorName, moveCard, updateCardsState]);
 
   const markLost = useCallback(async (id: string, category: string, reason: string) => {
