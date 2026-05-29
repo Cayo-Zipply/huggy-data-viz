@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseExternal";
+import { notifySlackGanho } from "@/lib/notifySlackGanho";
 import { toast } from "sonner";
 
 export type LeadAnexo = {
