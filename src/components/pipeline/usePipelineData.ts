@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import type { PipelineCard, PipelineTask, PipelineGoal, Stage, PipeType, StageChange } from "./types";
 import { DEFAULT_DEAL_VALUE, STAGE_CONFIG, AUTO_TASKS, addDays } from "./types";
 import { supabase } from "@/lib/supabaseExternal";
+import { notifySlackGanho } from "@/lib/notifySlackGanho";
 
 const sbExt = supabase as any;
 
@@ -642,6 +643,8 @@ export function usePipelineData(actorName: string) {
         valor_anterior: "aberto", valor_novo: "ganho", usuario_nome: actorName,
       } as any);
     } catch (e) { console.warn("lead_history insert error:", e); }
+    // Aviso no Slack #closer (idempotente; só envia se já houver contrato PDF anexado)
+    notifySlackGanho(id);
   }, [cards, actorName, moveCard, updateCardsState]);
 
   const markLost = useCallback(async (id: string, category: string, reason: string) => {

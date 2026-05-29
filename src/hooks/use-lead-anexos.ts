@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseExternal";
+import { notifySlackGanho } from "@/lib/notifySlackGanho";
 import { toast } from "sonner";
 
 export type LeadAnexo = {
@@ -78,9 +79,14 @@ export function useUploadAnexo(leadId: string) {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       qc.invalidateQueries({ queryKey: ["lead-anexos", leadId] });
       toast.success("Anexo enviado com sucesso.");
+      const tipo = (data?.tipo || "").toLowerCase();
+      const nome = (data?.nome_arquivo || "").toLowerCase();
+      if (tipo.includes("contrato") || nome.includes("contrato")) {
+        notifySlackGanho(leadId);
+      }
     },
     onError: (err: any) => {
       console.error("[useUploadAnexo] erro:", err);
