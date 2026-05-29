@@ -260,6 +260,8 @@ export function ContractTab({ card, onUpdate }: Props) {
           stage: "link_enviado" as Stage,
         });
       }
+      // Aviso Slack #closer (idempotente; só envia se lead já estiver ganho)
+      notifySlackGanho(card.id);
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Erro ao gerar contrato");
     } finally {
