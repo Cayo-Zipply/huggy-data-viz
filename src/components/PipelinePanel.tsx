@@ -820,27 +820,28 @@ export function PipelinePanel() {
           </DialogHeader>
           <p className="text-sm text-muted-foreground">Selecione o motivo da perda deste lead.</p>
           <select
-            value={lossPending?.motivoId || ""}
-            onChange={e => setLossPending(prev => prev ? { ...prev, motivoId: e.target.value } : null)}
+            value={lossPending?.motivo || ""}
+            onChange={e => setLossPending(prev => prev ? { ...prev, motivo: e.target.value, detalhe: e.target.value === "Outros" ? prev.detalhe : "" } : null)}
             className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground"
           >
             <option value="">Selecione um motivo...</option>
-            {activeMotivos.map(m => (
-              <option key={m.id} value={m.id}>{m.nome} ({m.categoria})</option>
+            {["Preço", "Timing", "Qualificação", "Concorrência", "Outros"].map(m => (
+              <option key={m} value={m}>{m}</option>
             ))}
           </select>
-          <textarea
-            value={lossPending?.observacao || ""}
-            onChange={e => setLossPending(prev => prev ? { ...prev, observacao: e.target.value.slice(0, 500) } : null)}
-            placeholder="Observação adicional (opcional)"
-            maxLength={500}
-            rows={3}
-            className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground resize-none"
-          />
-          <p className="text-[10px] text-muted-foreground text-right">{lossPending?.observacao?.length || 0}/500</p>
+          {lossPending?.motivo === "Outros" && (
+            <textarea
+              value={lossPending?.detalhe || ""}
+              onChange={e => setLossPending(prev => prev ? { ...prev, detalhe: e.target.value.slice(0, 500) } : null)}
+              placeholder="Descreva o motivo da perda *"
+              maxLength={500}
+              rows={3}
+              className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground resize-none"
+            />
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setLossPending(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={confirmLoss} disabled={!lossPending?.motivoId}>Confirmar Perda</Button>
+            <Button variant="destructive" onClick={confirmLoss} disabled={!lossPending?.motivo || (lossPending?.motivo === "Outros" && !lossPending?.detalhe.trim())}>Confirmar Perda</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
