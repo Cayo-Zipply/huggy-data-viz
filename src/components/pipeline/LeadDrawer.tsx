@@ -136,7 +136,18 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   }, [card?.id]);
 
   // Load drafts, contract, and anotacoes when card changes
+  // Also reset any in-flight edit state so a draft from a previous lead
+  // never leaks into a newly opened card.
   useEffect(() => {
+    // Reset transient form state on lead switch
+    setEditing(null);
+    setEditValue("");
+    setShowLoss(false);
+    setLossCat("preco");
+    setLossText("");
+    setShowTaskForm(false);
+    setNtTitle("");
+    setActiveSection("dados");
     if (card) {
       setNtResp(card.owner || "");
       const cf = loadContract(card.id);
@@ -144,6 +155,9 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
       const obsDraft = loadDraft(card.id, "obs_new");
       setObsText(obsDraft || "");
       fetchAnotacoes();
+    } else {
+      setContractFile(null);
+      setObsText("");
     }
   }, [card?.id, card?.owner, fetchAnotacoes]);
 
