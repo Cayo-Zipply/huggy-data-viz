@@ -79,7 +79,7 @@ export function PipelinePanel() {
   const [selectedCardId, setSelectedCardId] = useState<string | null>(() => sessionStorage.getItem(PIPELINE_UI_KEYS.selectedCardId) || null);
   const [drawerOpen, setDrawerOpen] = useState(() => sessionStorage.getItem(PIPELINE_UI_KEYS.drawerOpen) === "true");
   const [noShowPending, setNoShowPending] = useState<{ cardId: string; date: Date | undefined } | null>(null);
-  const [lossPending, setLossPending] = useState<{ cardId: string; motivoId: string; observacao: string } | null>(null);
+  const [lossPending, setLossPending] = useState<{ cardId: string; motivo: string; detalhe: string } | null>(null);
   const [ganhoPending, setGanhoPending] = useState<{ cardId: string; cardNome: string } | null>(null);
   const { toast } = useToast();
 
@@ -448,34 +448,34 @@ export function PipelinePanel() {
 
   // Loss modal interceptor
   const handleLossRequest = (cardId: string, _cat: string, _reason: string) => {
-    setLossPending({ cardId, motivoId: "", observacao: "" });
+    setLossPending({ cardId, motivo: "", detalhe: "" });
   };
 
   const confirmLoss = async () => {
-    if (!lossPending?.motivoId) return;
-    const motivo = activeMotivos.find(m => m.id === lossPending.motivoId);
-    const reason = motivo?.nome || "Desconhecido";
-    const cat = motivo?.categoria || "Outros";
-    
-    // Mark as lost
-    markLost(lossPending.cardId, cat, reason);
-    
+    if (!lossPending?.motivo) return;
+    const motivo = lossPending.motivo;
+    const detalhe = motivo === "Outros" ? lossPending.detalhe.trim() : "";
+    if (motivo === "Outros" && !detalhe) return;
+
+    // Mark as lost — category=canonical motivo, reason=detalhe (livre, só para "Outros")
+    markLost(lossPending.cardId, motivo, detalhe);
+
     // Update pipeline_cards with loss details
     await updateCard(lossPending.cardId, {
-      loss_reason: reason,
-      loss_category: cat.toLowerCase() as any,
+      loss_reason: detalhe || motivo,
+      loss_category: motivo.toLowerCase() as any,
     } as any);
-    
+
     // Add history entry
     await addHistoryEntry({
       lead_id: lossPending.cardId,
       tipo: "perda",
-      descricao: `Lead marcado como perdido — Motivo: ${reason}${lossPending.observacao ? ` | Obs: ${lossPending.observacao}` : ""}`,
+      descricao: `Lead marcado como perdido — Motivo: ${motivo}${detalhe ? ` | Detalhe: ${detalhe}` : ""}`,
       valor_anterior: null,
       valor_novo: "perdido",
       usuario_nome: currentUserName,
     });
-    
+
     setLossPending(null);
   };
 
@@ -820,27 +820,28 @@ export function PipelinePanel() {
           </DialogHeader>
           <p className="text-sm text-muted-foreground">Selecione o motivo da perda deste lead.</p>
           <select
-            value={lossPending?.motivoId || ""}
-            onChange={e => setLossPending(prev => prev ? { ...prev, motivoId: e.target.value } : null)}
+            value={lossPending?.motivo || ""}
+            onChange={e => setLossPending(prev => prev ? { ...prev, motivo: e.target.value, detalhe: e.target.value === "Outros" ? prev.detalhe : "" } : null)}
             className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground"
           >
             <option value="">Selecione um motivo...</option>
-            {activeMotivos.map(m => (
-              <option key={m.id} value={m.id}>{m.nome} ({m.categoria})</option>
+            {["Preço", "Timing", "Qualificação", "Concorrência", "Outros"].map(m => (
+              <option key={m} value={m}>{m}</option>
             ))}
           </select>
-          <textarea
-            value={lossPending?.observacao || ""}
-            onChange={e => setLossPending(prev => prev ? { ...prev, observacao: e.target.value.slice(0, 500) } : null)}
-            placeholder="Observação adicional (opcional)"
-            maxLength={500}
-            rows={3}
-            className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground resize-none"
-          />
-          <p className="text-[10px] text-muted-foreground text-right">{lossPending?.observacao?.length || 0}/500</p>
+          {lossPending?.motivo === "Outros" && (
+            <textarea
+              value={lossPending?.detalhe || ""}
+              onChange={e => setLossPending(prev => prev ? { ...prev, detalhe: e.target.value.slice(0, 500) } : null)}
+              placeholder="Descreva o motivo da perda *"
+              maxLength={500}
+              rows={3}
+              className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground resize-none"
+            />
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setLossPending(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={confirmLoss} disabled={!lossPending?.motivoId}>Confirmar Perda</Button>
+            <Button variant="destructive" onClick={confirmLoss} disabled={!lossPending?.motivo || (lossPending?.motivo === "Outros" && !lossPending?.detalhe.trim())}>Confirmar Perda</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
