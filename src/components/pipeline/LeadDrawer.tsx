@@ -1174,6 +1174,26 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
         onOpenChange={setMeetDialogOpen}
         onCreated={() => setMeetRefreshKey(k => k + 1)}
       />
+      <Dialog open={!!expandedTexto} onOpenChange={(o) => { if (!o) setExpandedTexto(null); }}>
+        <DialogContent className="max-w-[95vw] w-[95vw] max-h-[95vh]">
+          <DialogHeader>
+            <div className="flex items-center justify-between gap-2 pr-8">
+              <DialogTitle className="truncate">{expandedTexto?.title}</DialogTitle>
+              <div className="flex items-center gap-1 shrink-0">
+                <button type="button" onClick={() => expandedTexto && baixarTextoComoTxt(expandedTexto.text, expandedTexto.baseName)} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1">
+                  <Download size={12} /> .txt
+                </button>
+                <button type="button" onClick={() => expandedTexto && baixarTextoComoWord(expandedTexto.text, expandedTexto.baseName, expandedTexto.title)} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1">
+                  <FileType2 size={12} /> Word
+                </button>
+              </div>
+            </div>
+          </DialogHeader>
+          <ScrollArea className="max-h-[82vh]">
+            <pre className="text-sm leading-relaxed whitespace-pre-wrap font-sans p-4">{expandedTexto?.text}</pre>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </Sheet>
   );
 }
