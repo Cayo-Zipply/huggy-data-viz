@@ -349,11 +349,14 @@ export function ContractTab({ card, onUpdate }: Props) {
         {card.contrato_status === "assinado" && (
           <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 text-center">
             <p className="text-green-400 font-medium">🎉 Contrato assinado{card.zapsign_signed_at ? ` em ${new Date(card.zapsign_signed_at).toLocaleDateString("pt-BR")}` : ""}</p>
-            {card.contract_url && (
-              <a href={card.contract_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline mt-2 inline-block">
-                Ver contrato assinado
-              </a>
-            )}
+            <button
+              onClick={handleOpenSignedContract}
+              disabled={loadingSignedUrl}
+              className="text-sm text-primary hover:underline mt-2 inline-flex items-center gap-1 disabled:opacity-60"
+            >
+              {loadingSignedUrl && <Loader2 size={12} className="animate-spin" />}
+              {loadingSignedUrl ? "Abrindo…" : "Ver contrato assinado"}
+            </button>
           </div>
         )}
 
