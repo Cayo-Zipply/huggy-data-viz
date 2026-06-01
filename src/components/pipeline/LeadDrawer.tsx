@@ -203,7 +203,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
     const nowIso = new Date().toISOString();
     (supabaseCloud as any)
       .from("reunioes_agendadas")
-      .select("data_inicio")
+      .select("id,titulo,data_inicio,data_fim,convidados")
       .eq("lead_id", card.id)
       .eq("status", "agendada")
       .gt("data_inicio", nowIso)
