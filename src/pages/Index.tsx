@@ -125,12 +125,26 @@ const Index = () => {
   const prevCpcView = isHardcoded ? previousData?.cpc : prevLiveCpc;
   const prevCpmView = isHardcoded ? previousData?.cpm : prevLiveCpm;
 
+  // Overrides manuais para métricas comerciais (vendas, faturamento, reuniões)
+  const overrideAtual = selectedMonthYYYYMM ? overridesMap[selectedMonthYYYYMM] : null;
+  const prevMonthYYYYMM = useMemo(() => {
+    if (!selectedMonthYYYYMM) return "";
+    const [y, m] = selectedMonthYYYYMM.split("-").map(Number);
+    const d = new Date(Date.UTC(y, m - 2, 1));
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+  }, [selectedMonthYYYYMM]);
+  const overridePrev = prevMonthYYYYMM ? overridesMap[prevMonthYYYYMM] : null;
+
   // Mensagens/Vendas: hardcoded uses currentData (which has static values),
   // dynamic uses live counts from `leads`
   const effectiveMensagens = isHardcoded ? (currentData?.mensagens || 0) : (live.leadsStats?.mensagens ?? 0);
   const effectiveMensagensEfetivas = isHardcoded ? (currentData?.mensagensEfetivas || 0) : (live.leadsStats?.mensagens ?? 0);
-  const effectiveVendas = isHardcoded ? (currentData?.vendas || 0) : (live.leadsStats?.vendas ?? 0);
-  const effectiveFaturamento = isHardcoded ? (currentData?.faturamento || 0) : (live.leadsStats?.faturamento ?? 0);
+  const effectiveVendas = isHardcoded
+    ? (currentData?.vendas || 0)
+    : (overrideAtual?.manual_vendas ?? live.leadsStats?.vendas ?? 0);
+  const effectiveFaturamento = isHardcoded
+    ? (currentData?.faturamento || 0)
+    : (overrideAtual?.manual_faturamento ?? live.leadsStats?.faturamento ?? 0);
 
   const prevEffectiveMensagens = isHardcoded
     ? (previousData?.mensagens || 0)
@@ -140,7 +154,7 @@ const Index = () => {
     : (live.leadsStatsPrev?.mensagens ?? 0);
   const prevEffectiveVendas = isHardcoded
     ? (previousData?.vendas || 0)
-    : (live.leadsStatsPrev?.vendas ?? 0);
+    : (overridePrev?.manual_vendas ?? live.leadsStatsPrev?.vendas ?? 0);
 
   // CPA from live data
   const liveCpa = effectiveVendas > 0 ? investimentoView / effectiveVendas : 0;
@@ -156,17 +170,6 @@ const Index = () => {
     ? (prevEffectiveVendas / prevEffectiveMensagens) * 100
     : undefined;
 
-  // Reuniões — live for dynamic months, salesData for hardcoded.
-  // Override manual (marketing_overrides.manual_reunioes) tem prioridade
-  // sobre a contagem de leads em meses dinâmicos.
-  const overrideAtual = selectedMonthYYYYMM ? overridesMap[selectedMonthYYYYMM] : null;
-  const prevMonthYYYYMM = useMemo(() => {
-    if (!selectedMonthYYYYMM) return "";
-    const [y, m] = selectedMonthYYYYMM.split("-").map(Number);
-    const d = new Date(Date.UTC(y, m - 2, 1));
-    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
-  }, [selectedMonthYYYYMM]);
-  const overridePrev = prevMonthYYYYMM ? overridesMap[prevMonthYYYYMM] : null;
 
   const reunioesRealizadas = isHardcoded
     ? (currentSales?.funnel?.reunioes?.realizado || 0)
