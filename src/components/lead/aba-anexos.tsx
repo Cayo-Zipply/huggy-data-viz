@@ -50,10 +50,33 @@ export function AbaAnexos({ leadId }: { leadId: string }) {
   const upload = useUploadAnexo(leadId);
   const remove = useDeleteAnexo(leadId);
   const [previewing, setPreviewing] = useState<LeadAnexo | null>(null);
+  const [expanded, setExpanded] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [tipoSel, setTipoSel] = useState<string>("documento");
   const [fileSel, setFileSel] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  async function baixarComoWord(anexo: LeadAnexo) {
+    const texto = anexo.conteudo_texto ?? "";
+    const linhas = texto.split(/\r?\n/);
+    const doc = new Document({
+      sections: [{
+        children: [
+          new Paragraph({ children: [new TextRun({ text: anexo.nome_arquivo, bold: true, size: 28 })] }),
+          new Paragraph({ children: [new TextRun("")] }),
+          ...linhas.map((l) => new Paragraph({ children: [new TextRun(l)] })),
+        ],
+      }],
+    });
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const baseName = anexo.nome_arquivo.replace(/\.[^.]+$/, "");
+    a.href = url;
+    a.download = `${baseName}.docx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   function abrirModal() {
     setTipoSel("documento");
