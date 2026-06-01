@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
-import { FileText, Video, Image as ImageIcon, Upload, Trash2, Download, Eye, FileSignature, FileQuestion } from "lucide-react";
+import { FileText, Video, Image as ImageIcon, Upload, Trash2, Download, Eye, FileSignature, FileQuestion, FileType2, Maximize2, Minimize2 } from "lucide-react";
+import { Document, Packer, Paragraph, TextRun } from "docx";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -49,10 +50,33 @@ export function AbaAnexos({ leadId }: { leadId: string }) {
   const upload = useUploadAnexo(leadId);
   const remove = useDeleteAnexo(leadId);
   const [previewing, setPreviewing] = useState<LeadAnexo | null>(null);
+  const [expanded, setExpanded] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [tipoSel, setTipoSel] = useState<string>("documento");
   const [fileSel, setFileSel] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  async function baixarComoWord(anexo: LeadAnexo) {
+    const texto = anexo.conteudo_texto ?? "";
+    const linhas = texto.split(/\r?\n/);
+    const doc = new Document({
+      sections: [{
+        children: [
+          new Paragraph({ children: [new TextRun({ text: anexo.nome_arquivo, bold: true, size: 28 })] }),
+          new Paragraph({ children: [new TextRun("")] }),
+          ...linhas.map((l) => new Paragraph({ children: [new TextRun(l)] })),
+        ],
+      }],
+    });
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const baseName = anexo.nome_arquivo.replace(/\.[^.]+$/, "");
+    a.href = url;
+    a.download = `${baseName}.docx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   function abrirModal() {
     setTipoSel("documento");
@@ -131,6 +155,11 @@ export function AbaAnexos({ leadId }: { leadId: string }) {
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => downloadAnexo(a)} title="Baixar">
                   <Download size={14} />
                 </Button>
+                {a.conteudo_texto && (
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => baixarComoWord(a)} title="Baixar como Word (.docx)">
+                    <FileType2 size={14} />
+                  </Button>
+                )}
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => {
                   if (confirm(`Remover "${a.nome_arquivo}"?`)) remove.mutate(a);
                 }} title="Remover">
@@ -186,13 +215,26 @@ export function AbaAnexos({ leadId }: { leadId: string }) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!previewing} onOpenChange={(open) => !open && setPreviewing(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh]">
+      <Dialog open={!!previewing} onOpenChange={(open) => { if (!open) { setPreviewing(null); setExpanded(false); } }}>
+        <DialogContent className={expanded ? "max-w-[95vw] w-[95vw] max-h-[95vh]" : "max-w-3xl max-h-[85vh]"}>
           <DialogHeader>
-            <DialogTitle>{previewing?.nome_arquivo}</DialogTitle>
+            <div className="flex items-center justify-between gap-2 pr-8">
+              <DialogTitle className="truncate">{previewing?.nome_arquivo}</DialogTitle>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button variant="ghost" size="sm" onClick={() => previewing && downloadAnexo(previewing)} title="Baixar .txt">
+                  <Download size={14} className="mr-1" /> .txt
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => previewing && baixarComoWord(previewing)} title="Baixar Word">
+                  <FileType2 size={14} className="mr-1" /> Word
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setExpanded((v) => !v)} title={expanded ? "Recolher" : "Expandir"}>
+                  {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                </Button>
+              </div>
+            </div>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
-            <pre className="text-sm whitespace-pre-wrap font-sans p-4">{previewing?.conteudo_texto}</pre>
+          <ScrollArea className={expanded ? "max-h-[82vh]" : "max-h-[68vh]"}>
+            <pre className="text-sm leading-relaxed whitespace-pre-wrap font-sans p-4">{previewing?.conteudo_texto}</pre>
           </ScrollArea>
         </DialogContent>
       </Dialog>
