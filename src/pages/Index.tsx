@@ -129,8 +129,12 @@ const Index = () => {
   // dynamic uses live counts from `leads`
   const effectiveMensagens = isHardcoded ? (currentData?.mensagens || 0) : (live.leadsStats?.mensagens ?? 0);
   const effectiveMensagensEfetivas = isHardcoded ? (currentData?.mensagensEfetivas || 0) : (live.leadsStats?.mensagens ?? 0);
-  const effectiveVendas = isHardcoded ? (currentData?.vendas || 0) : (live.leadsStats?.vendas ?? 0);
-  const effectiveFaturamento = isHardcoded ? (currentData?.faturamento || 0) : (live.leadsStats?.faturamento ?? 0);
+  const effectiveVendas = isHardcoded
+    ? (currentData?.vendas || 0)
+    : (overrideAtual?.manual_vendas ?? live.leadsStats?.vendas ?? 0);
+  const effectiveFaturamento = isHardcoded
+    ? (currentData?.faturamento || 0)
+    : (overrideAtual?.manual_faturamento ?? live.leadsStats?.faturamento ?? 0);
 
   const prevEffectiveMensagens = isHardcoded
     ? (previousData?.mensagens || 0)
