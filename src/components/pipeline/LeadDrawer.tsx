@@ -4,8 +4,11 @@ import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
   Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap,
   X, Copy, ExternalLink, MapPin, Megaphone, MessageSquare, Save, Loader2,
-  AlertTriangle, Tag, StickyNote, FileSignature, Scale, Calculator, Video
+  AlertTriangle, Tag, StickyNote, FileSignature, Scale, Calculator, Video,
+  Download, Maximize2, FileType2
 } from "lucide-react";
+import { Document as DocxDocument, Packer, Paragraph as DocxParagraph, TextRun as DocxTextRun } from "docx";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AgendarReuniaoDialog } from "./AgendarReuniaoDialog";
 import { ReunioesAgendadasList } from "./ReunioesAgendadasList";
 import { InputMoedaBRL } from "@/components/ui/input-moeda-brl";
