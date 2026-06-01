@@ -415,9 +415,14 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
               const d = new Date(proximaReuniao.data_inicio);
               const pad = (n: number) => String(n).padStart(2, "0");
               return (
-                <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 font-medium flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setEditReuniaoOpen(true)}
+                  title="Editar reunião agendada"
+                  className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-medium flex items-center gap-1 transition-colors"
+                >
                   📅 Reunião em {pad(d.getDate())}/{pad(d.getMonth() + 1)} {pad(d.getHours())}:{pad(d.getMinutes())}
-                </span>
+                </button>
               );
             })()}
           </div>
