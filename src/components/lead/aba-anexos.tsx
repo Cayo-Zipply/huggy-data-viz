@@ -215,13 +215,26 @@ export function AbaAnexos({ leadId }: { leadId: string }) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!previewing} onOpenChange={(open) => !open && setPreviewing(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh]">
+      <Dialog open={!!previewing} onOpenChange={(open) => { if (!open) { setPreviewing(null); setExpanded(false); } }}>
+        <DialogContent className={expanded ? "max-w-[95vw] w-[95vw] max-h-[95vh]" : "max-w-3xl max-h-[85vh]"}>
           <DialogHeader>
-            <DialogTitle>{previewing?.nome_arquivo}</DialogTitle>
+            <div className="flex items-center justify-between gap-2 pr-8">
+              <DialogTitle className="truncate">{previewing?.nome_arquivo}</DialogTitle>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button variant="ghost" size="sm" onClick={() => previewing && downloadAnexo(previewing)} title="Baixar .txt">
+                  <Download size={14} className="mr-1" /> .txt
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => previewing && baixarComoWord(previewing)} title="Baixar Word">
+                  <FileType2 size={14} className="mr-1" /> Word
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setExpanded((v) => !v)} title={expanded ? "Recolher" : "Expandir"}>
+                  {expanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                </Button>
+              </div>
+            </div>
           </DialogHeader>
-          <ScrollArea className="max-h-[60vh]">
-            <pre className="text-sm whitespace-pre-wrap font-sans p-4">{previewing?.conteudo_texto}</pre>
+          <ScrollArea className={expanded ? "max-h-[82vh]" : "max-h-[68vh]"}>
+            <pre className="text-sm leading-relaxed whitespace-pre-wrap font-sans p-4">{previewing?.conteudo_texto}</pre>
           </ScrollArea>
         </DialogContent>
       </Dialog>
