@@ -155,6 +155,11 @@ export function AbaAnexos({ leadId }: { leadId: string }) {
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => downloadAnexo(a)} title="Baixar">
                   <Download size={14} />
                 </Button>
+                {a.conteudo_texto && (
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => baixarComoWord(a)} title="Baixar como Word (.docx)">
+                    <FileType2 size={14} />
+                  </Button>
+                )}
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => {
                   if (confirm(`Remover "${a.nome_arquivo}"?`)) remove.mutate(a);
                 }} title="Remover">
