@@ -160,17 +160,6 @@ const Index = () => {
     ? (prevEffectiveVendas / prevEffectiveMensagens) * 100
     : undefined;
 
-  // Reuniões — live for dynamic months, salesData for hardcoded.
-  // Override manual (marketing_overrides.manual_reunioes) tem prioridade
-  // sobre a contagem de leads em meses dinâmicos.
-  const overrideAtual = selectedMonthYYYYMM ? overridesMap[selectedMonthYYYYMM] : null;
-  const prevMonthYYYYMM = useMemo(() => {
-    if (!selectedMonthYYYYMM) return "";
-    const [y, m] = selectedMonthYYYYMM.split("-").map(Number);
-    const d = new Date(Date.UTC(y, m - 2, 1));
-    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
-  }, [selectedMonthYYYYMM]);
-  const overridePrev = prevMonthYYYYMM ? overridesMap[prevMonthYYYYMM] : null;
 
   const reunioesRealizadas = isHardcoded
     ? (currentSales?.funnel?.reunioes?.realizado || 0)
