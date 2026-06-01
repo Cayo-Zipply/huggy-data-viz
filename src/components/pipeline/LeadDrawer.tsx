@@ -123,7 +123,8 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const [emailModalTipo, setEmailModalTipo] = useState<EmailTipo | null>(null);
   const [meetDialogOpen, setMeetDialogOpen] = useState(false);
   const [meetRefreshKey, setMeetRefreshKey] = useState(0);
-  const [proximaReuniao, setProximaReuniao] = useState<{ data_inicio: string } | null>(null);
+  const [proximaReuniao, setProximaReuniao] = useState<{ id: string; titulo: string; data_inicio: string; data_fim: string; convidados: any } | null>(null);
+  const [editReuniaoOpen, setEditReuniaoOpen] = useState(false);
   const [expandedTexto, setExpandedTexto] = useState<{ title: string; text: string; baseName: string } | null>(null);
   const { items: emailEnvios, refetch: refetchEnvios, latestByTipo } = useEmailEnvios(card?.id ?? null);
 
