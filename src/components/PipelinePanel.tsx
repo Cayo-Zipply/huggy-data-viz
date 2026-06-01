@@ -748,6 +748,7 @@ export function PipelinePanel() {
       {subTab === "metas" && <GoalsPanel cards={cards} goals={goals} activeUser={activeUser} canViewAll={isAdmin} owners={ownerOptions} onSave={upsertGoal} />}
 
       <LeadDrawer
+        key={selectedCard?.id || "none"}
         card={selectedCard}
         tasks={tasks}
         open={drawerOpen}
