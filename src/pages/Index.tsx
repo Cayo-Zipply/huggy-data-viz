@@ -125,6 +125,16 @@ const Index = () => {
   const prevCpcView = isHardcoded ? previousData?.cpc : prevLiveCpc;
   const prevCpmView = isHardcoded ? previousData?.cpm : prevLiveCpm;
 
+  // Overrides manuais para métricas comerciais (vendas, faturamento, reuniões)
+  const overrideAtual = selectedMonthYYYYMM ? overridesMap[selectedMonthYYYYMM] : null;
+  const prevMonthYYYYMM = useMemo(() => {
+    if (!selectedMonthYYYYMM) return "";
+    const [y, m] = selectedMonthYYYYMM.split("-").map(Number);
+    const d = new Date(Date.UTC(y, m - 2, 1));
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+  }, [selectedMonthYYYYMM]);
+  const overridePrev = prevMonthYYYYMM ? overridesMap[prevMonthYYYYMM] : null;
+
   // Mensagens/Vendas: hardcoded uses currentData (which has static values),
   // dynamic uses live counts from `leads`
   const effectiveMensagens = isHardcoded ? (currentData?.mensagens || 0) : (live.leadsStats?.mensagens ?? 0);
