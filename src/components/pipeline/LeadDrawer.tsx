@@ -10,6 +10,7 @@ import {
 import { Document as DocxDocument, Packer, Paragraph as DocxParagraph, TextRun as DocxTextRun } from "docx";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AgendarReuniaoDialog } from "./AgendarReuniaoDialog";
+import { EditarReuniaoDialog } from "./EditarReuniaoDialog";
 import { ReunioesAgendadasList } from "./ReunioesAgendadasList";
 import { InputMoedaBRL } from "@/components/ui/input-moeda-brl";
 import { supabaseExt } from "@/lib/supabaseExternal";
@@ -122,7 +123,8 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const [emailModalTipo, setEmailModalTipo] = useState<EmailTipo | null>(null);
   const [meetDialogOpen, setMeetDialogOpen] = useState(false);
   const [meetRefreshKey, setMeetRefreshKey] = useState(0);
-  const [proximaReuniao, setProximaReuniao] = useState<{ data_inicio: string } | null>(null);
+  const [proximaReuniao, setProximaReuniao] = useState<{ id: string; titulo: string; data_inicio: string; data_fim: string; convidados: any } | null>(null);
+  const [editReuniaoOpen, setEditReuniaoOpen] = useState(false);
   const [expandedTexto, setExpandedTexto] = useState<{ title: string; text: string; baseName: string } | null>(null);
   const { items: emailEnvios, refetch: refetchEnvios, latestByTipo } = useEmailEnvios(card?.id ?? null);
 
@@ -201,7 +203,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
     const nowIso = new Date().toISOString();
     (supabaseCloud as any)
       .from("reunioes_agendadas")
-      .select("data_inicio")
+      .select("id,titulo,data_inicio,data_fim,convidados")
       .eq("lead_id", card.id)
       .eq("status", "agendada")
       .gt("data_inicio", nowIso)
@@ -413,9 +415,14 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
               const d = new Date(proximaReuniao.data_inicio);
               const pad = (n: number) => String(n).padStart(2, "0");
               return (
-                <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 font-medium flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setEditReuniaoOpen(true)}
+                  title="Editar reunião agendada"
+                  className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 font-medium flex items-center gap-1 transition-colors"
+                >
                   📅 Reunião em {pad(d.getDate())}/{pad(d.getMonth() + 1)} {pad(d.getHours())}:{pad(d.getMinutes())}
-                </span>
+                </button>
               );
             })()}
           </div>
@@ -1173,6 +1180,12 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
         open={meetDialogOpen}
         onOpenChange={setMeetDialogOpen}
         onCreated={() => setMeetRefreshKey(k => k + 1)}
+      />
+      <EditarReuniaoDialog
+        reuniao={proximaReuniao}
+        open={editReuniaoOpen}
+        onOpenChange={setEditReuniaoOpen}
+        onUpdated={() => setMeetRefreshKey(k => k + 1)}
       />
       <Dialog open={!!expandedTexto} onOpenChange={(o) => { if (!o) setExpandedTexto(null); }}>
         <DialogContent className="max-w-[95vw] w-[95vw] max-h-[95vh]">
