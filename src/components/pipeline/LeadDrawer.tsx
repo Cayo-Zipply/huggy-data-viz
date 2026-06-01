@@ -4,8 +4,11 @@ import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
   Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap,
   X, Copy, ExternalLink, MapPin, Megaphone, MessageSquare, Save, Loader2,
-  AlertTriangle, Tag, StickyNote, FileSignature, Scale, Calculator, Video
+  AlertTriangle, Tag, StickyNote, FileSignature, Scale, Calculator, Video,
+  Download, Maximize2, FileType2
 } from "lucide-react";
+import { Document as DocxDocument, Packer, Paragraph as DocxParagraph, TextRun as DocxTextRun } from "docx";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AgendarReuniaoDialog } from "./AgendarReuniaoDialog";
 import { ReunioesAgendadasList } from "./ReunioesAgendadasList";
 import { InputMoedaBRL } from "@/components/ui/input-moeda-brl";
@@ -120,7 +123,38 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const [meetDialogOpen, setMeetDialogOpen] = useState(false);
   const [meetRefreshKey, setMeetRefreshKey] = useState(0);
   const [proximaReuniao, setProximaReuniao] = useState<{ data_inicio: string } | null>(null);
+  const [expandedTexto, setExpandedTexto] = useState<{ title: string; text: string; baseName: string } | null>(null);
   const { items: emailEnvios, refetch: refetchEnvios, latestByTipo } = useEmailEnvios(card?.id ?? null);
+
+  async function baixarTextoComoWord(texto: string, baseName: string, titulo: string) {
+    const linhas = (texto ?? "").split(/\r?\n/);
+    const doc = new DocxDocument({
+      sections: [{
+        children: [
+          new DocxParagraph({ children: [new DocxTextRun({ text: titulo, bold: true, size: 28 })] }),
+          new DocxParagraph({ children: [new DocxTextRun("")] }),
+          ...linhas.map((l) => new DocxParagraph({ children: [new DocxTextRun(l)] })),
+        ],
+      }],
+    });
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${baseName}.docx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function baixarTextoComoTxt(texto: string, baseName: string) {
+    const blob = new Blob([texto ?? ""], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${baseName}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   const fetchAnotacoes = useCallback(async () => {
     if (!card) return;
@@ -952,9 +986,22 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     )}
                     {card.resumo_reuniao && (
                       <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <FileText size={14} className="text-primary" />
-                          <p className="text-xs font-medium text-foreground">Resumo da Reunião</p>
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2">
+                            <FileText size={14} className="text-primary" />
+                            <p className="text-xs font-medium text-foreground">Resumo da Reunião</p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button type="button" onClick={() => baixarTextoComoTxt(card.resumo_reuniao!, `resumo-${card.id}`)} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Baixar .txt">
+                              <Download size={12} /> .txt
+                            </button>
+                            <button type="button" onClick={() => baixarTextoComoWord(card.resumo_reuniao!, `resumo-${card.id}`, "Resumo da Reunião")} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Baixar Word (.docx)">
+                              <FileType2 size={12} /> Word
+                            </button>
+                            <button type="button" onClick={() => setExpandedTexto({ title: "Resumo da Reunião", text: card.resumo_reuniao!, baseName: `resumo-${card.id}` })} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Expandir">
+                              <Maximize2 size={12} /> Expandir
+                            </button>
+                          </div>
                         </div>
                         <div className="bg-muted/30 rounded-xl p-4 border border-border/50">
                           <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{card.resumo_reuniao}</p>
@@ -963,9 +1010,22 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     )}
                     {card.transcricao_reuniao && (
                       <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <MessageSquare size={14} className="text-primary" />
-                          <p className="text-xs font-medium text-foreground">Transcrição Completa</p>
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2">
+                            <MessageSquare size={14} className="text-primary" />
+                            <p className="text-xs font-medium text-foreground">Transcrição Completa</p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button type="button" onClick={() => baixarTextoComoTxt(card.transcricao_reuniao!, `transcricao-${card.id}`)} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Baixar .txt">
+                              <Download size={12} /> .txt
+                            </button>
+                            <button type="button" onClick={() => baixarTextoComoWord(card.transcricao_reuniao!, `transcricao-${card.id}`, "Transcrição da Reunião")} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Baixar Word (.docx)">
+                              <FileType2 size={12} /> Word
+                            </button>
+                            <button type="button" onClick={() => setExpandedTexto({ title: "Transcrição da Reunião", text: card.transcricao_reuniao!, baseName: `transcricao-${card.id}` })} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Expandir">
+                              <Maximize2 size={12} /> Expandir
+                            </button>
+                          </div>
                         </div>
                         <div className="bg-muted/30 rounded-xl p-4 border border-border/50 max-h-[400px] overflow-y-auto">
                           <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">{card.transcricao_reuniao}</p>
@@ -1114,6 +1174,26 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
         onOpenChange={setMeetDialogOpen}
         onCreated={() => setMeetRefreshKey(k => k + 1)}
       />
+      <Dialog open={!!expandedTexto} onOpenChange={(o) => { if (!o) setExpandedTexto(null); }}>
+        <DialogContent className="max-w-[95vw] w-[95vw] max-h-[95vh]">
+          <DialogHeader>
+            <div className="flex items-center justify-between gap-2 pr-8">
+              <DialogTitle className="truncate">{expandedTexto?.title}</DialogTitle>
+              <div className="flex items-center gap-1 shrink-0">
+                <button type="button" onClick={() => expandedTexto && baixarTextoComoTxt(expandedTexto.text, expandedTexto.baseName)} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1">
+                  <Download size={12} /> .txt
+                </button>
+                <button type="button" onClick={() => expandedTexto && baixarTextoComoWord(expandedTexto.text, expandedTexto.baseName, expandedTexto.title)} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1">
+                  <FileType2 size={12} /> Word
+                </button>
+              </div>
+            </div>
+          </DialogHeader>
+          <ScrollArea className="max-h-[82vh]">
+            <pre className="text-sm leading-relaxed whitespace-pre-wrap font-sans p-4">{expandedTexto?.text}</pre>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </Sheet>
   );
 }
