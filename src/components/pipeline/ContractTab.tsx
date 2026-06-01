@@ -93,6 +93,28 @@ export function ContractTab({ card, onUpdate }: Props) {
   const [errors, setErrors] = useState<string[]>([]);
   const [lastResult, setLastResult] = useState<{ action: string; data: ContractFunctionResult } | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [loadingSignedUrl, setLoadingSignedUrl] = useState(false);
+
+  const handleOpenSignedContract = async () => {
+    setLoadingSignedUrl(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("get-signed-contract-url", {
+        body: { lead_id: card.id },
+      });
+      if (error || !data?.url) {
+        const msg = (error as any)?.context?.body
+          ? (() => { try { return JSON.parse((error as any).context.body)?.error; } catch { return null; } })()
+          : (error as any)?.message;
+        toast.error(msg || "Não foi possível abrir o contrato. Tente novamente.");
+        return;
+      }
+      window.open(data.url, "_blank");
+    } catch (e: any) {
+      toast.error(e?.message || "Não foi possível abrir o contrato. Tente novamente.");
+    } finally {
+      setLoadingSignedUrl(false);
+    }
+  };
 
   useEffect(() => {
     setTipo(card.tipo_contrato || "");
