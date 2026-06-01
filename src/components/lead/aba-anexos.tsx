@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
-import { FileText, Video, Image as ImageIcon, Upload, Trash2, Download, Eye, FileSignature, FileQuestion } from "lucide-react";
+import { FileText, Video, Image as ImageIcon, Upload, Trash2, Download, Eye, FileSignature, FileQuestion, FileType2, Maximize2, Minimize2 } from "lucide-react";
+import { Document, Packer, Paragraph, TextRun } from "docx";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
