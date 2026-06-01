@@ -123,7 +123,38 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const [meetDialogOpen, setMeetDialogOpen] = useState(false);
   const [meetRefreshKey, setMeetRefreshKey] = useState(0);
   const [proximaReuniao, setProximaReuniao] = useState<{ data_inicio: string } | null>(null);
+  const [expandedTexto, setExpandedTexto] = useState<{ title: string; text: string; baseName: string } | null>(null);
   const { items: emailEnvios, refetch: refetchEnvios, latestByTipo } = useEmailEnvios(card?.id ?? null);
+
+  async function baixarTextoComoWord(texto: string, baseName: string, titulo: string) {
+    const linhas = (texto ?? "").split(/\r?\n/);
+    const doc = new DocxDocument({
+      sections: [{
+        children: [
+          new DocxParagraph({ children: [new DocxTextRun({ text: titulo, bold: true, size: 28 })] }),
+          new DocxParagraph({ children: [new DocxTextRun("")] }),
+          ...linhas.map((l) => new DocxParagraph({ children: [new DocxTextRun(l)] })),
+        ],
+      }],
+    });
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${baseName}.docx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function baixarTextoComoTxt(texto: string, baseName: string) {
+    const blob = new Blob([texto ?? ""], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${baseName}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   const fetchAnotacoes = useCallback(async () => {
     if (!card) return;
