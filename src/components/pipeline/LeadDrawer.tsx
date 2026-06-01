@@ -986,9 +986,22 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     )}
                     {card.resumo_reuniao && (
                       <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <FileText size={14} className="text-primary" />
-                          <p className="text-xs font-medium text-foreground">Resumo da Reunião</p>
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2">
+                            <FileText size={14} className="text-primary" />
+                            <p className="text-xs font-medium text-foreground">Resumo da Reunião</p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button type="button" onClick={() => baixarTextoComoTxt(card.resumo_reuniao!, `resumo-${card.id}`)} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Baixar .txt">
+                              <Download size={12} /> .txt
+                            </button>
+                            <button type="button" onClick={() => baixarTextoComoWord(card.resumo_reuniao!, `resumo-${card.id}`, "Resumo da Reunião")} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Baixar Word (.docx)">
+                              <FileType2 size={12} /> Word
+                            </button>
+                            <button type="button" onClick={() => setExpandedTexto({ title: "Resumo da Reunião", text: card.resumo_reuniao!, baseName: `resumo-${card.id}` })} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Expandir">
+                              <Maximize2 size={12} /> Expandir
+                            </button>
+                          </div>
                         </div>
                         <div className="bg-muted/30 rounded-xl p-4 border border-border/50">
                           <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{card.resumo_reuniao}</p>
@@ -997,9 +1010,22 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     )}
                     {card.transcricao_reuniao && (
                       <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <MessageSquare size={14} className="text-primary" />
-                          <p className="text-xs font-medium text-foreground">Transcrição Completa</p>
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2">
+                            <MessageSquare size={14} className="text-primary" />
+                            <p className="text-xs font-medium text-foreground">Transcrição Completa</p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button type="button" onClick={() => baixarTextoComoTxt(card.transcricao_reuniao!, `transcricao-${card.id}`)} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Baixar .txt">
+                              <Download size={12} /> .txt
+                            </button>
+                            <button type="button" onClick={() => baixarTextoComoWord(card.transcricao_reuniao!, `transcricao-${card.id}`, "Transcrição da Reunião")} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Baixar Word (.docx)">
+                              <FileType2 size={12} /> Word
+                            </button>
+                            <button type="button" onClick={() => setExpandedTexto({ title: "Transcrição da Reunião", text: card.transcricao_reuniao!, baseName: `transcricao-${card.id}` })} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Expandir">
+                              <Maximize2 size={12} /> Expandir
+                            </button>
+                          </div>
                         </div>
                         <div className="bg-muted/30 rounded-xl p-4 border border-border/50 max-h-[400px] overflow-y-auto">
                           <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">{card.transcricao_reuniao}</p>
