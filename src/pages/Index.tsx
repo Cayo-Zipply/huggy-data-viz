@@ -156,10 +156,21 @@ const Index = () => {
     ? (prevEffectiveVendas / prevEffectiveMensagens) * 100
     : undefined;
 
-  // Reuniões — live for dynamic months, salesData for hardcoded
+  // Reuniões — live for dynamic months, salesData for hardcoded.
+  // Override manual (marketing_overrides.manual_reunioes) tem prioridade
+  // sobre a contagem de leads em meses dinâmicos.
+  const overrideAtual = selectedMonthYYYYMM ? overridesMap[selectedMonthYYYYMM] : null;
+  const prevMonthYYYYMM = useMemo(() => {
+    if (!selectedMonthYYYYMM) return "";
+    const [y, m] = selectedMonthYYYYMM.split("-").map(Number);
+    const d = new Date(Date.UTC(y, m - 2, 1));
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+  }, [selectedMonthYYYYMM]);
+  const overridePrev = prevMonthYYYYMM ? overridesMap[prevMonthYYYYMM] : null;
+
   const reunioesRealizadas = isHardcoded
     ? (currentSales?.funnel?.reunioes?.realizado || 0)
-    : (live.leadsStats?.reunioesRealizadas ?? 0);
+    : (overrideAtual?.manual_reunioes ?? live.leadsStats?.reunioesRealizadas ?? 0);
   const custoPorReuniao = reunioesRealizadas > 0
     ? investimentoView / reunioesRealizadas
     : 0;
@@ -169,7 +180,7 @@ const Index = () => {
   const isHardcodedPrev = dynamicMonths.length > 1 && dynamicMonths[dynamicMonths.findIndex(m => m.key === selectedMonth) + 1]?.source === "hardcoded";
   const prevReunioes = isHardcodedPrev
     ? (prevSales?.funnel?.reunioes?.realizado || 0)
-    : (live.leadsStatsPrev?.reunioesRealizadas ?? 0);
+    : (overridePrev?.manual_reunioes ?? live.leadsStatsPrev?.reunioesRealizadas ?? 0);
   const prevCustoPorReuniao = prevReunioes > 0 && (prevInvestimentoView ?? 0) > 0
     ? (prevInvestimentoView ?? 0) / prevReunioes
     : undefined;
