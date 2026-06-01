@@ -1181,6 +1181,12 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
         onOpenChange={setMeetDialogOpen}
         onCreated={() => setMeetRefreshKey(k => k + 1)}
       />
+      <EditarReuniaoDialog
+        reuniao={proximaReuniao}
+        open={editReuniaoOpen}
+        onOpenChange={setEditReuniaoOpen}
+        onUpdated={() => setMeetRefreshKey(k => k + 1)}
+      />
       <Dialog open={!!expandedTexto} onOpenChange={(o) => { if (!o) setExpandedTexto(null); }}>
         <DialogContent className="max-w-[95vw] w-[95vw] max-h-[95vh]">
           <DialogHeader>
