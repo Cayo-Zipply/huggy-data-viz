@@ -154,7 +154,7 @@ const Index = () => {
     : (live.leadsStatsPrev?.mensagens ?? 0);
   const prevEffectiveVendas = isHardcoded
     ? (previousData?.vendas || 0)
-    : (live.leadsStatsPrev?.vendas ?? 0);
+    : (overridePrev?.manual_vendas ?? live.leadsStatsPrev?.vendas ?? 0);
 
   // CPA from live data
   const liveCpa = effectiveVendas > 0 ? investimentoView / effectiveVendas : 0;
