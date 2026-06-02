@@ -32,13 +32,18 @@ function CloserGoals({ cards, goals, closer, onSave }: { cards: PipelineCard[]; 
 
   const realized = useMemo(() => {
     const rm = cardsReachedStage(cc, "reuniao_marcada").length;
-    const rr = cardsReachedStage(cc, "reuniao_realizada").length;
+    // Reuniões realizadas: agrupar por mês via data_reuniao_realizada
+    const rr = cc.filter(c => {
+      const drr = (c as any).data_reuniao_realizada as string | null;
+      if (!drr) return false;
+      return drr.slice(0, 7) === monthKey;
+    }).length;
     const ganhos = cc.filter(c => c.lead_status === "ganho");
     const fat = ganhos.reduce((s, c) => s + (c.deal_value || 0), 0);
     const total = cc.filter(c => c.lead_status !== "perdido").length;
     const conv = total > 0 ? (ganhos.length / total) * 100 : 0;
     return { rm, rr, fat, conv };
-  }, [cc]);
+  }, [cc, monthKey]);
 
   const project = (v: number) => passedBiz > 0 ? (v / passedBiz) * totalBiz : 0;
   const upd = (k: string, v: number) => { setMeta(p => ({ ...p, [k]: v })); setDirty(true); };
