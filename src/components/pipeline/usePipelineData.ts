@@ -520,12 +520,18 @@ export function usePipelineData(actorName: string) {
     const now = new Date().toISOString();
     const dur = Math.round((Date.now() - new Date(card.stage_changed_at).getTime()) / 86400000);
 
+    // Auto-preencher data_reuniao_realizada ao entrar na etapa (sem sobrescrever)
+    const autoDataReuniaoRealizada =
+      targetStage === "reuniao_realizada" && !card.data_reuniao_realizada ? now : null;
+
     // update DB
-    await sbExt.from("leads").update({
+    const moveUpdate: any = {
       etapa_atual: stageToEtapa(targetStage),
       ultima_etapa: stageToEtapa(card.stage),
       data_ultima_mudanca_etapa: now,
-    }).eq("id", cardId);
+    };
+    if (autoDataReuniaoRealizada) moveUpdate.data_reuniao_realizada = autoDataReuniaoRealizada;
+    await sbExt.from("leads").update(moveUpdate).eq("id", cardId);
 
     // insert legacy history
     await sbExt.from("lead_historico").insert({
