@@ -30,6 +30,7 @@ import { CallButton } from "./CallButton";
 import { CallHistory } from "./CallHistory";
 import { EmailReviewModal } from "./EmailReviewModal";
 import { useEmailEnvios, type EmailTipo } from "@/hooks/useEmailEnvios";
+import { useOrigensLeads } from "@/hooks/useOrigensLeads";
 import { hasContractAttached } from "@/lib/contractCheck";
 import type { DuplicateInfo } from "@/hooks/useDuplicateLeads";
 import { Trash2, Copy as CopyDup } from "lucide-react";
@@ -102,6 +103,7 @@ type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "contrato" | "a
 
 export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onSaveObservation, labels = [], cardLabels = [], onAddLabel, onRemoveLabel, ownerOptions: ownerOptionsProp, duplicates = [], onDelete, onOpenLead }: Props) {
   const { user, isAdmin, profile } = useAuth();
+  const { activeOrigens } = useOrigensLeads();
   const db = supabaseExt as any;
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -784,7 +786,19 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                   <Megaphone size={16} className="text-muted-foreground" />
                   <div className="flex-1">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Origem</p>
-                    <p className="text-sm text-foreground">{card.origem || <span className="text-muted-foreground italic">Não informado</span>}</p>
+                    <select
+                      value={card.origem || ""}
+                      onChange={(e) => onUpdate(card.id, { origem: e.target.value || null } as any)}
+                      className="w-full text-sm bg-background border border-border rounded-md px-2 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      <option value="">— Não informado —</option>
+                      {card.origem && !activeOrigens.some(o => o.nome === card.origem) && (
+                        <option value={card.origem}>{card.origem} (legado)</option>
+                      )}
+                      {activeOrigens.map(o => (
+                        <option key={o.id} value={o.nome}>{o.nome}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 <Separator className="my-1" />
