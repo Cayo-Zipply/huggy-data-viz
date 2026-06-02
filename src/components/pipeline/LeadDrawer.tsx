@@ -427,6 +427,12 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                 </button>
               );
             })()}
+            {(["reuniao_realizada", "link_enviado", "contrato_assinado"].includes(card.stage) || card.data_reuniao_realizada) && (
+              <DataReuniaoRealizadaBadge
+                value={card.data_reuniao_realizada}
+                onChange={(iso) => onUpdate(card.id, { data_reuniao_realizada: iso } as any)}
+              />
+            )}
           </div>
 
           {duplicates.length > 0 && (
