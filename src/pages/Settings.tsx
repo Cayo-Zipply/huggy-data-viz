@@ -31,7 +31,7 @@ export default function Settings() {
   const { isAdmin } = useAuth();
   const { labels, createLabel, deleteLabel, updateLabel } = useLabels();
   const { rules, upsertRule } = useSlaRules();
-  const { motivos, createMotivo, updateMotivo, toggleAtivo } = useMotivosPerda();
+  const { motivos, createMotivo, updateMotivo, toggleAtivo, deleteMotivo } = useMotivosPerda();
   const { overrides, upsert: upsertOverride, getOverride } = useMarketingOverrides();
   const { months: marketingMonths } = useMarketingData();
   const { members: teamMembers, refetch: refetchTeam } = useTeamMembers();
