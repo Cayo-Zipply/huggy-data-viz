@@ -21,6 +21,7 @@ export interface FilterState {
   slaFilter: "todos" | "dentro" | "proximo" | "estourado";
   apenasFimDeSemana: boolean;
   tipoDocumento: "todos" | "cpf" | "cnpj" | "nenhum";
+  reuniaoRealizadaMonth: string; // "YYYY-MM" — filtra por data_reuniao_realizada no mês
 }
 
 export const defaultFilters: FilterState = (() => {
@@ -39,6 +40,7 @@ export const defaultFilters: FilterState = (() => {
     slaFilter: "todos",
     apenasFimDeSemana: false,
     tipoDocumento: "todos",
+    reuniaoRealizadaMonth: "",
   };
 })();
 
