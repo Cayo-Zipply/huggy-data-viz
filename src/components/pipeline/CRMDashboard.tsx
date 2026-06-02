@@ -344,6 +344,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
         </label>
       </div>
 
+      {(() => null)()}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-3">
         <MetricBox label="Leads Ativos" value={ativos.length.toString()} />
         <MetricBox label="Valor Bruto" value={formatBRL(valorBrutoPipe)} />
@@ -352,7 +353,9 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
         <MetricBox label="Perdidos" value={perdidos.length.toString()} sub={`${taxaPerda}% de perda`} />
         <MetricBox label="Conversão" value={`${taxaConv}%`} />
         <MetricBox label="Ciclo de Venda" value={cicloVenda != null ? `${cicloVenda} dias` : "—"} sub="criação → fechamento" />
+        <MetricBox label="Reuniões Realizadas" value={reunioesRealizadasMes.toString()} sub="por data da reunião" />
       </div>
+
 
       {/* Month comparison */}
       <div className="bg-card border border-border rounded-xl p-4">
