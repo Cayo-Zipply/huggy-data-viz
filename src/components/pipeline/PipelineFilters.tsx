@@ -175,7 +175,7 @@ export function PipelineFiltersBar({ filters, onChange, onExport, closerOptions 
   const [calFromOpen, setCalFromOpen] = useState(false);
   const [calToOpen, setCalToOpen] = useState(false);
 
-  const hasF = filters.dateFrom || filters.dateTo || filters.closers.length || filters.status !== "todos" || filters.stages.length || filters.staleDays != null || filters.slaFilter !== "todos" || filters.apenasFimDeSemana || filters.tipoDocumento !== "todos";
+  const hasF = filters.dateFrom || filters.dateTo || filters.closers.length || filters.status !== "todos" || filters.stages.length || filters.staleDays != null || filters.slaFilter !== "todos" || filters.apenasFimDeSemana || filters.tipoDocumento !== "todos" || filters.reuniaoRealizadaMonth;
   const currentPreset = detectPreset(filters);
 
   const applyPreset = (preset: DatePreset) => {
