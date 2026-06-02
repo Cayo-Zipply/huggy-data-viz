@@ -480,6 +480,7 @@ export function usePipelineData(actorName: string) {
     if (updates.last_stage !== undefined) dbUpdates.ultima_etapa = updates.last_stage;
     if (updates.contract_url !== undefined) dbUpdates.contract_url = updates.contract_url;
     if (updates.data_no_show !== undefined) dbUpdates.data_no_show = updates.data_no_show;
+    if ((updates as any).data_reuniao_realizada !== undefined) dbUpdates.data_reuniao_realizada = (updates as any).data_reuniao_realizada;
     // Contract fields
     if (updates.contrato_status !== undefined) dbUpdates.contrato_status = updates.contrato_status;
     if (updates.contrato_file_url !== undefined) dbUpdates.contrato_file_url = updates.contrato_file_url;
