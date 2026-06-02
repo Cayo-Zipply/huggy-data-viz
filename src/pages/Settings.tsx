@@ -415,6 +415,58 @@ export default function Settings() {
         </div>
       )}
 
+      {/* Origens dos Leads Section */}
+      {activeSection === "origens" && (
+        <div className="border border-border rounded-2xl bg-card overflow-hidden">
+          <div className="p-4 border-b border-border bg-muted/30">
+            <div className="flex items-center gap-2">
+              <Megaphone size={16} className="text-primary" />
+              <h2 className="text-sm font-semibold text-foreground">Origens dos Leads</h2>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Configure as origens disponíveis ao classificar a entrada de um lead</p>
+          </div>
+          <div className="p-4 space-y-4">
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <label className="text-xs text-muted-foreground block mb-1">Nome da origem</label>
+                <input value={newOrigemNome} onChange={e => setNewOrigemNome(e.target.value)}
+                  placeholder="Ex: Instagram, Indicação, Site..."
+                  className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  onKeyDown={async e => { if (e.key === "Enter" && newOrigemNome.trim()) { await createOrigem(newOrigemNome.trim()); setNewOrigemNome(""); } }} />
+              </div>
+              <button onClick={async () => { if (!newOrigemNome.trim()) return; await createOrigem(newOrigemNome.trim()); setNewOrigemNome(""); }}
+                disabled={!newOrigemNome.trim()}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 disabled:opacity-50 transition-all">
+                <Plus size={14} />Adicionar
+              </button>
+            </div>
+            {origens.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">Nenhuma origem cadastrada</p>
+            ) : (
+              <div className="space-y-2">
+                {origens.map(o => (
+                  <div key={o.id} className={cn(
+                    "flex items-center gap-3 py-2 px-3 rounded-lg border border-border bg-background group",
+                    !o.ativo && "opacity-50"
+                  )}>
+                    <span className="text-sm text-foreground flex-1">{o.nome}</span>
+                    <button onClick={() => toggleOrigemAtivo(o.id)}
+                      className={cn("text-xs px-2 py-1 rounded border transition-colors", o.ativo ? "border-emerald-500/30 text-emerald-500" : "border-border text-muted-foreground")}>
+                      {o.ativo ? "Ativo" : "Inativo"}
+                    </button>
+                    <button onClick={() => { if (confirm(`Excluir origem "${o.nome}"?`)) deleteOrigem(o.id); }}
+                      className="text-xs p-1.5 rounded border border-border text-muted-foreground hover:text-red-500 hover:border-red-500/30 transition-colors"
+                      title="Excluir origem">
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Marketing Metrics Override Section */}
       {activeSection === "metricas" && (
         <div className="border border-border rounded-2xl bg-card overflow-hidden">
