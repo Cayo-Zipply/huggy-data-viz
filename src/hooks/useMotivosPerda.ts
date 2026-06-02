@@ -39,7 +39,12 @@ export function useMotivosPerda() {
     fetch();
   }, [fetch, motivos]);
 
+  const deleteMotivo = useCallback(async (id: string) => {
+    await supabase.from("motivos_perda").delete().eq("id", id);
+    fetch();
+  }, [fetch]);
+
   const activeMotivos = motivos.filter(m => m.ativo);
 
-  return { motivos, activeMotivos, loading, createMotivo, updateMotivo, toggleAtivo, refetch: fetch };
+  return { motivos, activeMotivos, loading, createMotivo, updateMotivo, toggleAtivo, deleteMotivo, refetch: fetch };
 }

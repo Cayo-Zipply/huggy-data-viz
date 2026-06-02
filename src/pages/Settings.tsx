@@ -31,7 +31,7 @@ export default function Settings() {
   const { isAdmin } = useAuth();
   const { labels, createLabel, deleteLabel, updateLabel } = useLabels();
   const { rules, upsertRule } = useSlaRules();
-  const { motivos, createMotivo, updateMotivo, toggleAtivo } = useMotivosPerda();
+  const { motivos, createMotivo, updateMotivo, toggleAtivo, deleteMotivo } = useMotivosPerda();
   const { overrides, upsert: upsertOverride, getOverride } = useMarketingOverrides();
   const { months: marketingMonths } = useMarketingData();
   const { members: teamMembers, refetch: refetchTeam } = useTeamMembers();
@@ -397,6 +397,11 @@ export default function Settings() {
                     <button onClick={() => toggleAtivo(m.id)}
                       className={cn("text-xs px-2 py-1 rounded border transition-colors", m.ativo ? "border-emerald-500/30 text-emerald-500" : "border-border text-muted-foreground")}>
                       {m.ativo ? "Ativo" : "Inativo"}
+                    </button>
+                    <button onClick={() => { if (confirm(`Excluir motivo "${m.nome}"?`)) deleteMotivo(m.id); }}
+                      className="text-xs p-1.5 rounded border border-border text-muted-foreground hover:text-red-500 hover:border-red-500/30 transition-colors"
+                      title="Excluir motivo">
+                      <Trash2 size={12} />
                     </button>
                   </div>
                 ))}

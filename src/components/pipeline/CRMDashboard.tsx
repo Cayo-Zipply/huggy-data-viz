@@ -232,8 +232,13 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
 
   const lossData = useMemo(() => {
     const counts: Record<string, number> = {};
-    perdidos.forEach(c => { const k = c.loss_category || "outro"; counts[k] = (counts[k] || 0) + 1; });
-    return LOSS_CATEGORIES.map(l => ({ name: l.label, value: counts[l.key] || 0 })).filter(d => d.value > 0);
+    perdidos.forEach(c => {
+      const k = (c.loss_reason || "").trim() || "Sem motivo";
+      counts[k] = (counts[k] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
   }, [perdidos]);
 
   const timeData = useMemo(() => {
