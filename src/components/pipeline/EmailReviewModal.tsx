@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   AlertTriangle, Loader2, Paperclip, Mail, FileText, RefreshCw, Sparkles,
-  PencilLine, MoreVertical, RotateCcw,
+  PencilLine, MoreVertical, RotateCcw, Maximize2, Minimize2,
 } from "lucide-react";
 import { supabase as supabaseCloud } from "@/lib/supabaseExternal";
 import { sbExt } from "@/lib/supabaseExternal";
