@@ -3,11 +3,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLabels } from "@/hooks/useLabels";
 import { useSlaRules, type SlaRule } from "@/hooks/useSlaRules";
 import { useMotivosPerda } from "@/hooks/useMotivosPerda";
+import { useOrigensLeads } from "@/hooks/useOrigensLeads";
 import { useMarketingOverrides, type MarketingOverride } from "@/hooks/useMarketingOverrides";
 import { useMarketingData } from "@/hooks/useMarketingData";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { Navigate } from "react-router-dom";
-import { Plus, Trash2, Palette, Tag, Settings as SettingsIcon, X, Clock, AlertTriangle, Shield, BarChart3, Save, Users, Mail } from "lucide-react";
+import { Plus, Trash2, Palette, Tag, Settings as SettingsIcon, X, Clock, AlertTriangle, Shield, BarChart3, Save, Users, Mail, Megaphone } from "lucide-react";
 import { EmailDestinatariosSection } from "@/components/settings/EmailDestinatariosSection";
 import { cn } from "@/lib/utils";
 import { STAGE_ORDER, STAGE_CONFIG } from "@/components/pipeline/types";
@@ -32,6 +33,7 @@ export default function Settings() {
   const { labels, createLabel, deleteLabel, updateLabel } = useLabels();
   const { rules, upsertRule } = useSlaRules();
   const { motivos, createMotivo, updateMotivo, toggleAtivo, deleteMotivo } = useMotivosPerda();
+  const { origens, createOrigem, toggleAtivo: toggleOrigemAtivo, deleteOrigem } = useOrigensLeads();
   const { overrides, upsert: upsertOverride, getOverride } = useMarketingOverrides();
   const { months: marketingMonths } = useMarketingData();
   const { members: teamMembers, refetch: refetchTeam } = useTeamMembers();
@@ -42,7 +44,8 @@ export default function Settings() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState("");
-  const [activeSection, setActiveSection] = useState<"etiquetas" | "sla" | "motivos" | "metricas" | "responsaveis" | "emails">("etiquetas");
+  const [activeSection, setActiveSection] = useState<"etiquetas" | "sla" | "motivos" | "origens" | "metricas" | "responsaveis" | "emails">("etiquetas");
+  const [newOrigemNome, setNewOrigemNome] = useState("");
 
   // Motivos de perda state
   const [newMotivoNome, setNewMotivoNome] = useState("");
@@ -137,6 +140,7 @@ export default function Settings() {
     { key: "responsaveis" as const, label: "Responsáveis", icon: Users },
     { key: "sla" as const, label: "Regras de SLA", icon: Clock },
     { key: "motivos" as const, label: "Motivos de Perda", icon: AlertTriangle },
+    { key: "origens" as const, label: "Origens dos Leads", icon: Megaphone },
     { key: "metricas" as const, label: "Métricas Marketing", icon: BarChart3 },
     ...(isAdmin ? [{ key: "emails" as const, label: "Destinatários de E-mail", icon: Mail }] : []),
   ];
