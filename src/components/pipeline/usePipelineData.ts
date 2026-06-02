@@ -84,6 +84,7 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     resumo_reuniao: row.resumo_reuniao || null,
     transcricao_reuniao: row.transcricao_reuniao || null,
     data_reuniao: row.data_reuniao || null,
+    data_reuniao_realizada: row.data_reuniao_realizada || null,
     duracao_reuniao: row.duracao_reuniao || null,
     participantes_reuniao: row.participantes_reuniao || null,
     data_no_show: row.data_no_show || null,
