@@ -560,6 +560,7 @@ export function usePipelineData(actorName: string) {
     const updated: PipelineCard = {
       ...card, stage: targetStage, pipe: STAGE_CONFIG[targetStage].pipe as PipeType,
       stage_changed_at: now, updated_at: now,
+      data_reuniao_realizada: autoDataReuniaoRealizada || card.data_reuniao_realizada,
       history: [...card.history, { from: card.stage, to: targetStage, at: now, by: actorName, duration_days: dur }],
     };
     const newTasks = genAutoTasks(updated, targetStage);
