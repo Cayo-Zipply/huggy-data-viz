@@ -127,6 +127,7 @@ export function EmailReviewModal({ open, onOpenChange, tipo, leadId, card, onUpd
   const [creatingManual, setCreatingManual] = useState(false);
   const [showSwapAnexo, setShowSwapAnexo] = useState(false);
   const [anexosLead, setAnexosLead] = useState<any[]>([]);
+  const [bodyExpanded, setBodyExpanded] = useState(false);
 
   const readOnly = envio?.status === "enviado";
   const titulo = tipo === "juridico" ? "E-mail Jurídico" : "E-mail Financeiro";
