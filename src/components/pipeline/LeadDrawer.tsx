@@ -78,6 +78,46 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { CalendarDays } from "lucide-react";
+
+function DataReuniaoRealizadaBadge({ value, onChange }: { value: string | null; onChange: (iso: string | null) => void }) {
+  const [openPop, setOpenPop] = useState(false);
+  const selected = value ? new Date(value) : undefined;
+  const label = value
+    ? new Date(value).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
+    : "Definir data";
+  return (
+    <Popover open={openPop} onOpenChange={setOpenPop}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          title="Data da reunião realizada (clique para editar)"
+          className="text-xs px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/25 font-medium flex items-center gap-1 transition-colors"
+        >
+          <CalendarDays size={12} />Reunião realizada {label}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <CalendarPicker
+          mode="single"
+          selected={selected}
+          onSelect={(d) => {
+            if (d) {
+              const iso = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0).toISOString();
+              onChange(iso);
+              setOpenPop(false);
+            }
+          }}
+          initialFocus
+          className="p-3 pointer-events-auto"
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 interface Props {
   card: CardType | null;
   tasks: PipelineTask[];
@@ -427,6 +467,12 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                 </button>
               );
             })()}
+            {(["reuniao_realizada", "link_enviado", "contrato_assinado"].includes(card.stage) || card.data_reuniao_realizada) && (
+              <DataReuniaoRealizadaBadge
+                value={card.data_reuniao_realizada}
+                onChange={(iso) => onUpdate(card.id, { data_reuniao_realizada: iso } as any)}
+              />
+            )}
           </div>
 
           {duplicates.length > 0 && (

@@ -21,6 +21,7 @@ export interface FilterState {
   slaFilter: "todos" | "dentro" | "proximo" | "estourado";
   apenasFimDeSemana: boolean;
   tipoDocumento: "todos" | "cpf" | "cnpj" | "nenhum";
+  reuniaoRealizadaMonth: string; // "YYYY-MM" — filtra por data_reuniao_realizada no mês
 }
 
 export const defaultFilters: FilterState = (() => {
@@ -39,6 +40,7 @@ export const defaultFilters: FilterState = (() => {
     slaFilter: "todos",
     apenasFimDeSemana: false,
     tipoDocumento: "todos",
+    reuniaoRealizadaMonth: "",
   };
 })();
 
@@ -82,13 +84,20 @@ function getCardReferenceDate(card: PipelineCard): string | null {
 
 export function applyFilters(cards: PipelineCard[], f: FilterState): PipelineCard[] {
   return cards.filter(c => {
-    const refDate = getCardReferenceDate(c);
-
-    if (f.dateFrom) {
-      if (!refDate || refDate < f.dateFrom) return false;
-    }
-    if (f.dateTo) {
-      if (!refDate || refDate > f.dateTo) return false;
+    // Filtro "Reuniões realizadas no mês" — quando ativo, ignora outras datas
+    if (f.reuniaoRealizadaMonth) {
+      const drr = (c as any).data_reuniao_realizada as string | null;
+      if (!drr) return false;
+      const drrMonth = drr.slice(0, 7);
+      if (drrMonth !== f.reuniaoRealizadaMonth) return false;
+    } else {
+      const refDate = getCardReferenceDate(c);
+      if (f.dateFrom) {
+        if (!refDate || refDate < f.dateFrom) return false;
+      }
+      if (f.dateTo) {
+        if (!refDate || refDate > f.dateTo) return false;
+      }
     }
     if (f.stageChangedFrom && c.stage_changed_at < f.stageChangedFrom) return false;
     if (f.stageChangedTo && c.stage_changed_at > f.stageChangedTo + "T23:59:59") return false;
@@ -166,7 +175,7 @@ export function PipelineFiltersBar({ filters, onChange, onExport, closerOptions 
   const [calFromOpen, setCalFromOpen] = useState(false);
   const [calToOpen, setCalToOpen] = useState(false);
 
-  const hasF = filters.dateFrom || filters.dateTo || filters.closers.length || filters.status !== "todos" || filters.stages.length || filters.staleDays != null || filters.slaFilter !== "todos" || filters.apenasFimDeSemana || filters.tipoDocumento !== "todos";
+  const hasF = filters.dateFrom || filters.dateTo || filters.closers.length || filters.status !== "todos" || filters.stages.length || filters.staleDays != null || filters.slaFilter !== "todos" || filters.apenasFimDeSemana || filters.tipoDocumento !== "todos" || filters.reuniaoRealizadaMonth;
   const currentPreset = detectPreset(filters);
 
   const applyPreset = (preset: DatePreset) => {
@@ -265,6 +274,32 @@ export function PipelineFiltersBar({ filters, onChange, onExport, closerOptions 
         ))}
 
         <div className="flex-1" />
+
+        {/* Filtro: Reuniões realizadas no mês (data_reuniao_realizada) */}
+        <label className={cn(
+          "flex items-center gap-1.5 text-xs border rounded-lg px-2 py-1.5",
+          filters.reuniaoRealizadaMonth ? "border-emerald-500/50 text-emerald-600 bg-emerald-500/10" : "border-border text-muted-foreground"
+        )}>
+          <CalendarIcon size={12} />
+          <span>Reunião realizada:</span>
+          <input
+            type="month"
+            value={filters.reuniaoRealizadaMonth}
+            onChange={e => onChange({ ...filters, reuniaoRealizadaMonth: e.target.value })}
+            className="bg-transparent outline-none text-xs"
+          />
+          {filters.reuniaoRealizadaMonth && (
+            <button
+              type="button"
+              onClick={() => onChange({ ...filters, reuniaoRealizadaMonth: "" })}
+              className="hover:text-foreground"
+              title="Limpar"
+            >
+              <X size={10} />
+            </button>
+          )}
+        </label>
+
 
         {/* Date preset dropdown + calendar */}
         <div className="relative">

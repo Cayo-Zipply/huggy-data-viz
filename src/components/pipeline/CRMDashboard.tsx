@@ -230,6 +230,18 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
     return Math.round(avg * 10) / 10;
   }, [ganhos]);
 
+  // Reuniões realizadas agrupadas por mês via data_reuniao_realizada
+  // (não usa etapa_atual — lead pode já ter avançado).
+  const reunioesRealizadasMes = useMemo(() => {
+    const { start, end } = getMonthRange(currentMonth);
+    return vis.filter(c => {
+      const drr = (c as any).data_reuniao_realizada as string | null;
+      if (!drr) return false;
+      const d = new Date(drr);
+      return d >= start && d <= end;
+    }).length;
+  }, [vis, currentMonth]);
+
   const lossData = useMemo(() => {
     const counts: Record<string, number> = {};
     perdidos.forEach(c => {
@@ -344,6 +356,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
         </label>
       </div>
 
+      
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-3">
         <MetricBox label="Leads Ativos" value={ativos.length.toString()} />
         <MetricBox label="Valor Bruto" value={formatBRL(valorBrutoPipe)} />
@@ -352,7 +365,9 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
         <MetricBox label="Perdidos" value={perdidos.length.toString()} sub={`${taxaPerda}% de perda`} />
         <MetricBox label="Conversão" value={`${taxaConv}%`} />
         <MetricBox label="Ciclo de Venda" value={cicloVenda != null ? `${cicloVenda} dias` : "—"} sub="criação → fechamento" />
+        <MetricBox label="Reuniões Realizadas" value={reunioesRealizadasMes.toString()} sub="por data da reunião" />
       </div>
+
 
       {/* Month comparison */}
       <div className="bg-card border border-border rounded-xl p-4">

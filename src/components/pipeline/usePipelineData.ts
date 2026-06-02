@@ -84,6 +84,7 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     resumo_reuniao: row.resumo_reuniao || null,
     transcricao_reuniao: row.transcricao_reuniao || null,
     data_reuniao: row.data_reuniao || null,
+    data_reuniao_realizada: row.data_reuniao_realizada || null,
     duracao_reuniao: row.duracao_reuniao || null,
     participantes_reuniao: row.participantes_reuniao || null,
     data_no_show: row.data_no_show || null,
@@ -413,7 +414,7 @@ export function usePipelineData(actorName: string) {
       deal_value: data.deal_value || DEFAULT_DEAL_VALUE, lead_status: "aberto", loss_reason: null, loss_category: null,
       last_stage: null, stage_changed_at: now,
       history: [{ from: null, to: stage, at: now, by: actorName, duration_days: null }],
-      resumo_reuniao: null, transcricao_reuniao: null, data_reuniao: null, duracao_reuniao: null, participantes_reuniao: null,
+      resumo_reuniao: null, transcricao_reuniao: null, data_reuniao: null, data_reuniao_realizada: null, duracao_reuniao: null, participantes_reuniao: null,
       data_no_show: null,
       contrato_status: null, contrato_file_url: null, contrato_preparado_em: null, contrato_preparado_por: null,
       tipo_contrato: null, representante_nome: null, representante_cpf: null, valor_mensalidade: null,
@@ -479,6 +480,7 @@ export function usePipelineData(actorName: string) {
     if (updates.last_stage !== undefined) dbUpdates.ultima_etapa = updates.last_stage;
     if (updates.contract_url !== undefined) dbUpdates.contract_url = updates.contract_url;
     if (updates.data_no_show !== undefined) dbUpdates.data_no_show = updates.data_no_show;
+    if ((updates as any).data_reuniao_realizada !== undefined) dbUpdates.data_reuniao_realizada = (updates as any).data_reuniao_realizada;
     // Contract fields
     if (updates.contrato_status !== undefined) dbUpdates.contrato_status = updates.contrato_status;
     if (updates.contrato_file_url !== undefined) dbUpdates.contrato_file_url = updates.contrato_file_url;
@@ -518,12 +520,18 @@ export function usePipelineData(actorName: string) {
     const now = new Date().toISOString();
     const dur = Math.round((Date.now() - new Date(card.stage_changed_at).getTime()) / 86400000);
 
+    // Auto-preencher data_reuniao_realizada ao entrar na etapa (sem sobrescrever)
+    const autoDataReuniaoRealizada =
+      targetStage === "reuniao_realizada" && !card.data_reuniao_realizada ? now : null;
+
     // update DB
-    await sbExt.from("leads").update({
+    const moveUpdate: any = {
       etapa_atual: stageToEtapa(targetStage),
       ultima_etapa: stageToEtapa(card.stage),
       data_ultima_mudanca_etapa: now,
-    }).eq("id", cardId);
+    };
+    if (autoDataReuniaoRealizada) moveUpdate.data_reuniao_realizada = autoDataReuniaoRealizada;
+    await sbExt.from("leads").update(moveUpdate).eq("id", cardId);
 
     // insert legacy history
     await sbExt.from("lead_historico").insert({
@@ -552,6 +560,7 @@ export function usePipelineData(actorName: string) {
     const updated: PipelineCard = {
       ...card, stage: targetStage, pipe: STAGE_CONFIG[targetStage].pipe as PipeType,
       stage_changed_at: now, updated_at: now,
+      data_reuniao_realizada: autoDataReuniaoRealizada || card.data_reuniao_realizada,
       history: [...card.history, { from: card.stage, to: targetStage, at: now, by: actorName, duration_days: dur }],
     };
     const newTasks = genAutoTasks(updated, targetStage);
