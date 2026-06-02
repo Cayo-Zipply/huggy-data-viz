@@ -398,6 +398,11 @@ export default function Settings() {
                       className={cn("text-xs px-2 py-1 rounded border transition-colors", m.ativo ? "border-emerald-500/30 text-emerald-500" : "border-border text-muted-foreground")}>
                       {m.ativo ? "Ativo" : "Inativo"}
                     </button>
+                    <button onClick={() => { if (confirm(`Excluir motivo "${m.nome}"?`)) deleteMotivo(m.id); }}
+                      className="text-xs p-1.5 rounded border border-border text-muted-foreground hover:text-red-500 hover:border-red-500/30 transition-colors"
+                      title="Excluir motivo">
+                      <Trash2 size={12} />
+                    </button>
                   </div>
                 ))}
               </div>
