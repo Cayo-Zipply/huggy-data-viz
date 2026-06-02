@@ -230,6 +230,18 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
     return Math.round(avg * 10) / 10;
   }, [ganhos]);
 
+  // Reuniões realizadas agrupadas por mês via data_reuniao_realizada
+  // (não usa etapa_atual — lead pode já ter avançado).
+  const reunioesRealizadasMes = useMemo(() => {
+    const { start, end } = getMonthRange(currentMonth);
+    return vis.filter(c => {
+      const drr = (c as any).data_reuniao_realizada as string | null;
+      if (!drr) return false;
+      const d = new Date(drr);
+      return d >= start && d <= end;
+    }).length;
+  }, [vis, currentMonth]);
+
   const lossData = useMemo(() => {
     const counts: Record<string, number> = {};
     perdidos.forEach(c => {
