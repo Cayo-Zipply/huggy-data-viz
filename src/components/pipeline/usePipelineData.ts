@@ -414,7 +414,7 @@ export function usePipelineData(actorName: string) {
       deal_value: data.deal_value || DEFAULT_DEAL_VALUE, lead_status: "aberto", loss_reason: null, loss_category: null,
       last_stage: null, stage_changed_at: now,
       history: [{ from: null, to: stage, at: now, by: actorName, duration_days: null }],
-      resumo_reuniao: null, transcricao_reuniao: null, data_reuniao: null, duracao_reuniao: null, participantes_reuniao: null,
+      resumo_reuniao: null, transcricao_reuniao: null, data_reuniao: null, data_reuniao_realizada: null, duracao_reuniao: null, participantes_reuniao: null,
       data_no_show: null,
       contrato_status: null, contrato_file_url: null, contrato_preparado_em: null, contrato_preparado_por: null,
       tipo_contrato: null, representante_nome: null, representante_cpf: null, valor_mensalidade: null,
