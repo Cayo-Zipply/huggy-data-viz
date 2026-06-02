@@ -43,6 +43,7 @@ export interface PipelineCard {
   resumo_reuniao: string | null;
   transcricao_reuniao: string | null;
   data_reuniao: string | null;
+  data_reuniao_realizada: string | null;
   duracao_reuniao: string | null;
   participantes_reuniao: string | null;
   data_no_show: string | null;
