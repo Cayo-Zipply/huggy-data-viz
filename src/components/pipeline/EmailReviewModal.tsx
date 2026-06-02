@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   AlertTriangle, Loader2, Paperclip, Mail, FileText, RefreshCw, Sparkles,
-  PencilLine, MoreVertical, RotateCcw,
+  PencilLine, MoreVertical, RotateCcw, Maximize2, Minimize2,
 } from "lucide-react";
 import { supabase as supabaseCloud } from "@/lib/supabaseExternal";
 import { sbExt } from "@/lib/supabaseExternal";
@@ -127,6 +127,7 @@ export function EmailReviewModal({ open, onOpenChange, tipo, leadId, card, onUpd
   const [creatingManual, setCreatingManual] = useState(false);
   const [showSwapAnexo, setShowSwapAnexo] = useState(false);
   const [anexosLead, setAnexosLead] = useState<any[]>([]);
+  const [bodyExpanded, setBodyExpanded] = useState(false);
 
   const readOnly = envio?.status === "enviado";
   const titulo = tipo === "juridico" ? "E-mail Jurídico" : "E-mail Financeiro";
@@ -459,7 +460,18 @@ export function EmailReviewModal({ open, onOpenChange, tipo, leadId, card, onUpd
             </div>
 
             <div>
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Corpo do e-mail</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Corpo do e-mail</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setBodyExpanded(true)}
+                  className="h-6 px-2 text-xs"
+                >
+                  <Maximize2 size={12} className="mr-1" /> Expandir
+                </Button>
+              </div>
               <Textarea value={corpo} onChange={(e) => setCorpo(e.target.value)} disabled={readOnly} rows={14} className="mt-1 font-mono text-xs" />
             </div>
 
@@ -534,6 +546,33 @@ export function EmailReviewModal({ open, onOpenChange, tipo, leadId, card, onUpd
           </div>
         )}
       </DialogContent>
+
+      {/* Expanded body editor */}
+      <Dialog open={bodyExpanded} onOpenChange={setBodyExpanded}>
+        <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="p-4 border-b border-border">
+            <DialogTitle className="flex items-center gap-2 pr-8">
+              <Mail size={16} /> {titulo} — Editar corpo
+              <span className="ml-auto text-xs text-muted-foreground font-normal">
+                Assunto: {assunto || "—"}
+              </span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 p-4 overflow-hidden">
+            <Textarea
+              value={corpo}
+              onChange={(e) => setCorpo(e.target.value)}
+              disabled={readOnly}
+              className="w-full h-full resize-none font-mono text-sm"
+            />
+          </div>
+          <div className="flex justify-end gap-2 p-4 border-t border-border">
+            <Button variant="outline" onClick={() => setBodyExpanded(false)}>
+              <Minimize2 size={14} className="mr-1" /> Recolher
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
