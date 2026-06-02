@@ -460,7 +460,18 @@ export function EmailReviewModal({ open, onOpenChange, tipo, leadId, card, onUpd
             </div>
 
             <div>
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">Corpo do e-mail</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Corpo do e-mail</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setBodyExpanded(true)}
+                  className="h-6 px-2 text-xs"
+                >
+                  <Maximize2 size={12} className="mr-1" /> Expandir
+                </Button>
+              </div>
               <Textarea value={corpo} onChange={(e) => setCorpo(e.target.value)} disabled={readOnly} rows={14} className="mt-1 font-mono text-xs" />
             </div>
 
