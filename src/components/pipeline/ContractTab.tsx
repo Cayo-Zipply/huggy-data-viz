@@ -150,6 +150,8 @@ export function ContractTab({ card, onUpdate }: Props) {
     setValorMensalidade(card.valor_mensalidade ?? null);
     setValorDivida(card.valor_divida ?? null);
     setValorProposta(card.valor_proposta ?? null);
+    setCnpjsAdicionais(Array.isArray((card as any).cnpjs_adicionais) ? (card as any).cnpjs_adicionais : []);
+    setSociosAdicionais(Array.isArray((card as any).socios_adicionais) ? (card as any).socios_adicionais : []);
     setLastResult(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card.id]);
