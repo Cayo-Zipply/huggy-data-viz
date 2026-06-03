@@ -359,19 +359,13 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     [contratosMes]
   );
 
-  // Regras de visibilidade no Farol:
-  // - Stephanie nunca aparece
-  // - Fabrício e Henrique só aparecem se tiverem venda no mês
-  const HIDDEN_ALWAYS = ["stephanie"];
-  const ONLY_WITH_SALE = ["fabricio", "fabrício", "henrique"];
+  // Regras de visibilidade no Farol (item 14):
+  // Exibir um closer/SDR apenas se tiver META no mês OU venda/realização no mês.
+  // Sem meta e sem realização → não aparece.
   const norm = (s: string) =>
     (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-  const visibleByName = (name: string, hasSale: boolean) => {
-    const n = norm(name);
-    if (HIDDEN_ALWAYS.some(h => n.includes(h))) return false;
-    if (ONLY_WITH_SALE.some(h => n.includes(h)) && !hasSale) return false;
-    return true;
-  };
+  const visibleByName = (_name: string, _hasSale: boolean) => true; // legacy — não usado mais
+
 
   // ── INBOUND (closers) — vendas/faturamento por closer ──
   // Une os closers cadastrados (perfis) com os owners reais que aparecem
@@ -423,7 +417,9 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         const contratos = vendas; // mesma métrica
         return { closer, vendas, realizado, meta, metaAteAlvo, projecao, falta, diferenca, pctMeta, atingTotal, conv, ticket, tktProjetado, contratos, unassigned: 0 };
       })
-      .filter(r => visibleByName(r.closer, r.vendas > 0));
+      // Item 14: exibir só quem tem meta OU venda/realizado/contrato no mês
+      .filter(r => r.meta > 0 || r.realizado > 0 || r.vendas > 0 || r.contratos > 0);
+
 
     // Sem responsável (closer)
     const semOwnerGanhos = contratosMes.filter(c => !c.owner);
@@ -507,7 +503,9 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         const conv = rm > 0 ? Math.round((rr / rm) * 100) : 0;
         return { sdr, vendas, reunioesMarcadas: rm, reunioesRealizadas: rr, meta, metaRR, metaAteAlvo, projecao, falta, projetado, pctMeta, atingTotal, paceDiarioRR, conv, noShows: ns, unassigned: 0 };
       })
-      .filter(r => visibleByName(r.sdr, r.vendas > 0));
+      // Item 14: exibir só quem tem meta OU realização/venda
+      .filter(r => r.meta > 0 || r.metaRR > 0 || r.reunioesMarcadas > 0 || r.reunioesRealizadas > 0 || r.vendas > 0);
+
 
     const rmSem = reunioesMarcadas.filter(c => !c.owner).length;
     const rrSem = reunioesRealizadas.filter(c => !c.owner).length;
@@ -1130,14 +1128,27 @@ function EditGoalsDialog({
   onSave: (g: PipelineGoal) => void | Promise<void>;
 }) {
   const allNames = useMemo(() => Array.from(new Set([...closers, ...sdrs])), [closers, sdrs]);
+  // Lookup tolerante: compara por PRIMEIRO NOME normalizado (sem acento, lowercase).
+  // Assim, uma meta salva como "Fillipe Amorim Oliveira Silva" casa com o nome
+  // oficial curto "Fillipe" vindo de user_profiles.
+  const firstNorm = (s: string) =>
+    (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().split(/\s+/)[0] || "";
+  const findGoal = (name: string) => {
+    const k = firstNorm(name);
+    return goals.find(g => g.month === monthKey && firstNorm(g.closer) === k);
+  };
   const initial = useMemo(() => {
     const map: Record<string, PipelineGoal> = {};
     allNames.forEach(n => {
-      const g = goals.find(x => x.closer === n && x.month === monthKey);
-      map[n] = g || { closer: n, month: monthKey, reunioes_marcadas_meta: 0, reunioes_realizadas_meta: 0, faturamento_meta: 0, conversao_meta: 0, vendas_meta: 0, ticket_medio_meta: 0, contratos_meta: 0 };
+      const g = findGoal(n);
+      // IMPORTANTE: sempre usar o nome oficial curto (n), nunca o que veio do banco
+      map[n] = g
+        ? { ...g, closer: n, month: monthKey }
+        : { closer: n, month: monthKey, reunioes_marcadas_meta: 0, reunioes_realizadas_meta: 0, faturamento_meta: 0, conversao_meta: 0, vendas_meta: 0, ticket_medio_meta: 0, contratos_meta: 0 };
     });
     return map;
   }, [allNames, goals, monthKey]);
+
   const draftKey = `farol_goals_draft_${monthKey}`;
   const [draft, setDraft] = useState<Record<string, PipelineGoal>>(initial);
 
@@ -1173,12 +1184,14 @@ function EditGoalsDialog({
   const save = async () => {
     for (const name of allNames) {
       // Vendas e Contratos são a mesma métrica — espelha contratos_meta em vendas_meta
-      const g = { ...draft[name], vendas_meta: draft[name]?.contratos_meta ?? 0 } as PipelineGoal;
+      // Garante closer = nome oficial curto (user_profiles), nunca nome longo do banco
+      const g = { ...draft[name], closer: name, month: monthKey, vendas_meta: draft[name]?.contratos_meta ?? 0 } as PipelineGoal;
       await onSave(g);
     }
     try { localStorage.removeItem(draftKey); } catch {}
     onOpenChange(false);
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
