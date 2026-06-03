@@ -175,17 +175,27 @@ function SendNotificationDialog() {
   const [target, setTarget] = useState<"team" | "user">("team");
   const [userId, setUserId] = useState<string>("");
   const [usuarios, setUsuarios] = useState<Array<{ user_id: string; nome: string; email: string; role: string | null }>>([]);
+  const [canais, setCanais] = useState<Array<{ channel_id: string; nome: string }>>([]);
+  const [channelId, setChannelId] = useState<string>("");
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     (async () => {
-      const { data } = await supabase
-        .from("user_profiles")
-        .select("user_id, nome, email, role")
-        .not("user_id", "is", null)
-        .order("nome");
-      setUsuarios((data as any) ?? []);
+      const [{ data: u }, { data: c }] = await Promise.all([
+        supabase
+          .from("user_profiles")
+          .select("user_id, nome, email, role")
+          .not("user_id", "is", null)
+          .order("nome"),
+        supabase
+          .from("slack_canais" as any)
+          .select("channel_id, nome")
+          .eq("ativo", true)
+          .order("nome"),
+      ]);
+      setUsuarios((u as any) ?? []);
+      setCanais((c as any) ?? []);
     })();
   }, [open]);
 
@@ -202,6 +212,7 @@ function SendNotificationDialog() {
     try {
       const body: any = { title: title.trim(), message: message.trim(), target_type: target };
       if (target === "user") body.target_user_id = userId;
+      if (target === "team" && channelId) body.slack_channel_id = channelId;
       const { data, error } = await supabase.functions.invoke("enviar-notificacao", { body });
       if (error) throw error;
       const n = (data as any)?.recipients ?? 0;
@@ -209,6 +220,7 @@ function SendNotificationDialog() {
       setTitle("");
       setMessage("");
       setUserId("");
+      setChannelId("");
       setTarget("team");
       setOpen(false);
     } catch (err: any) {
@@ -264,6 +276,24 @@ function SendNotificationDialog() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          )}
+          {target === "team" && (
+            <div className="space-y-1.5">
+              <Label>Canal do Slack (opcional)</Label>
+              <Select value={channelId} onValueChange={setChannelId}>
+                <SelectTrigger><SelectValue placeholder="Sem canal (só in-app)" /></SelectTrigger>
+                <SelectContent>
+                  {canais.map((c) => (
+                    <SelectItem key={c.channel_id} value={c.channel_id}>
+                      #{c.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground">
+                Se deixar vazio, a notificação só aparece no sino dos usuários.
+              </p>
             </div>
           )}
         </div>
