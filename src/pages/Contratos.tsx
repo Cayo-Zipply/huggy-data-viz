@@ -14,7 +14,7 @@ import { format, startOfMonth, endOfMonth, subMonths, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { supabase as supabaseExt, sbExt } from "@/lib/supabaseExternal";
+import { sbExt } from "@/lib/supabaseExternal";
 import { supabase as supabaseCloud } from "@/integrations/supabase/client";
 
 async function resolveContractUrl(card: any): Promise<string | null> {
