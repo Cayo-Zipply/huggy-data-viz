@@ -33,6 +33,7 @@ const NAV_ITEMS = [
   { key: "/usuarios", label: "Usuários", icon: UsersRound, roles: ["admin"] },
   { key: "/configuracoes", label: "Configurações", icon: Settings, roles: ["admin"] },
   { key: "/feedbacks", label: "Feedbacks", icon: MessageSquarePlus, roles: ["admin"] },
+  { key: "/material-apoio", label: "Material de Apoio", icon: BookOpen, roles: ["admin", "sdr", "closer"] },
   { key: "/ajuda", label: "Ajuda", icon: HelpCircle, roles: ["admin", "sdr", "closer"] },
 ];
 
