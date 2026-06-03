@@ -772,14 +772,16 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
           footerLeft={{ label: "Assinados geral", value: String(globais.contratos.assinados) }}
           footerRight={{ label: "Por closer", value: <RankList items={globais.contratos.topByContratos} format={(v) => String(v)} /> }}
         />
-      </div>
-
-
-      {/* INBOUND */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-border bg-primary/5">
-          <h2 className="text-sm font-bold text-foreground">📞 INBOUND (Closers)</h2>
         </div>
+      </section>
+
+
+      {/* SEÇÃO: INBOUND */}
+      <section className="space-y-3">
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          Inbound · Closers
+        </h2>
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
         <Table>
           <TableHeader>
