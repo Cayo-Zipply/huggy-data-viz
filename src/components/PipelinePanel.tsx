@@ -454,17 +454,28 @@ export function PipelinePanel() {
   const confirmLoss = async () => {
     if (!lossPending?.motivo) return;
     const motivo = lossPending.motivo;
-    const detalhe = motivo === "Outros" ? lossPending.detalhe.trim() : "";
-    if (motivo === "Outros" && !detalhe) return;
+    const detalhe = motivo === "Outro" ? lossPending.detalhe.trim() : "";
+    if (motivo === "Outro" && !detalhe) return;
 
-    // Mark as lost — category=canonical motivo, reason=detalhe (livre, só para "Outros")
+    // Lookup catalog entry to derive category
+    const catalogItem = activeMotivos.find(m => m.nome === motivo);
+    const catRaw = (catalogItem?.categoria || (motivo === "Outro" ? "Outros" : "Outros")).toLowerCase();
+    const catMap: Record<string, string> = {
+      "preço": "preco", "preco": "preco",
+      "timing": "timing",
+      "concorrência": "concorrente", "concorrencia": "concorrente",
+      "qualificação": "sem_resposta", "qualificacao": "sem_resposta",
+      "outros": "outro", "outro": "outro",
+    };
+    const lossCategory = catMap[catRaw] || "outro";
+
     markLost(lossPending.cardId, motivo, detalhe);
 
-    // Update pipeline_cards with loss details
     await updateCard(lossPending.cardId, {
       loss_reason: detalhe || motivo,
-      loss_category: motivo.toLowerCase() as any,
+      loss_category: lossCategory as any,
     } as any);
+
 
     // Add history entry
     await addHistoryEntry({
@@ -822,15 +833,25 @@ export function PipelinePanel() {
           <p className="text-sm text-muted-foreground">Selecione o motivo da perda deste lead.</p>
           <select
             value={lossPending?.motivo || ""}
-            onChange={e => setLossPending(prev => prev ? { ...prev, motivo: e.target.value, detalhe: e.target.value === "Outros" ? prev.detalhe : "" } : null)}
+            onChange={e => setLossPending(prev => prev ? { ...prev, motivo: e.target.value, detalhe: e.target.value === "Outro" ? prev.detalhe : "" } : null)}
             className="w-full text-sm border border-border rounded-lg px-3 py-2 bg-background text-foreground"
           >
             <option value="">Selecione um motivo...</option>
-            {["Preço", "Timing", "Qualificação", "Concorrência", "Outros"].map(m => (
-              <option key={m} value={m}>{m}</option>
+            {Object.entries(
+              activeMotivos.reduce<Record<string, typeof activeMotivos>>((acc, m) => {
+                (acc[m.categoria] ||= []).push(m);
+                return acc;
+              }, {})
+            ).map(([cat, items]) => (
+              <optgroup key={cat} label={cat}>
+                {items.map(m => (
+                  <option key={m.id} value={m.nome}>{m.nome}</option>
+                ))}
+              </optgroup>
             ))}
+            <option value="Outro">Outro (descrever)</option>
           </select>
-          {lossPending?.motivo === "Outros" && (
+          {lossPending?.motivo === "Outro" && (
             <textarea
               value={lossPending?.detalhe || ""}
               onChange={e => setLossPending(prev => prev ? { ...prev, detalhe: e.target.value.slice(0, 500) } : null)}
@@ -842,7 +863,8 @@ export function PipelinePanel() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setLossPending(null)}>Cancelar</Button>
-            <Button variant="destructive" onClick={confirmLoss} disabled={!lossPending?.motivo || (lossPending?.motivo === "Outros" && !lossPending?.detalhe.trim())}>Confirmar Perda</Button>
+            <Button variant="destructive" onClick={confirmLoss} disabled={!lossPending?.motivo || (lossPending?.motivo === "Outro" && !lossPending?.detalhe.trim())}>Confirmar Perda</Button>
+
           </DialogFooter>
         </DialogContent>
       </Dialog>
