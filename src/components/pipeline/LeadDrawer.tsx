@@ -1015,8 +1015,14 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                         </div>
                         <div className="pb-4">
                           <p className="text-sm text-foreground">
-                            {h.from ? `${STAGE_CONFIG[h.from as keyof typeof STAGE_CONFIG]?.label || h.from} → ` : "Criado em "}
-                            <strong>{STAGE_CONFIG[h.to as keyof typeof STAGE_CONFIG]?.label || h.to}</strong>
+                            {h.from === "__meta__" ? (
+                              <strong>{META_LABEL[h.to] || h.to}</strong>
+                            ) : (
+                              <>
+                                {h.from ? `${STAGE_CONFIG[h.from as keyof typeof STAGE_CONFIG]?.label || h.from} → ` : "Criado em "}
+                                <strong>{STAGE_CONFIG[h.to as keyof typeof STAGE_CONFIG]?.label || h.to}</strong>
+                              </>
+                            )}
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {new Date(h.at).toLocaleString("pt-BR")} · por {h.by}
