@@ -927,7 +927,8 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         <div className="px-4 py-2 border-t border-border flex gap-6 text-xs text-muted-foreground">
           <span>Taxa de Show: <strong className="text-foreground">{preVendasTotal.taxaShow}%</strong></span>
         </div>
-      </div>
+        </div>
+      </section>
 
       {/* Edit Goals Dialog */}
       {isAdmin && onSaveGoal && (
