@@ -200,6 +200,17 @@ export function ContractTab({ card, onUpdate }: Props) {
     if (!form.data_primeiro_pagamento) errs.push("Data do Primeiro Pagamento");
     if (!form.dia_demais_pagamentos) errs.push("Dia dos Demais Pagamentos");
     if (!form.prazo_entrega_relatorios.trim()) errs.push("Prazo Entrega Relatórios");
+    if (isCNPJType) {
+      cnpjsAdicionais.forEach((c, i) => {
+        if (!c.empresa?.trim()) errs.push(`CNPJ adicional #${i + 1}: Empresa`);
+        if (!c.cnpj?.trim()) errs.push(`CNPJ adicional #${i + 1}: CNPJ`);
+        if (!c.mesmo_endereco && !c.endereco?.trim()) errs.push(`CNPJ adicional #${i + 1}: Endereço`);
+      });
+      sociosAdicionais.forEach((s, i) => {
+        if (!s.nome?.trim()) errs.push(`Sócio adicional #${i + 1}: Nome`);
+        if (!s.cpf?.trim()) errs.push(`Sócio adicional #${i + 1}: CPF`);
+      });
+    }
     return errs;
   };
 
