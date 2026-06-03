@@ -6,6 +6,7 @@ import type { PipelineCard } from "./types";
 import { STAGE_ORDER, STAGE_CONFIG, LOSS_CATEGORIES, formatBRL, cardsReachedStage, daysDiff } from "./types";
 import { useLabels } from "@/hooks/useLabels";
 import { MetricasTipoDocumentoCard } from "./MetricasTipoDocumentoCard";
+import { FechamentosPorFaixaDivida } from "./FechamentosPorFaixaDivida";
 import { CallStatsChart } from "./CallStatsChart";
 
 /** Formata BRL compacto: R$ 36,7 mil / R$ 1,2 mi — ideal para eixos e labels de barra */
@@ -509,6 +510,9 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
 
       {/* CPF vs CNPJ metrics */}
       <MetricasTipoDocumentoCard />
+
+      {/* Fechamentos por faixa de dívida */}
+      <FechamentosPorFaixaDivida />
 
       {/* Ligações por vendedor */}
       <CallStatsChart
