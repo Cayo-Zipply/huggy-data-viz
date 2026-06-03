@@ -1,5 +1,27 @@
 import { useState, useEffect } from "react";
-import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink, MessageCircle, Eye } from "lucide-react";
+import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink, MessageCircle, Eye, Plus, Trash2 } from "lucide-react";
+
+type CnpjAdicional = {
+  empresa: string;
+  cnpj: string;
+  mesmo_endereco: boolean;
+  endereco?: string;
+  cep?: string;
+  cidade?: string;
+  estado?: string;
+};
+type SocioAdicional = { nome: string; cpf: string };
+
+const maskCNPJ = (v: string) => v.replace(/\D/g, "").slice(0, 14)
+  .replace(/^(\d{2})(\d)/, "$1.$2")
+  .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+  .replace(/\.(\d{3})(\d)/, ".$1/$2")
+  .replace(/(\d{4})(\d)/, "$1-$2");
+const maskCPF = (v: string) => v.replace(/\D/g, "").slice(0, 11)
+  .replace(/(\d{3})(\d)/, "$1.$2")
+  .replace(/(\d{3})(\d)/, "$1.$2")
+  .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+const maskCEP = (v: string) => v.replace(/\D/g, "").slice(0, 8).replace(/(\d{5})(\d)/, "$1-$2");
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { InputMoedaBRL } from "@/components/ui/input-moeda-brl";
 import { toast } from "sonner";
