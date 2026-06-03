@@ -175,17 +175,27 @@ function SendNotificationDialog() {
   const [target, setTarget] = useState<"team" | "user">("team");
   const [userId, setUserId] = useState<string>("");
   const [usuarios, setUsuarios] = useState<Array<{ user_id: string; nome: string; email: string; role: string | null }>>([]);
+  const [canais, setCanais] = useState<Array<{ channel_id: string; nome: string }>>([]);
+  const [channelId, setChannelId] = useState<string>("");
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     (async () => {
-      const { data } = await supabase
-        .from("user_profiles")
-        .select("user_id, nome, email, role")
-        .not("user_id", "is", null)
-        .order("nome");
-      setUsuarios((data as any) ?? []);
+      const [{ data: u }, { data: c }] = await Promise.all([
+        supabase
+          .from("user_profiles")
+          .select("user_id, nome, email, role")
+          .not("user_id", "is", null)
+          .order("nome"),
+        supabase
+          .from("slack_canais" as any)
+          .select("channel_id, nome")
+          .eq("ativo", true)
+          .order("nome"),
+      ]);
+      setUsuarios((u as any) ?? []);
+      setCanais((c as any) ?? []);
     })();
   }, [open]);
 
