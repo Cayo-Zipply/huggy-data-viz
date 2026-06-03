@@ -846,13 +846,15 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
           </TableBody>
         </Table>
         </div>
-      </div>
-
-      {/* PRÉ-VENDAS */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-border bg-blue-500/5">
-          <h2 className="text-sm font-bold text-foreground">🎯 PRÉ-VENDAS (SDR)</h2>
         </div>
+      </section>
+
+      {/* SEÇÃO: PRÉ-VENDAS */}
+      <section className="space-y-3">
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          Pré-Vendas · SDR
+        </h2>
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
         <Table>
           <TableHeader>
