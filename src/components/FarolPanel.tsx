@@ -382,7 +382,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
     const semOwnerGanhos = contratosMes.filter(c => !c.owner);
     const semOwnerReuniao = reunioesRealizadas.filter(c => !c.owner);
     const realizadoSem = semOwnerGanhos.reduce((s, c) => s + (c.deal_value || 0), 0);
-    if (semOwnerGanhos.length > 0 || realizadoSem > 0 || semOwnerReuniao.length > 0) {
+    if (semOwnerGanhos.length > 0 || realizadoSem > 0) {
       rows.push({
         closer: "Sem responsável",
         vendas: semOwnerGanhos.length,
