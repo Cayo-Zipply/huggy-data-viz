@@ -646,11 +646,11 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
 
 
   return (
-    <div className="p-4 lg:p-8 max-w-7xl mx-auto space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="p-4 lg:p-8 max-w-7xl mx-auto space-y-8">
+      <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-xl font-bold text-foreground">🚦 Farol de Metas</h1>
-          <p className="text-xs text-muted-foreground capitalize">
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">Farol</h1>
+          <p className="text-sm text-muted-foreground mt-1 capitalize">
             {monthLabel} — {passedBD}/{totalBD} dias úteis até {dataAlvoLabel}
           </p>
         </div>
