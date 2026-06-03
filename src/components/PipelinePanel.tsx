@@ -29,6 +29,7 @@ import { useMotivosPerda } from "@/hooks/useMotivosPerda";
 import { useLeadHistory } from "@/hooks/useLeadHistory";
 import { dedupeOwnerNames, sameOwner } from "@/lib/ownerNormalization";
 import { useDuplicateLeads } from "@/hooks/useDuplicateLeads";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const SUB_TABS = [
   { key: "kanban", label: "Kanban", icon: LayoutGrid },
