@@ -117,7 +117,9 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     tipo_documento: (row.tipo_documento === "cpf" || row.tipo_documento === "cnpj") ? row.tipo_documento : null,
     data_venda: row.data_venda || null,
     assistente_juridico: row.assistente_juridico || null,
-  };
+    cnpjs_adicionais: Array.isArray(row.cnpjs_adicionais) ? row.cnpjs_adicionais : [],
+    socios_adicionais: Array.isArray(row.socios_adicionais) ? row.socios_adicionais : [],
+  } as any;
 }
 
 function dbRowToTask(row: any): PipelineTask {
