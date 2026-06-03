@@ -28,11 +28,13 @@ const TIPO_OPTIONS = [
 
 const TIPO_META: Record<string, { label: string; cls: string; Icon: any }> = {
   contrato_assinado: { label: "Contrato assinado", cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-500", Icon: FileSignature },
+  contrato: { label: "Contrato", cls: "border-emerald-500/40 bg-emerald-500/10 text-emerald-500", Icon: FileSignature },
   transcricao: { label: "Transcrição", cls: "border-blue-500/40 bg-blue-500/10 text-blue-400", Icon: Video },
   documento: { label: "Documento", cls: "border-slate-500/40 bg-slate-500/10 text-slate-300", Icon: FileText },
   imagem: { label: "Imagem", cls: "border-green-500/40 bg-green-500/10 text-green-400", Icon: ImageIcon },
   outro: { label: "Outro", cls: "border-amber-500/40 bg-amber-500/10 text-amber-400", Icon: FileQuestion },
 };
+
 
 function metaPorTipo(tipo: string) {
   return TIPO_META[tipo] ?? TIPO_META.documento;

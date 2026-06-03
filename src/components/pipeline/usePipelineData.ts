@@ -18,11 +18,16 @@ function mapEtapa(etapa: string | null): Stage {
   if (e === "reunião marcada" || e === "reuniao_marcada" || e === "reuniao marcada") return "reuniao_marcada";
   if (e === "reunião agendada" || e === "reuniao_agendada" || e === "reuniao agendada") return "reuniao_agendada";
   if (e === "no show" || e === "no_show") return "no_show";
-  if (e === "reunião realizada" || e === "reuniao_realizada" || e === "reuniao realizada") return "reuniao_realizada";
+  // Item 4: normalizar variantes legadas ("Realizada", "realizou", etc.) para "Reunião Realizada"
+  if (
+    e === "reunião realizada" || e === "reuniao_realizada" || e === "reuniao realizada" ||
+    e === "realizada" || e === "reunião feita" || e === "reuniao feita"
+  ) return "reuniao_realizada";
   if (e === "link enviado" || e === "link_enviado") return "link_enviado";
   if (e === "contrato assinado" || e === "contrato_assinado") return "contrato_assinado";
   return "fez_contato";
 }
+
 
 function mapStatus(status: string | null): "aberto" | "ganho" | "perdido" {
   if (!status) return "aberto";

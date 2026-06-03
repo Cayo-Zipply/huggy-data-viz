@@ -624,6 +624,24 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                   </div>
                 </div>
                 <Separator className="my-1" />
+                {/* Origem da Dívida (PGFN / Receita) */}
+                <div className="flex items-center gap-3 py-2">
+                  <Scale size={16} className="text-muted-foreground flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Origem da Dívida</p>
+                    <select
+                      value={(card as any).origem_divida || ""}
+                      onChange={e => onUpdate(card.id, { origem_divida: e.target.value || null } as any)}
+                      className="w-full text-sm bg-muted/50 border border-border rounded-md px-2.5 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      <option value="">Não informado</option>
+                      <option value="PGFN">PGFN</option>
+                      <option value="Receita">Receita Federal</option>
+                    </select>
+                  </div>
+                </div>
+                <Separator className="my-1" />
+
 
                 {/* Owner */}
                 <div className="flex items-center gap-3 py-2">
