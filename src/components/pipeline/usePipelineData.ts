@@ -395,7 +395,17 @@ export function usePipelineData(actorName: string) {
       data_ultima_mudanca_etapa: now,
       anotacoes: data.anotacoes || null,
     });
-    if (error) { console.error("Insert lead error:", error); return null; }
+    if (error) {
+      // Item 5: tratar 23505 (unique_violation) com mensagem amigável
+      if ((error as any).code === "23505" || /duplicate|unique/i.test(error.message || "")) {
+        toast.error("Lead duplicado: já existe um card aberto com este telefone neste pipe.");
+        return { duplicate: true } as any;
+      }
+      console.error("Insert lead error:", error);
+      toast.error(`Erro ao criar lead: ${error.message || "desconhecido"}`);
+      return null;
+    }
+
 
     // insert legacy history
     await sbExt.from("lead_historico").insert({
@@ -522,7 +532,25 @@ export function usePipelineData(actorName: string) {
   const moveCard = useCallback(async (cardId: string, targetStage: Stage) => {
     const card = cards.find(c => c.id === cardId);
     if (!card || card.stage === targetStage) return;
+
+    // Item 6: ao mover SDR → "Reunião Marcada" exigir dados mínimos antes do
+    // handoff para o pipe do Closer (que criará "Reunião Agendada").
+    if (targetStage === "reuniao_marcada" && card.pipe === "sdr") {
+      const faltando: string[] = [];
+      if (!card.cnpj && !(card as any).cpf && !(card.tipo_documento)) faltando.push("CNPJ ou CPF");
+      if (!card.nome || !card.nome.trim()) faltando.push("Nome");
+      if (!(card as any).empresa) faltando.push("Nome da empresa");
+      if (!card.owner) faltando.push("Closer responsável");
+      if (!card.email) faltando.push("E-mail");
+      if (card.valor_divida == null || Number(card.valor_divida) <= 0) faltando.push("Valor da dívida");
+      if (faltando.length) {
+        toast.error(`Não é possível marcar reunião. Faltando: ${faltando.join(", ")}.`);
+        return;
+      }
+    }
+
     const now = new Date().toISOString();
+
     const dur = Math.round((Date.now() - new Date(card.stage_changed_at).getTime()) / 86400000);
 
     // Auto-preencher data_reuniao_realizada ao entrar na etapa (sem sobrescrever)
