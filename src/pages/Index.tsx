@@ -34,7 +34,7 @@ const Index = () => {
   const activeTab = location.pathname.replace("/", "") || "pipeline";
   const { profile } = useAuth();
   const pipelineName = profile?.nome ?? "Admin";
-  const { cards, goals, upsertGoal } = usePipelineData(pipelineName);
+  const { cards, goals, upsertGoal, refresh } = usePipelineData(pipelineName);
   const pipelineOwners = [...new Set(cards.map(c => c.owner).filter(Boolean))] as string[];
 
   // Marketing overrides from internal DB
