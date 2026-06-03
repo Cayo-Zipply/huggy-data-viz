@@ -180,7 +180,7 @@ const App = () => (
               <Route path="/farol" element={null} />
 
               <Route path="/usuarios" element={<RoleGuard roles={["admin"]}><UserManagement /></RoleGuard>} />
-              <Route path="/contratos" element={<RoleGuard roles={["admin"]}><Contratos /></RoleGuard>} />
+              <Route path="/contratos" element={<Contratos />} />
               <Route path="/configuracoes" element={<RoleGuard roles={["admin"]}><Settings /></RoleGuard>} />
               <Route path="/feedbacks" element={<RoleGuard roles={["admin"]}><Feedbacks /></RoleGuard>} />
               <Route path="/material-apoio" element={<MaterialApoio />} />

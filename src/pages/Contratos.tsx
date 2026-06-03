@@ -14,6 +14,55 @@ import { format, startOfMonth, endOfMonth, subMonths, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { sbExt } from "@/lib/supabaseExternal";
+import { supabase as supabaseCloud } from "@/integrations/supabase/client";
+
+async function resolveContractUrl(card: any): Promise<string | null> {
+  if (card.contract_url) return card.contract_url;
+  if (card.contrato_file_url) return card.contrato_file_url;
+  try {
+    const { data: anexos } = await (supabaseCloud as any)
+      .from("lead_anexos")
+      .select("url_publica, storage_path, nome_arquivo, tipo")
+      .eq("lead_id", card.id);
+    const hit = anexos?.find((a: any) => {
+      const t = (a.tipo || "").toLowerCase();
+      const n = (a.nome_arquivo || "").toLowerCase();
+      return t.includes("contrato") || n.includes("contrato");
+    });
+    if (hit?.url_publica) return hit.url_publica;
+    if (hit?.storage_path) {
+      const { data } = await (supabaseCloud as any).storage.from("lead-anexos").createSignedUrl(hit.storage_path, 300);
+      if (data?.signedUrl) return data.signedUrl;
+    }
+  } catch {}
+  try {
+    const { data: zs } = await (sbExt as any)
+      .from("zapsign_contracts")
+      .select("signed_file_url")
+      .eq("lead_id", card.id)
+      .limit(1);
+    if (zs?.[0]?.signed_file_url) return zs[0].signed_file_url;
+  } catch {}
+  return null;
+}
+
+async function downloadContrato(card: any) {
+  const url = await resolveContractUrl(card);
+  if (!url) { toast.error("Nenhum contrato anexado"); return; }
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const obj = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = obj;
+    a.download = `contrato_${card.empresa || card.nome || card.id}`;
+    a.click();
+    URL.revokeObjectURL(obj);
+  } catch {
+    window.open(url, "_blank");
+  }
+}
 
 type DatePreset = "todos" | "este_mes" | "mes_passado" | "ultimos_7" | "personalizado";
 
@@ -278,12 +327,13 @@ export default function Contratos() {
               <TableHead className="text-xs">Vendedor</TableHead>
               <TableHead className="text-xs">Criação</TableHead>
               <TableHead className="text-xs">Fechamento</TableHead>
+              <TableHead className="text-xs">Contrato</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {contratos.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={isAdmin ? 11 : 10} className="text-center text-muted-foreground py-8 text-sm">
+                <TableCell colSpan={isAdmin ? 12 : 11} className="text-center text-muted-foreground py-8 text-sm">
                   Nenhum contrato encontrado
                 </TableCell>
               </TableRow>
@@ -310,6 +360,11 @@ export default function Contratos() {
                       : c.contrato_preparado_em
                         ? format(new Date(c.contrato_preparado_em), "dd/MM/yy")
                         : "—"}
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    <Button variant="outline" size="sm" className="h-7 px-2 text-[10px] gap-1" onClick={() => downloadContrato(c)}>
+                      <Download className="h-3 w-3" /> Baixar
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
