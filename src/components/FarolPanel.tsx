@@ -899,6 +899,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
           sdrs={sdrNames}
           goals={goals}
           onSave={onSaveGoal}
+          onRefresh={onRefresh}
         />
       )}
 
