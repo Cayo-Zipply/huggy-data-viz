@@ -122,7 +122,7 @@ function reachedInMonth(cards: PipelineCard[], stages: Stage[], start: Date, end
   });
 }
 
-export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
+export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { members, closerNames, sdrNames, refetch } = useTeamMembers();
