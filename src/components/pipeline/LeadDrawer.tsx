@@ -704,6 +704,33 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     <p className="text-sm text-foreground">{new Date(card.stage_changed_at).toLocaleString("pt-BR")}</p>
                   </div>
                 </div>
+                {card.data_reuniao && (
+                  <div className="flex items-center gap-3 py-2">
+                    <Clock size={16} className="text-cyan-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Reunião marcada para</p>
+                      <p className="text-sm text-foreground">{new Date(card.data_reuniao).toLocaleString("pt-BR")}</p>
+                    </div>
+                  </div>
+                )}
+                {card.data_reuniao_realizada && (
+                  <div className="flex items-center gap-3 py-2">
+                    <Clock size={16} className="text-emerald-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Reunião realizada em</p>
+                      <p className="text-sm text-foreground">{new Date(card.data_reuniao_realizada).toLocaleString("pt-BR")}</p>
+                    </div>
+                  </div>
+                )}
+                {card.data_no_show && (
+                  <div className="flex items-center gap-3 py-2">
+                    <Clock size={16} className="text-red-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">No-show em</p>
+                      <p className="text-sm text-foreground">{new Date(card.data_no_show).toLocaleString("pt-BR")}</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Data da Venda — só para leads ganhos. Determina em qual mês a venda aparece no dashboard. */}
                 {card.lead_status === "ganho" && (
