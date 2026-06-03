@@ -237,30 +237,6 @@ export function PipelineFiltersBar({ filters, onChange, onExport, closerOptions 
         <div className="flex-1" />
 
 
-        {/* Filtro: Reuniões realizadas no mês (data_reuniao_realizada) */}
-        <label className={cn(
-          "flex items-center gap-1.5 text-xs border rounded-lg px-2 py-1.5",
-          filters.reuniaoRealizadaMonth ? "border-emerald-500/50 text-emerald-600 bg-emerald-500/10" : "border-border text-muted-foreground"
-        )}>
-          <CalendarIcon size={12} />
-          <span>Reunião realizada:</span>
-          <input
-            type="month"
-            value={filters.reuniaoRealizadaMonth}
-            onChange={e => onChange({ ...filters, reuniaoRealizadaMonth: e.target.value })}
-            className="bg-transparent outline-none text-xs"
-          />
-          {filters.reuniaoRealizadaMonth && (
-            <button
-              type="button"
-              onClick={() => onChange({ ...filters, reuniaoRealizadaMonth: "" })}
-              className="hover:text-foreground"
-              title="Limpar"
-            >
-              <X size={10} />
-            </button>
-          )}
-        </label>
 
 
         {/* Date preset dropdown + calendar */}
