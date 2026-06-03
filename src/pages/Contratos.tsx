@@ -361,6 +361,11 @@ export default function Contratos() {
                         ? format(new Date(c.contrato_preparado_em), "dd/MM/yy")
                         : "—"}
                   </TableCell>
+                  <TableCell className="text-xs">
+                    <Button variant="outline" size="sm" className="h-7 px-2 text-[10px] gap-1" onClick={() => downloadContrato(c)}>
+                      <Download className="h-3 w-3" /> Baixar
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}
