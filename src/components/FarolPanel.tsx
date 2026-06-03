@@ -730,8 +730,9 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <HeroCard
           icon={<DollarSign className="w-4 h-4" />}
-          title="Faturamento"
-          value={formatBRL(globais.faturamento.realizado)}
+            title="Faturamento"
+            valueAccent
+            value={formatBRL(globais.faturamento.realizado)}
           metaLabel={globais.faturamento.meta > 0 ? `/ ${formatBRL(globais.faturamento.meta)}` : "meta não cadastrada"}
           subLabel={`meta até ${dataAlvoLabel}: ${formatBRL(globais.faturamento.metaAteAlvo)}`}
           progress={globais.faturamento.pacePct}
