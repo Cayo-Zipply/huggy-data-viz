@@ -368,7 +368,23 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
 
   // Separate observations from stage changes in history
   const observations = card.history.filter(h => h.from === "__obs__");
-  const stageHistory = card.history.filter(h => h.from !== "__obs__");
+  const baseStageHistory = card.history.filter(h => h.from !== "__obs__");
+  const meetingEvents: { from: string | null; to: string; at: string; by: string; duration_days: null }[] = [];
+  if (card.data_reuniao && !baseStageHistory.some(h => h.to === "reuniao_marcada_scheduled")) {
+    meetingEvents.push({ from: "__meta__", to: "reuniao_marcada_scheduled", at: card.data_reuniao, by: "agenda", duration_days: null });
+  }
+  if (card.data_reuniao_realizada && !baseStageHistory.some(h => h.to === "reuniao_realizada_evento")) {
+    meetingEvents.push({ from: "__meta__", to: "reuniao_realizada_evento", at: card.data_reuniao_realizada, by: "agenda", duration_days: null });
+  }
+  if (card.data_no_show && !baseStageHistory.some(h => h.to === "no_show_evento")) {
+    meetingEvents.push({ from: "__meta__", to: "no_show_evento", at: card.data_no_show, by: "agenda", duration_days: null });
+  }
+  const META_LABEL: Record<string, string> = {
+    reuniao_marcada_scheduled: "Reunião marcada para",
+    reuniao_realizada_evento: "Reunião realizada",
+    no_show_evento: "No-show",
+  };
+  const stageHistory = [...baseStageHistory, ...meetingEvents].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime()) as typeof baseStageHistory;
 
   const sections: { key: SectionKey; label: string; icon: any }[] = [
     { key: "dados", label: "Dados", icon: Info },
