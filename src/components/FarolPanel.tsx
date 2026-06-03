@@ -157,55 +157,10 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     });
   };
 
-  // Auto-aplicar metas fixas (Cayo, Café, Fillipe) para o mês atual em diante.
-  // Roda independente de carregar a lista de team members — usa nomes fixos como
-  // fallback. Se já existir meta no banco com valores, NÃO sobrescreve.
-  useEffect(() => {
-    if (!onSaveGoal) return;
-    const today = new Date();
-    const currentKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
-    if (monthKey < currentKey) return;
-    const presets: { name: string; data: Partial<PipelineGoal> }[] = [
-      { name: "Fillipe Amorim Oliveira Silva", data: { faturamento_meta: 31500, reunioes_realizadas_meta: 60, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 18 } },
-      { name: "João",                          data: { faturamento_meta: 14080, reunioes_realizadas_meta: 40, conversao_meta: 22, ticket_medio_meta: 1600, contratos_meta: 9 } },
-      { name: "Cayo Bitencourt",               data: { faturamento_meta: 10500, reunioes_realizadas_meta: 20, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 6 } },
-    ];
-    presets.forEach(preset => {
-      // tenta achar o nome real no time (com acentos/case corretos); senão usa o do preset
-      const matcher = (n: string) => {
-        const nn = norm(n);
-        if (preset.name.startsWith("Fillipe")) return /fillipe|filipe/.test(nn);
-        if (preset.name === "João") return /caf[eé]|joao/.test(nn);
-        return /cayo/.test(nn);
-      };
-      const realName = closerNames.find(matcher) || preset.name;
-      const existing = goals.find(g => g.closer === realName && g.month === monthKey);
-      const hasAny = existing && (
-        (existing.faturamento_meta || 0) > 0 ||
-        (existing.reunioes_realizadas_meta || 0) > 0 ||
-        (existing.contratos_meta || 0) > 0
-      );
-      if (hasAny) return;
-      const base: PipelineGoal = {
-        reunioes_marcadas_meta: 0,
-        reunioes_realizadas_meta: 0,
-        faturamento_meta: 0,
-        conversao_meta: 0,
-        vendas_meta: 0,
-        ticket_medio_meta: 0,
-        contratos_meta: 0,
-        ...(existing || {}),
-        closer: realName,
-        month: monthKey,
-      } as PipelineGoal;
-      const merged: PipelineGoal = {
-        ...base,
-        ...preset.data,
-        vendas_meta: preset.data.contratos_meta || 0,
-      } as PipelineGoal;
-      Promise.resolve(onSaveGoal(merged)).catch(() => {});
-    });
-  }, [onSaveGoal, monthKey, closerNames, goals]);
+  // [removido] auto-aplicar metas fixas — gerava linhas com nome completo do Google
+  // (ex.: "Fillipe Amorim Oliveira Silva") e sobrescrevia edições feitas pelo admin.
+  // Metas agora só são gravadas via o diálogo "Editar Metas".
+
 
   const year = selectedMonth.getFullYear();
   const month = selectedMonth.getMonth();
