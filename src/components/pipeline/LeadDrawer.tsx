@@ -368,7 +368,23 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
 
   // Separate observations from stage changes in history
   const observations = card.history.filter(h => h.from === "__obs__");
-  const stageHistory = card.history.filter(h => h.from !== "__obs__");
+  const baseStageHistory = card.history.filter(h => h.from !== "__obs__");
+  const meetingEvents: { from: string | null; to: string; at: string; by: string; duration_days: null }[] = [];
+  if (card.data_reuniao && !baseStageHistory.some(h => h.to === "reuniao_marcada_scheduled")) {
+    meetingEvents.push({ from: "__meta__", to: "reuniao_marcada_scheduled", at: card.data_reuniao, by: "agenda", duration_days: null });
+  }
+  if (card.data_reuniao_realizada && !baseStageHistory.some(h => h.to === "reuniao_realizada_evento")) {
+    meetingEvents.push({ from: "__meta__", to: "reuniao_realizada_evento", at: card.data_reuniao_realizada, by: "agenda", duration_days: null });
+  }
+  if (card.data_no_show && !baseStageHistory.some(h => h.to === "no_show_evento")) {
+    meetingEvents.push({ from: "__meta__", to: "no_show_evento", at: card.data_no_show, by: "agenda", duration_days: null });
+  }
+  const META_LABEL: Record<string, string> = {
+    reuniao_marcada_scheduled: "Reunião marcada para",
+    reuniao_realizada_evento: "Reunião realizada",
+    no_show_evento: "No-show",
+  };
+  const stageHistory = [...baseStageHistory, ...meetingEvents].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime()) as typeof baseStageHistory;
 
   const sections: { key: SectionKey; label: string; icon: any }[] = [
     { key: "dados", label: "Dados", icon: Info },
@@ -704,6 +720,33 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     <p className="text-sm text-foreground">{new Date(card.stage_changed_at).toLocaleString("pt-BR")}</p>
                   </div>
                 </div>
+                {card.data_reuniao && (
+                  <div className="flex items-center gap-3 py-2">
+                    <Clock size={16} className="text-cyan-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Reunião marcada para</p>
+                      <p className="text-sm text-foreground">{new Date(card.data_reuniao).toLocaleString("pt-BR")}</p>
+                    </div>
+                  </div>
+                )}
+                {card.data_reuniao_realizada && (
+                  <div className="flex items-center gap-3 py-2">
+                    <Clock size={16} className="text-emerald-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Reunião realizada em</p>
+                      <p className="text-sm text-foreground">{new Date(card.data_reuniao_realizada).toLocaleString("pt-BR")}</p>
+                    </div>
+                  </div>
+                )}
+                {card.data_no_show && (
+                  <div className="flex items-center gap-3 py-2">
+                    <Clock size={16} className="text-red-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">No-show em</p>
+                      <p className="text-sm text-foreground">{new Date(card.data_no_show).toLocaleString("pt-BR")}</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Data da Venda — só para leads ganhos. Determina em qual mês a venda aparece no dashboard. */}
                 {card.lead_status === "ganho" && (
@@ -972,8 +1015,14 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                         </div>
                         <div className="pb-4">
                           <p className="text-sm text-foreground">
-                            {h.from ? `${STAGE_CONFIG[h.from as keyof typeof STAGE_CONFIG]?.label || h.from} → ` : "Criado em "}
-                            <strong>{STAGE_CONFIG[h.to as keyof typeof STAGE_CONFIG]?.label || h.to}</strong>
+                            {h.from === "__meta__" ? (
+                              <strong>{META_LABEL[h.to] || h.to}</strong>
+                            ) : (
+                              <>
+                                {h.from ? `${STAGE_CONFIG[h.from as keyof typeof STAGE_CONFIG]?.label || h.from} → ` : "Criado em "}
+                                <strong>{STAGE_CONFIG[h.to as keyof typeof STAGE_CONFIG]?.label || h.to}</strong>
+                              </>
+                            )}
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {new Date(h.at).toLocaleString("pt-BR")} · por {h.by}
