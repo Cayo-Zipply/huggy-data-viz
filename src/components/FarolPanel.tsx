@@ -722,8 +722,12 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
         </div>
       )}
 
-      {/* HERO CARDS GLOBAIS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* SEÇÃO: Visão Geral */}
+      <section className="space-y-3">
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          Visão Geral
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <HeroCard
           icon={<DollarSign className="w-4 h-4" />}
           title="Faturamento"
