@@ -29,6 +29,7 @@ import { useMotivosPerda } from "@/hooks/useMotivosPerda";
 import { useLeadHistory } from "@/hooks/useLeadHistory";
 import { dedupeOwnerNames, sameOwner } from "@/lib/ownerNormalization";
 import { useDuplicateLeads } from "@/hooks/useDuplicateLeads";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const SUB_TABS = [
   { key: "kanban", label: "Kanban", icon: LayoutGrid },
@@ -511,6 +512,7 @@ export function PipelinePanel() {
             </div>
 
             <div className="flex flex-1 flex-wrap items-center justify-end gap-1.5">
+              <NotificationBell />
               {isAdmin ? (
                 <label className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground">
                   <UserCircle size={12} className="text-primary" />
