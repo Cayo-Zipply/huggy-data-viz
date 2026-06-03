@@ -217,7 +217,7 @@ export function ContractTab({ card, onUpdate }: Props) {
   const isFormValid = () => validate().length === 0;
 
   const saveFields = async () => {
-    const updates: Partial<CardType> = {
+    const updates: Partial<CardType> & Record<string, any> = {
       tipo_contrato: tipo as ContractType || null,
       empresa: form.empresa || null,
       cnpj: form.cnpj || null,
