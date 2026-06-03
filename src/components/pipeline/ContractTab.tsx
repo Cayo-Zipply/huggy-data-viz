@@ -544,6 +544,165 @@ export function ContractTab({ card, onUpdate }: Props) {
             </div>
           </div>
 
+          {isCNPJType && (
+            <>
+              {/* CNPJs adicionais */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-medium text-foreground uppercase tracking-wider">CNPJs adicionais</p>
+                  <button
+                    type="button"
+                    onClick={() => setCnpjsAdicionais(prev => [...prev, { empresa: "", cnpj: "", mesmo_endereco: true }])}
+                    className="text-xs flex items-center gap-1 px-2 py-1 rounded-md border border-border hover:bg-muted text-foreground"
+                  >
+                    <Plus size={12} /> Adicionar CNPJ
+                  </button>
+                </div>
+                {cnpjsAdicionais.length === 0 && (
+                  <p className="text-[11px] text-muted-foreground">Nenhum CNPJ adicional. O contrato sairá com apenas o CNPJ principal.</p>
+                )}
+                <div className="space-y-3">
+                  {cnpjsAdicionais.map((c, idx) => (
+                    <div key={idx} className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] font-medium text-muted-foreground">CNPJ #{idx + 2}</p>
+                        <button
+                          type="button"
+                          onClick={() => setCnpjsAdicionais(prev => prev.filter((_, i) => i !== idx))}
+                          className="text-muted-foreground hover:text-red-500"
+                          aria-label="Remover CNPJ"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-muted-foreground mb-1 block">Empresa *</label>
+                        <input
+                          value={c.empresa}
+                          onChange={e => setCnpjsAdicionais(prev => prev.map((p, i) => i === idx ? { ...p, empresa: e.target.value } : p))}
+                          className={inputClass("")}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-muted-foreground mb-1 block">CNPJ *</label>
+                        <input
+                          value={c.cnpj}
+                          onChange={e => setCnpjsAdicionais(prev => prev.map((p, i) => i === idx ? { ...p, cnpj: maskCNPJ(e.target.value) } : p))}
+                          placeholder="00.000.000/0000-00"
+                          className={inputClass("")}
+                        />
+                      </div>
+                      <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer pt-1">
+                        <input
+                          type="checkbox"
+                          checked={c.mesmo_endereco}
+                          onChange={e => setCnpjsAdicionais(prev => prev.map((p, i) => i === idx ? { ...p, mesmo_endereco: e.target.checked } : p))}
+                          className="accent-primary"
+                        />
+                        Usar o mesmo endereço do CNPJ principal
+                      </label>
+                      {!c.mesmo_endereco && (
+                        <div className="space-y-2 pt-1">
+                          <div>
+                            <label className="text-[11px] text-muted-foreground mb-1 block">Endereço (rua, nº, bairro) *</label>
+                            <input
+                              value={c.endereco || ""}
+                              onChange={e => setCnpjsAdicionais(prev => prev.map((p, i) => i === idx ? { ...p, endereco: e.target.value } : p))}
+                              className={inputClass("")}
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-[11px] text-muted-foreground mb-1 block">Cidade</label>
+                              <input
+                                value={c.cidade || ""}
+                                onChange={e => setCnpjsAdicionais(prev => prev.map((p, i) => i === idx ? { ...p, cidade: e.target.value } : p))}
+                                className={inputClass("")}
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[11px] text-muted-foreground mb-1 block">Estado</label>
+                              <select
+                                value={c.estado || ""}
+                                onChange={e => setCnpjsAdicionais(prev => prev.map((p, i) => i === idx ? { ...p, estado: e.target.value } : p))}
+                                className={inputClass("")}
+                              >
+                                <option value="">Selecione</option>
+                                {UF_OPTIONS.map(uf => <option key={uf} value={uf}>{uf}</option>)}
+                              </select>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-[11px] text-muted-foreground mb-1 block">CEP</label>
+                            <input
+                              value={c.cep || ""}
+                              onChange={e => setCnpjsAdicionais(prev => prev.map((p, i) => i === idx ? { ...p, cep: maskCEP(e.target.value) } : p))}
+                              placeholder="00000-000"
+                              className={inputClass("")}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sócios adicionais */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-medium text-foreground uppercase tracking-wider">Sócios / representantes adicionais</p>
+                  <button
+                    type="button"
+                    onClick={() => setSociosAdicionais(prev => [...prev, { nome: "", cpf: "" }])}
+                    className="text-xs flex items-center gap-1 px-2 py-1 rounded-md border border-border hover:bg-muted text-foreground"
+                  >
+                    <Plus size={12} /> Adicionar sócio
+                  </button>
+                </div>
+                {sociosAdicionais.length === 0 && (
+                  <p className="text-[11px] text-muted-foreground">Nenhum sócio adicional. Apenas o representante principal será incluído.</p>
+                )}
+                <div className="space-y-3">
+                  {sociosAdicionais.map((s, idx) => (
+                    <div key={idx} className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] font-medium text-muted-foreground">Sócio #{idx + 2}</p>
+                        <button
+                          type="button"
+                          onClick={() => setSociosAdicionais(prev => prev.filter((_, i) => i !== idx))}
+                          className="text-muted-foreground hover:text-red-500"
+                          aria-label="Remover sócio"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-muted-foreground mb-1 block">Nome *</label>
+                        <input
+                          value={s.nome}
+                          onChange={e => setSociosAdicionais(prev => prev.map((p, i) => i === idx ? { ...p, nome: e.target.value } : p))}
+                          className={inputClass("")}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-muted-foreground mb-1 block">CPF *</label>
+                        <input
+                          value={s.cpf}
+                          onChange={e => setSociosAdicionais(prev => prev.map((p, i) => i === idx ? { ...p, cpf: maskCPF(e.target.value) } : p))}
+                          placeholder="000.000.000-00"
+                          className={inputClass("")}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+
+
           {/* Financeiro */}
           <div>
             <p className="text-xs font-medium text-foreground uppercase tracking-wider mb-3">Dados Financeiros</p>
