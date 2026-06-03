@@ -263,6 +263,19 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
                   </div>
                 ))}
                 <div className="flex items-center gap-2">
+                  <AlertTriangle size={12} className="text-muted-foreground flex-shrink-0" />
+                  <select
+                    value={(card as any).origem_divida || ""}
+                    onChange={e => onUpdate(card.id, { origem_divida: e.target.value || null } as any)}
+                    className="flex-1 text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground"
+                  >
+                    <option value="">Origem da dívida...</option>
+                    <option value="PGFN">PGFN</option>
+                    <option value="Receita">Receita Federal</option>
+                    <option value="Nao informado">Não informado</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
                   <Paperclip size={12} className="text-muted-foreground flex-shrink-0" />
                   {card.contract_url ? (
                     <a href={card.contract_url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1"><FileText size={10} />Ver contrato</a>
