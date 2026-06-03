@@ -333,7 +333,7 @@ export default function Contratos() {
           <TableBody>
             {contratos.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={isAdmin ? 11 : 10} className="text-center text-muted-foreground py-8 text-sm">
+                <TableCell colSpan={isAdmin ? 12 : 11} className="text-center text-muted-foreground py-8 text-sm">
                   Nenhum contrato encontrado
                 </TableCell>
               </TableRow>
