@@ -511,6 +511,9 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
       {/* CPF vs CNPJ metrics */}
       <MetricasTipoDocumentoCard />
 
+      {/* Fechamentos por faixa de dívida */}
+      <FechamentosPorFaixaDivida />
+
       {/* Ligações por vendedor */}
       <CallStatsChart
         start={getMonthRange(currentMonth).start}
