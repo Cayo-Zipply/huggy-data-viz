@@ -1047,11 +1047,12 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
 // ── Edit Goals Dialog ──
 // ── Hero Card ──
 function HeroCard({
-  icon, title, value, metaLabel, subLabel, progress, progressLabel, footerLeft, footerRight,
+  icon, title, value, valueAccent, metaLabel, subLabel, progress, progressLabel, footerLeft, footerRight,
 }: {
   icon: React.ReactNode;
   title: string;
   value: string;
+  valueAccent?: boolean;
   metaLabel: string;
   subLabel?: string;
   progress: number;
@@ -1063,17 +1064,28 @@ function HeroCard({
   const toneClass = (t?: "red" | "green") =>
     t === "red" ? "text-red-400" : t === "green" ? "text-green-400" : "text-foreground";
   return (
-    <div className="rounded-xl border border-primary/20 bg-card p-4 flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] uppercase tracking-[0.2em] text-primary flex items-center gap-1.5">
-          {icon}{title}
+    <div className="rounded-xl border border-border bg-card p-5 flex flex-col gap-4 hover:border-primary/40 transition-colors">
+      {/* Header: label uppercase à esquerda, ícone em badge à direita */}
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          {title}
+        </span>
+        <span className="shrink-0 w-8 h-8 rounded-lg bg-muted/60 text-primary flex items-center justify-center">
+          {icon}
         </span>
       </div>
+
+      {/* Valor principal */}
       <div>
-        <div className="text-3xl font-extrabold tracking-tight text-foreground leading-none tabular-nums truncate">{value}</div>
-        <div className="text-xs font-semibold text-foreground/70 mt-1.5">{metaLabel}</div>
-        {subLabel && <div className="text-[10px] text-muted-foreground mt-0.5">{subLabel}</div>}
+        <div className={cn(
+          "text-3xl font-bold tracking-tight leading-none tabular-nums truncate",
+          valueAccent ? "text-primary" : "text-foreground"
+        )}>{value}</div>
+        <div className="text-xs text-muted-foreground mt-1.5">{metaLabel}</div>
+        {subLabel && <div className="text-[10px] text-muted-foreground/80 mt-0.5">{subLabel}</div>}
       </div>
+
+      {/* Progresso */}
       <div>
         <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
           <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
@@ -1085,12 +1097,14 @@ function HeroCard({
           </div>
         )}
       </div>
-      <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 pt-2 border-t border-border/50">
+
+      {/* Footer */}
+      <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 pt-3 border-t border-border/60">
         <div className="min-w-[88px]">
           <div className="text-[9px] uppercase tracking-wider text-muted-foreground">{footerLeft.label}</div>
           <div className={cn("text-sm font-bold tabular-nums", toneClass(footerLeft.tone))}>{footerLeft.value}</div>
         </div>
-        <div className="border-l border-border/50 pl-3">
+        <div className="border-l border-border/60 pl-3">
           <div className="text-[9px] uppercase tracking-wider text-muted-foreground">{footerRight.label}</div>
           <div className={cn("text-xs font-medium", toneClass(footerRight.tone))}>{footerRight.value}</div>
         </div>
@@ -1098,6 +1112,7 @@ function HeroCard({
     </div>
   );
 }
+
 
 
 function RankList({ items, format }: { items: { closer: string; value: number }[]; format: (v: number) => string }) {
