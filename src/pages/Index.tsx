@@ -330,7 +330,7 @@ const Index = () => {
 
           {/* Farol Tab — kept mounted to preserve state and avoid reload flicker */}
           <div className={activeTab === "farol" ? "" : "hidden"}>
-            <FarolPanel cards={cards} goals={goals} owners={pipelineOwners} onSaveGoal={upsertGoal} />
+            <FarolPanel cards={cards} goals={goals} owners={pipelineOwners} onSaveGoal={upsertGoal} onRefresh={refresh} />
           </div>
 
           {/* Ajuda Tab — kept mounted */}
