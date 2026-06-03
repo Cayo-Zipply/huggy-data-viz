@@ -278,6 +278,24 @@ function SendNotificationDialog() {
               </Select>
             </div>
           )}
+          {target === "team" && (
+            <div className="space-y-1.5">
+              <Label>Canal do Slack (opcional)</Label>
+              <Select value={channelId} onValueChange={setChannelId}>
+                <SelectTrigger><SelectValue placeholder="Sem canal (só in-app)" /></SelectTrigger>
+                <SelectContent>
+                  {canais.map((c) => (
+                    <SelectItem key={c.channel_id} value={c.channel_id}>
+                      #{c.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground">
+                Se deixar vazio, a notificação só aparece no sino dos usuários.
+              </p>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)} disabled={sending}>Cancelar</Button>
