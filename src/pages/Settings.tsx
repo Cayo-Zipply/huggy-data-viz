@@ -309,12 +309,32 @@ export default function Settings() {
       {/* SLA Rules Section */}
       {activeSection === "sla" && (
         <div className="border border-border rounded-2xl bg-card overflow-hidden">
-          <div className="p-4 border-b border-border bg-muted/30">
-            <div className="flex items-center gap-2">
-              <Clock size={16} className="text-primary" />
-              <h2 className="text-sm font-semibold text-foreground">Configuração de SLAs</h2>
+          <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <Clock size={16} className="text-primary" />
+                <h2 className="text-sm font-semibold text-foreground">Configuração de SLAs</h2>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Defina o tempo máximo que um lead pode ficar em cada etapa</p>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Defina o tempo máximo que um lead pode ficar em cada etapa</p>
+            <label className="flex items-center gap-2 text-xs cursor-pointer select-none">
+              <span className={cn("font-medium", slaMaster ? "text-foreground" : "text-muted-foreground")}>
+                {slaMaster ? "SLA ativo" : "SLA desativado"}
+              </span>
+              <button
+                type="button"
+                onClick={toggleSlaMaster}
+                className={cn(
+                  "relative w-9 h-5 rounded-full transition-colors",
+                  slaMaster ? "bg-primary" : "bg-muted"
+                )}
+              >
+                <span className={cn(
+                  "absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-background shadow transition-transform",
+                  slaMaster && "translate-x-4"
+                )} />
+              </button>
+            </label>
           </div>
           <div className="p-4">
             <div className="overflow-x-auto">
@@ -324,16 +344,20 @@ export default function Settings() {
                     <th className="text-left text-xs text-muted-foreground py-2 px-2">Etapa</th>
                     <th className="text-left text-xs text-muted-foreground py-2 px-2">SLA (horas)</th>
                     <th className="text-left text-xs text-muted-foreground py-2 px-2">Ação ao estourar</th>
+                    <th className="text-left text-xs text-muted-foreground py-2 px-2">Ativo</th>
                   </tr>
                 </thead>
                 <tbody>
                   {STAGE_ORDER.map(stageKey => {
                     const cfg = STAGE_CONFIG[stageKey];
-                    const rule = rules.find(r => r.etapa === stageKey);
+                    const etapaLabel = cfg.label; // sla_config.etapa usa o label humano
+                    const rule = rules.find(r => r.etapa === etapaLabel);
                     const slaHoras = rule?.sla_horas ?? 24;
-                    const acao = rule?.acao_ao_estourar ?? "destacar";
+                    const acao = rule?.acao ?? "destacar_kanban";
+                    const ativo = rule?.ativo ?? true;
+                    const masterOff = !slaMaster;
                     return (
-                      <tr key={stageKey} className="border-b border-border/50 hover:bg-muted/20">
+                      <tr key={stageKey} className={cn("border-b border-border/50 hover:bg-muted/20", masterOff && "opacity-50")}>
                         <td className="py-2 px-2">
                           <div className="flex items-center gap-2">
                             <cfg.icon size={12} className={cfg.color} />
@@ -345,20 +369,38 @@ export default function Settings() {
                             type="number"
                             min={1}
                             value={slaHoras}
-                            onChange={e => handleSaveSla(stageKey, "sla_horas", parseInt(e.target.value) || 24)}
-                            className="w-20 text-xs border border-border rounded px-2 py-1 bg-background text-foreground"
+                            disabled={masterOff}
+                            onChange={e => handleSaveSla(etapaLabel, "sla_horas", parseInt(e.target.value) || 24)}
+                            className="w-20 text-xs border border-border rounded px-2 py-1 bg-background text-foreground disabled:opacity-50"
                           />
                         </td>
                         <td className="py-2 px-2">
                           <select
                             value={acao}
-                            onChange={e => handleSaveSla(stageKey, "acao_ao_estourar", e.target.value)}
-                            className="text-xs border border-border rounded px-2 py-1 bg-background text-foreground"
+                            disabled={masterOff}
+                            onChange={e => handleSaveSla(etapaLabel, "acao", e.target.value)}
+                            className="text-xs border border-border rounded px-2 py-1 bg-background text-foreground disabled:opacity-50"
                           >
                             {ACAO_OPTIONS.map(o => (
                               <option key={o.value} value={o.value}>{o.label}</option>
                             ))}
                           </select>
+                        </td>
+                        <td className="py-2 px-2">
+                          <button
+                            type="button"
+                            disabled={masterOff}
+                            onClick={() => handleSaveSla(etapaLabel, "ativo", !ativo)}
+                            className={cn(
+                              "relative w-9 h-5 rounded-full transition-colors disabled:opacity-50",
+                              ativo ? "bg-primary" : "bg-muted"
+                            )}
+                          >
+                            <span className={cn(
+                              "absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-background shadow transition-transform",
+                              ativo && "translate-x-4"
+                            )} />
+                          </button>
                         </td>
                       </tr>
                     );
@@ -369,6 +411,7 @@ export default function Settings() {
           </div>
         </div>
       )}
+
 
       {/* Loss Reasons Section */}
       {activeSection === "motivos" && (
