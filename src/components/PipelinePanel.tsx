@@ -743,7 +743,7 @@ export function PipelinePanel() {
         </>
       )}
 
-      {subTab === "hoje" && <TasksPanel tasks={tasks} cards={cards} activeUser={activeUser} canViewAll={isAdmin} onToggle={toggleTask} onReschedule={rescheduleTask} />}
+      {subTab === "hoje" && <TasksPanel tasks={tasks} cards={cards} activeUser={activeUser} canViewAll={isAdmin} isAdmin={isAdmin} onToggle={toggleTask} onReschedule={rescheduleTask} onDeleteTask={deleteTask} onDeleteTasks={deleteTasks} onOpenCard={(id) => { setSelectedCardId(id); setDrawerOpen(true); }} />}
       {subTab === "dashboard" && <CRMDashboard cards={cards} activeUser={activeUser} canViewAll={isAdmin} owners={ownerOptions} />}
       {subTab === "metas" && <GoalsPanel cards={cards} goals={goals} activeUser={activeUser} canViewAll={isAdmin} owners={ownerOptions} onSave={upsertGoal} />}
 
