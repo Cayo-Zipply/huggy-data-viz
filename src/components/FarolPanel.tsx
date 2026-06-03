@@ -25,7 +25,9 @@ interface Props {
   goals: PipelineGoal[];
   owners: string[]; // legacy, ignored — uses team members
   onSaveGoal?: (g: PipelineGoal) => void | Promise<void>;
+  onRefresh?: () => void | Promise<void>;
 }
+
 
 function Semaphore({ pct }: { pct: number }) {
   const color = pct >= 110 ? "bg-green-500" : pct >= 90 ? "bg-yellow-500" : "bg-red-500";
