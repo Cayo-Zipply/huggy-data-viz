@@ -727,6 +727,18 @@ export function usePipelineData(actorName: string) {
     updateTasksState(prev => prev.map(t => t.id === id ? { ...t, due_date: date } : t));
   }, [updateTasksState]);
 
+  const deleteTask = useCallback(async (id: string) => {
+    await sbExt.from("tarefas").delete().eq("id", id);
+    updateTasksState(prev => prev.filter(t => t.id !== id));
+  }, [updateTasksState]);
+
+  const deleteTasks = useCallback(async (ids: string[]) => {
+    if (!ids.length) return;
+    await sbExt.from("tarefas").delete().in("id", ids);
+    const set = new Set(ids);
+    updateTasksState(prev => prev.filter(t => !set.has(t.id)));
+  }, [updateTasksState]);
+
   /* ── goals ── */
   const upsertGoal = useCallback(async (goal: PipelineGoal) => {
     const firstNorm = (s: string) =>
