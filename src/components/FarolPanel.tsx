@@ -1099,7 +1099,7 @@ function RankList({ items, format }: { items: { closer: string; value: number }[
 
 // ── Edit Goals Dialog ──
 function EditGoalsDialog({
-  open, onOpenChange, monthKey, monthLabel, closers, sdrs, goals, onSave,
+  open, onOpenChange, monthKey, monthLabel, closers, sdrs, goals, onSave, onRefresh,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -1109,71 +1109,95 @@ function EditGoalsDialog({
   sdrs: string[];
   goals: PipelineGoal[];
   onSave: (g: PipelineGoal) => void | Promise<void>;
+  onRefresh?: () => void | Promise<void>;
 }) {
   const allNames = useMemo(() => Array.from(new Set([...closers, ...sdrs])), [closers, sdrs]);
-  // Lookup tolerante: compara por PRIMEIRO NOME normalizado (sem acento, lowercase).
-  // Assim, uma meta salva como "Fillipe Amorim Oliveira Silva" casa com o nome
-  // oficial curto "Fillipe" vindo de user_profiles.
   const firstNorm = (s: string) =>
     (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().split(/\s+/)[0] || "";
+
+  // Metas frescas direto do banco quando o diálogo abre — sem cache/rascunho antigo.
+  const [freshGoals, setFreshGoals] = useState<PipelineGoal[] | null>(null);
+  const [loadingFresh, setLoadingFresh] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!open) return;
+    setDirty(new Set());
+    setFreshGoals(null);
+    setLoadingFresh(true);
+    (async () => {
+      const { data, error } = await supabase
+        .from("metas")
+        .select("*")
+        .eq("mes", monthKey);
+      if (error) {
+        console.warn("EditGoalsDialog: fetch metas failed", error.message);
+        setFreshGoals(goals.filter(g => g.month === monthKey));
+      } else {
+        setFreshGoals((data || []).map((row: any) => ({
+          closer: row.closer,
+          month: row.mes,
+          reunioes_marcadas_meta: row.meta_reunioes_marcadas || 0,
+          reunioes_realizadas_meta: row.meta_reunioes_realizadas || 0,
+          faturamento_meta: row.meta_faturamento || 0,
+          conversao_meta: row.meta_conversao || 0,
+          vendas_meta: row.meta_vendas || 0,
+          ticket_medio_meta: row.meta_ticket_medio || 0,
+          contratos_meta: row.meta_contratos || 0,
+        })));
+      }
+      // Limpa qualquer rascunho local antigo (fonte de bug de sobrescrita)
+      try { localStorage.removeItem(`farol_goals_draft_${monthKey}`); } catch {}
+      setLoadingFresh(false);
+    })();
+  }, [open, monthKey]);
+
+  const source = freshGoals ?? [];
   const findGoal = (name: string) => {
     const k = firstNorm(name);
-    return goals.find(g => g.month === monthKey && firstNorm(g.closer) === k);
+    return source.find(g => firstNorm(g.closer) === k);
   };
+
   const initial = useMemo(() => {
     const map: Record<string, PipelineGoal> = {};
     allNames.forEach(n => {
       const g = findGoal(n);
-      // IMPORTANTE: sempre usar o nome oficial curto (n), nunca o que veio do banco
+      // Sempre usar o nome oficial curto (n), nunca o que veio do banco
       map[n] = g
         ? { ...g, closer: n, month: monthKey }
         : { closer: n, month: monthKey, reunioes_marcadas_meta: 0, reunioes_realizadas_meta: 0, faturamento_meta: 0, conversao_meta: 0, vendas_meta: 0, ticket_medio_meta: 0, contratos_meta: 0 };
     });
     return map;
-  }, [allNames, goals, monthKey]);
+  }, [allNames, source, monthKey]);
 
-  const draftKey = `farol_goals_draft_${monthKey}`;
-  const [draft, setDraft] = useState<Record<string, PipelineGoal>>(initial);
-
-  // Ao abrir: carrega rascunho do localStorage (se houver) ou usa valores atuais
-  useEffect(() => {
-    if (!open) return;
-    try {
-      const raw = localStorage.getItem(draftKey);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        // mescla com initial para garantir que todos os nomes existam
-        const merged: Record<string, PipelineGoal> = { ...initial };
-        Object.keys(parsed || {}).forEach(k => {
-          if (merged[k]) merged[k] = { ...merged[k], ...parsed[k] };
-        });
-        setDraft(merged);
-        return;
-      }
-    } catch {}
-    setDraft(initial);
-  }, [open, initial, draftKey]);
-
-  // Persiste rascunho a cada alteração (só enquanto o diálogo está aberto)
-  useEffect(() => {
-    if (!open) return;
-    try { localStorage.setItem(draftKey, JSON.stringify(draft)); } catch {}
-  }, [draft, open, draftKey]);
+  const [draft, setDraft] = useState<Record<string, PipelineGoal>>({});
+  useEffect(() => { setDraft(initial); }, [initial]);
 
   const upd = (name: string, key: keyof PipelineGoal, val: number) => {
     setDraft(prev => ({ ...prev, [name]: { ...prev[name], [key]: val } }));
+    setDirty(prev => { const n = new Set(prev); n.add(name); return n; });
   };
 
   const save = async () => {
-    for (const name of allNames) {
-      // Vendas e Contratos são a mesma métrica — espelha contratos_meta em vendas_meta
-      // Garante closer = nome oficial curto (user_profiles), nunca nome longo do banco
-      const g = { ...draft[name], closer: name, month: monthKey, vendas_meta: draft[name]?.contratos_meta ?? 0 } as PipelineGoal;
-      await onSave(g);
+    if (saving) return;
+    setSaving(true);
+    try {
+      // Só salva os closers efetivamente editados — não reescreve o conjunto inteiro às cegas.
+      for (const name of allNames) {
+        if (!dirty.has(name)) continue;
+        const g = { ...draft[name], closer: name, month: monthKey, vendas_meta: draft[name]?.contratos_meta ?? 0 } as PipelineGoal;
+        await onSave(g);
+      }
+      try { localStorage.removeItem(`farol_goals_draft_${monthKey}`); } catch {}
+      if (onRefresh) await onRefresh();
+    } finally {
+      setSaving(false);
+      onOpenChange(false);
     }
-    try { localStorage.removeItem(draftKey); } catch {}
-    onOpenChange(false);
   };
+
+
 
 
   return (
