@@ -60,7 +60,7 @@ export function PipelinePanel() {
     return raw || "Usuário";
   }, [profile?.email, profile?.nome]);
 
-  const { cards, tasks, goals, createCard, updateCard, moveCard, markWon, markLost, createTask, toggleTask, rescheduleTask, upsertGoal, importCSV, deleteCard, saveObservation, refresh } = usePipelineData(currentUserName);
+  const { cards, tasks, goals, createCard, updateCard, moveCard, markWon, markLost, createTask, toggleTask, rescheduleTask, deleteTask, deleteTasks, upsertGoal, importCSV, deleteCard, saveObservation, refresh } = usePipelineData(currentUserName);
   const [refreshing, setRefreshing] = useState(false);
   const defaultPipe = isDual ? "all" : isCloser ? "closer" : isSdr ? "sdr" : "all";
   const [activePipe, setActivePipe] = useState<"sdr" | "closer" | "all">(() => {
@@ -743,7 +743,7 @@ export function PipelinePanel() {
         </>
       )}
 
-      {subTab === "hoje" && <TasksPanel tasks={tasks} cards={cards} activeUser={activeUser} canViewAll={isAdmin} onToggle={toggleTask} onReschedule={rescheduleTask} />}
+      {subTab === "hoje" && <TasksPanel tasks={tasks} cards={cards} activeUser={activeUser} canViewAll={isAdmin} isAdmin={isAdmin} onToggle={toggleTask} onReschedule={rescheduleTask} onDeleteTask={deleteTask} onDeleteTasks={deleteTasks} onOpenCard={(id) => { setSelectedCardId(id); setDrawerOpen(true); }} />}
       {subTab === "dashboard" && <CRMDashboard cards={cards} activeUser={activeUser} canViewAll={isAdmin} owners={ownerOptions} />}
       {subTab === "metas" && <GoalsPanel cards={cards} goals={goals} activeUser={activeUser} canViewAll={isAdmin} owners={ownerOptions} onSave={upsertGoal} />}
 
