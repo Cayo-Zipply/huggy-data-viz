@@ -15,6 +15,7 @@ import {
   MessageSquarePlus,
   FileText,
   Gauge,
+  BookOpen,
   KeyRound,
 } from "lucide-react";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
