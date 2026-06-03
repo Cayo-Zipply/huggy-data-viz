@@ -233,47 +233,9 @@ export function PipelineFiltersBar({ filters, onChange, onExport, closerOptions 
   return (
     <div className="space-y-2">
       <div className="flex gap-2 flex-wrap items-center">
-        {/* Quick status filters */}
-        {(["todos", "aberto", "ganho", "perdido"] as const).map(s => (
-          <button key={s} onClick={() => onChange({ ...filters, status: s })}
-            className={cn("text-[11px] px-3 py-1 rounded-full border transition-all capitalize",
-              filters.status === s ? "bg-primary/20 text-primary border-primary/40" : "border-border text-muted-foreground hover:text-foreground")}>
-            {s === "todos" ? "Todos" : s.charAt(0).toUpperCase() + s.slice(1) + "s"}
-          </button>
-        ))}
-
-        {/* Weekend filter toggle */}
-        <button
-          onClick={() => onChange({ ...filters, apenasFimDeSemana: !filters.apenasFimDeSemana })}
-          className={cn("text-[11px] px-3 py-1 rounded-full border transition-all flex items-center gap-1",
-            filters.apenasFimDeSemana ? "bg-amber-500/20 text-amber-500 border-amber-500/40" : "border-border text-muted-foreground hover:text-foreground")}
-        >
-          <CalendarIcon size={10} /> FDS
-        </button>
-
-        {/* Tipo documento filter */}
-        {(["todos", "cnpj", "cpf", "nenhum"] as const).map(td => (
-          <button
-            key={td}
-            onClick={() => onChange({ ...filters, tipoDocumento: td })}
-            className={cn(
-              "text-[11px] px-3 py-1 rounded-full border transition-all",
-              filters.tipoDocumento === td
-                ? td === "cnpj"
-                  ? "bg-blue-500/20 text-blue-500 border-blue-500/40"
-                  : td === "cpf"
-                  ? "bg-violet-500/20 text-violet-500 border-violet-500/40"
-                  : td === "nenhum"
-                  ? "bg-muted text-foreground border-border"
-                  : "bg-primary/20 text-primary border-primary/40"
-                : "border-border text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {td === "todos" ? "Doc: todos" : td === "cnpj" ? "CNPJ" : td === "cpf" ? "CPF" : "Sem doc"}
-          </button>
-        ))}
-
+        {/* Item 7: filtros clean — apenas data visível; resto fica no popover de Filtros */}
         <div className="flex-1" />
+
 
         {/* Filtro: Reuniões realizadas no mês (data_reuniao_realizada) */}
         <label className={cn(
@@ -383,7 +345,53 @@ export function PipelineFiltersBar({ filters, onChange, onExport, closerOptions 
         </button>
       </div>
       {open && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 bg-card/50 border border-border rounded-xl p-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-card/50 border border-border rounded-xl p-3">
+          {/* Status */}
+          <div>
+            <label className="text-[10px] text-muted-foreground block mb-1">Status</label>
+            <div className="flex gap-1 flex-wrap">
+              {(["todos", "aberto", "ganho", "perdido"] as const).map(s => (
+                <button key={s} onClick={() => onChange({ ...filters, status: s })}
+                  className={cn("text-[10px] px-2 py-1 rounded-full border transition-all capitalize",
+                    filters.status === s ? "bg-primary/20 text-primary border-primary/40" : "border-border text-muted-foreground hover:text-foreground")}>
+                  {s === "todos" ? "Todos" : s.charAt(0).toUpperCase() + s.slice(1) + "s"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* FDS */}
+          <div>
+            <label className="text-[10px] text-muted-foreground block mb-1">Origem do lead</label>
+            <button
+              onClick={() => onChange({ ...filters, apenasFimDeSemana: !filters.apenasFimDeSemana })}
+              className={cn("text-[10px] px-2 py-1 rounded-full border transition-all flex items-center gap-1",
+                filters.apenasFimDeSemana ? "bg-amber-500/20 text-amber-500 border-amber-500/40" : "border-border text-muted-foreground hover:text-foreground")}
+            >
+              <CalendarIcon size={10} /> FDS
+            </button>
+          </div>
+
+          {/* Tipo documento */}
+          <div>
+            <label className="text-[10px] text-muted-foreground block mb-1">Documento</label>
+            <div className="flex gap-1 flex-wrap">
+              {(["todos", "cnpj", "cpf", "nenhum"] as const).map(td => (
+                <button
+                  key={td}
+                  onClick={() => onChange({ ...filters, tipoDocumento: td })}
+                  className={cn(
+                    "text-[10px] px-2 py-1 rounded-full border transition-all",
+                    filters.tipoDocumento === td ? "bg-primary/20 text-primary border-primary/40" : "border-border text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {td === "todos" ? "Todos" : td === "cnpj" ? "CNPJ" : td === "cpf" ? "CPF" : "Sem doc"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Closer */}
           <div>
             <label className="text-[10px] text-muted-foreground block mb-1">Closer</label>
             <div className="flex gap-1 flex-wrap">
@@ -399,12 +407,16 @@ export function PipelineFiltersBar({ filters, onChange, onExport, closerOptions 
               ))}
             </div>
           </div>
+
+          {/* Parados há */}
           <div>
             <label className="text-[10px] text-muted-foreground block mb-1">Parados há mais de (dias)</label>
             <input type="number" value={filters.staleDays ?? ""} onChange={e => onChange({ ...filters, staleDays: e.target.value ? Number(e.target.value) : null })}
               placeholder="Ex: 7" className="w-full text-xs bg-muted/50 border border-border rounded px-2 py-1.5 text-foreground" />
           </div>
-          <div className="sm:col-span-2 lg:col-span-4">
+
+          {/* Etapas */}
+          <div className="sm:col-span-2 lg:col-span-3">
             <label className="text-[10px] text-muted-foreground block mb-1">Etapas</label>
             <div className="flex gap-1 flex-wrap">
               {STAGE_ORDER.map(s => (
@@ -424,3 +436,4 @@ export function PipelineFiltersBar({ filters, onChange, onExport, closerOptions 
     </div>
   );
 }
+
