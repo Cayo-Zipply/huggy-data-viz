@@ -327,6 +327,7 @@ export default function Contratos() {
               <TableHead className="text-xs">Vendedor</TableHead>
               <TableHead className="text-xs">Criação</TableHead>
               <TableHead className="text-xs">Fechamento</TableHead>
+              <TableHead className="text-xs">Contrato</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
