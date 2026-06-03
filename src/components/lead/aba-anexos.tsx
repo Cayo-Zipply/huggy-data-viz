@@ -96,24 +96,26 @@ export function AbaAnexos({ leadId }: { leadId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-xs text-muted-foreground truncate">
             {anexos?.length ?? 0} {(anexos?.length ?? 0) === 1 ? "anexo" : "anexos"}
           </span>
         </div>
-        <div>
+        <div className="flex-shrink-0">
           <Button
             variant="outline"
             size="sm"
             onClick={abrirModal}
             disabled={upload.isPending}
+            className="whitespace-nowrap"
           >
             <Upload size={14} className="mr-1.5" />
             {upload.isPending ? "Enviando..." : "Adicionar anexo"}
           </Button>
         </div>
       </div>
+
 
       {isLoading && <p className="text-sm text-muted-foreground text-center py-6">Carregando anexos...</p>}
 
