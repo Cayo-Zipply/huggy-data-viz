@@ -116,6 +116,12 @@ export function ContractTab({ card, onUpdate }: Props) {
   const [lastResult, setLastResult] = useState<{ action: string; data: ContractFunctionResult } | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loadingSignedUrl, setLoadingSignedUrl] = useState(false);
+  const [cnpjsAdicionais, setCnpjsAdicionais] = useState<CnpjAdicional[]>(
+    Array.isArray((card as any).cnpjs_adicionais) ? (card as any).cnpjs_adicionais : []
+  );
+  const [sociosAdicionais, setSociosAdicionais] = useState<SocioAdicional[]>(
+    Array.isArray((card as any).socios_adicionais) ? (card as any).socios_adicionais : []
+  );
 
   const handleOpenSignedContract = async () => {
     setLoadingSignedUrl(true);
