@@ -23,10 +23,14 @@ const PRESET_COLORS = [
 const CATEGORIAS = ["Preço", "Timing", "Concorrência", "Qualificação", "Outros"];
 
 const ACAO_OPTIONS = [
-  { value: "destacar", label: "Apenas destacar no Kanban" },
+  { value: "destacar_kanban", label: "Apenas destacar no Kanban" },
   { value: "destacar_notificar", label: "Destacar + Notificação" },
   { value: "destacar_notificar_reatribuir", label: "Destacar + Notificação + Reatribuir" },
 ];
+
+// Toggle global do SLA — persistido em localStorage. Quando false, o front
+// deve ignorar estouros de SLA em todas as etapas.
+const SLA_MASTER_KEY = "crm_sla_master_enabled";
 
 export default function Settings() {
   const { isAdmin } = useAuth();
