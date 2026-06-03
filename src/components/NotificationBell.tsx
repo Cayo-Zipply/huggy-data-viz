@@ -212,6 +212,7 @@ function SendNotificationDialog() {
     try {
       const body: any = { title: title.trim(), message: message.trim(), target_type: target };
       if (target === "user") body.target_user_id = userId;
+      if (target === "team" && channelId) body.slack_channel_id = channelId;
       const { data, error } = await supabase.functions.invoke("enviar-notificacao", { body });
       if (error) throw error;
       const n = (data as any)?.recipients ?? 0;
@@ -219,6 +220,7 @@ function SendNotificationDialog() {
       setTitle("");
       setMessage("");
       setUserId("");
+      setChannelId("");
       setTarget("team");
       setOpen(false);
     } catch (err: any) {
