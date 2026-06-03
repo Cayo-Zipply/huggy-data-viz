@@ -425,12 +425,6 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
   }, [sdrNames, closerNames, closerCards, canonical]);
 
   const preVendasData = useMemo(() => {
-    // Soma das metas de RR cadastradas nos closers — usada como fallback de meta dos SDRs
-    const totalCloserRRMeta = closerNames.reduce((s, c) => {
-      const g = goals.find(x => canonical(x.closer) === canonical(c) && x.month === monthKey);
-      return s + (g?.reunioes_realizadas_meta || 0);
-    }, 0);
-
     const rows = sdrRows
       .map(sdr => {
         const rm = reunioesMarcadas.filter(c => canonical(c.owner) === sdr).length;
@@ -439,11 +433,8 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
         const vendas = contratosMes.filter(c => canonical(c.owner) === sdr).length;
         const goal = goals.find(g => canonical(g.closer) === sdr && g.month === monthKey);
         const meta = goal?.reunioes_marcadas_meta || 0;
-        let metaRR = goal?.reunioes_realizadas_meta || 0;
-        // Fallback: se SDR não tem meta individual, divide a meta total dos closers entre os SDRs
-        if (metaRR === 0 && meta === 0 && totalCloserRRMeta > 0 && sdrNames.length > 0) {
-          metaRR = Math.round(totalCloserRRMeta / sdrNames.length);
-        }
+        const metaRR = goal?.reunioes_realizadas_meta || 0;
+
         const metaAteAlvo = (metaRR || meta) * fatorPace;
         const projecao = passedBD > 0 ? Math.round(rm * ratio) : 0;
         const projecaoRR = passedBD > 0 ? Math.round(rr * ratio) : 0;
