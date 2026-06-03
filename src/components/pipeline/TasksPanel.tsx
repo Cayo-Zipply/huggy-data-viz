@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Check, Calendar, Clock, User, AlertCircle, ChevronRight } from "lucide-react";
+import { Check, Calendar, Clock, User, AlertCircle, ChevronRight, Trash2 } from "lucide-react";
 import type { PipelineCard, PipelineTask } from "./types";
 import { STAGE_CONFIG } from "./types";
 import { sameOwner } from "@/lib/ownerNormalization";
@@ -13,9 +13,13 @@ interface Props {
   onToggle: (id: string) => void;
   onReschedule: (id: string, date: string) => void;
   onScrollToCard?: (cardId: string) => void;
+  onOpenCard?: (cardId: string) => void;
+  onDeleteTask?: (id: string) => void;
+  onDeleteTasks?: (ids: string[]) => void;
+  isAdmin?: boolean;
 }
 
-export function TasksPanel({ tasks, cards, activeUser, canViewAll = false, onToggle, onReschedule }: Props) {
+export function TasksPanel({ tasks, cards, activeUser, canViewAll = false, onToggle, onReschedule, onOpenCard, onDeleteTask, onDeleteTasks, isAdmin = false }: Props) {
   const today = new Date().toISOString().split("T")[0];
   const in3days = new Date(Date.now() + 3 * 86400000).toISOString().split("T")[0];
   const showAll = canViewAll && activeUser === "all";
@@ -28,17 +32,33 @@ export function TasksPanel({ tasks, cards, activeUser, canViewAll = false, onTog
 
   const getCard = (id: string) => cards.find(c => c.id === id);
 
+  const handleDeleteAll = () => {
+    const ids = userTasks.map(t => t.id);
+    if (!ids.length) return;
+    if (!confirm(`Excluir ${ids.length} tarefa(s) ${showAll ? "(todas)" : `de ${activeUser}`}? Esta ação não pode ser desfeita.`)) return;
+    onDeleteTasks?.(ids);
+  };
+
   const TaskRow = ({ task }: { task: PipelineTask }) => {
     const card = getCard(task.card_id);
     const [showDate, setShowDate] = useState(false);
     const isOD = task.due_date < today && task.status === "pendente";
 
     return (
-      <div className={cn("flex items-center gap-3 p-3 rounded-xl border bg-card/50 hover:bg-card transition-all",
-        isOD && "border-destructive/30")}>
-        <button onClick={() => onToggle(task.id)}
-          className={cn("flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
-            task.status === "concluida" ? "bg-green-500 border-green-500 text-white" : "border-muted-foreground hover:border-primary")}>
+      <div
+        onClick={() => card && onOpenCard?.(card.id)}
+        className={cn(
+          "group flex items-center gap-3 p-3 rounded-xl border bg-card/50 hover:bg-card transition-all cursor-pointer",
+          isOD && "border-destructive/30",
+        )}
+      >
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggle(task.id); }}
+          className={cn(
+            "flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+            task.status === "concluida" ? "bg-green-500 border-green-500 text-white" : "border-muted-foreground hover:border-primary",
+          )}
+        >
           {task.status === "concluida" && <Check size={10} />}
         </button>
         <div className="flex-1 min-w-0">
@@ -55,7 +75,7 @@ export function TasksPanel({ tasks, cards, activeUser, canViewAll = false, onTog
             {task.auto_generated && <span className="text-[10px] text-muted-foreground italic">auto</span>}
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           <span className={cn("text-[10px] flex items-center gap-0.5", isOD ? "text-red-400" : "text-muted-foreground")}>
             {isOD && <AlertCircle size={10} />}<Clock size={10} />{new Date(task.due_date + "T12:00:00").toLocaleDateString("pt-BR")}
           </span>
@@ -66,6 +86,15 @@ export function TasksPanel({ tasks, cards, activeUser, canViewAll = false, onTog
             ) : (
               <button onClick={() => setShowDate(true)} className="text-[10px] text-muted-foreground hover:text-foreground"><Calendar size={12} /></button>
             )
+          )}
+          {isAdmin && onDeleteTask && (
+            <button
+              onClick={() => { if (confirm(`Excluir tarefa "${task.title}"?`)) onDeleteTask(task.id); }}
+              className="text-[10px] text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+              title="Excluir tarefa"
+            >
+              <Trash2 size={12} />
+            </button>
           )}
         </div>
       </div>
@@ -85,14 +114,24 @@ export function TasksPanel({ tasks, cards, activeUser, canViewAll = false, onTog
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <h3 className="text-lg font-bold text-foreground">Tarefas</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             {totalPending} pendente(s) · {overdue.length} atrasada(s)
+            {!showAll && ` · filtradas para ${activeUser}`}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          {isAdmin && onDeleteTasks && userTasks.length > 0 && (
+            <button
+              onClick={handleDeleteAll}
+              className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20"
+              title="Excluir todas as tarefas exibidas"
+            >
+              <Trash2 size={12} /> Excluir todas ({userTasks.length})
+            </button>
+          )}
           {overdue.length > 0 && <div className="bg-destructive/10 text-red-400 font-bold text-lg px-4 py-2 rounded-xl">{overdue.length}</div>}
           <div className="bg-primary/10 text-primary font-bold text-lg px-4 py-2 rounded-xl">{todayTasks.length}</div>
         </div>
