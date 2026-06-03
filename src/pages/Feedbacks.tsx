@@ -2,48 +2,47 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabaseExternal";
 import { Navigate } from "react-router-dom";
-import { Bug, Lightbulb, Clock, Eye, CheckCircle2, Loader2, MessageSquare, Send } from "lucide-react";
+import { Bug, Lightbulb, Clock, CheckCircle2, Loader2, MessageSquare, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-type FeedbackStatus = "pendente" | "visto" | "concluido";
-
-interface Feedback {
+// Tabela real: public.feedback_reports
+// Colunas: id, type, description, user_name, user_email, page_url, has_screenshot, resolved, created_at
+interface FeedbackReport {
   id: string;
-  tipo: string;
-  descricao: string;
-  screenshot_url: string | null;
-  pagina: string | null;
-  status: FeedbackStatus;
-  resposta_admin: string | null;
+  type: string;
+  description: string;
   user_name: string | null;
   user_email: string | null;
+  page_url: string | null;
+  has_screenshot: boolean | null;
+  resolved: boolean;
   created_at: string;
-  updated_at: string;
 }
 
-const STATUS_CONFIG: Record<FeedbackStatus, { label: string; icon: typeof Clock; color: string; bg: string }> = {
+type StatusFilter = "todos" | "pendente" | "concluido";
+
+const STATUS_CONFIG = {
   pendente: { label: "Pendente", icon: Clock, color: "text-yellow-500", bg: "bg-yellow-500/10" },
-  visto: { label: "Visto", icon: Eye, color: "text-blue-500", bg: "bg-blue-500/10" },
   concluido: { label: "Concluído", icon: CheckCircle2, color: "text-green-500", bg: "bg-green-500/10" },
-};
+} as const;
 
 export default function Feedbacks() {
   const { isAdmin } = useAuth();
-  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [feedbacks, setFeedbacks] = useState<FeedbackReport[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"todos" | FeedbackStatus>("todos");
+  const [filter, setFilter] = useState<StatusFilter>("todos");
   const [typeFilter, setTypeFilter] = useState<"todos" | "bug" | "melhoria">("todos");
-  const [responses, setResponses] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
 
   const fetchFeedbacks = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("feedbacks")
+    const { data, error } = await supabase
+      .from("feedback_reports")
       .select("*")
       .order("created_at", { ascending: false });
-    setFeedbacks((data as Feedback[]) ?? []);
+    if (error) toast.error("Erro ao carregar feedbacks: " + error.message);
+    setFeedbacks((data as FeedbackReport[]) ?? []);
     setLoading(false);
   };
 
@@ -51,42 +50,28 @@ export default function Feedbacks() {
 
   if (!isAdmin) return <Navigate to="/pipeline" replace />;
 
-  const updateStatus = async (id: string, status: FeedbackStatus) => {
+  const toggleResolved = async (id: string, resolved: boolean) => {
     setSaving(id);
-    const { error } = await supabase.from("feedbacks").update({ status }).eq("id", id);
-    if (error) { toast.error("Erro ao atualizar"); }
+    const { error } = await supabase.from("feedback_reports").update({ resolved }).eq("id", id);
+    if (error) toast.error("Erro ao atualizar");
     else {
-      setFeedbacks(prev => prev.map(f => f.id === id ? { ...f, status } : f));
-      toast.success(`Status atualizado para "${STATUS_CONFIG[status].label}"`);
-    }
-    setSaving(null);
-  };
-
-  const sendResponse = async (id: string) => {
-    const text = responses[id]?.trim();
-    if (!text) return;
-    setSaving(id);
-    const { error } = await supabase.from("feedbacks").update({ resposta_admin: text }).eq("id", id);
-    if (error) { toast.error("Erro ao salvar resposta"); }
-    else {
-      setFeedbacks(prev => prev.map(f => f.id === id ? { ...f, resposta_admin: text } : f));
-      setResponses(prev => { const n = { ...prev }; delete n[id]; return n; });
-      toast.success("Resposta salva!");
+      setFeedbacks(prev => prev.map(f => f.id === id ? { ...f, resolved } : f));
+      toast.success(resolved ? "Marcado como concluído" : "Marcado como pendente");
     }
     setSaving(null);
   };
 
   const filtered = feedbacks.filter(f => {
-    if (filter !== "todos" && f.status !== filter) return false;
-    if (typeFilter !== "todos" && f.tipo !== typeFilter) return false;
+    if (filter === "pendente" && f.resolved) return false;
+    if (filter === "concluido" && !f.resolved) return false;
+    if (typeFilter !== "todos" && f.type !== typeFilter) return false;
     return true;
   });
 
   const counts = {
     todos: feedbacks.length,
-    pendente: feedbacks.filter(f => f.status === "pendente").length,
-    visto: feedbacks.filter(f => f.status === "visto").length,
-    concluido: feedbacks.filter(f => f.status === "concluido").length,
+    pendente: feedbacks.filter(f => !f.resolved).length,
+    concluido: feedbacks.filter(f => f.resolved).length,
   };
 
   return (
@@ -97,10 +82,12 @@ export default function Feedbacks() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-3">
-        {(["todos", "pendente", "visto", "concluido"] as const).map(key => {
+      <div className="grid grid-cols-3 gap-3">
+        {(["todos", "pendente", "concluido"] as const).map(key => {
           const isActive = filter === key;
-          const cfg = key === "todos" ? { label: "Todos", icon: MessageSquare, color: "text-foreground", bg: "bg-muted" } : STATUS_CONFIG[key];
+          const cfg = key === "todos"
+            ? { label: "Todos", icon: MessageSquare, color: "text-foreground", bg: "bg-muted" }
+            : STATUS_CONFIG[key];
           const Icon = cfg.icon;
           return (
             <button
@@ -143,16 +130,15 @@ export default function Feedbacks() {
       ) : (
         <div className="space-y-3">
           {filtered.map(fb => {
-            const cfg = STATUS_CONFIG[fb.status] ?? STATUS_CONFIG.pendente;
+            const cfg = fb.resolved ? STATUS_CONFIG.concluido : STATUS_CONFIG.pendente;
             const Icon = cfg.icon;
             return (
               <div key={fb.id} className="border border-border rounded-xl p-4 space-y-3 bg-card">
-                {/* Header */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${fb.tipo === "bug" ? "bg-red-500/10 text-red-400" : "bg-primary/10 text-primary"}`}>
-                        {fb.tipo === "bug" ? <><Bug size={10} className="inline mr-1" />Bug</> : <><Lightbulb size={10} className="inline mr-1" />Melhoria</>}
+                      <span className={`text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded ${fb.type === "bug" ? "bg-red-500/10 text-red-400" : "bg-primary/10 text-primary"}`}>
+                        {fb.type === "bug" ? <><Bug size={10} className="inline mr-1" />Bug</> : <><Lightbulb size={10} className="inline mr-1" />Melhoria</>}
                       </span>
                       <span className="text-[10px] text-muted-foreground">
                         {fb.user_name || "Anônimo"} · {fb.user_email}
@@ -160,15 +146,23 @@ export default function Feedbacks() {
                       <span className="text-[10px] text-muted-foreground">
                         {new Date(fb.created_at).toLocaleDateString("pt-BR")} {new Date(fb.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                       </span>
-                      {fb.pagina && <span className="text-[10px] text-muted-foreground">📍 {fb.pagina}</span>}
+                      {fb.page_url && (
+                        <a href={fb.page_url} target="_blank" rel="noreferrer" className="text-[10px] text-muted-foreground hover:text-foreground underline">
+                          📍 {fb.page_url.replace(/^https?:\/\//, "").slice(0, 40)}
+                        </a>
+                      )}
+                      {fb.has_screenshot && (
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          <ImageIcon size={10} /> screenshot
+                        </span>
+                      )}
                     </div>
-                    <p className="text-sm text-foreground">{fb.descricao}</p>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">{fb.description}</p>
                   </div>
 
-                  {/* Status selector */}
                   <Select
-                    value={fb.status}
-                    onValueChange={(v) => updateStatus(fb.id, v as FeedbackStatus)}
+                    value={fb.resolved ? "concluido" : "pendente"}
+                    onValueChange={(v) => toggleResolved(fb.id, v === "concluido")}
                     disabled={saving === fb.id}
                   >
                     <SelectTrigger className={`w-32 h-8 text-xs ${cfg.bg} ${cfg.color} border-none`}>
@@ -177,42 +171,10 @@ export default function Feedbacks() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pendente"><Clock size={12} className="inline mr-1" />Pendente</SelectItem>
-                      <SelectItem value="visto"><Eye size={12} className="inline mr-1" />Visto</SelectItem>
                       <SelectItem value="concluido"><CheckCircle2 size={12} className="inline mr-1" />Concluído</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Screenshot */}
-                {fb.screenshot_url && (
-                  <img src={fb.screenshot_url} alt="Screenshot" className="max-h-48 rounded-lg border border-border object-contain" />
-                )}
-
-                {/* Admin response */}
-                {fb.resposta_admin ? (
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <p className="text-[10px] font-medium text-muted-foreground mb-1">Sua resposta:</p>
-                    <p className="text-xs text-foreground">{fb.resposta_admin}</p>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={responses[fb.id] ?? ""}
-                      onChange={e => setResponses(prev => ({ ...prev, [fb.id]: e.target.value }))}
-                      placeholder="Responder ao feedback..."
-                      className="flex-1 text-xs bg-muted/50 border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                      onKeyDown={e => e.key === "Enter" && sendResponse(fb.id)}
-                    />
-                    <button
-                      onClick={() => sendResponse(fb.id)}
-                      disabled={!responses[fb.id]?.trim() || saving === fb.id}
-                      className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
-                    >
-                      <Send size={12} />
-                    </button>
-                  </div>
-                )}
               </div>
             );
           })}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-// motivos_perda vive na base do Lovable Cloud (não na externa).
-import { supabaseCloud as supabase } from "@/lib/supabaseCloud";
+// motivos_perda vive no Supabase EXTERNO (riyfdcmmabvpcubusujw),
+// junto com leads, metas, sla_config, feedback_reports etc.
+import { supabase } from "@/lib/supabaseExternal";
 
 export interface MotivoPerda {
   id: string;
@@ -15,7 +16,10 @@ export function useMotivosPerda() {
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
-    const { data } = await supabase.from("motivos_perda").select("*").order("ordem");
+    const { data } = await supabase
+      .from("motivos_perda")
+      .select("*")
+      .order("ordem", { ascending: true });
     if (data) setMotivos(data as unknown as MotivoPerda[]);
     setLoading(false);
   }, []);
@@ -23,8 +27,10 @@ export function useMotivosPerda() {
   useEffect(() => { fetch(); }, [fetch]);
 
   const createMotivo = useCallback(async (nome: string, categoria: string) => {
-    const maxOrdem = motivos.length > 0 ? Math.max(...motivos.map(m => m.ordem)) + 1 : 0;
-    const { error } = await supabase.from("motivos_perda").insert({ nome, categoria, ordem: maxOrdem } as any);
+    const maxOrdem = motivos.length > 0 ? Math.max(...motivos.map(m => m.ordem)) + 1 : 1;
+    const { error } = await supabase
+      .from("motivos_perda")
+      .insert({ nome, categoria, ordem: maxOrdem, ativo: true } as any);
     if (!error) fetch();
   }, [fetch, motivos]);
 
@@ -39,8 +45,9 @@ export function useMotivosPerda() {
     fetch();
   }, [fetch, motivos]);
 
+  // Soft delete (apenas desativa). Mantém histórico.
   const deleteMotivo = useCallback(async (id: string) => {
-    await supabase.from("motivos_perda").delete().eq("id", id);
+    await supabase.from("motivos_perda").update({ ativo: false } as any).eq("id", id);
     fetch();
   }, [fetch]);
 
