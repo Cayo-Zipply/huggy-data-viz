@@ -25,7 +25,9 @@ interface Props {
   goals: PipelineGoal[];
   owners: string[]; // legacy, ignored — uses team members
   onSaveGoal?: (g: PipelineGoal) => void | Promise<void>;
+  onRefresh?: () => void | Promise<void>;
 }
+
 
 function Semaphore({ pct }: { pct: number }) {
   const color = pct >= 110 ? "bg-green-500" : pct >= 90 ? "bg-yellow-500" : "bg-red-500";
@@ -120,7 +122,7 @@ function reachedInMonth(cards: PipelineCard[], stages: Stage[], start: Date, end
   });
 }
 
-export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
+export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { members, closerNames, sdrNames, refetch } = useTeamMembers();
@@ -157,55 +159,10 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
     });
   };
 
-  // Auto-aplicar metas fixas (Cayo, Café, Fillipe) para o mês atual em diante.
-  // Roda independente de carregar a lista de team members — usa nomes fixos como
-  // fallback. Se já existir meta no banco com valores, NÃO sobrescreve.
-  useEffect(() => {
-    if (!onSaveGoal) return;
-    const today = new Date();
-    const currentKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
-    if (monthKey < currentKey) return;
-    const presets: { name: string; data: Partial<PipelineGoal> }[] = [
-      { name: "Fillipe Amorim Oliveira Silva", data: { faturamento_meta: 31500, reunioes_realizadas_meta: 60, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 18 } },
-      { name: "João",                          data: { faturamento_meta: 14080, reunioes_realizadas_meta: 40, conversao_meta: 22, ticket_medio_meta: 1600, contratos_meta: 9 } },
-      { name: "Cayo Bitencourt",               data: { faturamento_meta: 10500, reunioes_realizadas_meta: 20, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 6 } },
-    ];
-    presets.forEach(preset => {
-      // tenta achar o nome real no time (com acentos/case corretos); senão usa o do preset
-      const matcher = (n: string) => {
-        const nn = norm(n);
-        if (preset.name.startsWith("Fillipe")) return /fillipe|filipe/.test(nn);
-        if (preset.name === "João") return /caf[eé]|joao/.test(nn);
-        return /cayo/.test(nn);
-      };
-      const realName = closerNames.find(matcher) || preset.name;
-      const existing = goals.find(g => g.closer === realName && g.month === monthKey);
-      const hasAny = existing && (
-        (existing.faturamento_meta || 0) > 0 ||
-        (existing.reunioes_realizadas_meta || 0) > 0 ||
-        (existing.contratos_meta || 0) > 0
-      );
-      if (hasAny) return;
-      const base: PipelineGoal = {
-        reunioes_marcadas_meta: 0,
-        reunioes_realizadas_meta: 0,
-        faturamento_meta: 0,
-        conversao_meta: 0,
-        vendas_meta: 0,
-        ticket_medio_meta: 0,
-        contratos_meta: 0,
-        ...(existing || {}),
-        closer: realName,
-        month: monthKey,
-      } as PipelineGoal;
-      const merged: PipelineGoal = {
-        ...base,
-        ...preset.data,
-        vendas_meta: preset.data.contratos_meta || 0,
-      } as PipelineGoal;
-      Promise.resolve(onSaveGoal(merged)).catch(() => {});
-    });
-  }, [onSaveGoal, monthKey, closerNames, goals]);
+  // [removido] auto-aplicar metas fixas — gerava linhas com nome completo do Google
+  // (ex.: "Fillipe Amorim Oliveira Silva") e sobrescrevia edições feitas pelo admin.
+  // Metas agora só são gravadas via o diálogo "Editar Metas".
+
 
   const year = selectedMonth.getFullYear();
   const month = selectedMonth.getMonth();
@@ -942,6 +899,7 @@ export function FarolPanel({ cards, goals, onSaveGoal }: Props) {
           sdrs={sdrNames}
           goals={goals}
           onSave={onSaveGoal}
+          onRefresh={onRefresh}
         />
       )}
 
@@ -1141,7 +1099,7 @@ function RankList({ items, format }: { items: { closer: string; value: number }[
 
 // ── Edit Goals Dialog ──
 function EditGoalsDialog({
-  open, onOpenChange, monthKey, monthLabel, closers, sdrs, goals, onSave,
+  open, onOpenChange, monthKey, monthLabel, closers, sdrs, goals, onSave, onRefresh,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -1151,71 +1109,95 @@ function EditGoalsDialog({
   sdrs: string[];
   goals: PipelineGoal[];
   onSave: (g: PipelineGoal) => void | Promise<void>;
+  onRefresh?: () => void | Promise<void>;
 }) {
   const allNames = useMemo(() => Array.from(new Set([...closers, ...sdrs])), [closers, sdrs]);
-  // Lookup tolerante: compara por PRIMEIRO NOME normalizado (sem acento, lowercase).
-  // Assim, uma meta salva como "Fillipe Amorim Oliveira Silva" casa com o nome
-  // oficial curto "Fillipe" vindo de user_profiles.
   const firstNorm = (s: string) =>
     (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().split(/\s+/)[0] || "";
+
+  // Metas frescas direto do banco quando o diálogo abre — sem cache/rascunho antigo.
+  const [freshGoals, setFreshGoals] = useState<PipelineGoal[] | null>(null);
+  const [loadingFresh, setLoadingFresh] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!open) return;
+    setDirty(new Set());
+    setFreshGoals(null);
+    setLoadingFresh(true);
+    (async () => {
+      const { data, error } = await supabase
+        .from("metas")
+        .select("*")
+        .eq("mes", monthKey);
+      if (error) {
+        console.warn("EditGoalsDialog: fetch metas failed", error.message);
+        setFreshGoals(goals.filter(g => g.month === monthKey));
+      } else {
+        setFreshGoals((data || []).map((row: any) => ({
+          closer: row.closer,
+          month: row.mes,
+          reunioes_marcadas_meta: row.meta_reunioes_marcadas || 0,
+          reunioes_realizadas_meta: row.meta_reunioes_realizadas || 0,
+          faturamento_meta: row.meta_faturamento || 0,
+          conversao_meta: row.meta_conversao || 0,
+          vendas_meta: row.meta_vendas || 0,
+          ticket_medio_meta: row.meta_ticket_medio || 0,
+          contratos_meta: row.meta_contratos || 0,
+        })));
+      }
+      // Limpa qualquer rascunho local antigo (fonte de bug de sobrescrita)
+      try { localStorage.removeItem(`farol_goals_draft_${monthKey}`); } catch {}
+      setLoadingFresh(false);
+    })();
+  }, [open, monthKey]);
+
+  const source = freshGoals ?? [];
   const findGoal = (name: string) => {
     const k = firstNorm(name);
-    return goals.find(g => g.month === monthKey && firstNorm(g.closer) === k);
+    return source.find(g => firstNorm(g.closer) === k);
   };
+
   const initial = useMemo(() => {
     const map: Record<string, PipelineGoal> = {};
     allNames.forEach(n => {
       const g = findGoal(n);
-      // IMPORTANTE: sempre usar o nome oficial curto (n), nunca o que veio do banco
+      // Sempre usar o nome oficial curto (n), nunca o que veio do banco
       map[n] = g
         ? { ...g, closer: n, month: monthKey }
         : { closer: n, month: monthKey, reunioes_marcadas_meta: 0, reunioes_realizadas_meta: 0, faturamento_meta: 0, conversao_meta: 0, vendas_meta: 0, ticket_medio_meta: 0, contratos_meta: 0 };
     });
     return map;
-  }, [allNames, goals, monthKey]);
+  }, [allNames, source, monthKey]);
 
-  const draftKey = `farol_goals_draft_${monthKey}`;
-  const [draft, setDraft] = useState<Record<string, PipelineGoal>>(initial);
-
-  // Ao abrir: carrega rascunho do localStorage (se houver) ou usa valores atuais
-  useEffect(() => {
-    if (!open) return;
-    try {
-      const raw = localStorage.getItem(draftKey);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        // mescla com initial para garantir que todos os nomes existam
-        const merged: Record<string, PipelineGoal> = { ...initial };
-        Object.keys(parsed || {}).forEach(k => {
-          if (merged[k]) merged[k] = { ...merged[k], ...parsed[k] };
-        });
-        setDraft(merged);
-        return;
-      }
-    } catch {}
-    setDraft(initial);
-  }, [open, initial, draftKey]);
-
-  // Persiste rascunho a cada alteração (só enquanto o diálogo está aberto)
-  useEffect(() => {
-    if (!open) return;
-    try { localStorage.setItem(draftKey, JSON.stringify(draft)); } catch {}
-  }, [draft, open, draftKey]);
+  const [draft, setDraft] = useState<Record<string, PipelineGoal>>({});
+  useEffect(() => { setDraft(initial); }, [initial]);
 
   const upd = (name: string, key: keyof PipelineGoal, val: number) => {
     setDraft(prev => ({ ...prev, [name]: { ...prev[name], [key]: val } }));
+    setDirty(prev => { const n = new Set(prev); n.add(name); return n; });
   };
 
   const save = async () => {
-    for (const name of allNames) {
-      // Vendas e Contratos são a mesma métrica — espelha contratos_meta em vendas_meta
-      // Garante closer = nome oficial curto (user_profiles), nunca nome longo do banco
-      const g = { ...draft[name], closer: name, month: monthKey, vendas_meta: draft[name]?.contratos_meta ?? 0 } as PipelineGoal;
-      await onSave(g);
+    if (saving) return;
+    setSaving(true);
+    try {
+      // Só salva os closers efetivamente editados — não reescreve o conjunto inteiro às cegas.
+      for (const name of allNames) {
+        if (!dirty.has(name)) continue;
+        const g = { ...draft[name], closer: name, month: monthKey, vendas_meta: draft[name]?.contratos_meta ?? 0 } as PipelineGoal;
+        await onSave(g);
+      }
+      try { localStorage.removeItem(`farol_goals_draft_${monthKey}`); } catch {}
+      if (onRefresh) await onRefresh();
+    } finally {
+      setSaving(false);
+      onOpenChange(false);
     }
-    try { localStorage.removeItem(draftKey); } catch {}
-    onOpenChange(false);
   };
+
+
 
 
   return (
@@ -1256,14 +1238,14 @@ function EditGoalsDialog({
             variant="secondary"
             onClick={() => {
               const presets: Record<string, Partial<PipelineGoal>> = {
-                "Fillipe Amorim Oliveira Silva": { faturamento_meta: 31500, reunioes_realizadas_meta: 60, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 18 },
+                "Fillipe": { faturamento_meta: 31500, reunioes_realizadas_meta: 60, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 18 },
                 "João": { faturamento_meta: 14080, reunioes_realizadas_meta: 40, conversao_meta: 22, ticket_medio_meta: 1600, contratos_meta: 9 },
                 "Cayo Bitencourt": { faturamento_meta: 10500, reunioes_realizadas_meta: 20, conversao_meta: 30, ticket_medio_meta: 1750, contratos_meta: 6 },
               };
               const norm = (s: string) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
               const matchKey = (name: string) => {
                 const n = norm(name);
-                if (n.includes("fillipe") || n.includes("filipe")) return "Fillipe Amorim Oliveira Silva";
+                if (n.includes("fillipe") || n.includes("filipe")) return "Fillipe";
                 if (n.includes("cafe") || n.includes("café") || n.includes("joao")) return "João";
                 if (n.includes("cayo")) return "Cayo Bitencourt";
                 return null;

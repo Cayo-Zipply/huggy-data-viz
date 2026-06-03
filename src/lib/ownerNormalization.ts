@@ -33,9 +33,11 @@ const ALIAS_TO_GROUP: Record<string, string> = {
 
 // Nome canônico exibido para cada grupo conhecido. Quem não estiver listado
 // usa o nome mais "completo" (mais longo) entre as variantes encontradas.
+// Nomes oficiais curtos vindos de user_profiles. Sempre exibir o nome curto,
+// mesmo quando lead/agenda/read.ai trouxer o nome completo do Google.
 const GROUP_DISPLAY: Record<string, string> = {
   joao: "João",
-  fillipe: "Fillipe Amorim Oliveira Silva",
+  fillipe: "Fillipe",
 };
 
 function groupKey(name: string | null | undefined): string {

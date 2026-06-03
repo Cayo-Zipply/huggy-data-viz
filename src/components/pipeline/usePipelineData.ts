@@ -729,6 +729,26 @@ export function usePipelineData(actorName: string) {
 
   /* ── goals ── */
   const upsertGoal = useCallback(async (goal: PipelineGoal) => {
+    const firstNorm = (s: string) =>
+      (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().split(/\s+/)[0] || "";
+    const targetFirst = firstNorm(goal.closer);
+
+    // Remove linhas antigas para o mesmo mês cujo primeiro nome bate com o
+    // closer oficial mas tem grafia diferente (ex.: "Fillipe Amorim Oliveira
+    // Silva" vs. "Fillipe"). Evita duplicar e migra para o nome oficial curto.
+    if (targetFirst) {
+      const { data: existing } = await sbExt
+        .from("metas")
+        .select("closer")
+        .eq("mes", goal.month);
+      const stale = (existing || [])
+        .map((r: any) => r.closer as string)
+        .filter((c) => c && c !== goal.closer && firstNorm(c) === targetFirst);
+      if (stale.length) {
+        await sbExt.from("metas").delete().eq("mes", goal.month).in("closer", stale);
+      }
+    }
+
     await sbExt.from("metas").upsert({
       closer: goal.closer,
       mes: goal.month,
@@ -742,11 +762,13 @@ export function usePipelineData(actorName: string) {
     }, { onConflict: "closer,mes" });
 
     updateGoalsState(prev => {
-      const idx = prev.findIndex(g => g.closer === goal.closer && g.month === goal.month);
-      if (idx >= 0) { const n = [...prev]; n[idx] = goal; return n; }
-      return [...prev, goal];
+      const filtered = prev.filter(g => !(g.month === goal.month && firstNorm(g.closer) === targetFirst && g.closer !== goal.closer));
+      const idx = filtered.findIndex(g => g.closer === goal.closer && g.month === goal.month);
+      if (idx >= 0) { const n = [...filtered]; n[idx] = goal; return n; }
+      return [...filtered, goal];
     });
   }, [updateGoalsState]);
+
 
   /* ── CSV import ── */
   const importCSV = useCallback(async (text: string) => {
