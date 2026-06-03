@@ -238,7 +238,12 @@ export function ContractTab({ card, onUpdate }: Props) {
       dia_demais_pagamentos: form.dia_demais_pagamentos || null,
       prazo_entrega_relatorios: form.prazo_entrega_relatorios ? parseInt(form.prazo_entrega_relatorios) : null,
       prazo_contrato: form.prazo_contrato || null,
-    };
+      cnpjs_adicionais: isCNPJType ? cnpjsAdicionais.map(c => c.mesmo_endereco
+        ? { empresa: c.empresa, cnpj: c.cnpj, mesmo_endereco: true }
+        : { empresa: c.empresa, cnpj: c.cnpj, mesmo_endereco: false, endereco: c.endereco || "", cep: c.cep || "", cidade: c.cidade || "", estado: c.estado || "" }
+      ) : [],
+      socios_adicionais: isCNPJType ? sociosAdicionais.map(s => ({ nome: s.nome, cpf: s.cpf })) : [],
+    } as any;
     await onUpdate(card.id, updates);
   };
 
