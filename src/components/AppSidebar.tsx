@@ -108,7 +108,6 @@ export function AppSidebar() {
               {secondaryRole ? `${role} + ${secondaryRole}` : role}
             </p>
           </div>
-          <NotificationBell />
           <ChangePasswordDialog>
             <button
               className="text-muted-foreground hover:text-primary transition-colors"
