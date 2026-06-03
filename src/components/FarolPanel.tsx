@@ -1128,14 +1128,27 @@ function EditGoalsDialog({
   onSave: (g: PipelineGoal) => void | Promise<void>;
 }) {
   const allNames = useMemo(() => Array.from(new Set([...closers, ...sdrs])), [closers, sdrs]);
+  // Lookup tolerante: compara por PRIMEIRO NOME normalizado (sem acento, lowercase).
+  // Assim, uma meta salva como "Fillipe Amorim Oliveira Silva" casa com o nome
+  // oficial curto "Fillipe" vindo de user_profiles.
+  const firstNorm = (s: string) =>
+    (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().split(/\s+/)[0] || "";
+  const findGoal = (name: string) => {
+    const k = firstNorm(name);
+    return goals.find(g => g.month === monthKey && firstNorm(g.closer) === k);
+  };
   const initial = useMemo(() => {
     const map: Record<string, PipelineGoal> = {};
     allNames.forEach(n => {
-      const g = goals.find(x => x.closer === n && x.month === monthKey);
-      map[n] = g || { closer: n, month: monthKey, reunioes_marcadas_meta: 0, reunioes_realizadas_meta: 0, faturamento_meta: 0, conversao_meta: 0, vendas_meta: 0, ticket_medio_meta: 0, contratos_meta: 0 };
+      const g = findGoal(n);
+      // IMPORTANTE: sempre usar o nome oficial curto (n), nunca o que veio do banco
+      map[n] = g
+        ? { ...g, closer: n, month: monthKey }
+        : { closer: n, month: monthKey, reunioes_marcadas_meta: 0, reunioes_realizadas_meta: 0, faturamento_meta: 0, conversao_meta: 0, vendas_meta: 0, ticket_medio_meta: 0, contratos_meta: 0 };
     });
     return map;
   }, [allNames, goals, monthKey]);
+
   const draftKey = `farol_goals_draft_${monthKey}`;
   const [draft, setDraft] = useState<Record<string, PipelineGoal>>(initial);
 
@@ -1171,12 +1184,14 @@ function EditGoalsDialog({
   const save = async () => {
     for (const name of allNames) {
       // Vendas e Contratos são a mesma métrica — espelha contratos_meta em vendas_meta
-      const g = { ...draft[name], vendas_meta: draft[name]?.contratos_meta ?? 0 } as PipelineGoal;
+      // Garante closer = nome oficial curto (user_profiles), nunca nome longo do banco
+      const g = { ...draft[name], closer: name, month: monthKey, vendas_meta: draft[name]?.contratos_meta ?? 0 } as PipelineGoal;
       await onSave(g);
     }
     try { localStorage.removeItem(draftKey); } catch {}
     onOpenChange(false);
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
