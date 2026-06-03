@@ -80,11 +80,21 @@ export default function Settings() {
     setEditColor(label.color);
   };
 
-  const handleSaveSla = async (etapa: string, field: string, value: any) => {
-    const existing = rules.find(r => r.etapa === etapa);
-    const update: any = { etapa, ...(existing || {}), [field]: value };
-    await upsertRule(update);
-    toast({ title: "SLA salvo", description: `SLA de ${STAGE_CONFIG[etapa as keyof typeof STAGE_CONFIG]?.label || etapa} atualizado.` });
+  const handleSaveSla = async (etapaLabel: string, field: string, value: any) => {
+    const existing = rules.find(r => r.etapa === etapaLabel);
+    await upsertRule({ etapa: etapaLabel, ...(existing || {}), [field]: value } as any);
+    toast({ title: "SLA salvo", description: `SLA de ${etapaLabel} atualizado.` });
+  };
+
+  const [slaMaster, setSlaMaster] = useState<boolean>(() => {
+    try { return localStorage.getItem(SLA_MASTER_KEY) !== "false"; } catch { return true; }
+  });
+  const toggleSlaMaster = () => {
+    setSlaMaster(v => {
+      const next = !v;
+      try { localStorage.setItem(SLA_MASTER_KEY, String(next)); } catch {}
+      return next;
+    });
   };
 
   const handleCreateMotivo = async () => {
