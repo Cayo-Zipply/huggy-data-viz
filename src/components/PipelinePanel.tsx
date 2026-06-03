@@ -60,7 +60,7 @@ export function PipelinePanel() {
     return raw || "Usuário";
   }, [profile?.email, profile?.nome]);
 
-  const { cards, tasks, goals, createCard, updateCard, moveCard, markWon, markLost, createTask, toggleTask, rescheduleTask, upsertGoal, importCSV, deleteCard, saveObservation, refresh } = usePipelineData(currentUserName);
+  const { cards, tasks, goals, createCard, updateCard, moveCard, markWon, markLost, createTask, toggleTask, rescheduleTask, deleteTask, deleteTasks, upsertGoal, importCSV, deleteCard, saveObservation, refresh } = usePipelineData(currentUserName);
   const [refreshing, setRefreshing] = useState(false);
   const defaultPipe = isDual ? "all" : isCloser ? "closer" : isSdr ? "sdr" : "all";
   const [activePipe, setActivePipe] = useState<"sdr" | "closer" | "all">(() => {
