@@ -21,6 +21,7 @@ import {
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const NAV_ITEMS = [
   { key: "/farol", label: "Farol", icon: Gauge, roles: ["admin", "sdr", "closer"] },
@@ -107,6 +108,7 @@ export function AppSidebar() {
               {secondaryRole ? `${role} + ${secondaryRole}` : role}
             </p>
           </div>
+          <NotificationBell />
           <ChangePasswordDialog>
             <button
               className="text-muted-foreground hover:text-primary transition-colors"
