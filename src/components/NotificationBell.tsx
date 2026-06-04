@@ -42,6 +42,7 @@ function timeAgo(iso: string) {
 
 export function NotificationBell() {
   const { user, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [items, setItems] = useState<Recipient[]>([]);
   const [open, setOpen] = useState(false);
 
@@ -49,7 +50,7 @@ export function NotificationBell() {
     const { data, error } = await supabase
       .from("notification_recipients" as any)
       .select(
-        "id, read_at, created_at, notification:notifications(id, title, message, created_by_nome, created_at)"
+        "id, read_at, created_at, notification:notifications(id, title, message, created_by_nome, created_at, lead_id, tipo)"
       )
       .order("created_at", { ascending: false })
       .limit(50);
