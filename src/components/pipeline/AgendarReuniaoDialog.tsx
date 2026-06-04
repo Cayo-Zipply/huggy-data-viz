@@ -67,6 +67,25 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
       setExtras([]);
       setNovoExtra("");
       setResultado(null);
+      setCloserEmail(null);
+
+      // Buscar e-mail do closer responsável
+      const nomeCloser = card.owner;
+      if (nomeCloser) {
+        const emailDoMap = CLOSER_MAP[nomeCloser];
+        if (emailDoMap) {
+          setCloserEmail(emailDoMap);
+        } else {
+          (supabase as any)
+            .from("user_profiles")
+            .select("email")
+            .eq("nome", nomeCloser)
+            .maybeSingle()
+            .then(({ data, error }: any) => {
+              if (data?.email && !error) setCloserEmail(data.email);
+            });
+        }
+      }
     }
   }, [open, card, tituloDefault, descricaoDefault]);
 
