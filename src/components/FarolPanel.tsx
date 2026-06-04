@@ -307,16 +307,6 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
     return { mes, hoje: hojeArr };
   }, [cards, start, end]);
 
-  const reunioesMarcadasPorCloser = useMemo(() => {
-    const map = new Map<string, number>();
-    reunioesMarcadasPorData.mes.forEach(c => {
-      const key = canonical(c.owner || "Sem responsável");
-      map.set(key, (map.get(key) || 0) + 1);
-    });
-    return Array.from(map.entries())
-      .map(([closer, value]) => ({ closer, value }))
-      .sort((a, b) => b.value - a.value);
-  }, [reunioesMarcadasPorData.mes, canonical]);
   const ganhosMes = useMemo(() => {
     return cards.filter(c => {
       if (c.lead_status !== "ganho") return false;
