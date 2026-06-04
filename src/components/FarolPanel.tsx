@@ -630,8 +630,13 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
         topByContratos,
       },
       rankings: { topByFat, topByRR },
+      reunioesMarcadas: {
+        mes: reunioesMarcadasPorData.mes.length,
+        hoje: reunioesMarcadasPorData.hoje.length,
+        porCloser: reunioesMarcadasPorCloser,
+      },
     };
-  }, [inboundData, inboundTotal, preVendasTotal, reunioesRealizadas.length, closerRows, goals, monthKey, passedBD, ratio, fatorPace, du.restantes, contratosMes.length, contratosEnviados, contratosAssinados]);
+  }, [inboundData, inboundTotal, preVendasTotal, reunioesRealizadas.length, closerRows, goals, monthKey, passedBD, ratio, fatorPace, du.restantes, contratosMes.length, contratosEnviados, contratosAssinados, reunioesMarcadasPorData, reunioesMarcadasPorCloser]);
 
 
   return (
