@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Bell, Send } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseExternal";
 import { useAuth } from "@/contexts/AuthContext";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -23,6 +24,8 @@ interface Recipient {
     message: string;
     created_by_nome: string | null;
     created_at: string;
+    lead_id: string | null;
+    tipo: string | null;
   } | null;
 }
 
@@ -39,6 +42,7 @@ function timeAgo(iso: string) {
 
 export function NotificationBell() {
   const { user, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [items, setItems] = useState<Recipient[]>([]);
   const [open, setOpen] = useState(false);
 
@@ -46,7 +50,7 @@ export function NotificationBell() {
     const { data, error } = await supabase
       .from("notification_recipients" as any)
       .select(
-        "id, read_at, created_at, notification:notifications(id, title, message, created_by_nome, created_at)"
+        "id, read_at, created_at, notification:notifications(id, title, message, created_by_nome, created_at, lead_id, tipo)"
       )
       .order("created_at", { ascending: false })
       .limit(50);
@@ -130,13 +134,33 @@ export function NotificationBell() {
                   const n = r.notification;
                   if (!n) return null;
                   const unreadItem = r.read_at === null;
+                  const tipoIcon =
+                    n.tipo === "contrato_assinado" ? "✅" :
+                    n.tipo === "contrato_aberto" ? "📄" : null;
+                  const tipoAccent =
+                    n.tipo === "contrato_assinado" ? "border-l-2 border-emerald-500" :
+                    n.tipo === "contrato_aberto" ? "border-l-2 border-amber-500" : "";
+                  const handleClick = () => {
+                    if (unreadItem) markOne(r.id);
+                    if (n.lead_id) {
+                      setOpen(false);
+                      navigate("/pipeline");
+                      // dispatch after route change so PipelinePanel handler is mounted
+                      setTimeout(() => {
+                        window.dispatchEvent(
+                          new CustomEvent("open-lead-card", { detail: { leadId: n.lead_id } })
+                        );
+                      }, 50);
+                    }
+                  };
                   return (
                     <li
                       key={r.id}
-                      onClick={() => unreadItem && markOne(r.id)}
+                      onClick={handleClick}
                       className={cn(
                         "p-3 cursor-pointer hover:bg-accent/50 transition-colors",
-                        unreadItem && "bg-primary/5"
+                        unreadItem && "bg-primary/5",
+                        tipoAccent
                       )}
                     >
                       <div className="flex items-start gap-2">
@@ -144,13 +168,17 @@ export function NotificationBell() {
                           <span className="mt-1.5 h-2 w-2 rounded-full bg-primary shrink-0" />
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold">{n.title}</p>
+                          <p className="text-sm font-semibold">
+                            {tipoIcon && <span className="mr-1">{tipoIcon}</span>}
+                            {n.title}
+                          </p>
                           <p className="text-xs text-muted-foreground whitespace-pre-wrap">
                             {n.message}
                           </p>
                           <p className="text-[10px] text-muted-foreground mt-1">
                             {n.created_by_nome ? `${n.created_by_nome} · ` : ""}
                             {timeAgo(n.created_at)}
+                            {n.lead_id ? " · clique para abrir o card" : ""}
                           </p>
                         </div>
                       </div>
