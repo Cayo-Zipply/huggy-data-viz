@@ -129,6 +129,18 @@ export function PipelinePanel() {
     sessionStorage.setItem(PIPELINE_UI_KEYS.drawerOpen, String(drawerOpen));
   }, [drawerOpen, selectedCardId]);
 
+  // Listen to global "open-lead-card" event (from notifications bell)
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const leadId = (e as CustomEvent<{ leadId: string }>).detail?.leadId;
+      if (!leadId) return;
+      setSelectedCardId(leadId);
+      setDrawerOpen(true);
+    };
+    window.addEventListener("open-lead-card", handler);
+    return () => window.removeEventListener("open-lead-card", handler);
+  }, []);
+
   const ownerOptions = useMemo(() => {
     const raw: string[] = [
       currentUserName,
