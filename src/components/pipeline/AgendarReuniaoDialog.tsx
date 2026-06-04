@@ -114,6 +114,7 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
     try {
       const inicioISO = new Date(dataHora).toISOString();
 
+      const extrasComCloser = closerEmail ? [...extras, closerEmail] : extras;
       const { data, error } = await supabase.functions.invoke("criar-reuniao-meet", {
         body: {
           lead_id: card.id,
@@ -121,7 +122,7 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
           duracao_minutos: duracao,
           titulo,
           descricao,
-          convidados_extras: extras,
+          convidados_extras: extrasComCloser,
         },
       });
 
