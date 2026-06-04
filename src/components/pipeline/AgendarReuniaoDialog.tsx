@@ -56,6 +56,7 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
   const [novoExtra, setNovoExtra] = useState("");
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState<{ meet_link: string; html_link: string; convidados: string[] } | null>(null);
+  const [closerEmail, setCloserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && card) {
