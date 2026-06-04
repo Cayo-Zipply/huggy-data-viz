@@ -428,11 +428,88 @@ export function ContractTab({ card, onUpdate }: Props) {
           </div>
         )}
 
-        {card.contrato_status === "enviado" && card.contract_url && (
-          <a href={card.contract_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors border border-amber-500/20 w-fit">
-            <ExternalLink size={16} />Ver no ZapSign
-          </a>
-        )}
+{(() => {
+          const signerToken = (card as any).zapsign_signer_token as string | null | undefined;
+          const isZapUrl = card.contract_url && card.contract_url.startsWith("https://app.zapsign.com.br/");
+          const signLink = isZapUrl
+            ? card.contract_url!
+            : (signerToken ? `https://app.zapsign.com.br/verificar/${signerToken}` : null);
+          if (!signLink) return null;
+
+          const copySignLink = async () => {
+            try { await navigator.clipboard.writeText(signLink); toast.success("Link copiado!"); }
+            catch { toast.error("Não foi possível copiar"); }
+          };
+
+          const buildProposalMessage = () => {
+            const primeiroNome = (card.nome || "").trim().split(/\s+/)[0] || card.nome || "";
+            const vm = card.valor_mensalidade;
+            const valorFmt = vm != null
+              ? vm.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+              : "—";
+            const qtdSm = (card.qtd_salarios_minimos || "").replace(".", ",");
+
+            let diasTxt = "alguns";
+            const dp = card.data_primeiro_pagamento;
+            if (dp && /^\d{4}-\d{2}-\d{2}/.test(dp)) {
+              const [y, m, d] = dp.slice(0, 10).split("-").map(Number);
+              const target = new Date(Date.UTC(y, m - 1, d));
+              const nowSP = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+              const todayUTC = new Date(Date.UTC(nowSP.getFullYear(), nowSP.getMonth(), nowSP.getDate()));
+              const diff = Math.ceil((target.getTime() - todayUTC.getTime()) / 86400000);
+              diasTxt = String(Math.max(0, diff));
+            }
+
+            return `${primeiroNome} ! Conforme alinhamos na reunião, estou te encaminhando nossa proposta comercial de assessoria jurídica tributária para análise.
+Atuamos com exclusão de débitos fiscais e negociação tributária, sempre com foco em segurança jurídica e previsibilidade financeira para empresários e sócios.
+Na proposta, você encontrará:
+📌 Mensalidade: R$ ${valorFmt} (${qtdSm} salário-mínimo), com o primeiro pagamento apenas ${diasTxt} dias após a assinatura;
+📌 Relatório fiscal e judicial completo, entregue em até 7 dias úteis após o envio dos acessos.
+Nosso acompanhamento é contínuo, com análise mensal de oportunidades de negociação e exclusão de débitos.
+${signLink}`;
+          };
+
+          const copyProposal = async () => {
+            try { await navigator.clipboard.writeText(buildProposalMessage()); toast.success("Mensagem copiada!"); }
+            catch { toast.error("Não foi possível copiar"); }
+          };
+
+          return (
+            <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
+              <p className="text-xs font-medium text-foreground uppercase tracking-wider">Link de assinatura (ZapSign)</p>
+              <div className="flex items-center gap-2">
+                <input
+                  readOnly
+                  value={signLink}
+                  onFocus={e => e.currentTarget.select()}
+                  className="flex-1 min-w-0 text-xs bg-background border border-border rounded-md px-2 py-1.5 text-foreground"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={copySignLink}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-border bg-background hover:bg-muted text-foreground"
+                >
+                  <Copy size={12} /> Copiar
+                </button>
+                <a
+                  href={signLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-border bg-background hover:bg-muted text-foreground"
+                >
+                  <ExternalLink size={12} /> Abrir
+                </a>
+                <button
+                  onClick={copyProposal}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary"
+                >
+                  <Copy size={12} /> Copiar mensagem com o Link
+                </button>
+              </div>
+            </div>
+          );
+        })()}
 
         {card.contrato_status === "enviado_whatsapp" && (
           <p className="text-xs text-muted-foreground bg-emerald-500/10 rounded-lg p-3 border border-emerald-500/20">
