@@ -95,21 +95,6 @@ function dateInRange(dateLike: string | null | undefined, start: Date, end: Date
   return !Number.isNaN(d.getTime()) && d >= start && d <= end;
 }
 
-/** Data em São Paulo (meia-noite local) a partir de um ISO string */
-function spDate(iso: string | null | undefined): Date | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  const sp = new Date(d.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-  return new Date(sp.getFullYear(), sp.getMonth(), sp.getDate());
-}
-
-function spToday(): Date {
-  const now = new Date();
-  const sp = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-  return new Date(sp.getFullYear(), sp.getMonth(), sp.getDate());
-}
-
 function getReuniaoRealizadaDate(c: PipelineCard): string | null {
   const historyHit = (c.history || []).find(h => normalizeStageName(h.to) === "reuniao_realizada");
   if (historyHit?.at) return historyHit.at;
@@ -292,21 +277,6 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
     () => currentStageInMonth(["no_show"]),
     [closerCards, start, end]
   );
-
-  // ── Reuniões Marcadas (por data_reuniao, independente de status) ──
-  const reunioesMarcadasPorData = useMemo(() => {
-    const hoje = spToday();
-    const mes: PipelineCard[] = [];
-    const hojeArr: PipelineCard[] = [];
-    for (const c of cards) {
-      const d = spDate(c.data_reuniao);
-      if (!d) continue;
-      if (d >= start && d <= end) mes.push(c);
-      if (d.getTime() === hoje.getTime()) hojeArr.push(c);
-    }
-    return { mes, hoje: hojeArr };
-  }, [cards, start, end]);
-
   const ganhosMes = useMemo(() => {
     return cards.filter(c => {
       if (c.lead_status !== "ganho") return false;
@@ -369,17 +339,6 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
     ["Cayo Bitencourt", "João", "Fillipe Amorim Oliveira Silva"].forEach(n => all.push(n));
     return buildCanonicalizer(all);
   }, [closerNames, closerCards, cards, goals]);
-
-  const reunioesMarcadasPorCloser = useMemo(() => {
-    const map = new Map<string, number>();
-    reunioesMarcadasPorData.mes.forEach(c => {
-      const key = canonical(c.owner || "Sem responsável");
-      map.set(key, (map.get(key) || 0) + 1);
-    });
-    return Array.from(map.entries())
-      .map(([closer, value]) => ({ closer, value }))
-      .sort((a, b) => b.value - a.value);
-  }, [reunioesMarcadasPorData.mes, canonical]);
 
   const closerRows = useMemo(() => {
     const set = new Set<string>();
@@ -630,13 +589,8 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
         topByContratos,
       },
       rankings: { topByFat, topByRR },
-      reunioesMarcadas: {
-        mes: reunioesMarcadasPorData.mes.length,
-        hoje: reunioesMarcadasPorData.hoje.length,
-        porCloser: reunioesMarcadasPorCloser,
-      },
     };
-  }, [inboundData, inboundTotal, preVendasTotal, reunioesRealizadas.length, closerRows, goals, monthKey, passedBD, ratio, fatorPace, du.restantes, contratosMes.length, contratosEnviados, contratosAssinados, reunioesMarcadasPorData, reunioesMarcadasPorCloser]);
+  }, [inboundData, inboundTotal, preVendasTotal, reunioesRealizadas.length, closerRows, goals, monthKey, passedBD, ratio, fatorPace, du.restantes, contratosMes.length, contratosEnviados, contratosAssinados]);
 
 
   return (
@@ -721,7 +675,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
         <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
           Visão Geral
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <HeroCard
           icon={<DollarSign className="w-4 h-4" />}
             title="Faturamento"
@@ -733,15 +687,6 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
           progressLabel={`Pace ${Math.round(globais.faturamento.pacePct)}%`}
           footerLeft={{ label: "Falta p/ pace", value: formatBRL(globais.faturamento.faltaPace), tone: globais.faturamento.faltaPace > 0 ? "red" : "green" }}
           footerRight={{ label: "Por closer", value: <RankList items={globais.rankings.topByFat} format={(v) => formatBRL(v)} /> }}
-        />
-        <HeroCard
-          icon={<CalendarDays className="w-4 h-4" />}
-          title="Reuniões Marcadas"
-          value={String(globais.reunioesMarcadas.mes)}
-          metaLabel={`Hoje: ${globais.reunioesMarcadas.hoje}`}
-          progress={0}
-          footerLeft={{ label: "—", value: "—" }}
-          footerRight={{ label: "Por closer", value: <RankList items={globais.reunioesMarcadas.porCloser} format={(v) => String(v)} /> }}
         />
         <HeroCard
           icon={<Users className="w-4 h-4" />}
