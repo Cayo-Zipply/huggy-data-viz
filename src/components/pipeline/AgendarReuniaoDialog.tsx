@@ -5,6 +5,15 @@ import { supabase } from "@/lib/supabaseExternal";
 import { toast } from "sonner";
 import type { PipelineCard } from "./types";
 
+const CLOSER_MAP: Record<string, string> = {
+  "Fillipe": "fillipe.amorim@penaquadros.com",
+  "Luka": "luka.freitas@penaquadros.com",
+  "João": "joao.almeida@penaquadros.com",
+  "Paulo": "paulo.vitor@penaquadros.com",
+  "Stephanie": "stephanie@penaquadros.com",
+  "Cayo Bitencourt": "cayo.bitencourt@penaquadros.com",
+};
+
 interface Props {
   card: PipelineCard | null;
   open: boolean;
