@@ -24,6 +24,8 @@ interface Recipient {
     message: string;
     created_by_nome: string | null;
     created_at: string;
+    lead_id: string | null;
+    tipo: string | null;
   } | null;
 }
 
