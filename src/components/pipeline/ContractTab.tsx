@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink, MessageCircle, Eye, Plus, Trash2 } from "lucide-react";
+import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink, MessageCircle, Eye, Plus, Trash2, Copy } from "lucide-react";
 
 type CnpjAdicional = {
   empresa: string;
