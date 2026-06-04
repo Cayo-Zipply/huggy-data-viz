@@ -370,6 +370,17 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
     return buildCanonicalizer(all);
   }, [closerNames, closerCards, cards, goals]);
 
+  const reunioesMarcadasPorCloser = useMemo(() => {
+    const map = new Map<string, number>();
+    reunioesMarcadasPorData.mes.forEach(c => {
+      const key = canonical(c.owner || "Sem responsável");
+      map.set(key, (map.get(key) || 0) + 1);
+    });
+    return Array.from(map.entries())
+      .map(([closer, value]) => ({ closer, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [reunioesMarcadasPorData.mes, canonical]);
+
   const closerRows = useMemo(() => {
     const set = new Set<string>();
     closerNames.forEach(n => n && set.add(canonical(n)));
