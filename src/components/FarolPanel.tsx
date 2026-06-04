@@ -735,6 +735,15 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
           footerRight={{ label: "Por closer", value: <RankList items={globais.rankings.topByFat} format={(v) => formatBRL(v)} /> }}
         />
         <HeroCard
+          icon={<CalendarDays className="w-4 h-4" />}
+          title="Reuniões Marcadas"
+          value={String(globais.reunioesMarcadas.mes)}
+          metaLabel={`Hoje: ${globais.reunioesMarcadas.hoje}`}
+          progress={0}
+          footerLeft={{ label: "—", value: "—" }}
+          footerRight={{ label: "Por closer", value: <RankList items={globais.reunioesMarcadas.porCloser} format={(v) => String(v)} /> }}
+        />
+        <HeroCard
           icon={<Users className="w-4 h-4" />}
           title="Reuniões realizadas"
           value={String(globais.reunioes.realizadas)}
