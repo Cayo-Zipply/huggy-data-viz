@@ -512,6 +512,10 @@ ${signLink}`;
           );
         })()}
 
+        <ZapsignHistory leadId={card.id} />
+
+
+
         {card.contrato_status === "enviado_whatsapp" && (
           <p className="text-xs text-muted-foreground bg-emerald-500/10 rounded-lg p-3 border border-emerald-500/20">
             📱 Contrato enviado via WhatsApp. O link de download expira em 7 dias.
