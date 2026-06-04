@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink, MessageCircle, Eye, Plus, Trash2, Copy } from "lucide-react";
+import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink, MessageCircle, Eye, Plus, Trash2, Copy, Send, CheckCircle2, AlertTriangle } from "lucide-react";
+import { ZapsignHistory } from "./ZapsignHistory";
 
 type CnpjAdicional = {
   empresa: string;
@@ -510,6 +511,10 @@ ${signLink}`;
             </div>
           );
         })()}
+
+        <ZapsignHistory leadId={card.id} />
+
+
 
         {card.contrato_status === "enviado_whatsapp" && (
           <p className="text-xs text-muted-foreground bg-emerald-500/10 rounded-lg p-3 border border-emerald-500/20">
