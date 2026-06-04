@@ -5,6 +5,15 @@ import { supabase } from "@/lib/supabaseExternal";
 import { toast } from "sonner";
 import type { PipelineCard } from "./types";
 
+const CLOSER_MAP: Record<string, string> = {
+  "Fillipe": "fillipe.amorim@penaquadros.com",
+  "Luka": "luka.freitas@penaquadros.com",
+  "João": "joao.almeida@penaquadros.com",
+  "Paulo": "paulo.vitor@penaquadros.com",
+  "Stephanie": "stephanie@penaquadros.com",
+  "Cayo Bitencourt": "cayo.bitencourt@penaquadros.com",
+};
+
 interface Props {
   card: PipelineCard | null;
   open: boolean;
@@ -47,6 +56,7 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
   const [novoExtra, setNovoExtra] = useState("");
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState<{ meet_link: string; html_link: string; convidados: string[] } | null>(null);
+  const [closerEmail, setCloserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && card) {
@@ -57,6 +67,25 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
       setExtras([]);
       setNovoExtra("");
       setResultado(null);
+      setCloserEmail(null);
+
+      // Buscar e-mail do closer responsável
+      const nomeCloser = card.owner;
+      if (nomeCloser) {
+        const emailDoMap = CLOSER_MAP[nomeCloser];
+        if (emailDoMap) {
+          setCloserEmail(emailDoMap);
+        } else {
+          (supabase as any)
+            .from("user_profiles")
+            .select("email")
+            .eq("nome", nomeCloser)
+            .maybeSingle()
+            .then(({ data, error }: any) => {
+              if (data?.email && !error) setCloserEmail(data.email);
+            });
+        }
+      }
     }
   }, [open, card, tituloDefault, descricaoDefault]);
 
@@ -85,6 +114,7 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
     try {
       const inicioISO = new Date(dataHora).toISOString();
 
+      const extrasComCloser = closerEmail ? [...extras, closerEmail] : extras;
       const { data, error } = await supabase.functions.invoke("criar-reuniao-meet", {
         body: {
           lead_id: card.id,
@@ -92,7 +122,7 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
           duracao_minutos: duracao,
           titulo,
           descricao,
-          convidados_extras: extras,
+          convidados_extras: extrasComCloser,
         },
       });
 
@@ -203,6 +233,12 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
                   </div>
                 ) : (
                   <p className="text-xs text-amber-400 px-1">Lead sem e-mail cadastrado — adicione o e-mail no card antes de agendar.</p>
+                )}
+                {closerEmail && (
+                  <div className="flex items-center justify-between text-xs px-2.5 py-1.5 bg-muted/50 rounded-md">
+                    <span>{closerEmail}</span>
+                    <span className="text-[10px] text-muted-foreground">closer</span>
+                  </div>
                 )}
                 {extras.map(e => (
                   <div key={e} className="flex items-center justify-between text-xs px-2.5 py-1.5 bg-muted/50 rounded-md">
