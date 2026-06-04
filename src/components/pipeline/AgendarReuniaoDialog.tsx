@@ -233,6 +233,12 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
                 ) : (
                   <p className="text-xs text-amber-400 px-1">Lead sem e-mail cadastrado — adicione o e-mail no card antes de agendar.</p>
                 )}
+                {closerEmail && (
+                  <div className="flex items-center justify-between text-xs px-2.5 py-1.5 bg-muted/50 rounded-md">
+                    <span>{closerEmail}</span>
+                    <span className="text-[10px] text-muted-foreground">closer</span>
+                  </div>
+                )}
                 {extras.map(e => (
                   <div key={e} className="flex items-center justify-between text-xs px-2.5 py-1.5 bg-muted/50 rounded-md">
                     <span>{e}</span>
