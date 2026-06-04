@@ -95,6 +95,21 @@ function dateInRange(dateLike: string | null | undefined, start: Date, end: Date
   return !Number.isNaN(d.getTime()) && d >= start && d <= end;
 }
 
+/** Data em São Paulo (meia-noite local) a partir de um ISO string */
+function spDate(iso: string | null | undefined): Date | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const sp = new Date(d.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  return new Date(sp.getFullYear(), sp.getMonth(), sp.getDate());
+}
+
+function spToday(): Date {
+  const now = new Date();
+  const sp = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  return new Date(sp.getFullYear(), sp.getMonth(), sp.getDate());
+}
+
 function getReuniaoRealizadaDate(c: PipelineCard): string | null {
   const historyHit = (c.history || []).find(h => normalizeStageName(h.to) === "reuniao_realizada");
   if (historyHit?.at) return historyHit.at;
