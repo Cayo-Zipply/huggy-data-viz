@@ -292,6 +292,31 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
     () => currentStageInMonth(["no_show"]),
     [closerCards, start, end]
   );
+
+  // ── Reuniões Marcadas (por data_reuniao, independente de status) ──
+  const reunioesMarcadasPorData = useMemo(() => {
+    const hoje = spToday();
+    const mes: PipelineCard[] = [];
+    const hojeArr: PipelineCard[] = [];
+    for (const c of cards) {
+      const d = spDate(c.data_reuniao);
+      if (!d) continue;
+      if (d >= start && d <= end) mes.push(c);
+      if (d.getTime() === hoje.getTime()) hojeArr.push(c);
+    }
+    return { mes, hoje: hojeArr };
+  }, [cards, start, end]);
+
+  const reunioesMarcadasPorCloser = useMemo(() => {
+    const map = new Map<string, number>();
+    reunioesMarcadasPorData.mes.forEach(c => {
+      const key = canonical(c.owner || "Sem responsável");
+      map.set(key, (map.get(key) || 0) + 1);
+    });
+    return Array.from(map.entries())
+      .map(([closer, value]) => ({ closer, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [reunioesMarcadasPorData.mes, canonical]);
   const ganhosMes = useMemo(() => {
     return cards.filter(c => {
       if (c.lead_status !== "ganho") return false;
