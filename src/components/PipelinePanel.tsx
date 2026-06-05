@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { Search, UserCircle, LayoutGrid, ListChecks, BarChart3, Target, Upload, Plus, ChevronDown, Trash2, ArrowRightLeft, UserPlus, CheckSquare, X, CalendarIcon, RefreshCw } from "lucide-react";
+import { Search, UserCircle, LayoutGrid, ListChecks, BarChart3, Target, Upload, Plus, ChevronDown, Trash2, ArrowRightLeft, UserPlus, CheckSquare, X, CalendarIcon, RefreshCw, Flame } from "lucide-react";
+import BurnFupDialog from "./pipeline/BurnFupDialog";
+import BalaoDiscando from "./pipeline/BalaoDiscando";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
