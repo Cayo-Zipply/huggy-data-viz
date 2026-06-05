@@ -7,33 +7,20 @@ export interface CallAtiva {
   nome: string | null;
   telefone: string | null;
   uid: string | null;
-  estado_raw: any;
-}
-
-const ESTADOS_DISCANDO = ["DISCANDO", "CHAMANDO", "ORIGINANDO"];
-const ESTADOS_ATENDIDO = ["ATENDIDO", "EM_ATENDIMENTO", "FALANDO", "EM ATENDIMENTO"];
-
-function extractEstado(raw: any): string {
-  if (!raw) return "";
-  if (typeof raw === "string") return raw.toUpperCase();
-  const v = raw.estado || raw.status || raw.situacao || "";
-  return String(v).toUpperCase();
-}
-
-export function statusDaChamada(call: CallAtiva | null): "discando" | "atendido" | "idle" {
-  if (!call?.ativo) return "idle";
-  const est = extractEstado(call.estado_raw);
-  if (ESTADOS_ATENDIDO.some((e) => est.includes(e))) return "atendido";
-  if (ESTADOS_DISCANDO.some((e) => est.includes(e))) return "discando";
-  return "discando";
+  etapa_atual?: string | null;
+  estado_raw?: any;
 }
 
 export function useDiscadorAtivo(ramal: string, login: string, enabled = true) {
   const [call, setCall] = useState<CallAtiva | null>(null);
-  const lastOpenedRef = useRef<string | null>(null);
+  const lastKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!enabled || !ramal) return;
+    if (!enabled || !ramal) {
+      setCall(null);
+      lastKeyRef.current = null;
+      return;
+    }
     let cancelled = false;
     const tick = async () => {
       try {
@@ -45,17 +32,16 @@ export function useDiscadorAtivo(ramal: string, login: string, enabled = true) {
         setCall(c);
 
         if (c?.ativo && c.lead_id) {
-          const status = statusDaChamada(c);
-          const key = `${c.uid || c.lead_id}-${status}`;
-          if (status === "atendido" && lastOpenedRef.current !== key) {
-            lastOpenedRef.current = key;
+          const key = c.uid || c.lead_id;
+          if (lastKeyRef.current !== key) {
+            lastKeyRef.current = key;
             window.dispatchEvent(new CustomEvent("open-lead-card", { detail: { leadId: c.lead_id } }));
           }
         } else {
-          lastOpenedRef.current = null;
+          lastKeyRef.current = null;
         }
       } catch {
-        /* ignore polling errors */
+        /* ignore */
       }
     };
     tick();
@@ -63,5 +49,5 @@ export function useDiscadorAtivo(ramal: string, login: string, enabled = true) {
     return () => { cancelled = true; clearInterval(id); };
   }, [ramal, login, enabled]);
 
-  return { call, status: statusDaChamada(call) };
+  return { call };
 }
