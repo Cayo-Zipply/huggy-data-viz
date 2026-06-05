@@ -9,6 +9,8 @@ import { supabase } from "@/lib/supabaseExternal";
 import { STAGE_CONFIG, STAGE_ORDER, type Stage } from "./types";
 import { toast } from "sonner";
 import { Flame, Loader2, Trash2 } from "lucide-react";
+import { burnState } from "@/lib/burnState";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Tipo = "tag" | "etapa" | "parado";
 type Quando = "agora" | "agendar";
@@ -24,6 +26,7 @@ interface FupJob {
 }
 
 export default function BurnFupDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const { user } = useAuth();
   const [tipo, setTipo] = useState<Tipo>("tag");
   const [etapa, setEtapa] = useState<Stage>("conectado");
   const [dias, setDias] = useState<number>(2);
@@ -89,11 +92,12 @@ export default function BurnFupDialog({ open, onOpenChange }: { open: boolean; o
     try {
       if (quando === "agora") {
         const { data: resp, error } = await supabase.functions.invoke("iniciar-fup", {
-          body: { criterio },
+          body: { criterio, criado_por: user?.id ?? null },
         });
         if (error) throw error;
         const r = resp as any;
         if (r?.error) throw new Error(r.error);
+        if (r?.run_id) burnState.set(r.run_id);
         await (supabase as any).from("fup_jobs").insert({
           criterio,
           rotulo,
