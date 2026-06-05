@@ -561,6 +561,14 @@ export function PipelinePanel() {
               )}
 
               <button
+                onClick={() => setBurnOpen(true)}
+                title="Disparar FUP no discador IPBOX"
+                className="flex items-center gap-1 rounded-lg bg-orange-500 px-2.5 py-1 text-[11px] font-medium text-white transition-opacity hover:opacity-90"
+              >
+                <Flame size={11} />Burn
+              </button>
+
+              <button
                 onClick={() => setShowNewLead(!showNewLead)}
                 className="flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground transition-opacity hover:opacity-90"
               >
