@@ -3,20 +3,21 @@ import { supabase } from "@/lib/supabaseExternal";
 
 export interface CallAtiva {
   ativo: boolean;
+  ramal?: string | null;
   lead_id: string | null;
   nome: string | null;
   telefone: string | null;
-  uid: string | null;
+  uid?: string | null;
   etapa_atual?: string | null;
   estado_raw?: any;
 }
 
-export function useDiscadorAtivo(ramal: string, login: string, enabled = true) {
+export function useDiscadorAtivo(email: string | null | undefined, enabled = true) {
   const [call, setCall] = useState<CallAtiva | null>(null);
   const lastKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!enabled || !ramal) {
+    if (!enabled || !email) {
       setCall(null);
       lastKeyRef.current = null;
       return;
@@ -25,7 +26,7 @@ export function useDiscadorAtivo(ramal: string, login: string, enabled = true) {
     const tick = async () => {
       try {
         const { data } = await supabase.functions.invoke("ipbox-atendimento-ativo", {
-          body: { ramal, login },
+          body: { email },
         });
         if (cancelled) return;
         const c = (data as CallAtiva) || null;
@@ -47,7 +48,7 @@ export function useDiscadorAtivo(ramal: string, login: string, enabled = true) {
     tick();
     const id = setInterval(tick, 2500);
     return () => { cancelled = true; clearInterval(id); };
-  }, [ramal, login, enabled]);
+  }, [email, enabled]);
 
   return { call };
 }
