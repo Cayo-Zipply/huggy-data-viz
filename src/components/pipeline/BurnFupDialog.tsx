@@ -26,6 +26,7 @@ interface FupJob {
 }
 
 export default function BurnFupDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const { user } = useAuth();
   const [tipo, setTipo] = useState<Tipo>("tag");
   const [etapa, setEtapa] = useState<Stage>("conectado");
   const [dias, setDias] = useState<number>(2);
