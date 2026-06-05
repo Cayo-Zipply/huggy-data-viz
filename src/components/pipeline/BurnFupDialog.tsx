@@ -8,12 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/lib/supabaseExternal";
 import { STAGE_CONFIG, STAGE_ORDER, type Stage } from "./types";
 import { toast } from "sonner";
-import { Flame, Loader2, Trash2 } from "lucide-react";
+import { Flame, Loader2, Trash2, Repeat } from "lucide-react";
 import { burnState } from "@/lib/burnState";
 import { useAuth } from "@/contexts/AuthContext";
 
-type Tipo = "tag" | "etapa" | "parado";
+type Tipo = "tag" | "etapa" | "parado" | "todos";
 type Quando = "agora" | "agendar";
+type PipeSel = "sdr" | "closer" | "tudo";
 
 interface FupJob {
   id: string;
@@ -25,12 +26,22 @@ interface FupJob {
   erro_msg: string | null;
 }
 
+interface FupRun {
+  id: string;
+  rotulo: string | null;
+  total: number | null;
+  discados: number | null;
+  status: string | null;
+  criado_em: string | null;
+}
+
 export default function BurnFupDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const { user } = useAuth();
   const [tipo, setTipo] = useState<Tipo>("tag");
   const [etapa, setEtapa] = useState<Stage>("conectado");
   const [dias, setDias] = useState<number>(2);
   const [etapaParado, setEtapaParado] = useState<string>("");
+  const [pipeTodos, setPipeTodos] = useState<PipeSel>("sdr");
   const [quando, setQuando] = useState<Quando>("agora");
   const [agendado, setAgendado] = useState<string>(() => {
     const d = new Date(Date.now() + 86400000);
@@ -41,16 +52,26 @@ export default function BurnFupDialog({ open, onOpenChange }: { open: boolean; o
   const [previewing, setPreviewing] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
   const [jobs, setJobs] = useState<FupJob[]>([]);
+  const [runs, setRuns] = useState<FupRun[]>([]);
+  const [repetindo, setRepetindo] = useState<string | null>(null);
 
   const criterio = (() => {
     if (tipo === "tag") return { tipo: "tag", valor: "ligar" };
-    if (tipo === "etapa") return { tipo: "etapa", valor: etapa };
-    return { tipo: "parado", dias, valor: etapaParado || null };
+    if (tipo === "etapa") return { tipo: "etapa", valor: STAGE_CONFIG[etapa].label };
+    if (tipo === "todos") {
+      const c: any = { tipo: "todos" };
+      if (pipeTodos !== "tudo") c.pipe = pipeTodos;
+      return c;
+    }
+    const c: any = { tipo: "parado", dias };
+    if (etapaParado) c.valor = STAGE_CONFIG[etapaParado as Stage].label;
+    return c;
   })();
 
   const rotulo = (() => {
     if (tipo === "tag") return "Leads com tag ligar";
     if (tipo === "etapa") return `Todos em ${STAGE_CONFIG[etapa].label}`;
+    if (tipo === "todos") return `Todos do pipe ${pipeTodos.toUpperCase()}`;
     return `Parados há ${dias}d${etapaParado ? ` em ${STAGE_CONFIG[etapaParado as Stage].label}` : ""}`;
   })();
 
@@ -63,14 +84,24 @@ export default function BurnFupDialog({ open, onOpenChange }: { open: boolean; o
     setJobs((data as FupJob[]) || []);
   }
 
+  async function loadRuns() {
+    const { data } = await (supabase as any)
+      .from("fup_runs")
+      .select("id, rotulo, total, discados, status, criado_em")
+      .order("criado_em", { ascending: false })
+      .limit(10);
+    setRuns((data as FupRun[]) || []);
+  }
+
   useEffect(() => {
     if (open) {
       loadJobs();
+      loadRuns();
       setPreview(null);
     }
   }, [open]);
 
-  useEffect(() => { setPreview(null); }, [tipo, etapa, dias, etapaParado]);
+  useEffect(() => { setPreview(null); }, [tipo, etapa, dias, etapaParado, pipeTodos]);
 
   async function fazerPreview() {
     setPreviewing(true);
@@ -98,15 +129,7 @@ export default function BurnFupDialog({ open, onOpenChange }: { open: boolean; o
         const r = resp as any;
         if (r?.error) throw new Error(r.error);
         if (r?.run_id) burnState.set(r.run_id);
-        await (supabase as any).from("fup_jobs").insert({
-          criterio,
-          rotulo,
-          agendado_para: new Date().toISOString(),
-          status: "executado",
-          total_enfileirado: r?.enfileirados ?? 0,
-          executado_em: new Date().toISOString(),
-        });
-        toast.success(`🔥 ${r?.enfileirados ?? 0} leads enviados pro discador`);
+        toast.success(`🔥 Burn iniciado · ${r?.total ?? 0} leads na fila`);
         onOpenChange(false);
       } else {
         const when = new Date(agendado).toISOString();
@@ -124,6 +147,25 @@ export default function BurnFupDialog({ open, onOpenChange }: { open: boolean; o
       toast.error("Erro: " + (e?.message || e));
     } finally {
       setConfirmando(false);
+    }
+  }
+
+  async function repetirRun(runId: string) {
+    setRepetindo(runId);
+    try {
+      const { data: resp, error } = await supabase.functions.invoke("iniciar-fup", {
+        body: { criterio: { tipo: "repetir", run_id: runId }, criado_por: user?.id ?? null },
+      });
+      if (error) throw error;
+      const r = resp as any;
+      if (r?.error) throw new Error(r.error);
+      if (r?.run_id) burnState.set(r.run_id);
+      toast.success(`🔥 Repetindo · ${r?.total ?? 0} leads`);
+      onOpenChange(false);
+    } catch (e: any) {
+      toast.error("Erro ao repetir: " + (e?.message || e));
+    } finally {
+      setRepetindo(null);
     }
   }
 
@@ -182,6 +224,20 @@ export default function BurnFupDialog({ open, onOpenChange }: { open: boolean; o
                   </>
                 )}
               </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="todos" id="t-todos" />
+                <Label htmlFor="t-todos" className="text-sm">Todos do pipe</Label>
+                {tipo === "todos" && (
+                  <Select value={pipeTodos} onValueChange={(v) => setPipeTodos(v as PipeSel)}>
+                    <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sdr">SDR</SelectItem>
+                      <SelectItem value="closer">Closer</SelectItem>
+                      <SelectItem value="tudo">Tudo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
             </RadioGroup>
           </div>
 
@@ -234,6 +290,34 @@ export default function BurnFupDialog({ open, onOpenChange }: { open: boolean; o
                     </div>
                     <Button size="sm" variant="ghost" onClick={() => cancelar(j.id)} className="h-7 px-2 text-destructive">
                       <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {runs.length > 0 && (
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground">BURNS ANTERIORES</Label>
+              <div className="mt-2 space-y-1.5">
+                {runs.map((r) => (
+                  <div key={r.id} className="flex items-center gap-2 p-2 rounded-md border border-border bg-card text-sm">
+                    <div className="flex-1 min-w-0">
+                      <div className="truncate font-medium">{r.rotulo || "Burn"}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {r.criado_em ? new Date(r.criado_em).toLocaleString("pt-BR") : "—"} · {r.discados ?? 0}/{r.total ?? 0} · {r.status}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => repetirRun(r.id)}
+                      disabled={repetindo === r.id}
+                      className="h-7 px-2"
+                      title="Repetir esta lista"
+                    >
+                      {repetindo === r.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Repeat className="w-3 h-3" />}
                     </Button>
                   </div>
                 ))}
