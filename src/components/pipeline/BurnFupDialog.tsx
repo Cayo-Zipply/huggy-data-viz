@@ -92,11 +92,12 @@ export default function BurnFupDialog({ open, onOpenChange }: { open: boolean; o
     try {
       if (quando === "agora") {
         const { data: resp, error } = await supabase.functions.invoke("iniciar-fup", {
-          body: { criterio },
+          body: { criterio, criado_por: user?.id ?? null },
         });
         if (error) throw error;
         const r = resp as any;
         if (r?.error) throw new Error(r.error);
+        if (r?.run_id) burnState.set(r.run_id);
         await (supabase as any).from("fup_jobs").insert({
           criterio,
           rotulo,
