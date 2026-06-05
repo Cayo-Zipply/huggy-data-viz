@@ -901,6 +901,9 @@ export function PipelinePanel() {
         onConfirm={confirmGanho}
         onCancel={() => setGanhoPending(null)}
       />
+
+      <BurnFupDialog open={burnOpen} onOpenChange={setBurnOpen} />
+      <BalaoDiscando />
     </div>
   );
 }
