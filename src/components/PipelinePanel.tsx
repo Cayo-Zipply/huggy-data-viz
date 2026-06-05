@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { Search, UserCircle, LayoutGrid, ListChecks, BarChart3, Target, Upload, Plus, ChevronDown, Trash2, ArrowRightLeft, UserPlus, CheckSquare, X, CalendarIcon, RefreshCw } from "lucide-react";
+import { Search, UserCircle, LayoutGrid, ListChecks, BarChart3, Target, Upload, Plus, ChevronDown, Trash2, ArrowRightLeft, UserPlus, CheckSquare, X, CalendarIcon, RefreshCw, Flame } from "lucide-react";
+import BurnFupDialog from "./pipeline/BurnFupDialog";
+import BalaoDiscando from "./pipeline/BalaoDiscando";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
@@ -82,6 +84,7 @@ export function PipelinePanel() {
   const [noShowPending, setNoShowPending] = useState<{ cardId: string; date: Date | undefined } | null>(null);
   const [lossPending, setLossPending] = useState<{ cardId: string; motivo: string; detalhe: string } | null>(null);
   const [ganhoPending, setGanhoPending] = useState<{ cardId: string; cardNome: string } | null>(null);
+  const [burnOpen, setBurnOpen] = useState(false);
   const { toast } = useToast();
 
   // Bulk selection state (admin only)
@@ -558,6 +561,14 @@ export function PipelinePanel() {
               )}
 
               <button
+                onClick={() => setBurnOpen(true)}
+                title="Disparar FUP no discador IPBOX"
+                className="flex items-center gap-1 rounded-lg bg-orange-500 px-2.5 py-1 text-[11px] font-medium text-white transition-opacity hover:opacity-90"
+              >
+                <Flame size={11} />Burn
+              </button>
+
+              <button
                 onClick={() => setShowNewLead(!showNewLead)}
                 className="flex items-center gap-1 rounded-lg bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground transition-opacity hover:opacity-90"
               >
@@ -890,6 +901,9 @@ export function PipelinePanel() {
         onConfirm={confirmGanho}
         onCancel={() => setGanhoPending(null)}
       />
+
+      <BurnFupDialog open={burnOpen} onOpenChange={setBurnOpen} />
+      <BalaoDiscando />
     </div>
   );
 }
