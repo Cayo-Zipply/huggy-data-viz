@@ -1,19 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { Phone, Flame } from "lucide-react";
+import { Phone, Flame, Pause, Play } from "lucide-react";
 import { useDiscadorAtivo } from "@/hooks/useDiscadorAtivo";
 import { useBurnRunId, burnState } from "@/lib/burnState";
 import { supabase } from "@/lib/supabaseExternal";
+import { useAuth } from "@/contexts/AuthContext";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-
-const RAMAL = "6017";
-const LOGIN = "Paulo Grilo";
 
 interface Progresso {
   existe: boolean;
   status: string;
   finalizado: boolean;
+  pausado: boolean;
   popup_visto: boolean;
   total: number;
   discados: number;
@@ -25,10 +24,12 @@ interface Progresso {
 }
 
 export default function BalaoDiscando() {
+  const { user } = useAuth();
   const runId = useBurnRunId();
-  const { call } = useDiscadorAtivo(RAMAL, LOGIN, !!runId);
+  const { call } = useDiscadorAtivo(user?.email, true);
   const [prog, setProg] = useState<Progresso | null>(null);
   const [finalModal, setFinalModal] = useState<Progresso | null>(null);
+  const [toggling, setToggling] = useState(false);
   const markedRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -54,6 +55,18 @@ export default function BalaoDiscando() {
     return () => { cancelled = true; clearInterval(id); };
   }, [runId]);
 
+  async function togglePause() {
+    if (!runId || !prog) return;
+    setToggling(true);
+    try {
+      const novo = prog.pausado ? "rodando" : "pausado";
+      await (supabase as any).from("fup_runs").update({ status: novo }).eq("id", runId);
+      setProg({ ...prog, pausado: !prog.pausado, status: novo });
+    } finally {
+      setToggling(false);
+    }
+  }
+
   const showCall = call?.ativo;
   const showBurn = !!runId && !!prog;
 
@@ -65,20 +78,24 @@ export default function BalaoDiscando() {
             <div className="flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 shadow-lg backdrop-blur">
               <Phone className="w-4 h-4 text-foreground animate-pulse" />
               <span className="text-sm text-foreground">
-                Em ligação com <strong>{call?.nome || "—"}</strong>
+                📞 Em ligação com <strong>{call?.nome || "—"}</strong>
                 {call?.telefone && <span className="text-muted-foreground ml-1">· {call.telefone}</span>}
               </span>
             </div>
           )}
           {showBurn && prog && (
-            <div className="min-w-[260px] rounded-lg border border-orange-500/40 bg-orange-500/10 px-3 py-2 shadow-lg backdrop-blur">
+            <div className="min-w-[280px] rounded-lg border border-orange-500/40 bg-orange-500/10 px-3 py-2 shadow-lg backdrop-blur">
               <div className="flex items-center gap-2 text-sm text-foreground">
                 <Flame className="w-4 h-4 text-orange-500" />
-                <span>🔥 Discados <strong>{prog.discados}/{prog.total}</strong> · {prog.atendidos} atendidos</span>
+                <span className="flex-1">🔥 Discados <strong>{prog.discados}/{prog.total}</strong> · {prog.atendidos} atendidos</span>
+                <Button size="sm" variant="ghost" className="h-6 px-2" onClick={togglePause} disabled={toggling}>
+                  {prog.pausado ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
+                </Button>
               </div>
               <Progress value={prog.total ? (prog.discados / prog.total) * 100 : 0} className="h-1.5 mt-1.5" />
-              <div className="text-[11px] text-muted-foreground mt-1">
-                {prog.caixa_postal} caixa postal · {prog.sem_resposta} sem resposta
+              <div className="text-[11px] text-muted-foreground mt-1 flex justify-between">
+                <span>{prog.caixa_postal} caixa postal · {prog.sem_resposta} sem resposta</span>
+                <span className="uppercase">{prog.pausado ? "pausado" : prog.status}</span>
               </div>
             </div>
           )}
