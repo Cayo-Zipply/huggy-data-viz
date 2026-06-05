@@ -9,6 +9,8 @@ import { supabase } from "@/lib/supabaseExternal";
 import { STAGE_CONFIG, STAGE_ORDER, type Stage } from "./types";
 import { toast } from "sonner";
 import { Flame, Loader2, Trash2 } from "lucide-react";
+import { burnState } from "@/lib/burnState";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Tipo = "tag" | "etapa" | "parado";
 type Quando = "agora" | "agendar";
