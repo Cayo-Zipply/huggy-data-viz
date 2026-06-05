@@ -84,6 +84,7 @@ export function PipelinePanel() {
   const [noShowPending, setNoShowPending] = useState<{ cardId: string; date: Date | undefined } | null>(null);
   const [lossPending, setLossPending] = useState<{ cardId: string; motivo: string; detalhe: string } | null>(null);
   const [ganhoPending, setGanhoPending] = useState<{ cardId: string; cardNome: string } | null>(null);
+  const [burnOpen, setBurnOpen] = useState(false);
   const { toast } = useToast();
 
   // Bulk selection state (admin only)
