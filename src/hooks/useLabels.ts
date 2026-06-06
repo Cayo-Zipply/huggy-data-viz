@@ -13,6 +13,17 @@ export interface CardLabel {
   label_id: string;
 }
 
+// Mapeia linha da tabela `etiquetas` (nome, cor, ativo, criado_em)
+// para o shape usado em toda a app (name, color, created_at).
+function mapRow(r: any): PipelineLabel {
+  return {
+    id: r.id,
+    name: r.nome ?? r.name ?? "",
+    color: r.cor ?? r.color ?? "#3b82f6",
+    created_at: r.criado_em ?? r.created_at ?? new Date().toISOString(),
+  };
+}
+
 export function useLabels() {
   const [labels, setLabels] = useState<PipelineLabel[]>([]);
   const [cardLabels, setCardLabels] = useState<CardLabel[]>([]);
@@ -20,11 +31,11 @@ export function useLabels() {
 
   const fetchLabels = useCallback(async () => {
     const [labelsRes, cardLabelsRes] = await Promise.all([
-      supabase.from("pipeline_labels").select("*").order("name"),
+      (supabase as any).from("etiquetas").select("*").eq("ativo", true).order("nome"),
       supabase.from("pipeline_card_labels").select("card_id, label_id"),
     ]);
 
-    if (labelsRes.data) setLabels(labelsRes.data as PipelineLabel[]);
+    if (labelsRes.data) setLabels((labelsRes.data as any[]).map(mapRow));
     if (cardLabelsRes.data) setCardLabels(cardLabelsRes.data as CardLabel[]);
     setLoading(false);
   }, []);
@@ -34,21 +45,25 @@ export function useLabels() {
   }, [fetchLabels]);
 
   const createLabel = useCallback(async (name: string, color: string) => {
-    const { data, error } = await supabase.from("pipeline_labels").insert({ name, color }).select().single();
+    const { data, error } = await (supabase as any)
+      .from("etiquetas")
+      .insert({ nome: name, cor: color, ativo: true })
+      .select()
+      .single();
     if (!error && data) {
-      setLabels(prev => [...prev, data as PipelineLabel]);
+      setLabels(prev => [...prev, mapRow(data)]);
     }
     return { data, error };
   }, []);
 
   const deleteLabel = useCallback(async (id: string) => {
-    await supabase.from("pipeline_labels").delete().eq("id", id);
+    await (supabase as any).from("etiquetas").update({ ativo: false }).eq("id", id);
     setLabels(prev => prev.filter(l => l.id !== id));
     setCardLabels(prev => prev.filter(cl => cl.label_id !== id));
   }, []);
 
   const updateLabel = useCallback(async (id: string, name: string, color: string) => {
-    await supabase.from("pipeline_labels").update({ name, color }).eq("id", id);
+    await (supabase as any).from("etiquetas").update({ nome: name, cor: color }).eq("id", id);
     setLabels(prev => prev.map(l => l.id === id ? { ...l, name, color } : l));
   }, []);
 
