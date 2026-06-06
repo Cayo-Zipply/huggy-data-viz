@@ -31,6 +31,7 @@ interface FupRun {
   rotulo: string | null;
   total: number | null;
   discados: number | null;
+  fed_count?: number | null;
   status: string | null;
   criado_em: string | null;
 }
