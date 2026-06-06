@@ -216,6 +216,21 @@ export default function BurnFupDialog({ open, onOpenChange }: { open: boolean; o
         </DialogHeader>
 
         <div className="space-y-4">
+          {continuavel && (
+            <div className="flex items-center gap-2 p-3 rounded-lg border border-orange-500/40 bg-orange-500/10">
+              <Flame className="w-4 h-4 text-orange-500" />
+              <div className="flex-1 min-w-0 text-sm">
+                <div className="truncate font-medium">{continuavel.rotulo || "Lista anterior"}</div>
+                <div className="text-xs text-muted-foreground">
+                  {continuavel.discados ?? 0}/{continuavel.total ?? 0} · {continuavel.status}
+                </div>
+              </div>
+              <Button size="sm" onClick={continuar} disabled={continuando} className="bg-orange-500 hover:bg-orange-600 text-white">
+                {continuando ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Play className="w-3 h-3 mr-1" /> Continuar</>}
+              </Button>
+            </div>
+          )}
+
           <div>
             <Label className="text-xs font-semibold text-muted-foreground">CRITÉRIO</Label>
             <RadioGroup value={tipo} onValueChange={(v) => setTipo(v as Tipo)} className="mt-2 space-y-2">
