@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/lib/supabaseExternal";
 import { STAGE_CONFIG, STAGE_ORDER, type Stage } from "./types";
 import { toast } from "sonner";
-import { Flame, Loader2, Trash2, Repeat } from "lucide-react";
+import { Flame, Loader2, Trash2, Repeat, Play } from "lucide-react";
 import { burnState } from "@/lib/burnState";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -31,6 +31,7 @@ interface FupRun {
   rotulo: string | null;
   total: number | null;
   discados: number | null;
+  fed_count?: number | null;
   status: string | null;
   criado_em: string | null;
 }
@@ -54,6 +55,8 @@ export default function BurnFupDialog({ open, onOpenChange }: { open: boolean; o
   const [jobs, setJobs] = useState<FupJob[]>([]);
   const [runs, setRuns] = useState<FupRun[]>([]);
   const [repetindo, setRepetindo] = useState<string | null>(null);
+  const [continuavel, setContinuavel] = useState<FupRun | null>(null);
+  const [continuando, setContinuando] = useState(false);
 
   const criterio = (() => {
     if (tipo === "tag") return { tipo: "tag", valor: "ligar" };
@@ -87,16 +90,45 @@ export default function BurnFupDialog({ open, onOpenChange }: { open: boolean; o
   async function loadRuns() {
     const { data } = await (supabase as any)
       .from("fup_runs")
-      .select("id, rotulo, total, discados, status, criado_em")
+      .select("id, rotulo, total, discados, fed_count, status, criado_em")
       .order("criado_em", { ascending: false })
       .limit(10);
     setRuns((data as FupRun[]) || []);
+  }
+
+  async function loadContinuavel() {
+    const { data } = await (supabase as any)
+      .from("fup_runs")
+      .select("id, rotulo, total, discados, fed_count, status, criado_em")
+      .in("status", ["pausado", "encerrado"])
+      .order("criado_em", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const r = data as FupRun | null;
+    if (r && (r.fed_count ?? 0) < (r.total ?? 0)) setContinuavel(r);
+    else setContinuavel(null);
+  }
+
+  async function continuar() {
+    if (!continuavel) return;
+    setContinuando(true);
+    try {
+      await (supabase as any).from("fup_runs").update({ status: "rodando" }).eq("id", continuavel.id);
+      burnState.set(continuavel.id);
+      toast.success("🔥 Burn retomado");
+      onOpenChange(false);
+    } catch (e: any) {
+      toast.error("Erro ao continuar: " + (e?.message || e));
+    } finally {
+      setContinuando(false);
+    }
   }
 
   useEffect(() => {
     if (open) {
       loadJobs();
       loadRuns();
+      loadContinuavel();
       setPreview(null);
     }
   }, [open]);
@@ -184,6 +216,21 @@ export default function BurnFupDialog({ open, onOpenChange }: { open: boolean; o
         </DialogHeader>
 
         <div className="space-y-4">
+          {continuavel && (
+            <div className="flex items-center gap-2 p-3 rounded-lg border border-orange-500/40 bg-orange-500/10">
+              <Flame className="w-4 h-4 text-orange-500" />
+              <div className="flex-1 min-w-0 text-sm">
+                <div className="truncate font-medium">{continuavel.rotulo || "Lista anterior"}</div>
+                <div className="text-xs text-muted-foreground">
+                  {continuavel.discados ?? 0}/{continuavel.total ?? 0} · {continuavel.status}
+                </div>
+              </div>
+              <Button size="sm" onClick={continuar} disabled={continuando} className="bg-orange-500 hover:bg-orange-600 text-white">
+                {continuando ? <Loader2 className="w-3 h-3 animate-spin" /> : <><Play className="w-3 h-3 mr-1" /> Continuar</>}
+              </Button>
+            </div>
+          )}
+
           <div>
             <Label className="text-xs font-semibold text-muted-foreground">CRITÉRIO</Label>
             <RadioGroup value={tipo} onValueChange={(v) => setTipo(v as Tipo)} className="mt-2 space-y-2">

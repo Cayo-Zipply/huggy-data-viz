@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Phone, Flame, Pause, Play } from "lucide-react";
+import { Phone, Flame, Pause, Play, Square, PhoneOff } from "lucide-react";
 import { useDiscadorAtivo } from "@/hooks/useDiscadorAtivo";
 import { useBurnRunId, burnState } from "@/lib/burnState";
 import { supabase } from "@/lib/supabaseExternal";
@@ -7,10 +7,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface Progresso {
   existe: boolean;
-  status: string;
+  status: string; // rodando | pausado | encerrado | finalizado
   finalizado: boolean;
   pausado: boolean;
   popup_visto: boolean;
@@ -29,7 +30,8 @@ export default function BalaoDiscando() {
   const { call } = useDiscadorAtivo(user?.email, true);
   const [prog, setProg] = useState<Progresso | null>(null);
   const [finalModal, setFinalModal] = useState<Progresso | null>(null);
-  const [toggling, setToggling] = useState(false);
+  const [acting, setActing] = useState(false);
+  const [hangingUp, setHangingUp] = useState(false);
   const markedRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -42,6 +44,10 @@ export default function BalaoDiscando() {
         const p = data as Progresso;
         if (!p?.existe) return;
         setProg(p);
+        if (p.status === "encerrado") {
+          burnState.set(null);
+          return;
+        }
         if (p.finalizado && !p.popup_visto && markedRef.current !== runId) {
           markedRef.current = runId;
           setFinalModal(p);
@@ -55,20 +61,37 @@ export default function BalaoDiscando() {
     return () => { cancelled = true; clearInterval(id); };
   }, [runId]);
 
-  async function togglePause() {
+  async function updateStatus(novo: "rodando" | "pausado" | "encerrado") {
     if (!runId || !prog) return;
-    setToggling(true);
+    setActing(true);
     try {
-      const novo = prog.pausado ? "rodando" : "pausado";
       await (supabase as any).from("fup_runs").update({ status: novo }).eq("id", runId);
-      setProg({ ...prog, pausado: !prog.pausado, status: novo });
+      if (novo === "encerrado") {
+        burnState.set(null);
+        toast.info("Burn encerrado. Você pode continuar depois.");
+      } else {
+        setProg({ ...prog, status: novo, pausado: novo === "pausado" });
+      }
     } finally {
-      setToggling(false);
+      setActing(false);
+    }
+  }
+
+  async function desligar() {
+    if (!user?.email) return;
+    setHangingUp(true);
+    try {
+      await supabase.functions.invoke("ipbox-end-call", { body: { email: user.email } });
+      toast.success("Ligação encerrada");
+    } catch (e: any) {
+      toast.error("Erro ao desligar: " + (e?.message || e));
+    } finally {
+      setHangingUp(false);
     }
   }
 
   const showCall = call?.ativo;
-  const showBurn = !!runId && !!prog;
+  const showBurn = !!runId && !!prog && prog.status !== "encerrado";
 
   return (
     <>
@@ -81,15 +104,35 @@ export default function BalaoDiscando() {
                 📞 Em ligação com <strong>{call?.nome || "—"}</strong>
                 {call?.telefone && <span className="text-muted-foreground ml-1">· {call.telefone}</span>}
               </span>
+              <Button size="sm" variant="destructive" className="h-7 px-2 ml-1" onClick={desligar} disabled={hangingUp}>
+                <PhoneOff className="w-3 h-3 mr-1" /> Desligar
+              </Button>
             </div>
           )}
           {showBurn && prog && (
-            <div className="min-w-[280px] rounded-lg border border-orange-500/40 bg-orange-500/10 px-3 py-2 shadow-lg backdrop-blur">
+            <div className="min-w-[300px] rounded-lg border border-orange-500/40 bg-orange-500/10 px-3 py-2 shadow-lg backdrop-blur">
               <div className="flex items-center gap-2 text-sm text-foreground">
                 <Flame className="w-4 h-4 text-orange-500" />
                 <span className="flex-1">🔥 Discados <strong>{prog.discados}/{prog.total}</strong> · {prog.atendidos} atendidos</span>
-                <Button size="sm" variant="ghost" className="h-6 px-2" onClick={togglePause} disabled={toggling}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 px-2"
+                  onClick={() => updateStatus(prog.pausado ? "rodando" : "pausado")}
+                  disabled={acting}
+                  title={prog.pausado ? "Continuar" : "Pausar"}
+                >
                   {prog.pausado ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 px-2 text-destructive"
+                  onClick={() => updateStatus("encerrado")}
+                  disabled={acting}
+                  title="Encerrar"
+                >
+                  <Square className="w-3 h-3" />
                 </Button>
               </div>
               <Progress value={prog.total ? (prog.discados / prog.total) * 100 : 0} className="h-1.5 mt-1.5" />
