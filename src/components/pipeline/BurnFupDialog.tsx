@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/lib/supabaseExternal";
 import { STAGE_CONFIG, STAGE_ORDER, type Stage } from "./types";
 import { toast } from "sonner";
-import { Flame, Loader2, Trash2, Repeat } from "lucide-react";
+import { Flame, Loader2, Trash2, Repeat, Play } from "lucide-react";
 import { burnState } from "@/lib/burnState";
 import { useAuth } from "@/contexts/AuthContext";
 
