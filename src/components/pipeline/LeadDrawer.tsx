@@ -614,6 +614,26 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                 <Separator className="my-1" />
                 {renderEditableField("telefone", "Telefone", <Phone size={16} />, card.telefone)}
                 <Separator className="my-1" />
+                {(card as any).ultima_ligacao_fup && (
+                  <>
+                    <div className="flex items-center gap-3 py-2">
+                      <Phone size={16} className="text-muted-foreground flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Última Ligação FUP</p>
+                        <p className="text-sm text-foreground">
+                          {new Date((card as any).ultima_ligacao_fup).toLocaleString("pt-BR")}
+                          {(card as any).ultima_ligacao_fup_duracao_seg != null && (
+                            <span className="text-muted-foreground"> · {(card as any).ultima_ligacao_fup_duracao_seg}s</span>
+                          )}
+                          {(card as any).ultima_ligacao_fup_resultado && (
+                            <span className="text-muted-foreground"> · {(card as any).ultima_ligacao_fup_resultado}</span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <Separator className="my-1" />
+                  </>
+                )}
                 {renderEditableField("email", "Email", <Mail size={16} />, card.email)}
                 <Separator className="my-1" />
                 {renderEditableField("cnpj", "CNPJ", <Building2 size={16} />, card.cnpj)}
