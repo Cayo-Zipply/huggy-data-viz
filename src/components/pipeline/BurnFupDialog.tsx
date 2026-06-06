@@ -55,6 +55,8 @@ export default function BurnFupDialog({ open, onOpenChange }: { open: boolean; o
   const [jobs, setJobs] = useState<FupJob[]>([]);
   const [runs, setRuns] = useState<FupRun[]>([]);
   const [repetindo, setRepetindo] = useState<string | null>(null);
+  const [continuavel, setContinuavel] = useState<FupRun | null>(null);
+  const [continuando, setContinuando] = useState(false);
 
   const criterio = (() => {
     if (tipo === "tag") return { tipo: "tag", valor: "ligar" };
