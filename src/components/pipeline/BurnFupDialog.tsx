@@ -90,10 +90,38 @@ export default function BurnFupDialog({ open, onOpenChange }: { open: boolean; o
   async function loadRuns() {
     const { data } = await (supabase as any)
       .from("fup_runs")
-      .select("id, rotulo, total, discados, status, criado_em")
+      .select("id, rotulo, total, discados, fed_count, status, criado_em")
       .order("criado_em", { ascending: false })
       .limit(10);
     setRuns((data as FupRun[]) || []);
+  }
+
+  async function loadContinuavel() {
+    const { data } = await (supabase as any)
+      .from("fup_runs")
+      .select("id, rotulo, total, discados, fed_count, status, criado_em")
+      .in("status", ["pausado", "encerrado"])
+      .order("criado_em", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const r = data as FupRun | null;
+    if (r && (r.fed_count ?? 0) < (r.total ?? 0)) setContinuavel(r);
+    else setContinuavel(null);
+  }
+
+  async function continuar() {
+    if (!continuavel) return;
+    setContinuando(true);
+    try {
+      await (supabase as any).from("fup_runs").update({ status: "rodando" }).eq("id", continuavel.id);
+      burnState.set(continuavel.id);
+      toast.success("🔥 Burn retomado");
+      onOpenChange(false);
+    } catch (e: any) {
+      toast.error("Erro ao continuar: " + (e?.message || e));
+    } finally {
+      setContinuando(false);
+    }
   }
 
   useEffect(() => {
