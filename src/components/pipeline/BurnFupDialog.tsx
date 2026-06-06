@@ -128,6 +128,7 @@ export default function BurnFupDialog({ open, onOpenChange }: { open: boolean; o
     if (open) {
       loadJobs();
       loadRuns();
+      loadContinuavel();
       setPreview(null);
     }
   }, [open]);
