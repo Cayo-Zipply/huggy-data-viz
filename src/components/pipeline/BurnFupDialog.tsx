@@ -113,7 +113,8 @@ export default function BurnFupDialog({ open, onOpenChange }: { open: boolean; o
     if (!continuavel) return;
     setContinuando(true);
     try {
-      await (supabase as any).from("fup_runs").update({ status: "rodando" }).eq("id", continuavel.id);
+      const { error } = await supabase.functions.invoke("fup-controle", { body: { run_id: continuavel.id, acao: "continuar" } });
+      if (error) throw error;
       burnState.set(continuavel.id);
       toast.success("🔥 Burn retomado");
       onOpenChange(false);
