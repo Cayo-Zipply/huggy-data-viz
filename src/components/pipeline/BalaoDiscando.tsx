@@ -63,15 +63,20 @@ export default function BalaoDiscando() {
 
   async function updateStatus(novo: "rodando" | "pausado" | "encerrado") {
     if (!runId || !prog) return;
+    const acao = novo === "rodando" ? "continuar" : novo === "pausado" ? "pausar" : "encerrar";
     setActing(true);
     try {
-      await (supabase as any).from("fup_runs").update({ status: novo }).eq("id", runId);
+      const { error } = await supabase.functions.invoke("fup-controle", { body: { run_id: runId, acao } });
+      if (error) throw error;
       if (novo === "encerrado") {
         burnState.set(null);
         toast.info("Burn encerrado. Você pode continuar depois.");
       } else {
         setProg({ ...prog, status: novo, pausado: novo === "pausado" });
+        toast.success(novo === "pausado" ? "Burn pausado" : "Burn retomado");
       }
+    } catch (e: any) {
+      toast.error("Erro: " + (e?.message || e));
     } finally {
       setActing(false);
     }
