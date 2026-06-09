@@ -192,13 +192,33 @@ export function usePipelineData(actorName: string) {
     pipelineDataCache.inFlight = (async () => {
     // Paginated fetch to bypass PostgREST's default 1000-row cap
     const PAGE_SIZE = 1000;
-    async function fetchAll(table: string, orderCol?: string) {
+    // Colunas leves para listas/kanban. Pesadas (transcricao_reuniao,
+    // resumo_reuniao) são carregadas SÓ no LeadDrawer via fetch por id.
+    // Isso reduz drasticamente o I/O de disco no PostgREST.
+    const LEADS_LIST_COLS = [
+      "id","nome","empresa","telefone","email","cnpj","valor_divida",
+      "etapa_atual","origem","anotacoes","contract_url",
+      "data_entrada","created_at","data_ultima_mudanca_etapa",
+      "closer","valor_negocio","status",
+      "motivo_perda","motivo_perda_detalhe","ultima_etapa",
+      "data_reuniao","data_reuniao_realizada","duracao_reuniao","participantes_reuniao",
+      "data_no_show","contrato_status","contrato_file_url",
+      "contrato_preparado_em","contrato_preparado_por","tipo_contrato",
+      "representante_nome","representante_cpf",
+      "valor_mensalidade","qtd_salarios_minimos","porcentagem_exito",
+      "data_primeiro_pagamento","dia_demais_pagamentos","prazo_entrega_relatorios",
+      "prazo_contrato","valor_proposta",
+      "endereco","cidade","estado","cep","zapsign_signed_at","fim_de_semana",
+      "tipo_documento","data_venda","assistente_juridico",
+      "cnpjs_adicionais","socios_adicionais",
+    ].join(",");
+    const HIST_COLS = "lead_id,etapa_de,etapa_para,created_at,closer";
+
+    async function fetchAll(table: string, cols: string, orderCol?: string) {
       const all: any[] = [];
       let from = 0;
-      // Loop until we get a short page (means no more rows)
-      // Cap at 100k rows for safety
       while (from < 100000) {
-        let q = sbExt.from(table).select("*").range(from, from + PAGE_SIZE - 1);
+        let q = sbExt.from(table).select(cols).range(from, from + PAGE_SIZE - 1);
         if (orderCol) q = q.order(orderCol, { ascending: true });
         const { data, error } = await q;
         if (error) return { data: null, error };
@@ -211,10 +231,10 @@ export function usePipelineData(actorName: string) {
     }
 
     const [leadsRes, tasksRes, goalsRes, histRes] = await Promise.all([
-      fetchAll("leads"),
-      fetchAll("tarefas"),
+      fetchAll("leads", LEADS_LIST_COLS),
+      fetchAll("tarefas", "*"),
       sbExt.from("metas").select("*"),
-      fetchAll("lead_historico", "created_at"),
+      fetchAll("lead_historico", HIST_COLS, "created_at"),
     ]);
 
     // Log errors but DO NOT bail out — partial data is better than empty UI.
