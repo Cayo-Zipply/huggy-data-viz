@@ -168,6 +168,8 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const [proximaReuniao, setProximaReuniao] = useState<{ id: string; titulo: string; data_inicio: string; data_fim: string; convidados: any } | null>(null);
   const [editReuniaoOpen, setEditReuniaoOpen] = useState(false);
   const [expandedTexto, setExpandedTexto] = useState<{ title: string; text: string; baseName: string } | null>(null);
+  // Lazy-load das colunas pesadas (transcricao/resumo) — só quando o drawer abre
+  const [heavy, setHeavy] = useState<{ resumo_reuniao: string | null; transcricao_reuniao: string | null }>({ resumo_reuniao: null, transcricao_reuniao: null });
   const { items: emailEnvios, refetch: refetchEnvios, latestByTipo } = useEmailEnvios(card?.id ?? null);
 
   async function baixarTextoComoWord(texto: string, baseName: string, titulo: string) {
