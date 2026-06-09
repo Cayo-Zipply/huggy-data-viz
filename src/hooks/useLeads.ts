@@ -28,7 +28,8 @@ export function useLeads() {
   const [loading, setLoading] = useState(true);
 
   const fetchLeads = useCallback(async () => {
-    let query = db.from("leads").select("*").order("created_at", { ascending: false });
+    const LEAN_COLS = "id,nome,telefone,email,origem,etapa_atual,status,closer,deal_value,data_entrada,created_at,updated_at,loss_reason,valor_divida";
+    let query = db.from("leads").select(LEAN_COLS).order("created_at", { ascending: false });
 
     if (isCloser && profile?.email) {
       query = query.eq("closer", profile.email);
