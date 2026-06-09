@@ -257,6 +257,22 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
       .then(({ data }: any) => setProximaReuniao(data || null));
   }, [card?.id, meetRefreshKey]);
 
+  // Lazy-load das colunas pesadas (transcricao/resumo) só ao abrir o drawer
+  useEffect(() => {
+    if (!open || !card?.id) { setHeavy({ resumo_reuniao: null, transcricao_reuniao: null }); return; }
+    let cancelled = false;
+    (supabaseExt as any)
+      .from("leads")
+      .select("resumo_reuniao,transcricao_reuniao")
+      .eq("id", card.id)
+      .maybeSingle()
+      .then(({ data }: any) => {
+        if (cancelled || !data) return;
+        setHeavy({ resumo_reuniao: data.resumo_reuniao ?? null, transcricao_reuniao: data.transcricao_reuniao ?? null });
+      });
+    return () => { cancelled = true; };
+  }, [open, card?.id]);
+
   // When starting to edit, check for draft first
   const startEdit = useCallback((f: string, v: string) => {
     if (!card) return;
