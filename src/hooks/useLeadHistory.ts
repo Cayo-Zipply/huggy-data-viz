@@ -18,7 +18,7 @@ export function useLeadHistory() {
 
   const fetchForLead = useCallback(async (leadId: string) => {
     setLoading(true);
-    const { data } = await supabase.from("lead_history").select("*").eq("lead_id", leadId).order("created_at", { ascending: false });
+    const { data } = await supabase.from("lead_history").select("id,lead_id,tipo,descricao,valor_anterior,valor_novo,usuario_nome,created_at").eq("lead_id", leadId).order("created_at", { ascending: false }).limit(200);
     if (data) setEntries(data as unknown as LeadHistoryEntry[]);
     setLoading(false);
   }, []);

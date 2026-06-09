@@ -168,6 +168,8 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const [proximaReuniao, setProximaReuniao] = useState<{ id: string; titulo: string; data_inicio: string; data_fim: string; convidados: any } | null>(null);
   const [editReuniaoOpen, setEditReuniaoOpen] = useState(false);
   const [expandedTexto, setExpandedTexto] = useState<{ title: string; text: string; baseName: string } | null>(null);
+  // Lazy-load das colunas pesadas (transcricao/resumo) — só quando o drawer abre
+  const [heavy, setHeavy] = useState<{ resumo_reuniao: string | null; transcricao_reuniao: string | null }>({ resumo_reuniao: null, transcricao_reuniao: null });
   const { items: emailEnvios, refetch: refetchEnvios, latestByTipo } = useEmailEnvios(card?.id ?? null);
 
   async function baixarTextoComoWord(texto: string, baseName: string, titulo: string) {
@@ -254,6 +256,22 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
       .maybeSingle()
       .then(({ data }: any) => setProximaReuniao(data || null));
   }, [card?.id, meetRefreshKey]);
+
+  // Lazy-load das colunas pesadas (transcricao/resumo) só ao abrir o drawer
+  useEffect(() => {
+    if (!open || !card?.id) { setHeavy({ resumo_reuniao: null, transcricao_reuniao: null }); return; }
+    let cancelled = false;
+    (supabaseExt as any)
+      .from("leads")
+      .select("resumo_reuniao,transcricao_reuniao")
+      .eq("id", card.id)
+      .maybeSingle()
+      .then(({ data }: any) => {
+        if (cancelled || !data) return;
+        setHeavy({ resumo_reuniao: data.resumo_reuniao ?? null, transcricao_reuniao: data.transcricao_reuniao ?? null });
+      });
+    return () => { cancelled = true; };
+  }, [open, card?.id]);
 
   // When starting to edit, check for draft first
   const startEdit = useCallback((f: string, v: string) => {
@@ -364,7 +382,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
     }
   };
 
-  const hasMeetingData = !!(card.resumo_reuniao || card.transcricao_reuniao || card.data_reuniao);
+  const hasMeetingData = !!(heavy.resumo_reuniao || heavy.transcricao_reuniao || card.data_reuniao);
 
   // Separate observations from stage changes in history
   const observations = card.history.filter(h => h.from === "__obs__");
@@ -1138,7 +1156,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                         </div>
                       </div>
                     )}
-                    {card.resumo_reuniao && (
+                    {heavy.resumo_reuniao && (
                       <div>
                         <div className="flex items-center justify-between gap-2 mb-2">
                           <div className="flex items-center gap-2">
@@ -1146,23 +1164,23 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                             <p className="text-xs font-medium text-foreground">Resumo da Reunião</p>
                           </div>
                           <div className="flex items-center gap-1">
-                            <button type="button" onClick={() => baixarTextoComoTxt(card.resumo_reuniao!, `resumo-${card.id}`)} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Baixar .txt">
+                            <button type="button" onClick={() => baixarTextoComoTxt(heavy.resumo_reuniao!, `resumo-${card.id}`)} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Baixar .txt">
                               <Download size={12} /> .txt
                             </button>
-                            <button type="button" onClick={() => baixarTextoComoWord(card.resumo_reuniao!, `resumo-${card.id}`, "Resumo da Reunião")} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Baixar Word (.docx)">
+                            <button type="button" onClick={() => baixarTextoComoWord(heavy.resumo_reuniao!, `resumo-${card.id}`, "Resumo da Reunião")} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Baixar Word (.docx)">
                               <FileType2 size={12} /> Word
                             </button>
-                            <button type="button" onClick={() => setExpandedTexto({ title: "Resumo da Reunião", text: card.resumo_reuniao!, baseName: `resumo-${card.id}` })} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Expandir">
+                            <button type="button" onClick={() => setExpandedTexto({ title: "Resumo da Reunião", text: heavy.resumo_reuniao!, baseName: `resumo-${card.id}` })} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Expandir">
                               <Maximize2 size={12} /> Expandir
                             </button>
                           </div>
                         </div>
                         <div className="bg-muted/30 rounded-xl p-4 border border-border/50">
-                          <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{card.resumo_reuniao}</p>
+                          <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{heavy.resumo_reuniao}</p>
                         </div>
                       </div>
                     )}
-                    {card.transcricao_reuniao && (
+                    {heavy.transcricao_reuniao && (
                       <div>
                         <div className="flex items-center justify-between gap-2 mb-2">
                           <div className="flex items-center gap-2">
@@ -1170,19 +1188,19 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                             <p className="text-xs font-medium text-foreground">Transcrição Completa</p>
                           </div>
                           <div className="flex items-center gap-1">
-                            <button type="button" onClick={() => baixarTextoComoTxt(card.transcricao_reuniao!, `transcricao-${card.id}`)} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Baixar .txt">
+                            <button type="button" onClick={() => baixarTextoComoTxt(heavy.transcricao_reuniao!, `transcricao-${card.id}`)} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Baixar .txt">
                               <Download size={12} /> .txt
                             </button>
-                            <button type="button" onClick={() => baixarTextoComoWord(card.transcricao_reuniao!, `transcricao-${card.id}`, "Transcrição da Reunião")} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Baixar Word (.docx)">
+                            <button type="button" onClick={() => baixarTextoComoWord(heavy.transcricao_reuniao!, `transcricao-${card.id}`, "Transcrição da Reunião")} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Baixar Word (.docx)">
                               <FileType2 size={12} /> Word
                             </button>
-                            <button type="button" onClick={() => setExpandedTexto({ title: "Transcrição da Reunião", text: card.transcricao_reuniao!, baseName: `transcricao-${card.id}` })} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Expandir">
+                            <button type="button" onClick={() => setExpandedTexto({ title: "Transcrição da Reunião", text: heavy.transcricao_reuniao!, baseName: `transcricao-${card.id}` })} className="text-[11px] px-2 py-1 rounded-md border border-border hover:bg-muted inline-flex items-center gap-1" title="Expandir">
                               <Maximize2 size={12} /> Expandir
                             </button>
                           </div>
                         </div>
                         <div className="bg-muted/30 rounded-xl p-4 border border-border/50 max-h-[400px] overflow-y-auto">
-                          <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">{card.transcricao_reuniao}</p>
+                          <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">{heavy.transcricao_reuniao}</p>
                         </div>
                       </div>
                     )}
