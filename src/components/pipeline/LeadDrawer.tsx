@@ -1091,6 +1091,8 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     <div className="flex gap-2">
                       <input type="date" value={ntDate} onChange={e => setNtDate(e.target.value)}
                         className="flex-1 text-sm bg-muted/50 border border-border rounded-md px-2.5 py-1.5 text-foreground" />
+                      <input type="time" value={ntTime} onChange={e => setNtTime(e.target.value)} title="Hora (opcional)"
+                        className="w-24 text-sm bg-muted/50 border border-border rounded-md px-2.5 py-1.5 text-foreground" />
                       <select value={ntResp} onChange={e => setNtResp(e.target.value)}
                         className="text-sm bg-muted/50 border border-border rounded-md px-2.5 py-1.5 text-foreground">
                         <option value="">Sem responsável</option>
