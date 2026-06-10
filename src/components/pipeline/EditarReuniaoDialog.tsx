@@ -18,6 +18,9 @@ interface Props {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   onUpdated?: () => void;
+  cliente?: string;
+  empresa?: string | null;
+  meetLink?: string | null;
 }
 
 const isEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
