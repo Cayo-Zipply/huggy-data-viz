@@ -77,7 +77,7 @@ export function TasksPanel({ tasks, cards, activeUser, canViewAll = false, onTog
         </div>
         <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           <span className={cn("text-[10px] flex items-center gap-0.5", isOD ? "text-red-400" : "text-muted-foreground")}>
-            {isOD && <AlertCircle size={10} />}<Clock size={10} />{new Date(task.due_date + "T12:00:00").toLocaleDateString("pt-BR")}
+            {isOD && <AlertCircle size={10} />}<Clock size={10} />{new Date(task.due_date + "T12:00:00").toLocaleDateString("pt-BR")}{task.due_time ? ` · ${task.due_time}` : ""}
           </span>
           {task.status === "pendente" && (
             showDate ? (
