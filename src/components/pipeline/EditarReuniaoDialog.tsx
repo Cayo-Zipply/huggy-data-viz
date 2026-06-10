@@ -10,6 +10,7 @@ interface Reuniao {
   titulo: string;
   data_inicio: string;
   data_fim: string;
+  meet_link?: string | null;
   convidados: Array<string | { email?: string }> | null;
 }
 
