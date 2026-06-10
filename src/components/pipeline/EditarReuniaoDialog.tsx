@@ -166,6 +166,26 @@ export function EditarReuniaoDialog({ reuniao, open, onOpenChange, onUpdated, cl
               className="flex-1 py-2 bg-muted text-foreground rounded-md text-sm hover:bg-muted/80 disabled:opacity-50">
               Cancelar
             </button>
+            <button
+              onClick={() => {
+                const link = meetLink ?? reuniao.meet_link ?? "";
+                const inicioISO = dataHora ? new Date(dataHora).toISOString() : reuniao.data_inicio;
+                const fimISO = dataHora
+                  ? new Date(new Date(dataHora).getTime() + duracao * 60000).toISOString()
+                  : reuniao.data_fim;
+                const msg = buildReuniaoMessage({
+                  cliente: cliente || "",
+                  empresa: empresa ?? null,
+                  data_inicio: inicioISO,
+                  data_fim: fimISO,
+                  link,
+                });
+                navigator.clipboard.writeText(msg).then(() => toast.success("Mensagem copiada!"));
+              }}
+              disabled={loading}
+              className="flex-1 py-2 bg-emerald-500/10 text-emerald-400 rounded-md text-sm hover:bg-emerald-500/20 disabled:opacity-50 flex items-center justify-center gap-2">
+              <MessageSquare size={14} />Copiar mensagem
+            </button>
             <button onClick={salvar} disabled={loading}
               className="flex-1 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2">
               {loading ? <Loader2 size={14} className="animate-spin" /> : <Calendar size={14} />}
