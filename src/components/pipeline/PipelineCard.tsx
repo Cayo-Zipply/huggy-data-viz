@@ -350,6 +350,8 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
                     <div className="flex gap-1.5">
                       <input type="date" value={ntDate} onChange={e => setNtDate(e.target.value)}
                         className="flex-1 text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground" />
+                      <input type="time" value={ntTime} onChange={e => setNtTime(e.target.value)} title="Hora (opcional)"
+                        className="w-20 text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground" />
                       <select value={ntResp} onChange={e => setNtResp(e.target.value)}
                         className="text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground">
                         <option value="">Sem responsável</option>
