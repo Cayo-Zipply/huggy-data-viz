@@ -123,11 +123,13 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
 }
 
 function dbRowToTask(row: any): PipelineTask {
+  const rawTime = row.hora_tarefa ? String(row.hora_tarefa).slice(0, 5) : null;
   return {
     id: row.id,
     card_id: row.lead_id,
     title: row.titulo,
     due_date: row.data_tarefa,
+    due_time: rawTime,
     responsible: row.closer || null,
     status: row.status === "concluida" ? "concluida" : "pendente",
     pipe_context: (row.pipeline || "sdr") as PipeType,
