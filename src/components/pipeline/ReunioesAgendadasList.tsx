@@ -201,6 +201,7 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
         onUpdated={fetchItems}
         cliente={lead.nome}
         empresa={lead.empresa}
+        meetLink={editing?.meet_link ?? null}
       />
     </div>
   );
