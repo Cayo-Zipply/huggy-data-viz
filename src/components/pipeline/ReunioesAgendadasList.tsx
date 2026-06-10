@@ -199,6 +199,9 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
         open={!!editing}
         onOpenChange={(o) => !o && setEditing(null)}
         onUpdated={fetchItems}
+        cliente={lead.nome}
+        empresa={lead.empresa}
+        meetLink={editing?.meet_link ?? null}
       />
     </div>
   );

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Calendar, Loader2, Plus, Trash2 } from "lucide-react";
+import { Calendar, Loader2, MessageSquare, Plus, Trash2 } from "lucide-react";
+import { buildReuniaoMessage } from "@/lib/reuniaoMessage";
 import { supabase } from "@/lib/supabaseExternal";
 import { toast } from "sonner";
 
@@ -9,6 +10,7 @@ interface Reuniao {
   titulo: string;
   data_inicio: string;
   data_fim: string;
+  meet_link?: string | null;
   convidados: Array<string | { email?: string }> | null;
 }
 
@@ -17,6 +19,9 @@ interface Props {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   onUpdated?: () => void;
+  cliente?: string;
+  empresa?: string | null;
+  meetLink?: string | null;
 }
 
 const isEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
@@ -36,7 +41,7 @@ function normalizeConvidados(c: Reuniao["convidados"]): string[] {
   return c.map(x => (typeof x === "string" ? x : x?.email ?? "")).filter(Boolean);
 }
 
-export function EditarReuniaoDialog({ reuniao, open, onOpenChange, onUpdated }: Props) {
+export function EditarReuniaoDialog({ reuniao, open, onOpenChange, onUpdated, cliente, empresa, meetLink }: Props) {
   const [titulo, setTitulo] = useState("");
   const [dataHora, setDataHora] = useState("");
   const [duracao, setDuracao] = useState(60);
@@ -160,6 +165,26 @@ export function EditarReuniaoDialog({ reuniao, open, onOpenChange, onUpdated }: 
             <button onClick={() => onOpenChange(false)} disabled={loading}
               className="flex-1 py-2 bg-muted text-foreground rounded-md text-sm hover:bg-muted/80 disabled:opacity-50">
               Cancelar
+            </button>
+            <button
+              onClick={() => {
+                const link = meetLink ?? reuniao.meet_link ?? "";
+                const inicioISO = dataHora ? new Date(dataHora).toISOString() : reuniao.data_inicio;
+                const fimISO = dataHora
+                  ? new Date(new Date(dataHora).getTime() + duracao * 60000).toISOString()
+                  : reuniao.data_fim;
+                const msg = buildReuniaoMessage({
+                  cliente: cliente || "",
+                  empresa: empresa ?? null,
+                  data_inicio: inicioISO,
+                  data_fim: fimISO,
+                  link,
+                });
+                navigator.clipboard.writeText(msg).then(() => toast.success("Mensagem copiada!"));
+              }}
+              disabled={loading}
+              className="flex-1 py-2 bg-emerald-500/10 text-emerald-400 rounded-md text-sm hover:bg-emerald-500/20 disabled:opacity-50 flex items-center justify-center gap-2">
+              <MessageSquare size={14} />Copiar mensagem
             </button>
             <button onClick={salvar} disabled={loading}
               className="flex-1 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2">
