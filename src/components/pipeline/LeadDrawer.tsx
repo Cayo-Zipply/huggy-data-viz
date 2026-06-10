@@ -154,6 +154,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [ntTitle, setNtTitle] = useState("");
   const [ntDate, setNtDate] = useState(new Date().toISOString().split("T")[0]);
+  const [ntTime, setNtTime] = useState("");
   const [ntResp, setNtResp] = useState("");
   const [copied, setCopied] = useState(false);
   const [contractFile, setContractFile] = useState<{ data: string; name: string } | null>(null);
