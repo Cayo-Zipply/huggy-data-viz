@@ -368,7 +368,7 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
                       <Check size={12} />
                     </button>
                     <span className={cn("flex-1 truncate", t.status === "concluida" && "line-through text-muted-foreground")}>{t.title}</span>
-                    <span className="text-muted-foreground text-[10px]">{new Date(t.due_date + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+                    <span className="text-muted-foreground text-[10px]">{new Date(t.due_date + "T12:00:00").toLocaleDateString("pt-BR")}{t.due_time ? ` · ${t.due_time}` : ""}</span>
                     {t.auto_generated && <span className="text-[9px] text-muted-foreground italic">auto</span>}
                   </div>
                 ))}
