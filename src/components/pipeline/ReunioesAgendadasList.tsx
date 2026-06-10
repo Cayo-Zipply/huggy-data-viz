@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabaseExternal";
-import { Calendar, Copy, ExternalLink, Loader2, Pencil, Video, X } from "lucide-react";
+import { Calendar, Copy, ExternalLink, Loader2, MessageSquare, Pencil, Video, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { EditarReuniaoDialog } from "./EditarReuniaoDialog";
@@ -23,10 +23,43 @@ const statusStyle: Record<string, string> = {
   realizada: "bg-emerald-500/20 text-emerald-400",
 };
 
+const TZ = "America/Sao_Paulo";
+
 function fmt(iso: string) {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} às ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function partsSP(iso: string) {
+  const parts = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: TZ, weekday: "long", day: "2-digit", month: "2-digit", year: "numeric",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(new Date(iso));
+  const get = (t: string) => parts.find(p => p.type === t)?.value || "";
+  return {
+    weekday: get("weekday").toLowerCase(),
+    date: `${get("day")}/${get("month")}/${get("year")}`,
+    time: `${get("hour")}:${get("minute")}`,
+  };
+}
+
+function buildMensagem(r: Reuniao, cliente: string, empresa: string | null) {
+  const ini = partsSP(r.data_inicio);
+  const fim = r.data_fim ? partsSP(r.data_fim) : null;
+  const primeiroNome = (cliente || "").trim().split(/\s+/)[0] || cliente;
+  const dataExt = `${ini.weekday}, ${ini.date}`;
+  const horario = fim ? `${ini.time} às ${fim.time}` : `às ${ini.time}`;
+  const empresaLinha = empresa && empresa.trim() ? `\n🏢 *Empresa:* ${empresa.trim()}` : "";
+  return `📌 *Reunião confirmada — Pena Quadros Advocacia*
+
+${primeiroNome}, está tudo certo! Sua reunião está agendada:
+${empresaLinha}
+🗓️ *Data:* ${dataExt}
+🕐 *Horário:* ${horario}
+💻 *Link da reunião:* ${r.meet_link || ""}
+
+Qualquer dúvida, estou à disposição. Até lá!`;
 }
 
 export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; refreshKey?: number }) {
@@ -34,6 +67,7 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Reuniao | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
+  const [lead, setLead] = useState<{ nome: string; empresa: string | null }>({ nome: "", empresa: null });
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -47,6 +81,18 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
   }, [leadId]);
 
   useEffect(() => { fetchItems(); }, [fetchItems, refreshKey]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("leads")
+        .select("nome, empresa")
+        .eq("id", leadId)
+        .maybeSingle();
+      if (data) setLead({ nome: data.nome || "", empresa: data.empresa ?? null });
+    })();
+  }, [leadId]);
+
 
   const copy = (s: string) => navigator.clipboard.writeText(s).then(() => toast.success("Copiado!"));
 
@@ -111,7 +157,14 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
             {r.meet_link && (
               <button onClick={() => copy(r.meet_link!)}
                 className="text-xs px-2 py-1 bg-emerald-500/10 text-emerald-400 rounded-md hover:bg-emerald-500/20 flex items-center gap-1">
-                <Video size={11} /><Copy size={10} />Meet
+                <Video size={11} /><Copy size={10} />Link
+              </button>
+            )}
+            {r.meet_link && (
+              <button
+                onClick={() => navigator.clipboard.writeText(buildMensagem(r, lead.nome, lead.empresa)).then(() => toast.success("Mensagem copiada!"))}
+                className="text-xs px-2 py-1 bg-emerald-500/10 text-emerald-400 rounded-md hover:bg-emerald-500/20 flex items-center gap-1">
+                <MessageSquare size={11} />Copiar mensagem
               </button>
             )}
             {r.status !== "cancelada" && (
