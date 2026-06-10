@@ -67,6 +67,7 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Reuniao | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
+  const [lead, setLead] = useState<{ nome: string; empresa: string | null }>({ nome: "", empresa: null });
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -80,6 +81,18 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
   }, [leadId]);
 
   useEffect(() => { fetchItems(); }, [fetchItems, refreshKey]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("leads")
+        .select("nome, empresa")
+        .eq("id", leadId)
+        .maybeSingle();
+      if (data) setLead({ nome: data.nome || "", empresa: data.empresa ?? null });
+    })();
+  }, [leadId]);
+
 
   const copy = (s: string) => navigator.clipboard.writeText(s).then(() => toast.success("Copiado!"));
 
