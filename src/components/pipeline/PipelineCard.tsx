@@ -45,6 +45,7 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [ntTitle, setNtTitle] = useState("");
   const [ntDate, setNtDate] = useState(new Date().toISOString().split("T")[0]);
+  const [ntTime, setNtTime] = useState("");
   const [ntResp, setNtResp] = useState(card.owner || "");
 
   const isLost = card.lead_status === "perdido";
