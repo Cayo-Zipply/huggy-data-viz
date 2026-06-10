@@ -173,7 +173,22 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
               <Video size={16} className="text-emerald-400 flex-shrink-0" />
               <span className="text-sm flex-1 truncate">{resultado.meet_link}</span>
               <button onClick={() => copy(resultado.meet_link)} className="text-xs px-2 py-1 bg-muted rounded hover:bg-muted/80 flex items-center gap-1">
-                <Copy size={12} />Copiar
+                <Copy size={12} />Copiar link
+              </button>
+              <button
+                onClick={() => {
+                  const fimISO = new Date(new Date(dataHora).getTime() + duracao * 60000).toISOString();
+                  const msg = buildReuniaoMessage({
+                    cliente: card.nome,
+                    empresa: card.empresa ?? null,
+                    data_inicio: new Date(dataHora).toISOString(),
+                    data_fim: fimISO,
+                    link: resultado.meet_link,
+                  });
+                  navigator.clipboard.writeText(msg).then(() => toast.success("Mensagem copiada!"));
+                }}
+                className="text-xs px-2 py-1 bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-500/20 flex items-center gap-1">
+                <MessageSquare size={12} />Copiar mensagem
               </button>
             </div>
             <a href={resultado.html_link} target="_blank" rel="noopener noreferrer"
