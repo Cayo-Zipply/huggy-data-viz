@@ -79,6 +79,7 @@ export interface PipelineTask {
   card_id: string;
   title: string;
   due_date: string;
+  due_time: string | null;
   responsible: string | null;
   status: "pendente" | "concluida";
   pipe_context: PipeType;

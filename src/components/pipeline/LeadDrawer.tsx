@@ -154,6 +154,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [ntTitle, setNtTitle] = useState("");
   const [ntDate, setNtDate] = useState(new Date().toISOString().split("T")[0]);
+  const [ntTime, setNtTime] = useState("");
   const [ntResp, setNtResp] = useState("");
   const [copied, setCopied] = useState(false);
   const [contractFile, setContractFile] = useState<{ data: string; name: string } | null>(null);
@@ -361,8 +362,8 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
 
   const submitTask = () => {
     if (!ntTitle.trim()) return;
-    onCreateTask({ card_id: card.id, title: ntTitle, due_date: ntDate, responsible: ntResp, status: "pendente", pipe_context: card.pipe, auto_generated: false });
-    setNtTitle(""); setShowTaskForm(false);
+    onCreateTask({ card_id: card.id, title: ntTitle, due_date: ntDate, due_time: ntTime || null, responsible: ntResp, status: "pendente", pipe_context: card.pipe, auto_generated: false });
+    setNtTitle(""); setNtTime(""); setShowTaskForm(false);
   };
 
   const handleContractUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1090,6 +1091,8 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     <div className="flex gap-2">
                       <input type="date" value={ntDate} onChange={e => setNtDate(e.target.value)}
                         className="flex-1 text-sm bg-muted/50 border border-border rounded-md px-2.5 py-1.5 text-foreground" />
+                      <input type="time" value={ntTime} onChange={e => setNtTime(e.target.value)} title="Hora (opcional)"
+                        className="w-24 text-sm bg-muted/50 border border-border rounded-md px-2.5 py-1.5 text-foreground" />
                       <select value={ntResp} onChange={e => setNtResp(e.target.value)}
                         className="text-sm bg-muted/50 border border-border rounded-md px-2.5 py-1.5 text-foreground">
                         <option value="">Sem responsável</option>
@@ -1109,7 +1112,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     <div className="flex-1 min-w-0">
                       <span className={cn("text-sm", t.status === "concluida" && "line-through text-muted-foreground")}>{t.title}</span>
                       <div className="flex gap-2 mt-0.5">
-                        <span className="text-[10px] text-muted-foreground">{new Date(t.due_date + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+                        <span className="text-[10px] text-muted-foreground">{new Date(t.due_date + "T12:00:00").toLocaleDateString("pt-BR")}{t.due_time ? ` · ${t.due_time}` : ""}</span>
                         {t.auto_generated && <span className="text-[10px] text-muted-foreground italic">auto</span>}
                       </div>
                     </div>

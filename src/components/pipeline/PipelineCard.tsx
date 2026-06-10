@@ -45,6 +45,7 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [ntTitle, setNtTitle] = useState("");
   const [ntDate, setNtDate] = useState(new Date().toISOString().split("T")[0]);
+  const [ntTime, setNtTime] = useState("");
   const [ntResp, setNtResp] = useState(card.owner || "");
 
   const isLost = card.lead_status === "perdido";
@@ -83,8 +84,8 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
 
   const submitTask = () => {
     if (!ntTitle.trim()) return;
-    onCreateTask({ card_id: card.id, title: ntTitle, due_date: ntDate, responsible: ntResp, status: "pendente", pipe_context: card.pipe, auto_generated: false });
-    setNtTitle(""); setShowTaskForm(false);
+    onCreateTask({ card_id: card.id, title: ntTitle, due_date: ntDate, due_time: ntTime || null, responsible: ntResp, status: "pendente", pipe_context: card.pipe, auto_generated: false });
+    setNtTitle(""); setNtTime(""); setShowTaskForm(false);
   };
 
   const tabs: { key: Tab; label: string; icon: any }[] = [
@@ -349,6 +350,8 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
                     <div className="flex gap-1.5">
                       <input type="date" value={ntDate} onChange={e => setNtDate(e.target.value)}
                         className="flex-1 text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground" />
+                      <input type="time" value={ntTime} onChange={e => setNtTime(e.target.value)} title="Hora (opcional)"
+                        className="w-20 text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground" />
                       <select value={ntResp} onChange={e => setNtResp(e.target.value)}
                         className="text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground">
                         <option value="">Sem responsável</option>
@@ -365,7 +368,7 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
                       <Check size={12} />
                     </button>
                     <span className={cn("flex-1 truncate", t.status === "concluida" && "line-through text-muted-foreground")}>{t.title}</span>
-                    <span className="text-muted-foreground text-[10px]">{new Date(t.due_date + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+                    <span className="text-muted-foreground text-[10px]">{new Date(t.due_date + "T12:00:00").toLocaleDateString("pt-BR")}{t.due_time ? ` · ${t.due_time}` : ""}</span>
                     {t.auto_generated && <span className="text-[9px] text-muted-foreground italic">auto</span>}
                   </div>
                 ))}

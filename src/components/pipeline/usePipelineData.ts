@@ -123,11 +123,13 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
 }
 
 function dbRowToTask(row: any): PipelineTask {
+  const rawTime = row.hora_tarefa ? String(row.hora_tarefa).slice(0, 5) : null;
   return {
     id: row.id,
     card_id: row.lead_id,
     title: row.titulo,
     due_date: row.data_tarefa,
+    due_time: rawTime,
     responsible: row.closer || null,
     status: row.status === "concluida" ? "concluida" : "pendente",
     pipe_context: (row.pipeline || "sdr") as PipeType,
@@ -370,6 +372,7 @@ export function usePipelineData(actorName: string) {
       card_id: card.id,
       title: t.title(card.nome),
       due_date: addDays(now, Math.max(0, t.daysOffset)),
+      due_time: null,
       responsible: card.owner,
       status: "pendente" as const,
       pipe_context: pipe as PipeType,
@@ -732,11 +735,13 @@ export function usePipelineData(actorName: string) {
   /* ── tasks ── */
   const createTask = useCallback(async (task: Omit<PipelineTask, "id" | "created_at">) => {
     const id = crypto.randomUUID();
+    const hora = task.due_time ? task.due_time.slice(0, 5) : null;
     await sbExt.from("tarefas").insert({
       id, lead_id: task.card_id, titulo: task.title, data_tarefa: task.due_date,
+      hora_tarefa: hora,
       status: task.status, pipeline: task.pipe_context, closer: task.responsible, auto: task.auto_generated,
     });
-    updateTasksState(prev => [{ ...task, id, created_at: new Date().toISOString() }, ...prev]);
+    updateTasksState(prev => [{ ...task, id, due_time: hora, created_at: new Date().toISOString() }, ...prev]);
   }, [updateTasksState]);
 
   const toggleTask = useCallback(async (id: string) => {
@@ -747,9 +752,11 @@ export function usePipelineData(actorName: string) {
     updateTasksState(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
   }, [tasks, updateTasksState]);
 
-  const rescheduleTask = useCallback(async (id: string, date: string) => {
-    await sbExt.from("tarefas").update({ data_tarefa: date }).eq("id", id);
-    updateTasksState(prev => prev.map(t => t.id === id ? { ...t, due_date: date } : t));
+  const rescheduleTask = useCallback(async (id: string, date: string, time?: string | null) => {
+    const patch: Record<string, any> = { data_tarefa: date, lembrete_enviado: false };
+    if (time !== undefined) patch.hora_tarefa = time ? time.slice(0, 5) : null;
+    await sbExt.from("tarefas").update(patch).eq("id", id);
+    updateTasksState(prev => prev.map(t => t.id === id ? { ...t, due_date: date, ...(time !== undefined ? { due_time: time ? time.slice(0, 5) : null } : {}) } : t));
   }, [updateTasksState]);
 
   const deleteTask = useCallback(async (id: string) => {
