@@ -84,8 +84,8 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
 
   const submitTask = () => {
     if (!ntTitle.trim()) return;
-    onCreateTask({ card_id: card.id, title: ntTitle, due_date: ntDate, responsible: ntResp, status: "pendente", pipe_context: card.pipe, auto_generated: false });
-    setNtTitle(""); setShowTaskForm(false);
+    onCreateTask({ card_id: card.id, title: ntTitle, due_date: ntDate, due_time: ntTime || null, responsible: ntResp, status: "pendente", pipe_context: card.pipe, auto_generated: false });
+    setNtTitle(""); setNtTime(""); setShowTaskForm(false);
   };
 
   const tabs: { key: Tab; label: string; icon: any }[] = [
