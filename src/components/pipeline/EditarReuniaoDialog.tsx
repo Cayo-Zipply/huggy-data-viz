@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Calendar, Loader2, Plus, Trash2 } from "lucide-react";
+import { Calendar, Loader2, MessageSquare, Plus, Trash2 } from "lucide-react";
+import { buildReuniaoMessage } from "@/lib/reuniaoMessage";
 import { supabase } from "@/lib/supabaseExternal";
 import { toast } from "sonner";
 
