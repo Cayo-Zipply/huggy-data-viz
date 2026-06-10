@@ -1112,7 +1112,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     <div className="flex-1 min-w-0">
                       <span className={cn("text-sm", t.status === "concluida" && "line-through text-muted-foreground")}>{t.title}</span>
                       <div className="flex gap-2 mt-0.5">
-                        <span className="text-[10px] text-muted-foreground">{new Date(t.due_date + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+                        <span className="text-[10px] text-muted-foreground">{new Date(t.due_date + "T12:00:00").toLocaleDateString("pt-BR")}{t.due_time ? ` · ${t.due_time}` : ""}</span>
                         {t.auto_generated && <span className="text-[10px] text-muted-foreground italic">auto</span>}
                       </div>
                     </div>
