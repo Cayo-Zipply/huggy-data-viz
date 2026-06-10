@@ -372,6 +372,7 @@ export function usePipelineData(actorName: string) {
       card_id: card.id,
       title: t.title(card.nome),
       due_date: addDays(now, Math.max(0, t.daysOffset)),
+      due_time: null,
       responsible: card.owner,
       status: "pendente" as const,
       pipe_context: pipe as PipeType,
