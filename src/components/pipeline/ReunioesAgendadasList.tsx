@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabaseExternal";
-import { Calendar, Copy, ExternalLink, Loader2, Pencil, Video, X } from "lucide-react";
+import { Calendar, Copy, ExternalLink, Loader2, MessageSquare, Pencil, Video, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { EditarReuniaoDialog } from "./EditarReuniaoDialog";
@@ -23,10 +23,43 @@ const statusStyle: Record<string, string> = {
   realizada: "bg-emerald-500/20 text-emerald-400",
 };
 
+const TZ = "America/Sao_Paulo";
+
 function fmt(iso: string) {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} às ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function partsSP(iso: string) {
+  const parts = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: TZ, weekday: "long", day: "2-digit", month: "2-digit", year: "numeric",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(new Date(iso));
+  const get = (t: string) => parts.find(p => p.type === t)?.value || "";
+  return {
+    weekday: get("weekday").toLowerCase(),
+    date: `${get("day")}/${get("month")}/${get("year")}`,
+    time: `${get("hour")}:${get("minute")}`,
+  };
+}
+
+function buildMensagem(r: Reuniao, cliente: string, empresa: string | null) {
+  const ini = partsSP(r.data_inicio);
+  const fim = r.data_fim ? partsSP(r.data_fim) : null;
+  const primeiroNome = (cliente || "").trim().split(/\s+/)[0] || cliente;
+  const dataExt = `${ini.weekday}, ${ini.date}`;
+  const horario = fim ? `${ini.time} às ${fim.time}` : `às ${ini.time}`;
+  const empresaLinha = empresa && empresa.trim() ? `\n🏢 *Empresa:* ${empresa.trim()}` : "";
+  return `📌 *Reunião confirmada — Pena Quadros Advocacia*
+
+${primeiroNome}, está tudo certo! Sua reunião está agendada:
+${empresaLinha}
+🗓️ *Data:* ${dataExt}
+🕐 *Horário:* ${horario}
+💻 *Link da reunião:* ${r.meet_link || ""}
+
+Qualquer dúvida, estou à disposição. Até lá!`;
 }
 
 export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; refreshKey?: number }) {
