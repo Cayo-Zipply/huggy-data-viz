@@ -88,7 +88,10 @@ function buildPatternRules(lead: any): PatternRule[] {
   const socioNome = lead.representante_nome || "[NOME DO SÓCIO]";
   const socioCpf = lead.representante_cpf || "[número]";
 
-  return [
+  const prazoRelatNum = parseInt(String(lead.prazo_entrega_relatorios || "").replace(/\D/g, ""), 10);
+  const prazoRelatExtenso = prazoRelatNum > 0 ? numberToWords(prazoRelatNum) : "";
+
+  const rules: PatternRule[] = [
     // Cliente — parágrafo de qualificação
     {
       anchor: /doravante denominado[^<]*CONTRATANTE/i,
@@ -124,7 +127,39 @@ function buildPatternRules(lead: any): PatternRule[] {
       ],
     },
   ];
+
+  // Prazo de entrega dos relatórios (parágrafo terceiro)
+  if (prazoRelatNum > 0) {
+    rules.push({
+      anchor: /entregue\s+\d+\s*\([^)]*\)\s*dias\s+úteis/i,
+      replacements: [
+        [
+          /entregue\s+\d+\s*\([^)]*\)\s*dias\s+úteis/g,
+          `entregue ${prazoRelatNum} (${prazoRelatExtenso}) dias úteis`,
+        ],
+      ],
+    });
+  }
+
+  return rules;
 }
+
+// Extenso pt-BR para inteiros 1..99 (suficiente para prazos em dias)
+function numberToWords(n: number): string {
+  const units = ["zero", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove"];
+  const teens = ["dez", "onze", "doze", "treze", "quatorze", "quinze", "dezesseis", "dezessete", "dezoito", "dezenove"];
+  const tens = ["", "", "vinte", "trinta", "quarenta", "cinquenta", "sessenta", "setenta", "oitenta", "noventa"];
+  if (n < 0 || !Number.isFinite(n)) return String(n);
+  if (n < 10) return units[n];
+  if (n < 20) return teens[n - 10];
+  if (n < 100) {
+    const t = Math.floor(n / 10);
+    const u = n % 10;
+    return u === 0 ? tens[t] : `${tens[t]} e ${units[u]}`;
+  }
+  return String(n);
+}
+
 
 function applyPatternRules(xml: string, rules: PatternRule[]): string {
   return xml.replace(/<w:p[ >][\s\S]*?<\/w:p>/g, (paragraph) => {
