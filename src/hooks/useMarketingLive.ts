@@ -178,16 +178,10 @@ function aggregateLeads(rows: any[], monthYYYYMM: string): LeadsStats {
     );
   });
 
-  const reunRealizadasRows = createdInMonth.filter((r: any) => {
-    const e = String(r.etapa_atual ?? "").toLowerCase().trim();
-    return (
-      (e.includes("reuni") && e.includes("realiz")) ||
-      e.includes("link enviado") ||
-      e.includes("proposta") ||
-      e.includes("contrato assinado") ||
-      e === "ganho"
-    );
-  });
+  // Reuniões REALIZADAS: contar pelo campo `data_reuniao` (data real da
+  // reunião, idêntico à planilha Farol). NÃO usar etapa_atual+created_at —
+  // isso falha quando o lead foi criado em outro mês ou voltou de etapa.
+  const reunRealizadasRows = rows.filter((r: any) => inMonth(r.data_reuniao));
 
   const vendasRows = rows.filter(
     (r: any) => r.status === "ganho" && inMonth(r.data_venda),
