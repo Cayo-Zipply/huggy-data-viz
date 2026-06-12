@@ -1,9 +1,13 @@
 import { formatNumber, formatCurrency, formatPercent } from "@/data/marketingData";
+import { MetricTooltip } from "./MetricTooltip";
 
 interface TrafficFunnelProps {
   impressoes: number;
   cliques: number;
   mensagens: number;
+  /** Reuniões marcadas no mês (data_reuniao no mês). */
+  reunioesMarcadas?: number;
+  /** Reuniões realizadas (etapa ≥ Realizada + data_ultima_mudanca_etapa no mês). */
   reunioes: number;
   vendas: number;
   investimento: number;
