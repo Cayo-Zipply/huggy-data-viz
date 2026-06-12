@@ -174,6 +174,9 @@ const Index = () => {
   const reunioesRealizadas = isHardcoded
     ? (currentSales?.funnel?.reunioes?.realizado || 0)
     : (overrideAtual?.manual_reunioes ?? live.leadsStats?.reunioesRealizadas ?? 0);
+  const reunioesMarcadas = isHardcoded
+    ? undefined
+    : (live.leadsStats?.reunioesAgendadas ?? 0);
   const custoPorReuniao = reunioesRealizadas > 0
     ? investimentoView / reunioesRealizadas
     : 0;
