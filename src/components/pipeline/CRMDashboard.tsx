@@ -369,7 +369,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
         <MetricBox label="Perdidos" value={perdidos.length.toString()} sub={`${taxaPerda}% de perda`} />
         <MetricBox label="Conversão" value={`${taxaConv}%`} />
         <MetricBox label="Ciclo de Venda" value={cicloVenda != null ? `${cicloVenda} dias` : "—"} sub="criação → fechamento" />
-        <MetricBox label="Reuniões Realizadas" value={reunioesRealizadasMes.toString()} sub="por data da reunião" />
+        <MetricBox label="Reuniões Realizadas" value={reunioesRealizadasMes.toString()} sub="etapa ≥ Reunião Realizada no mês" />
       </div>
 
 
