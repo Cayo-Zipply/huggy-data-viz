@@ -904,6 +904,7 @@ export function PipelinePanel() {
       <ConfirmarGanhoDialog
         open={!!ganhoPending}
         leadNome={ganhoPending?.cardNome ?? ""}
+        valorDividaAtual={ganhoPending?.valorDividaAtual ?? null}
         onConfirm={confirmGanho}
         onCancel={() => setGanhoPending(null)}
       />
