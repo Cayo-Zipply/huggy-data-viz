@@ -241,11 +241,11 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
     navigate("/pipeline");
   };
 
-  // ── Reuniões marcadas/realizadas/no-show no mês (somente cards no pipe Closer) ──
-  // Critério único para SDR e Closer: usa SOMENTE cards já no pipe Closer,
-  // pois no pipe SDR os dados (nome, e-mail, CNPJ) ainda costumam estar incompletos.
-  // O closer corrige essas informações antes da reunião, então o pipe Closer é a fonte confiável.
-  const closerCards = useMemo(() => cards.filter(c => c.pipe === "closer"), [cards]);
+  // ── Reuniões marcadas/realizadas/no-show no mês ──
+  // Regra oficial unificada (Marketing = Farol = Pipeline): sem filtro de pipe.
+  // O filtro de pipe gerava divergência com a aba Marketing; os dados históricos
+  // com pipe incorreto já foram corrigidos no banco.
+  const closerCards = useMemo(() => cards, [cards]);
 
   // Espelho do pipe: contamos pelo ESTADO ATUAL do card (não pelo histórico).
   // Se um card voltar de "realizada" para "agendada", ele deixa de contar como realizada.
