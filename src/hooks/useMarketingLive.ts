@@ -148,9 +148,9 @@ async function fetchLeadsRaw(monthYYYYMM: string): Promise<any[]> {
   const { inicioIso, fimIso } = monthRange(monthYYYYMM);
   const { data, error } = await supabaseExt
     .from("leads")
-    .select("id, etapa_atual, closer, status, valor_negocio, data_venda, created_at")
+    .select("id, etapa_atual, closer, status, valor_negocio, data_venda, data_reuniao, created_at")
     .or(
-      `and(created_at.gte.${inicioIso},created_at.lte.${fimIso}),and(data_venda.gte.${inicioIso},data_venda.lte.${fimIso})`,
+      `and(created_at.gte.${inicioIso},created_at.lte.${fimIso}),and(data_venda.gte.${inicioIso},data_venda.lte.${fimIso}),and(data_reuniao.gte.${inicioIso},data_reuniao.lte.${fimIso})`,
     );
   if (error) throw error;
   return data ?? [];
