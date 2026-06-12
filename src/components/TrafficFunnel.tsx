@@ -73,7 +73,7 @@ const ConversionArrow = ({ pct }: { pct: string }) => (
 );
 
 export const TrafficFunnel = ({
-  impressoes, cliques, mensagens, reunioes, vendas,
+  impressoes, cliques, mensagens, reunioesMarcadas, reunioes, vendas,
   investimento, faturamento,
 }: TrafficFunnelProps) => {
   const roi = investimento > 0 ? ((faturamento - investimento) / investimento) : 0;
@@ -85,10 +85,16 @@ export const TrafficFunnel = ({
   const custoReuniao = reunioes > 0 ? investimento / reunioes : 0;
   const cpa = vendas > 0 ? investimento / vendas : 0;
 
+  const showMarcadas = typeof reunioesMarcadas === "number";
   const pctCliques = impressoes > 0 ? ((cliques / impressoes) * 100).toFixed(2) : "0";
   const pctMensagens = cliques > 0 ? ((mensagens / cliques) * 100).toFixed(2) : "0";
+  const pctMsgMarcadas = mensagens > 0 && showMarcadas ? ((reunioesMarcadas! / mensagens) * 100).toFixed(2) : "0";
+  const pctMarcadasRealizadas = showMarcadas && (reunioesMarcadas! > 0) ? ((reunioes / reunioesMarcadas!) * 100).toFixed(2) : "0";
   const pctReunioes = mensagens > 0 ? ((reunioes / mensagens) * 100).toFixed(2) : "0";
   const pctVendas = reunioes > 0 ? ((vendas / reunioes) * 100).toFixed(2) : "0";
+
+  const tooltipRealizadas = "Conta leads em Reunião Realizada, Link Enviado ou Contrato Assinado, pela data da última mudança de etapa. Fonte única usada em Marketing, Farol e Pipeline.";
+  const tooltipMarcadas = "Conta leads com data_reuniao dentro do mês (remarcação sobrescreve a data anterior).";
 
   return (
     <div className="bg-card border border-border rounded-lg p-4 sm:p-6 opacity-0 animate-fade-in col-span-full" style={{ animationDelay: '400ms' }}>
@@ -115,13 +121,25 @@ export const TrafficFunnel = ({
           <ConversionArrow pct={pctMensagens} />
           
           <FunnelStage label="Mensagens" value={mensagens} widthPct={65} color="hsl(var(--foreground) / 0.7)" />
-          <ConversionArrow pct={pctReunioes} />
-          
-          <FunnelStage label="Reuniões" value={reunioes} widthPct={48} color="hsl(145, 60%, 35%)" />
+
+          {showMarcadas ? (
+            <>
+              <ConversionArrow pct={pctMsgMarcadas} />
+              <FunnelStage label="Reuniões Marcadas" value={reunioesMarcadas!} widthPct={56} color="hsl(35, 80%, 45%)" tooltip={tooltipMarcadas} />
+              <ConversionArrow pct={pctMarcadasRealizadas} />
+              <FunnelStage label="Reuniões Realizadas" value={reunioes} widthPct={48} color="hsl(145, 60%, 35%)" tooltip={tooltipRealizadas} />
+            </>
+          ) : (
+            <>
+              <ConversionArrow pct={pctReunioes} />
+              <FunnelStage label="Reuniões Realizadas" value={reunioes} widthPct={48} color="hsl(145, 60%, 35%)" tooltip={tooltipRealizadas} />
+            </>
+          )}
           <ConversionArrow pct={pctVendas} />
           
           <FunnelStage label="Vendas" value={vendas} widthPct={32} color="hsl(var(--foreground) / 0.5)" />
         </div>
+
 
         {/* Right — Comercial */}
         <div className="space-y-2">
