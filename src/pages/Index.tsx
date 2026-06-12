@@ -284,7 +284,7 @@ const Index = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">
                   <MetricCard title="Vendas" value={formatNumber(effectiveVendas)} variation={getVariation(effectiveVendas, prevEffectiveVendas)} delay={0} />
                   <MetricCard title="Faturamento" value={formatCurrency(effectiveFaturamento)} delay={50} />
-                  <MetricCard title="Reuniões Realizadas" value={formatNumber(reunioesRealizadas)} variation={getVariation(reunioesRealizadas, prevReunioes)} delay={100} />
+                  <MetricCard title="Reuniões Realizadas" value={formatNumber(reunioesRealizadas)} variation={getVariation(reunioesRealizadas, prevReunioes)} tooltip="Conta leads em Reunião Realizada, Link Enviado ou Contrato Assinado, pela data da última mudança de etapa. Fonte única usada em Marketing, Farol e Pipeline." delay={100} />
                   <MetricCard title="Mensagens" value={formatNumber(effectiveMensagens)} variation={getVariation(effectiveMensagens, prevEffectiveMensagens)} delay={150} />
                   <MetricCard title="Ticket Médio" value={effectiveVendas > 0 ? formatCurrency(effectiveFaturamento / effectiveVendas) : "—"} delay={200} />
                   <MetricCard title="Conv. Reuniões" value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "—"} variation={getVariation(conversaoReunioes, prevConversaoReunioes)} delay={250} />
