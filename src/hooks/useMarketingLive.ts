@@ -185,21 +185,16 @@ function aggregateLeads(rows: any[], monthYYYYMM: string): LeadsStats {
 
   const createdInMonth = rows.filter((r) => inMonth(r.created_at));
 
-  const reunMarcadasNorm = createdInMonth.filter((r: any) => {
-    const e = String(r.etapa_atual ?? "").toLowerCase();
-    return (
-      e.includes("reuni") ||
-      e.includes("proposta") ||
-      e.includes("contrato") ||
-      e.includes("link enviado") ||
-      e.includes("no show")
-    );
-  });
+  // Reuniões MARCADAS no mês: lead com `data_reuniao` dentro do mês.
+  // (Granularidade de funil: a remarcação sobrescreve a data anterior.)
+  const reunMarcadasNorm = rows.filter((r: any) => inMonth(r.data_reuniao));
 
-  // Reuniões REALIZADAS: contar pelo campo `data_reuniao` (data real da
-  // reunião, idêntico à planilha Farol). NÃO usar etapa_atual+created_at —
-  // isso falha quando o lead foi criado em outro mês ou voltou de etapa.
-  const reunRealizadasRows = rows.filter((r: any) => inMonth(r.data_reuniao));
+  // Reuniões REALIZADAS no mês — FONTE ÚNICA (alinhada com Farol e Pipeline):
+  // lead com etapa_atual em Reunião Realizada / Realizada / Link Enviado /
+  // Contrato Assinado E data_ultima_mudanca_etapa dentro do mês.
+  const reunRealizadasRows = rows.filter(
+    (r: any) => isEtapaRealizada(r.etapa_atual) && inMonth(r.data_ultima_mudanca_etapa),
+  );
 
   const vendasRows = rows.filter(
     (r: any) => r.status === "ganho" && inMonth(r.data_venda),
