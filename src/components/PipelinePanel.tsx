@@ -795,13 +795,15 @@ export function PipelinePanel() {
         onOpenChange={handleDrawerOpenChange}
         onUpdate={updateCard}
         onMarkWon={async (cid) => {
-          await markWon(cid);
-          try {
-            await (sbExt as any).functions.invoke("gerar-rascunhos-ganho", { body: { lead_id: cid } });
-            toast({ title: "Rascunhos de e-mail gerados", description: "Revise antes de enviar." });
-          } catch (e: any) {
-            toast({ title: "Erro ao gerar rascunhos", description: e?.message || "", variant: "destructive" });
+          const c = cards.find(x => x.id === cid);
+          if (!c) return;
+          // Mesmo fluxo do drop: valida contrato anexado e abre diálogo com valor da dívida obrigatório
+          const ok = await hasContractAttached(c);
+          if (!ok) {
+            toast({ title: "Contrato obrigatório", description: "É necessário anexar o contrato assinado antes de marcar como Ganho.", variant: "destructive" });
+            return;
           }
+          setGanhoPending({ cardId: cid, cardNome: c.nome, valorDividaAtual: c.valor_divida ?? null });
         }}
         onMarkLost={handleLossRequest}
         onCreateTask={createTask}
