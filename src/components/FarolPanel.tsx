@@ -489,28 +489,13 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
   }, [preVendasData]);
 
   // ── Cards sem responsável (lista para o modal) ──
-  // Regra ampliada: inclui cards sem closer com etapa no mês (reunião marcada/agendada/no-show
-  // /realizada/link enviado/contrato assinado) E também leads sem closer com `data_reuniao`
-  // dentro do mês, independente da etapa — captura quem marcou reunião e o card nunca avançou.
-  const unassignedCards = useMemo(() => {
-    const ids = new Set<string>();
-    const list: PipelineCard[] = [];
-    const push = (c: PipelineCard) => {
-      if (!c.owner && !ids.has(c.id)) { ids.add(c.id); list.push(c); }
-    };
-    [...reunioesMarcadas, ...reunioesRealizadas, ...noShowsMes, ...ganhosMes].forEach(push);
-    cards.forEach(c => {
-      if (c.owner) return;
-      if (!c.data_reuniao) return;
-      if (!dateInRange(c.data_reuniao, start, end)) return;
-      push(c);
-    });
-    return list.sort((a, b) => {
-      const ta = new Date(a.data_reuniao || a.stage_changed_at).getTime();
-      const tb = new Date(b.data_reuniao || b.stage_changed_at).getTime();
-      return tb - ta;
-    });
-  }, [reunioesMarcadas, reunioesRealizadas, noShowsMes, ganhosMes, cards, start, end]);
+  // Regra (Cayo, 12/06): SOMENTE etapa "Reunião Agendada" sem closer no mês.
+  // "Reunião Marcada" é fase de SDR/pré-vendas, normal não ter closer ainda.
+  const unassignedCards = useMemo(
+    () => currentStageInMonth(["reuniao_agendada"]).filter(c => !c.owner),
+    [currentStageInMonth],
+  );
+
 
   const monthLabel = selectedMonth.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
