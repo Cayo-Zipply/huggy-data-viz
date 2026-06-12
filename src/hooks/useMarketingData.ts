@@ -165,8 +165,15 @@ export function useMarketingData(overrides?: Record<string, MarketingOverrideDat
     return [...dynamic, ...hardcoded];
   }, [dynamicRows]);
 
-  // Default to the current month (always first in the dynamic list above).
-  const defaultMonth = months.length > 0 ? months[0].key : "fevereiro";
+  // Default to the CURRENT month (sempre, independente da ordem da lista).
+  // Garante que o dashboard nunca abra num mês antigo (ex.: setembro/2024).
+  const defaultMonth = useMemo(() => {
+    const now = new Date();
+    const currentRaw = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+    const currentKey = monthKeyFromDate(currentRaw);
+    const found = months.find(m => m.key === currentKey);
+    return found?.key ?? (months[0]?.key ?? "fevereiro");
+  }, [months]);
 
   const getLeadMetricsForMonth = (monthStr: string): LeadMetrics => {
     const prefix = monthStr.slice(0, 7);
