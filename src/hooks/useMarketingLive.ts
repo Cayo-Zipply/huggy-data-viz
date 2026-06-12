@@ -148,9 +148,9 @@ async function fetchLeadsRaw(monthYYYYMM: string): Promise<any[]> {
   const { inicioIso, fimIso } = monthRange(monthYYYYMM);
   const { data, error } = await supabaseExt
     .from("leads")
-    .select("id, etapa_atual, closer, status, valor_negocio, data_venda, created_at")
+    .select("id, etapa_atual, closer, status, valor_negocio, data_venda, data_reuniao, created_at")
     .or(
-      `and(created_at.gte.${inicioIso},created_at.lte.${fimIso}),and(data_venda.gte.${inicioIso},data_venda.lte.${fimIso})`,
+      `and(created_at.gte.${inicioIso},created_at.lte.${fimIso}),and(data_venda.gte.${inicioIso},data_venda.lte.${fimIso}),and(data_reuniao.gte.${inicioIso},data_reuniao.lte.${fimIso})`,
     );
   if (error) throw error;
   return data ?? [];
@@ -178,16 +178,10 @@ function aggregateLeads(rows: any[], monthYYYYMM: string): LeadsStats {
     );
   });
 
-  const reunRealizadasRows = createdInMonth.filter((r: any) => {
-    const e = String(r.etapa_atual ?? "").toLowerCase().trim();
-    return (
-      (e.includes("reuni") && e.includes("realiz")) ||
-      e.includes("link enviado") ||
-      e.includes("proposta") ||
-      e.includes("contrato assinado") ||
-      e === "ganho"
-    );
-  });
+  // Reuniões REALIZADAS: contar pelo campo `data_reuniao` (data real da
+  // reunião, idêntico à planilha Farol). NÃO usar etapa_atual+created_at —
+  // isso falha quando o lead foi criado em outro mês ou voltou de etapa.
+  const reunRealizadasRows = rows.filter((r: any) => inMonth(r.data_reuniao));
 
   const vendasRows = rows.filter(
     (r: any) => r.status === "ganho" && inMonth(r.data_venda),
