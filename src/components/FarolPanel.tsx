@@ -489,18 +489,28 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
   }, [preVendasData]);
 
   // ── Cards sem responsável (lista para o modal) ──
+  // Regra ampliada: inclui cards sem closer com etapa no mês (reunião marcada/agendada/no-show
+  // /realizada/link enviado/contrato assinado) E também leads sem closer com `data_reuniao`
+  // dentro do mês, independente da etapa — captura quem marcou reunião e o card nunca avançou.
   const unassignedCards = useMemo(() => {
     const ids = new Set<string>();
     const list: PipelineCard[] = [];
-    const all = [...reunioesMarcadas, ...reunioesRealizadas, ...noShowsMes, ...ganhosMes];
-    all.forEach(c => {
-      if (!c.owner && !ids.has(c.id)) {
-        ids.add(c.id);
-        list.push(c);
-      }
+    const push = (c: PipelineCard) => {
+      if (!c.owner && !ids.has(c.id)) { ids.add(c.id); list.push(c); }
+    };
+    [...reunioesMarcadas, ...reunioesRealizadas, ...noShowsMes, ...ganhosMes].forEach(push);
+    cards.forEach(c => {
+      if (c.owner) return;
+      if (!c.data_reuniao) return;
+      if (!dateInRange(c.data_reuniao, start, end)) return;
+      push(c);
     });
-    return list.sort((a, b) => new Date(b.stage_changed_at).getTime() - new Date(a.stage_changed_at).getTime());
-  }, [reunioesMarcadas, reunioesRealizadas, noShowsMes, ganhosMes]);
+    return list.sort((a, b) => {
+      const ta = new Date(a.data_reuniao || a.stage_changed_at).getTime();
+      const tb = new Date(b.data_reuniao || b.stage_changed_at).getTime();
+      return tb - ta;
+    });
+  }, [reunioesMarcadas, reunioesRealizadas, noShowsMes, ganhosMes, cards, start, end]);
 
   const monthLabel = selectedMonth.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
