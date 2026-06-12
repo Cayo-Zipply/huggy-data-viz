@@ -314,10 +314,14 @@ export function PipelinePanel() {
     setNoShowPending(null);
   };
 
-  const confirmGanho = async (dataVenda: string) => {
+  const confirmGanho = async (dataVenda: string, valorDivida: number) => {
     if (!ganhoPending) return;
-    const { cardId } = ganhoPending;
+    const { cardId, valorDividaAtual } = ganhoPending;
     setGanhoPending(null);
+    // 0. Persiste valor da dívida se mudou (obrigatório para painel de fechamentos)
+    if (valorDivida !== valorDividaAtual) {
+      await updateCard(cardId, { valor_divida: valorDivida } as any);
+    }
     // 1. Move para "Contrato Assinado" (registra histórico de etapa)
     await moveCard(cardId, "contrato_assinado" as Stage);
     // 2. Marca como ganho com a data da venda escolhida
