@@ -41,9 +41,10 @@ interface FunnelStageProps {
   value: number;
   widthPct: number;
   color: string;
+  tooltip?: string;
 }
 
-const FunnelStage = ({ label, value, widthPct, color }: FunnelStageProps) => (
+const FunnelStage = ({ label, value, widthPct, color, tooltip }: FunnelStageProps) => (
   <div className="flex items-center justify-center flex-col" style={{ width: `${widthPct}%` }}>
     <div
       className="w-full h-14 flex items-center justify-center rounded-sm"
@@ -54,9 +55,13 @@ const FunnelStage = ({ label, value, widthPct, color }: FunnelStageProps) => (
     >
       <span className="text-white font-bold text-base">{formatValue(value)}</span>
     </div>
-    <span className="text-[10px] text-muted-foreground mt-0.5">{label}</span>
+    <span className="text-[10px] text-muted-foreground mt-0.5 inline-flex items-center">
+      {label}
+      {tooltip && <MetricTooltip text={tooltip} />}
+    </span>
   </div>
 );
+
 
 const ConversionArrow = ({ pct }: { pct: string }) => (
   <div className="flex items-center gap-1 text-muted-foreground my-0.5">
