@@ -231,14 +231,17 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
     return Math.round(avg * 10) / 10;
   }, [ganhos]);
 
-  // Reuniões realizadas agrupadas por mês via data_reuniao_realizada
-  // (não usa etapa_atual — lead pode já ter avançado).
+  // Reuniões REALIZADAS no mês — FONTE ÚNICA (alinhada com Farol e Marketing):
+  // card com etapa atual em reuniao_realizada / link_enviado / contrato_assinado
+  // E data_ultima_mudanca_etapa (stage_changed_at) dentro do mês.
+  const REUNIAO_REALIZADA_STAGES = new Set(["reuniao_realizada", "link_enviado", "contrato_assinado"]);
   const reunioesRealizadasMes = useMemo(() => {
     const { start, end } = getMonthRange(currentMonth);
     return vis.filter(c => {
-      const drr = (c as any).data_reuniao_realizada as string | null;
-      if (!drr) return false;
-      const d = new Date(drr);
+      if (!REUNIAO_REALIZADA_STAGES.has(c.stage as string)) return false;
+      const ref = c.stage_changed_at;
+      if (!ref) return false;
+      const d = new Date(ref);
       return d >= start && d <= end;
     }).length;
   }, [vis, currentMonth]);
@@ -366,7 +369,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
         <MetricBox label="Perdidos" value={perdidos.length.toString()} sub={`${taxaPerda}% de perda`} />
         <MetricBox label="Conversão" value={`${taxaConv}%`} />
         <MetricBox label="Ciclo de Venda" value={cicloVenda != null ? `${cicloVenda} dias` : "—"} sub="criação → fechamento" />
-        <MetricBox label="Reuniões Realizadas" value={reunioesRealizadasMes.toString()} sub="por data da reunião" />
+        <MetricBox label="Reuniões Realizadas" value={reunioesRealizadasMes.toString()} sub="etapa ≥ Reunião Realizada no mês" />
       </div>
 
 
