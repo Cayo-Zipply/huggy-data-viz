@@ -255,6 +255,7 @@ const Index = () => {
               impressoes={impressoesView}
               cliques={cliquesView}
               mensagens={effectiveMensagens}
+              reunioesMarcadas={reunioesMarcadas}
               reunioes={reunioesRealizadas}
               vendas={effectiveVendas}
               investimento={investimentoView}
