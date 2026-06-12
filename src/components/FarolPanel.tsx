@@ -924,21 +924,32 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
             {unassignedCards.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">Nenhum card sem responsável.</p>
             )}
-            {unassignedCards.map(c => (
-              <button
-                key={c.id}
-                onClick={() => { setUnassignedOpen(false); openCard(c.id); }}
-                className="w-full text-left p-3 border border-border rounded-lg hover:bg-accent transition flex items-center justify-between"
-              >
-                <div>
-                  <div className="text-sm font-medium">{c.nome}</div>
-                  <div className="text-[11px] text-muted-foreground">
-                    {c.stage.replace(/_/g, " ")} · {new Date(c.stage_changed_at).toLocaleDateString("pt-BR")}
+            {unassignedCards.map(c => {
+              const REALIZADA_OU_ALEM = new Set(["reuniao_realizada", "link_enviado", "contrato_assinado"]);
+              const reuniaoDate = c.data_reuniao ? new Date(c.data_reuniao) : null;
+              const vencidaSemAvanco = !!reuniaoDate && reuniaoDate.getTime() < Date.now() && !REALIZADA_OU_ALEM.has(c.stage);
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => { setUnassignedOpen(false); openCard(c.id); }}
+                  className="w-full text-left p-3 border border-border rounded-lg hover:bg-accent transition flex items-center justify-between"
+                >
+                  <div>
+                    <div className="text-sm font-medium">{c.nome}</div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {c.stage.replace(/_/g, " ")} · {new Date(c.stage_changed_at).toLocaleDateString("pt-BR")}
+                      {reuniaoDate && (
+                        <> · reunião {reuniaoDate.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</>
+                      )}
+                    </div>
+                    {vencidaSemAvanco && (
+                      <div className="text-[11px] text-destructive mt-0.5">reunião vencida, etapa não atualizada</div>
+                    )}
                   </div>
-                </div>
-                <AlertTriangle className="w-4 h-4 text-destructive" />
-              </button>
-            ))}
+                  <AlertTriangle className="w-4 h-4 text-destructive" />
+                </button>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>
