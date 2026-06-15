@@ -1239,13 +1239,17 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                 {(["juridico", "financeiro"] as EmailTipo[]).map((tipo) => {
                   const envio = latestByTipo(tipo);
                   const status = envio?.status;
+                  const erroMsg = (envio as any)?.erro_mensagem || (envio as any)?.erro_msg;
                   const dot = status === "enviado"
                     ? "bg-emerald-500"
-                    : status === "rascunho"
-                      ? "bg-amber-400"
-                      : "bg-muted-foreground/40";
+                    : status === "erro"
+                      ? "bg-red-500"
+                      : status === "rascunho"
+                        ? "bg-amber-400"
+                        : "bg-muted-foreground/40";
                   const tooltip = status === "enviado" && envio?.enviado_em
                     ? `Enviado em ${new Date(envio.enviado_em).toLocaleString("pt-BR")}`
+                    : status === "erro" ? (erroMsg ? `Erro: ${erroMsg}` : "Erro no envio")
                     : status === "rascunho" ? "Rascunho pendente" : "Sem rascunho";
                   return (
                     <button
