@@ -60,18 +60,53 @@ type ContractFunctionResult = {
   share_url?: string;
 };
 
+const MISSING_FIELD_LABELS: Record<string, string> = {
+  representante_cpf: "CPF do representante",
+  representante_nome: "Nome do representante",
+  valor_mensalidade: "Valor da mensalidade",
+  porcentagem_exito: "Porcentagem de êxito",
+  empresa: "Razão social / empresa",
+  cnpj: "CNPJ",
+  email: "E-mail",
+  telefone: "Telefone",
+  endereco: "Endereço",
+  cidade: "Cidade",
+  estado: "Estado (UF)",
+  cep: "CEP",
+  tipo_contrato: "Tipo de contrato",
+};
+
+async function parseEdgeFunctionError(error: any, fallback: string): Promise<string> {
+  let parsed: any = null;
+  try {
+    const ctx = error?.context;
+    if (ctx && typeof ctx.json === "function") {
+      try { parsed = await ctx.clone().json(); } catch {
+        try { const txt = await ctx.clone().text(); parsed = txt ? JSON.parse(txt) : null; } catch {}
+      }
+    } else if (typeof ctx?.body === "string") {
+      try { parsed = JSON.parse(ctx.body); } catch {}
+    } else if (ctx?.body && typeof ctx.body === "object") {
+      parsed = ctx.body;
+    }
+  } catch { /* ignore */ }
+
+  if (parsed?.error) {
+    let msg = parsed.error as string;
+    if (Array.isArray(parsed.missing) && parsed.missing.length) {
+      const faltando = parsed.missing.map((f: string) => MISSING_FIELD_LABELS[f] ?? f).join(", ");
+      msg = `${msg}: ${faltando}`;
+    }
+    return msg;
+  }
+  if (parsed?.message) return parsed.message;
+  return error?.message || fallback;
+}
+
 async function invokeContractFunction(body: { lead_id: string; action: "zapsign" | "download" | "whatsapp" | "preview" }) {
   const { data, error } = await supabase.functions.invoke("generate-contract-docx", { body });
   if (error) {
-    let msg = error.message || "Erro ao gerar contrato";
-    try {
-      const ctxBody = (error as any)?.context?.body;
-      if (ctxBody) {
-        const parsed = typeof ctxBody === "string" ? JSON.parse(ctxBody) : ctxBody;
-        if (parsed?.error) msg = parsed.error;
-        else if (parsed?.message) msg = parsed.message;
-      }
-    } catch { /* ignore */ }
+    const msg = await parseEdgeFunctionError(error, "Erro ao gerar contrato");
     throw new Error(msg);
   }
   return data as ContractFunctionResult;
@@ -131,10 +166,10 @@ export function ContractTab({ card, onUpdate }: Props) {
         body: { lead_id: card.id },
       });
       if (error || !data?.url) {
-        const msg = (error as any)?.context?.body
-          ? (() => { try { return JSON.parse((error as any).context.body)?.error; } catch { return null; } })()
-          : (error as any)?.message;
-        toast.error(msg || "Não foi possível abrir o contrato. Tente novamente.");
+        const msg = error
+          ? await parseEdgeFunctionError(error, "Não foi possível abrir o contrato. Tente novamente.")
+          : "Não foi possível abrir o contrato. Tente novamente.";
+        toast.error(msg);
         return;
       }
       window.open(data.url, "_blank");
