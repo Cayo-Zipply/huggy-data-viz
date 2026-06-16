@@ -166,10 +166,10 @@ export function ContractTab({ card, onUpdate }: Props) {
         body: { lead_id: card.id },
       });
       if (error || !data?.url) {
-        const msg = (error as any)?.context?.body
-          ? (() => { try { return JSON.parse((error as any).context.body)?.error; } catch { return null; } })()
-          : (error as any)?.message;
-        toast.error(msg || "Não foi possível abrir o contrato. Tente novamente.");
+        const msg = error
+          ? await parseEdgeFunctionError(error, "Não foi possível abrir o contrato. Tente novamente.")
+          : "Não foi possível abrir o contrato. Tente novamente.";
+        toast.error(msg);
         return;
       }
       window.open(data.url, "_blank");
