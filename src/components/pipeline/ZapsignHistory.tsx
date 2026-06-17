@@ -57,7 +57,7 @@ function eventoIcon(tipo: string) {
   return <Send size={14} className="text-muted-foreground" />;
 }
 
-export function ZapsignHistory({ leadId }: { leadId: string }) {
+export function ZapsignHistory({ leadId, signerTokenFallback, isSigned }: { leadId: string; signerTokenFallback?: string | null; isSigned?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Resp | null>(null);
 
