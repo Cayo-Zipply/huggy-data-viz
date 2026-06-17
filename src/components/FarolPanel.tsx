@@ -461,7 +461,9 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
       .filter(r => r.meta > 0 || r.metaRR > 0 || r.reunioesMarcadas > 0 || r.reunioesRealizadas > 0 || r.vendas > 0);
 
 
-    const rmSem = reunioesMarcadas.filter(c => !c.owner).length;
+    // "Sem responsável": contar APENAS leads atualmente em "Reunião Agendada" sem closer.
+    // (Outras etapas — reuniao_marcada, no_show, realizada etc — não devem inflar este número.)
+    const rmSem = reunioesAgendadasAbertas.filter(c => !c.owner).length;
     const rrSem = reunioesRealizadas.filter(c => !c.owner).length;
     const nsSem = noShowsMes.filter(c => !c.owner).length;
     if (rmSem || rrSem || nsSem) {
@@ -472,7 +474,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
       });
     }
     return rows;
-  }, [sdrRows, sdrNames, closerNames, reunioesMarcadas, reunioesRealizadas, noShowsMes, ganhosMes, goals, monthKey, passedBD, ratio, fatorPace, du.restantes]);
+  }, [sdrRows, sdrNames, closerNames, reunioesMarcadas, reunioesRealizadas, reunioesAgendadasAbertas, noShowsMes, ganhosMes, goals, monthKey, passedBD, ratio, fatorPace, du.restantes]);
 
   const preVendasTotal = useMemo(() => {
     const rm = preVendasData.reduce((s, d) => s + d.reunioesMarcadas, 0);
