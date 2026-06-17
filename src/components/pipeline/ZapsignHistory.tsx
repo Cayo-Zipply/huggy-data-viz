@@ -135,6 +135,48 @@ export function ZapsignHistory({ leadId, signerTokenFallback, isSigned }: { lead
             </div>
           )}
 
+          {/* Links de assinatura (somente quando contrato ainda não assinado) */}
+          {!isSigned && data.doc_status !== "signed" && data.signatarios && data.signatarios.length > 0 && (() => {
+            const pendentes = data.signatarios.filter(s => !s.signed_at);
+            if (pendentes.length === 0) return null;
+            return (
+              <div className="space-y-1.5">
+                {pendentes.map((s, i) => {
+                  const url = s.sign_url
+                    || (s.token ? `https://app.zapsign.com.br/verificar/${s.token}` : null)
+                    || (signerTokenFallback ? `https://app.zapsign.com.br/verificar/${signerTokenFallback}` : null);
+                  if (!url) return null;
+                  return (
+                    <div key={i} className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                      <span className="text-muted-foreground">{s.nome.split(" ")[0] || "Signatário"}:</span>
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
+                      >
+                        <ExternalLink size={10} /> Abrir link de assinatura
+                      </a>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(url);
+                            toast.success("Link copiado");
+                          } catch {
+                            toast.error("Não foi possível copiar");
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-border bg-background hover:bg-muted text-foreground"
+                      >
+                        <Copy size={10} /> Copiar link
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
           {data.eventos && data.eventos.length > 0 ? (
             <ol className="relative border-l border-border ml-1.5 space-y-2.5 pl-3">
               {data.eventos.map((ev, i) => (
