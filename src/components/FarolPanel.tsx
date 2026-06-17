@@ -278,6 +278,11 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
     () => currentStageInMonth(["no_show"]),
     [closerCards, start, end]
   );
+  // Reuniões ainda agendadas no pipe Closer (denominador da taxa de show)
+  const reunioesAgendadasAbertas = useMemo(
+    () => currentStageInMonth(["reuniao_agendada"]),
+    [closerCards, start, end]
+  );
   const ganhosMes = useMemo(() => {
     return cards.filter(c => {
       if (c.lead_status !== "ganho") return false;
