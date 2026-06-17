@@ -60,6 +60,8 @@ Deno.serve(async (req) => {
       first_opened_at: s.first_opened_at || null,
       last_view_at: s.last_view_at || null,
       signed_at: s.signed_at || null,
+      sign_url: s.sign_url || null,
+      token: s.token || null,
     }));
 
     const eventos: { tipo: string; titulo: string; em: string; detalhe?: string }[] = [];
