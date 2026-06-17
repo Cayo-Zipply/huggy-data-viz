@@ -135,6 +135,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
   const [unassignedOpen, setUnassignedOpen] = useState(false);
   const [weekFilter, setWeekFilter] = useState<string>("all"); // "all" | "1".."5"
   const [debugRR, setDebugRR] = useState<{ owner: string } | null>(null);
+  const [realizadoDrill, setRealizadoDrill] = useState<{ closer: string | null; label: string } | null>(null);
   const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
 
   const monthKey = getMonthKey(selectedMonth);
@@ -759,7 +760,19 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
                   </div>
                 </TableCell>
                 
-                <TableCell className="text-xs text-right">{formatBRL(d.realizado)}</TableCell>
+                <TableCell className="text-xs text-right">
+                  {d.realizado > 0 ? (
+                    <button
+                      onClick={() => setRealizadoDrill({ closer: d.closer, label: d.closer })}
+                      className="hover:underline hover:text-primary cursor-pointer"
+                      title="Ver contratos que compõem este valor"
+                    >
+                      {formatBRL(d.realizado)}
+                    </button>
+                  ) : (
+                    formatBRL(d.realizado)
+                  )}
+                </TableCell>
                 <TableCell className="text-xs text-right">{formatBRL(d.meta)}</TableCell>
                 <TableCell className="text-xs text-right text-muted-foreground">{formatBRL(d.metaAteAlvo)}</TableCell>
                 <TableCell className="text-xs text-right">{formatBRL(d.projecao)}</TableCell>
@@ -775,7 +788,19 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
             <TableRow className="bg-muted/30 font-bold">
               <TableCell className="text-xs font-bold">Total</TableCell>
               
-              <TableCell className="text-xs text-right font-bold">{formatBRL(inboundTotal.realizado)}</TableCell>
+              <TableCell className="text-xs text-right font-bold">
+                {inboundTotal.realizado > 0 ? (
+                  <button
+                    onClick={() => setRealizadoDrill({ closer: null, label: "Todos os closers" })}
+                    className="hover:underline hover:text-primary cursor-pointer"
+                    title="Ver todos os contratos do período"
+                  >
+                    {formatBRL(inboundTotal.realizado)}
+                  </button>
+                ) : (
+                  formatBRL(inboundTotal.realizado)
+                )}
+              </TableCell>
               <TableCell className="text-xs text-right font-bold">{formatBRL(inboundTotal.meta)}</TableCell>
               <TableCell className="text-xs text-right font-bold text-muted-foreground">{formatBRL(inboundTotal.metaAteAlvo)}</TableCell>
               <TableCell className="text-xs text-right font-bold">{formatBRL(inboundTotal.projecao)}</TableCell>
@@ -991,6 +1016,98 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
                     <p className="text-sm text-muted-foreground text-center py-4">Nenhum card.</p>
                   )}
                 </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Drill-down — Contratos que compõem o "Realizado" */}
+      <Dialog open={!!realizadoDrill} onOpenChange={(o) => !o && setRealizadoDrill(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Contratos de {realizadoDrill?.label} — <span className="capitalize">{monthLabel}</span></DialogTitle>
+          </DialogHeader>
+          {(() => {
+            if (!realizadoDrill) return null;
+            const target = realizadoDrill.closer;
+            const list = contratosMes
+              .filter(c => {
+                if (target === null) return true;
+                if (target === "Sem responsável") return !c.owner;
+                return canonical(c.owner || "") === target;
+              })
+              .sort((a, b) => {
+                const da = new Date(a.data_venda || a.zapsign_signed_at || a.contrato_preparado_em || a.stage_changed_at || a.created_at || 0).getTime();
+                const db = new Date(b.data_venda || b.zapsign_signed_at || b.contrato_preparado_em || b.stage_changed_at || b.created_at || 0).getTime();
+                return da - db;
+              });
+            const total = list.reduce((s, c) => s + (c.deal_value || 0), 0);
+            const STATUS_OK = new Set(["assinado"]);
+            return (
+              <>
+                <div className="text-[11px] text-muted-foreground mb-2">
+                  Clique na linha para abrir o card do lead. Linhas em amarelo são contratos ainda não assinados.
+                </div>
+                <div className="max-h-[60vh] overflow-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-[10px]">Cliente</TableHead>
+                        <TableHead className="text-[10px] text-right">Valor</TableHead>
+                        <TableHead className="text-[10px] text-center">Data</TableHead>
+                        <TableHead className="text-[10px]">Status</TableHead>
+                        <TableHead className="text-[10px]">Tipo</TableHead>
+                        <TableHead className="text-[10px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {list.map(c => {
+                        const dt = c.data_venda || c.zapsign_signed_at || c.contrato_preparado_em || c.stage_changed_at || c.created_at;
+                        const naoAssinado = !c.contrato_status || !STATUS_OK.has(c.contrato_status);
+                        return (
+                          <TableRow
+                            key={c.id}
+                            className={cn("cursor-pointer", naoAssinado && "bg-yellow-500/10")}
+                            onClick={() => { setRealizadoDrill(null); openCard(c.id); }}
+                          >
+                            <TableCell className="text-xs font-medium">{c.nome}</TableCell>
+                            <TableCell className="text-xs text-right">{formatBRL(c.deal_value || 0)}</TableCell>
+                            <TableCell className="text-xs text-center">{dt ? new Date(dt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "—"}</TableCell>
+                            <TableCell className="text-xs">
+                              <span className={cn("inline-block px-1.5 py-0.5 rounded text-[10px]", naoAssinado ? "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300" : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300")}>
+                                {c.contrato_status || "—"}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-xs">{c.tipo_contrato || "—"}</TableCell>
+                            <TableCell className="text-xs text-right">
+                              {c.contrato_file_url && (
+                                <a
+                                  href={c.contrato_file_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-primary hover:underline"
+                                >
+                                  Ver contrato
+                                </a>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      {list.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-6">Nenhum contrato no período.</TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+                <DialogFooter className="border-t border-border pt-3 sm:justify-between">
+                  <div className="text-xs text-muted-foreground">Qtde: <strong className="text-foreground">{list.length}</strong></div>
+                  <div className="text-xs text-muted-foreground">Total: <strong className="text-foreground">{formatBRL(total)}</strong></div>
+                </DialogFooter>
               </>
             );
           })()}

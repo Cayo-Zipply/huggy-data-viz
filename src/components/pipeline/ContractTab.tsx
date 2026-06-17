@@ -547,7 +547,11 @@ ${signLink}`;
           );
         })()}
 
-        <ZapsignHistory leadId={card.id} />
+        <ZapsignHistory
+          leadId={card.id}
+          signerTokenFallback={(card as any).zapsign_signer_token || null}
+          isSigned={!!card.zapsign_signed_at}
+        />
 
 
 

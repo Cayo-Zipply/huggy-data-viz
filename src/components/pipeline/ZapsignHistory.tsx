@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, RefreshCw, Send, Eye, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Loader2, RefreshCw, Send, Eye, CheckCircle2, AlertTriangle, ExternalLink, Copy } from "lucide-react";
 import { supabase } from "@/lib/supabaseExternal";
+import { toast } from "sonner";
 
 type Signatario = {
   nome: string;
@@ -10,6 +11,8 @@ type Signatario = {
   first_opened_at: string | null;
   last_view_at: string | null;
   signed_at: string | null;
+  sign_url?: string | null;
+  token?: string | null;
 };
 type Evento = { tipo: string; titulo: string; em: string; detalhe?: string };
 type Resp = {
@@ -54,7 +57,7 @@ function eventoIcon(tipo: string) {
   return <Send size={14} className="text-muted-foreground" />;
 }
 
-export function ZapsignHistory({ leadId }: { leadId: string }) {
+export function ZapsignHistory({ leadId, signerTokenFallback, isSigned }: { leadId: string; signerTokenFallback?: string | null; isSigned?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Resp | null>(null);
 
@@ -131,6 +134,48 @@ export function ZapsignHistory({ leadId }: { leadId: string }) {
               ))}
             </div>
           )}
+
+          {/* Links de assinatura (somente quando contrato ainda não assinado) */}
+          {!isSigned && data.doc_status !== "signed" && data.signatarios && data.signatarios.length > 0 && (() => {
+            const pendentes = data.signatarios.filter(s => !s.signed_at);
+            if (pendentes.length === 0) return null;
+            return (
+              <div className="space-y-1.5">
+                {pendentes.map((s, i) => {
+                  const url = s.sign_url
+                    || (s.token ? `https://app.zapsign.com.br/verificar/${s.token}` : null)
+                    || (signerTokenFallback ? `https://app.zapsign.com.br/verificar/${signerTokenFallback}` : null);
+                  if (!url) return null;
+                  return (
+                    <div key={i} className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                      <span className="text-muted-foreground">{s.nome.split(" ")[0] || "Signatário"}:</span>
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
+                      >
+                        <ExternalLink size={10} /> Abrir link de assinatura
+                      </a>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(url);
+                            toast.success("Link copiado");
+                          } catch {
+                            toast.error("Não foi possível copiar");
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-border bg-background hover:bg-muted text-foreground"
+                      >
+                        <Copy size={10} /> Copiar link
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           {data.eventos && data.eventos.length > 0 ? (
             <ol className="relative border-l border-border ml-1.5 space-y-2.5 pl-3">
