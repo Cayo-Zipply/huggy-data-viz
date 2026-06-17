@@ -760,7 +760,19 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
                   </div>
                 </TableCell>
                 
-                <TableCell className="text-xs text-right">{formatBRL(d.realizado)}</TableCell>
+                <TableCell className="text-xs text-right">
+                  {d.realizado > 0 ? (
+                    <button
+                      onClick={() => setRealizadoDrill({ closer: d.closer, label: d.closer })}
+                      className="hover:underline hover:text-primary cursor-pointer"
+                      title="Ver contratos que compõem este valor"
+                    >
+                      {formatBRL(d.realizado)}
+                    </button>
+                  ) : (
+                    formatBRL(d.realizado)
+                  )}
+                </TableCell>
                 <TableCell className="text-xs text-right">{formatBRL(d.meta)}</TableCell>
                 <TableCell className="text-xs text-right text-muted-foreground">{formatBRL(d.metaAteAlvo)}</TableCell>
                 <TableCell className="text-xs text-right">{formatBRL(d.projecao)}</TableCell>
