@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, RefreshCw, Send, Eye, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Loader2, RefreshCw, Send, Eye, CheckCircle2, AlertTriangle, ExternalLink, Copy } from "lucide-react";
 import { supabase } from "@/lib/supabaseExternal";
+import { toast } from "sonner";
 
 type Signatario = {
   nome: string;
@@ -10,6 +11,8 @@ type Signatario = {
   first_opened_at: string | null;
   last_view_at: string | null;
   signed_at: string | null;
+  sign_url?: string | null;
+  token?: string | null;
 };
 type Evento = { tipo: string; titulo: string; em: string; detalhe?: string };
 type Resp = {
