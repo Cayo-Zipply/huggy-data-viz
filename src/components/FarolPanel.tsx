@@ -135,6 +135,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
   const [unassignedOpen, setUnassignedOpen] = useState(false);
   const [weekFilter, setWeekFilter] = useState<string>("all"); // "all" | "1".."5"
   const [debugRR, setDebugRR] = useState<{ owner: string } | null>(null);
+  const [realizadoDrill, setRealizadoDrill] = useState<{ closer: string | null; label: string } | null>(null);
   const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
 
   const monthKey = getMonthKey(selectedMonth);
