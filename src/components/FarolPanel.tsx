@@ -788,7 +788,19 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
             <TableRow className="bg-muted/30 font-bold">
               <TableCell className="text-xs font-bold">Total</TableCell>
               
-              <TableCell className="text-xs text-right font-bold">{formatBRL(inboundTotal.realizado)}</TableCell>
+              <TableCell className="text-xs text-right font-bold">
+                {inboundTotal.realizado > 0 ? (
+                  <button
+                    onClick={() => setRealizadoDrill({ closer: null, label: "Todos os closers" })}
+                    className="hover:underline hover:text-primary cursor-pointer"
+                    title="Ver todos os contratos do período"
+                  >
+                    {formatBRL(inboundTotal.realizado)}
+                  </button>
+                ) : (
+                  formatBRL(inboundTotal.realizado)
+                )}
+              </TableCell>
               <TableCell className="text-xs text-right font-bold">{formatBRL(inboundTotal.meta)}</TableCell>
               <TableCell className="text-xs text-right font-bold text-muted-foreground">{formatBRL(inboundTotal.metaAteAlvo)}</TableCell>
               <TableCell className="text-xs text-right font-bold">{formatBRL(inboundTotal.projecao)}</TableCell>
