@@ -43,6 +43,7 @@ import {
   Equal,
 } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 /* ---------------- Types ---------------- */
 type Avaliacao = {
@@ -92,89 +93,74 @@ type Calibracao = {
   taxa_pagamento_pct: number;
 };
 
-/* ---------------- Design tokens (Cartografia Calibrada) ---------------- */
-const SIG = {
-  green: "#56B98A",
-  teal: "#54A8B0",
-  amber: "#E0A33E",
-  red: "#D9594C",
-  brass: "#C8A35B",
-};
-const SURFACE = {
-  page: "bg-[#0E1726]",
-  card: "bg-[#15223A] border border-[rgba(176,198,232,0.12)]",
-  raised: "bg-[#1C2C49] border border-[rgba(176,198,232,0.12)]",
-  text: "text-[#EAEFF8]",
-  textMuted: "text-[#8595B4]",
-};
-
-function sigColor(n: number | null | undefined): string {
-  if (n == null) return SIG.teal;
-  if (n >= 85) return SIG.green;
-  if (n >= 70) return SIG.teal;
-  if (n >= 50) return SIG.amber;
-  return SIG.red;
-}
-function sigBgBorder(n: number | null | undefined) {
-  const c = sigColor(n);
-  return { backgroundColor: `${c}22`, borderColor: `${c}66`, color: c };
+/* ---------------- Sinal de nota (cores semânticas + Tailwind) ---------------- */
+function notaTone(n: number | null | undefined) {
+  if (n == null) return { text: "text-muted-foreground", bg: "bg-muted", border: "border-border", hex: "hsl(var(--muted-foreground))" };
+  if (n >= 85) return { text: "text-green-500", bg: "bg-green-500/10", border: "border-green-500/30", hex: "#22c55e" };
+  if (n >= 70) return { text: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/30", hex: "#34d399" };
+  if (n >= 50) return { text: "text-yellow-500", bg: "bg-yellow-500/10", border: "border-yellow-500/30", hex: "#eab308" };
+  return { text: "text-red-500", bg: "bg-red-500/10", border: "border-red-500/30", hex: "#ef4444" };
 }
 
-/* ---------------- Notas ---------------- */
-function NotaPill({ value, size = "md" }: { value: number | null; size?: "sm" | "md" | "lg" | "xl" }) {
+function NotaPill({ value, size = "md" }: { value: number | null; size?: "sm" | "md" | "lg" }) {
   const sz =
-    size === "xl"
-      ? "text-4xl px-5 py-2 font-serif"
-      : size === "lg"
-      ? "text-2xl px-4 py-1.5 font-serif"
-      : size === "sm"
-      ? "text-xs px-2 py-0.5"
-      : "text-base px-3 py-1";
+    size === "lg" ? "text-xl px-3.5 py-1.5" : size === "sm" ? "text-xs px-2 py-0.5" : "text-base px-3 py-1";
+  const t = notaTone(value);
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-md border font-bold tabular-nums ${sz}`}
-      style={sigBgBorder(value)}
+      className={cn(
+        "inline-flex items-center justify-center rounded-md border font-bold tabular-nums",
+        sz,
+        t.text,
+        t.bg,
+        t.border
+      )}
     >
       {value == null ? "—" : Math.round(value)}
     </span>
   );
 }
 
-/* ---------------- KPI Card ---------------- */
+/* ---------------- KPI Card (mesmo estilo do FarolPanel) ---------------- */
 function KpiCard({
   label,
   value,
   hint,
   accent = false,
-  valueColor,
+  toneClass,
+  icon,
 }: {
   label: string;
   value: React.ReactNode;
   hint: string;
   accent?: boolean;
-  valueColor?: string;
+  toneClass?: string;
+  icon?: React.ReactNode;
 }) {
   return (
-    <div
-      className={`relative rounded-[14px] ${SURFACE.card} p-5 overflow-hidden`}
-    >
-      <span
-        className="absolute left-0 top-0 bottom-0 w-[3px]"
-        style={{ backgroundColor: accent ? SIG.brass : "rgba(200,163,91,0.35)" }}
-      />
-      <div
-        className={`text-[10px] uppercase tracking-[0.18em] ${SURFACE.textMuted} font-medium`}
-      >
-        {label}
+    <div className="rounded-xl border border-border bg-card p-5 flex flex-col gap-4 hover:border-primary/40 transition-colors">
+      <div className="flex items-start justify-between gap-2">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          {label}
+        </span>
+        {icon && (
+          <span className="shrink-0 w-8 h-8 rounded-lg bg-muted/60 text-primary flex items-center justify-center">
+            {icon}
+          </span>
+        )}
       </div>
-      <div
-        className="mt-2 text-3xl font-serif font-semibold tabular-nums"
-        style={{ color: valueColor ?? "#EAEFF8" }}
-      >
-        {value}
-      </div>
-      <div className={`mt-3 text-[11px] leading-snug ${SURFACE.textMuted}`}>
-        {hint}
+      <div>
+        <div
+          className={cn(
+            "text-3xl font-bold tracking-tight leading-none tabular-nums truncate",
+            toneClass ?? (accent ? "text-primary" : "text-foreground")
+          )}
+        >
+          {value}
+        </div>
+        <div className="text-[11px] text-muted-foreground/90 mt-3 leading-snug">
+          {hint}
+        </div>
       </div>
     </div>
   );
@@ -436,46 +422,44 @@ export default function SalesEnablement() {
   const isLoading =
     avaliacoes.isLoading || ranking.isLoading || rubrica.isLoading || calibracao.isLoading;
 
+  const notaMediaTone = notaTone(notaMediaGeral);
+  const complianceTone =
+    complianceIdx >= 85 ? "text-green-500" : complianceIdx >= 70 ? "text-yellow-500" : "text-red-500";
+  const conversaoTone = notaTone(conversaoCalibrada);
+
   return (
-    <div className={`min-h-screen ${SURFACE.page} ${SURFACE.text}`}>
-      <main className="p-4 sm:p-6 lg:p-10">
-        <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-background">
+      <main className="p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
           {/* Header */}
-          <div className="flex flex-wrap items-end justify-between gap-3 pb-4 border-b border-[rgba(176,198,232,0.12)]">
+          <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <div
-                className="text-[10px] uppercase tracking-[0.32em] font-medium"
-                style={{ color: SIG.brass }}
-              >
-                Painel do Treinador · Pena Quadros
-              </div>
-              <h1 className="mt-1 text-4xl font-serif font-semibold text-[#EAEFF8] flex items-center gap-3">
+              <h1 className="text-4xl font-bold text-foreground tracking-tight">
                 Sales Enablement
               </h1>
-              <p className={`mt-1 text-sm ${SURFACE.textMuted} max-w-xl`}>
-                Cada reunião realizada do mês recebe uma nota de 0 a 100 pela IA. O placar
-                premia quem fecha certo — não só quem fecha.
+              <p className="text-sm text-muted-foreground mt-1">
+                Cada reunião realizada do mês recebe uma nota de 0 a 100 pela IA. O placar premia quem fecha certo — não só quem fecha.
               </p>
             </div>
-            <Button
-              onClick={refetchAll}
-              variant="outline"
-              size="sm"
-              className="bg-transparent border-[rgba(200,163,91,0.4)] text-[#C8A35B] hover:bg-[rgba(200,163,91,0.08)] hover:text-[#C8A35B]"
-            >
+            <Button onClick={refetchAll} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" />
               Atualizar
             </Button>
           </div>
 
+          <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Visão Geral
+          </div>
+
           {/* KPIs */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <KpiCard
               label="Reuniões avaliadas"
+              icon={<Sparkles className="h-4 w-4" />}
               value={
                 <span>
                   {totalAvaliadas}
-                  <span className="text-xl text-[#8595B4]"> / {totalElegiveis}</span>
+                  <span className="text-xl text-muted-foreground"> / {totalElegiveis}</span>
                 </span>
               }
               hint="Elegíveis = realizadas do mês (Reunião Realizada → Contrato Assinado), com transcrição."
@@ -483,30 +467,30 @@ export default function SalesEnablement() {
             />
             <KpiCard
               label="Nota média do time"
+              icon={<Gauge className="h-4 w-4" />}
               value={totalAvaliadas > 0 ? Math.round(notaMediaGeral) : "—"}
-              valueColor={sigColor(notaMediaGeral)}
+              toneClass={totalAvaliadas > 0 ? notaMediaTone.text : undefined}
               hint="Nota geral média = nota técnica − penalidades de compliance."
             />
             <KpiCard
               label="Índice de compliance"
+              icon={<AlertTriangle className="h-4 w-4" />}
               value={`${Math.round(complianceIdx)}%`}
-              valueColor={complianceIdx >= 85 ? SIG.green : complianceIdx >= 70 ? SIG.amber : SIG.red}
+              toneClass={complianceTone}
               hint="Reuniões sem violação grave (g1/g2) ÷ total avaliadas."
             />
             <KpiCard
               label="Conversão calibrada"
+              icon={<Trophy className="h-4 w-4" />}
               value={totalOutcomes > 0 ? `${Math.round(conversaoCalibrada)}%` : "—"}
-              valueColor={sigColor(conversaoCalibrada)}
+              toneClass={totalOutcomes > 0 ? conversaoTone.text : undefined}
               hint={`Pagou ÷ reuniões com desfecho registrado (${totalPagaram}/${totalOutcomes}).`}
             />
           </div>
 
           {/* Como a nota é construída */}
-          <div className={`rounded-[14px] ${SURFACE.card} p-5`}>
-            <div
-              className="text-[10px] uppercase tracking-[0.18em] font-medium mb-4"
-              style={{ color: SIG.brass }}
-            >
+          <div className="rounded-xl border border-border bg-card p-5">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-4">
               Como a nota é construída
             </div>
             <div className="flex flex-col md:flex-row items-stretch gap-3">
@@ -514,74 +498,54 @@ export default function SalesEnablement() {
                 step="1"
                 title="Nota técnica"
                 desc="Soma ponderada dos 8 critérios (cada um 0–10 × seu peso)."
-                color={SIG.teal}
+                tone="emerald"
               />
               <FormulaOp icon={<Minus className="h-5 w-5" />} />
               <FormulaBox
                 step="2"
                 title="Penalidades · Guardrails"
                 desc="Cada violação de compliance acionada subtrai pontos."
-                color={SIG.red}
+                tone="red"
               />
               <FormulaOp icon={<Equal className="h-5 w-5" />} />
               <FormulaBox
                 step="3"
                 title="Nota geral"
                 desc="O número que rankeia. Premia quem fecha certo, não só quem fecha."
-                color={SIG.brass}
+                tone="primary"
               />
             </div>
           </div>
 
           {totalAvaliadas === 0 && !isLoading && (
-            <div className={`rounded-[14px] ${SURFACE.card} py-16 text-center`}>
-              <Sparkles className="h-10 w-10 mx-auto mb-3 opacity-40" style={{ color: SIG.brass }} />
-              <p className={SURFACE.textMuted}>
+            <div className="rounded-xl border border-border bg-card py-16 text-center">
+              <Sparkles className="h-10 w-10 mx-auto mb-3 text-primary/60" />
+              <p className="text-muted-foreground">
                 As notas aparecem automaticamente conforme as reuniões realizadas do mês são processadas.
               </p>
             </div>
           )}
 
           <Tabs defaultValue="placar" className="w-full">
-            <TabsList className="bg-[#15223A] border border-[rgba(176,198,232,0.12)] p-1 h-auto">
-              <TabsTrigger
-                value="placar"
-                className="data-[state=active]:bg-[#1C2C49] data-[state=active]:text-[#C8A35B] text-[#8595B4]"
-              >
-                <Trophy className="h-4 w-4 mr-1.5" />Placar
-              </TabsTrigger>
-              <TabsTrigger
-                value="melhores"
-                className="data-[state=active]:bg-[#1C2C49] data-[state=active]:text-[#C8A35B] text-[#8595B4]"
-              >
-                <Star className="h-4 w-4 mr-1.5" />Melhores
-              </TabsTrigger>
-              <TabsTrigger
-                value="calibracao"
-                className="data-[state=active]:bg-[#1C2C49] data-[state=active]:text-[#C8A35B] text-[#8595B4]"
-              >
-                <Gauge className="h-4 w-4 mr-1.5" />Calibração
-              </TabsTrigger>
-              <TabsTrigger
-                value="biblioteca"
-                className="data-[state=active]:bg-[#1C2C49] data-[state=active]:text-[#C8A35B] text-[#8595B4]"
-              >
-                <BookOpen className="h-4 w-4 mr-1.5" />Biblioteca
-              </TabsTrigger>
+            <TabsList className="grid grid-cols-4 w-full max-w-2xl">
+              <TabsTrigger value="placar"><Trophy className="h-4 w-4 mr-1.5" />Placar</TabsTrigger>
+              <TabsTrigger value="melhores"><Star className="h-4 w-4 mr-1.5" />Melhores</TabsTrigger>
+              <TabsTrigger value="calibracao"><Gauge className="h-4 w-4 mr-1.5" />Calibração</TabsTrigger>
+              <TabsTrigger value="biblioteca"><BookOpen className="h-4 w-4 mr-1.5" />Biblioteca</TabsTrigger>
             </TabsList>
 
             {/* PLACAR */}
-            <TabsContent value="placar" className="space-y-4 mt-6">
-              <div className={`rounded-[14px] ${SURFACE.card} overflow-hidden`}>
-                <div className="flex items-center justify-between p-5 border-b border-[rgba(176,198,232,0.12)]">
+            <TabsContent value="placar" className="space-y-4 mt-4">
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <div className="flex flex-wrap items-center justify-between gap-3 p-5 border-b border-border">
                   <div>
-                    <h2 className="text-base font-semibold text-[#EAEFF8]">Ranking de Closers</h2>
-                    <p className={`text-xs ${SURFACE.textMuted} mt-0.5`}>
+                    <h2 className="text-base font-semibold text-foreground">Ranking de Closers</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       Ordene clicando nos cabeçalhos. O filtro atenua quem não foi selecionado.
                     </p>
                   </div>
                   <Select value={closerFilter || "__all"} onValueChange={(v) => setCloserFilter(v === "__all" ? "" : v)}>
-                    <SelectTrigger className="w-48 bg-[#1C2C49] border-[rgba(176,198,232,0.12)] text-[#EAEFF8]">
+                    <SelectTrigger className="w-48">
                       <SelectValue placeholder="Todos os closers" />
                     </SelectTrigger>
                     <SelectContent>
@@ -592,122 +556,107 @@ export default function SalesEnablement() {
                     </SelectContent>
                   </Select>
                 </div>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-[10px] uppercase tracking-[0.14em] text-[#8595B4]">
-                      <th className="text-left px-5 py-3 w-12">#</th>
-                      <th className="text-left px-2 py-3">Closer</th>
-                      <SortableTh
-                        active={sortKey === "nota"}
-                        onClick={() => setSortKey("nota")}
-                      >
-                        Nota média
-                      </SortableTh>
-                      <SortableTh
-                        active={sortKey === "reunioes"}
-                        onClick={() => setSortKey("reunioes")}
-                      >
-                        Reuniões
-                      </SortableTh>
-                      <SortableTh
-                        active={sortKey === "alertas"}
-                        onClick={() => setSortKey("alertas")}
-                      >
-                        Alertas
-                      </SortableTh>
-                      <SortableTh
-                        active={sortKey === "conv"}
-                        onClick={() => setSortKey("conv")}
-                      >
-                        Conversão real
-                      </SortableTh>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rankingSorted.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className={`px-5 py-8 text-center ${SURFACE.textMuted}`}>
-                          Sem ranking ainda.
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                        <th className="text-left px-5 py-3 w-12">#</th>
+                        <th className="text-left px-2 py-3">Closer</th>
+                        <SortableTh active={sortKey === "nota"} onClick={() => setSortKey("nota")}>
+                          Nota média
+                        </SortableTh>
+                        <SortableTh active={sortKey === "reunioes"} onClick={() => setSortKey("reunioes")}>
+                          Reuniões
+                        </SortableTh>
+                        <SortableTh active={sortKey === "alertas"} onClick={() => setSortKey("alertas")}>
+                          Alertas
+                        </SortableTh>
+                        <SortableTh active={sortKey === "conv"} onClick={() => setSortKey("conv")}>
+                          Conversão real
+                        </SortableTh>
                       </tr>
-                    )}
-                    {rankingSorted.map((r, i) => {
-                      const dim = closerFilter && r.closer !== closerFilter;
-                      const conv = r.leads_com_outcome
-                        ? (r.leads_pagaram / r.leads_com_outcome) * 100
-                        : null;
-                      return (
-                        <tr
-                          key={r.closer}
-                          className={`border-t border-[rgba(176,198,232,0.08)] hover:bg-[#1C2C49]/60 transition-all ${
-                            dim ? "opacity-30" : ""
-                          }`}
-                        >
-                          <td className="px-5 py-4 font-serif text-lg text-[#8595B4] tabular-nums">
-                            {i + 1}
-                          </td>
-                          <td className="px-2 py-4">
-                            <div className="font-semibold text-[#EAEFF8]">{r.closer}</div>
-                          </td>
-                          <td className="px-2 py-4">
-                            <NotaPill value={r.nota_media} />
-                          </td>
-                          <td className="px-2 py-4 tabular-nums text-[#EAEFF8]">
-                            {r.reunioes_avaliadas}
-                          </td>
-                          <td className="px-2 py-4">
-                            {r.reunioes_com_alerta > 0 ? (
-                              <span
-                                className="inline-flex items-center gap-1 font-semibold tabular-nums"
-                                style={{ color: SIG.red }}
-                              >
-                                🚩 {r.reunioes_com_alerta}
-                              </span>
-                            ) : (
-                              <span className={SURFACE.textMuted}>—</span>
-                            )}
-                          </td>
-                          <td className="px-2 py-4 pr-5">
-                            {conv == null ? (
-                              <span className={SURFACE.textMuted}>—</span>
-                            ) : (
-                              <div className="flex items-center gap-2 min-w-[120px]">
-                                <div className="flex-1 h-1.5 rounded-full bg-[#0E1726] overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full"
-                                    style={{
-                                      width: `${Math.min(100, conv)}%`,
-                                      backgroundColor: sigColor(conv),
-                                    }}
-                                  />
-                                </div>
-                                <span
-                                  className="text-xs font-semibold tabular-nums w-10 text-right"
-                                  style={{ color: sigColor(conv) }}
-                                >
-                                  {Math.round(conv)}%
-                                </span>
-                              </div>
-                            )}
+                    </thead>
+                    <tbody>
+                      {rankingSorted.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="px-5 py-8 text-center text-muted-foreground">
+                            Sem ranking ainda.
                           </td>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                      )}
+                      {rankingSorted.map((r, i) => {
+                        const dim = closerFilter && r.closer !== closerFilter;
+                        const conv = r.leads_com_outcome
+                          ? (r.leads_pagaram / r.leads_com_outcome) * 100
+                          : null;
+                        const convTone = conv != null ? notaTone(conv) : null;
+                        return (
+                          <tr
+                            key={r.closer}
+                            className={cn(
+                              "border-t border-border/60 hover:bg-muted/30 transition-all",
+                              dim && "opacity-30"
+                            )}
+                          >
+                            <td className="px-5 py-4 text-base font-bold text-muted-foreground tabular-nums">
+                              {i + 1}
+                            </td>
+                            <td className="px-2 py-4">
+                              <div className="font-semibold text-foreground">{r.closer}</div>
+                            </td>
+                            <td className="px-2 py-4">
+                              <NotaPill value={r.nota_media} />
+                            </td>
+                            <td className="px-2 py-4 tabular-nums text-foreground">
+                              {r.reunioes_avaliadas}
+                            </td>
+                            <td className="px-2 py-4">
+                              {r.reunioes_com_alerta > 0 ? (
+                                <span className="inline-flex items-center gap-1 font-semibold tabular-nums text-red-500">
+                                  🚩 {r.reunioes_com_alerta}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </td>
+                            <td className="px-2 py-4 pr-5">
+                              {conv == null || !convTone ? (
+                                <span className="text-muted-foreground">—</span>
+                              ) : (
+                                <div className="flex items-center gap-2 min-w-[120px]">
+                                  <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                                    <div
+                                      className="h-full rounded-full"
+                                      style={{ width: `${Math.min(100, conv)}%`, backgroundColor: convTone.hex }}
+                                    />
+                                  </div>
+                                  <span
+                                    className={cn("text-xs font-semibold tabular-nums w-10 text-right", convTone.text)}
+                                  >
+                                    {Math.round(conv)}%
+                                  </span>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </TabsContent>
 
             {/* MELHORES */}
-            <TabsContent value="melhores" className="space-y-3 mt-6">
-              <div className={`rounded-[14px] ${SURFACE.card} p-5`}>
-                <h2 className="text-base font-semibold text-[#EAEFF8] mb-1">Top 20 Reuniões</h2>
-                <p className={`text-xs ${SURFACE.textMuted} mb-4`}>
+            <TabsContent value="melhores" className="space-y-3 mt-4">
+              <div className="rounded-xl border border-border bg-card p-5">
+                <h2 className="text-base font-semibold text-foreground mb-1">Top 20 Reuniões</h2>
+                <p className="text-xs text-muted-foreground mb-4">
                   As maiores notas do período. Clique em uma linha para ver o detalhamento.
                 </p>
                 <div className="space-y-2">
                   {melhores.length === 0 && (
-                    <div className={`text-sm ${SURFACE.textMuted}`}>Sem reuniões avaliadas.</div>
+                    <div className="text-sm text-muted-foreground">Sem reuniões avaliadas.</div>
                   )}
                   {melhores.map((a) => {
                     const lead = a.lead_id ? leadById.get(a.lead_id) : null;
@@ -716,21 +665,18 @@ export default function SalesEnablement() {
                     return (
                       <div
                         key={a.id}
-                        className={`flex items-center gap-3 p-3 rounded-lg ${SURFACE.raised} hover:border-[rgba(200,163,91,0.4)] transition-colors cursor-pointer`}
+                        className="flex items-center gap-3 p-3 rounded-lg border border-border bg-background hover:border-primary/40 transition-colors cursor-pointer"
                         onClick={() => setDrillId(a.id)}
                       >
                         <NotaPill value={a.nota_geral} />
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-[#EAEFF8] truncate flex items-center gap-2">
+                          <div className="font-medium text-foreground truncate flex items-center gap-2">
                             {lead?.empresa || lead?.nome || meet?.meeting_title || "Reunião"}
                             {isGold && (
-                              <Star
-                                className="h-3.5 w-3.5 fill-current"
-                                style={{ color: SIG.brass }}
-                              />
+                              <Star className="h-3.5 w-3.5 fill-current text-primary" />
                             )}
                           </div>
-                          <div className={`text-xs ${SURFACE.textMuted}`}>
+                          <div className="text-xs text-muted-foreground">
                             {a.closer ?? "—"} ·{" "}
                             {meet?.meeting_date
                               ? new Date(meet.meeting_date).toLocaleDateString("pt-BR")
@@ -741,7 +687,6 @@ export default function SalesEnablement() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="bg-transparent border-[rgba(200,163,91,0.4)] text-[#C8A35B] hover:bg-[rgba(200,163,91,0.08)] hover:text-[#C8A35B]"
                             onClick={(e) => {
                               e.stopPropagation();
                               toggleGold.mutate(a);
@@ -750,7 +695,7 @@ export default function SalesEnablement() {
                             {isGold ? "Remover gold" : "Marcar gold"}
                           </Button>
                         )}
-                        <ChevronRight className="h-4 w-4 text-[#8595B4]" />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </div>
                     );
                   })}
@@ -758,23 +703,19 @@ export default function SalesEnablement() {
               </div>
 
               {isAdmin && errAvaliacoes.length > 0 && (
-                <div className={`rounded-[14px] ${SURFACE.card} p-5`}>
-                  <h3
-                    className="text-sm font-semibold flex items-center gap-2 mb-3"
-                    style={{ color: SIG.red }}
-                  >
+                <div className="rounded-xl border border-border bg-card p-5">
+                  <h3 className="text-sm font-semibold flex items-center gap-2 mb-3 text-red-500">
                     <AlertTriangle className="h-4 w-4" /> Avaliações com erro
                   </h3>
                   <div className="space-y-2">
                     {errAvaliacoes.map((a) => (
                       <div key={a.id} className="flex items-center gap-2 text-sm">
-                        <span className={`${SURFACE.textMuted} truncate flex-1 font-mono text-xs`}>
+                        <span className="text-muted-foreground truncate flex-1 font-mono text-xs">
                           {a.readai_meeting_id} — {a.erro ?? "erro"}
                         </span>
                         <Button
                           size="sm"
                           variant="outline"
-                          className="bg-transparent border-[rgba(200,163,91,0.4)] text-[#C8A35B] hover:bg-[rgba(200,163,91,0.08)] hover:text-[#C8A35B]"
                           onClick={() => reavaliar.mutate(a.readai_meeting_id)}
                         >
                           Reavaliar
@@ -787,40 +728,40 @@ export default function SalesEnablement() {
             </TabsContent>
 
             {/* CALIBRAÇÃO */}
-            <TabsContent value="calibracao" className="space-y-4 mt-6">
-              <div className={`rounded-[14px] ${SURFACE.card} p-5`}>
-                <h2 className="text-base font-semibold text-[#EAEFF8]">Calibração da nota</h2>
-                <p className={`text-xs ${SURFACE.textMuted} mt-1 mb-4`}>
+            <TabsContent value="calibracao" className="space-y-4 mt-4">
+              <div className="rounded-xl border border-border bg-card p-5">
+                <h2 className="text-base font-semibold text-foreground">Calibração da nota</h2>
+                <p className="text-xs text-muted-foreground mt-1 mb-4">
                   Se a barra sobe da esquerda p/ direita, a nota está prevendo bem o fechamento.
                 </p>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={calibracao.data ?? []}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(176,198,232,0.1)" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                       <XAxis
                         dataKey="faixa"
-                        tick={{ fill: "#8595B4", fontSize: 11 }}
-                        axisLine={{ stroke: "rgba(176,198,232,0.2)" }}
+                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                        axisLine={{ stroke: "hsl(var(--border))" }}
                       />
                       <YAxis
-                        tick={{ fill: "#8595B4", fontSize: 11 }}
-                        axisLine={{ stroke: "rgba(176,198,232,0.2)" }}
+                        tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                        axisLine={{ stroke: "hsl(var(--border))" }}
                         unit="%"
                       />
                       <RTooltip
                         contentStyle={{
-                          backgroundColor: "#1C2C49",
-                          border: "1px solid rgba(176,198,232,0.2)",
+                          backgroundColor: "hsl(var(--popover))",
+                          border: "1px solid hsl(var(--border))",
                           borderRadius: 8,
-                          color: "#EAEFF8",
+                          color: "hsl(var(--popover-foreground))",
                         }}
-                        cursor={{ fill: "rgba(200,163,91,0.06)" }}
+                        cursor={{ fill: "hsl(var(--muted) / 0.4)" }}
                       />
                       <Bar dataKey="taxa_pagamento_pct" radius={[6, 6, 0, 0]}>
                         {(calibracao.data ?? []).map((c, i) => {
                           const ref =
                             c.faixa === "85-100" ? 90 : c.faixa === "70-84" ? 77 : c.faixa === "50-69" ? 60 : 30;
-                          return <Cell key={i} fill={sigColor(ref)} />;
+                          return <Cell key={i} fill={notaTone(ref).hex} />;
                         })}
                       </Bar>
                     </BarChart>
@@ -829,15 +770,15 @@ export default function SalesEnablement() {
               </div>
 
               {isAdmin && (
-                <div className={`rounded-[14px] ${SURFACE.card} p-5`}>
-                  <h3 className="text-base font-semibold text-[#EAEFF8] mb-1">Registrar resultado</h3>
-                  <p className={`text-xs ${SURFACE.textMuted} mb-4`}>
+                <div className="rounded-xl border border-border bg-card p-5">
+                  <h3 className="text-base font-semibold text-foreground mb-1">Registrar resultado</h3>
+                  <p className="text-xs text-muted-foreground mb-4">
                     Alimenta a calibração: cada desfecho registrado afina a previsão da nota.
                   </p>
                   <div className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <Select value={outcomeLeadId} onValueChange={setOutcomeLeadId}>
-                        <SelectTrigger className="bg-[#1C2C49] border-[rgba(176,198,232,0.12)] text-[#EAEFF8]">
+                        <SelectTrigger>
                           <SelectValue placeholder="Selecione o lead" />
                         </SelectTrigger>
                         <SelectContent>
@@ -849,7 +790,7 @@ export default function SalesEnablement() {
                         </SelectContent>
                       </Select>
                       <Select value={outcomeResultado} onValueChange={setOutcomeResultado}>
-                        <SelectTrigger className="bg-[#1C2C49] border-[rgba(176,198,232,0.12)] text-[#EAEFF8]">
+                        <SelectTrigger>
                           <SelectValue placeholder="Resultado" />
                         </SelectTrigger>
                         <SelectContent>
@@ -865,20 +806,16 @@ export default function SalesEnablement() {
                         placeholder="Valor (opcional)"
                         value={outcomeValor}
                         onChange={(e) => setOutcomeValor(e.target.value)}
-                        className="bg-[#1C2C49] border-[rgba(176,198,232,0.12)] text-[#EAEFF8]"
                       />
                       <Input
                         placeholder="Observação (opcional)"
                         value={outcomeObs}
                         onChange={(e) => setOutcomeObs(e.target.value)}
-                        className="bg-[#1C2C49] border-[rgba(176,198,232,0.12)] text-[#EAEFF8]"
                       />
                     </div>
                     <Button
                       onClick={() => registrarOutcome.mutate()}
                       disabled={registrarOutcome.isPending}
-                      style={{ backgroundColor: SIG.brass, color: "#0E1726" }}
-                      className="hover:opacity-90"
                     >
                       Registrar
                     </Button>
@@ -888,10 +825,10 @@ export default function SalesEnablement() {
             </TabsContent>
 
             {/* BIBLIOTECA */}
-            <TabsContent value="biblioteca" className="space-y-4 mt-6">
-              <div className={`rounded-[14px] ${SURFACE.card} p-5`}>
-                <h2 className="text-base font-semibold text-[#EAEFF8]">Critérios</h2>
-                <p className={`text-xs ${SURFACE.textMuted} mt-1 mb-4`}>
+            <TabsContent value="biblioteca" className="space-y-4 mt-4">
+              <div className="rounded-xl border border-border bg-card p-5">
+                <h2 className="text-base font-semibold text-foreground">Critérios</h2>
+                <p className="text-xs text-muted-foreground mt-1 mb-4">
                   O manual do que conta como uma boa reunião. Pesos somam a nota técnica.
                 </p>
                 <div className="space-y-3">
@@ -899,21 +836,18 @@ export default function SalesEnablement() {
                     .filter((r) => r.tipo === "criterio")
                     .sort((a, b) => (b.peso ?? 0) - (a.peso ?? 0))
                     .map((r) => (
-                      <div key={r.id} className={`rounded-lg ${SURFACE.raised} p-4`}>
+                      <div key={r.id} className="rounded-lg border border-border bg-background p-4">
                         <div className="flex items-center justify-between gap-3">
-                          <div className="font-semibold text-[#EAEFF8]">{r.titulo}</div>
-                          <Badge
-                            variant="outline"
-                            className="border-[rgba(200,163,91,0.4)] text-[#C8A35B] bg-transparent tabular-nums"
-                          >
+                          <div className="font-semibold text-foreground">{r.titulo}</div>
+                          <Badge variant="outline" className="text-primary border-primary/40 tabular-nums">
                             peso {r.peso ?? "—"}
                           </Badge>
                         </div>
                         {r.descricao && (
-                          <p className={`text-sm ${SURFACE.textMuted} mt-2`}>{r.descricao}</p>
+                          <p className="text-sm text-muted-foreground mt-2">{r.descricao}</p>
                         )}
                         {r.como_pontuar && (
-                          <p className={`text-xs ${SURFACE.textMuted} mt-2 opacity-80`}>
+                          <p className="text-xs text-muted-foreground/80 mt-2">
                             <span className="font-medium">Como pontuar:</span> {r.como_pontuar}
                           </p>
                         )}
@@ -922,11 +856,9 @@ export default function SalesEnablement() {
                 </div>
               </div>
 
-              <div className={`rounded-[14px] ${SURFACE.card} p-5`}>
-                <h2 className="text-base font-semibold mb-1" style={{ color: SIG.red }}>
-                  O que NÃO fazer
-                </h2>
-                <p className={`text-xs ${SURFACE.textMuted} mb-4`}>
+              <div className="rounded-xl border border-border bg-card p-5">
+                <h2 className="text-base font-semibold text-red-500 mb-1">O que NÃO fazer</h2>
+                <p className="text-xs text-muted-foreground mb-4">
                   Guardrails de compliance. Cada violação subtrai da nota técnica.
                 </p>
                 <div className="space-y-2">
@@ -935,47 +867,35 @@ export default function SalesEnablement() {
                     .map((r) => (
                       <div
                         key={r.id}
-                        className="rounded-lg p-4 border"
-                        style={{
-                          borderColor: `${SIG.red}55`,
-                          backgroundColor: `${SIG.red}0F`,
-                        }}
+                        className="rounded-lg p-4 border border-red-500/30 bg-red-500/5"
                       >
                         <div className="flex items-center justify-between gap-3">
-                          <div className="font-semibold text-[#EAEFF8]">{r.titulo}</div>
+                          <div className="font-semibold text-foreground">{r.titulo}</div>
                           {r.penalidade != null && (
-                            <span
-                              className="text-xs font-bold tabular-nums px-2 py-0.5 rounded"
-                              style={{
-                                color: SIG.red,
-                                backgroundColor: `${SIG.red}22`,
-                              }}
-                            >
+                            <span className="text-xs font-bold tabular-nums px-2 py-0.5 rounded text-red-500 bg-red-500/10">
                               −{r.penalidade}
                             </span>
                           )}
                         </div>
                         {r.descricao && (
-                          <p className={`text-sm ${SURFACE.textMuted} mt-2`}>{r.descricao}</p>
+                          <p className="text-sm text-muted-foreground mt-2">{r.descricao}</p>
                         )}
                       </div>
                     ))}
                 </div>
               </div>
 
-              <div className={`rounded-[14px] ${SURFACE.card} p-5`}>
-                <h2 className="text-base font-semibold text-[#EAEFF8] flex items-center gap-2">
+              <div className="rounded-xl border border-border bg-card p-5">
+                <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
                   Exemplos gold
-                  <Star className="h-4 w-4 fill-current" style={{ color: SIG.brass }} />
+                  <Star className="h-4 w-4 fill-current text-primary" />
                 </h2>
-                <p className={`text-xs ${SURFACE.textMuted} mt-1 mb-4`}>
+                <p className="text-xs text-muted-foreground mt-1 mb-4">
                   Reuniões de referência para o time estudar.
                 </p>
                 <div className="space-y-1">
                   {(exemplosGold.data ?? []).length === 0 && (
-                    <div className={`text-sm ${SURFACE.textMuted}`}>
-                      Nenhum exemplo marcado ainda.
-                    </div>
+                    <div className="text-sm text-muted-foreground">Nenhum exemplo marcado ainda.</div>
                   )}
                   {(exemplosGold.data ?? []).map((g) => {
                     const a = okAvaliacoes.find((x) => x.readai_meeting_id === g.readai_meeting_id);
@@ -984,9 +904,9 @@ export default function SalesEnablement() {
                       <button
                         key={g.id}
                         onClick={() => a && setDrillId(a.id)}
-                        className="w-full flex items-center justify-between text-sm py-2.5 px-3 rounded hover:bg-[#1C2C49] transition-colors"
+                        className="w-full flex items-center justify-between text-sm py-2.5 px-3 rounded hover:bg-muted/40 transition-colors"
                       >
-                        <span className="text-[#EAEFF8]">
+                        <span className="text-foreground">
                           {lead?.empresa || lead?.nome || g.readai_meeting_id}
                         </span>
                         {a && <NotaPill value={a.nota_geral} size="sm" />}
@@ -1002,7 +922,7 @@ export default function SalesEnablement() {
 
       {/* Drill-down */}
       <Dialog open={!!drillId} onOpenChange={(o) => !o && setDrillId(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-[#15223A] border-[rgba(176,198,232,0.12)] text-[#EAEFF8]">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           {drill && <DrillContent
             a={drill}
             lead={drill.lead_id ? leadById.get(drill.lead_id) : null}
@@ -1031,9 +951,10 @@ function SortableTh({
     <th className="text-left px-2 py-3">
       <button
         onClick={onClick}
-        className={`inline-flex items-center gap-1 hover:text-[#C8A35B] transition-colors ${
-          active ? "text-[#C8A35B]" : "text-[#8595B4]"
-        }`}
+        className={cn(
+          "inline-flex items-center gap-1 hover:text-primary transition-colors",
+          active ? "text-primary" : "text-muted-foreground"
+        )}
       >
         {children}
         <ArrowUpDown className="h-3 w-3 opacity-60" />
@@ -1046,31 +967,32 @@ function FormulaBox({
   step,
   title,
   desc,
-  color,
+  tone,
 }: {
   step: string;
   title: string;
   desc: string;
-  color: string;
+  tone: "emerald" | "red" | "primary";
 }) {
+  const tones = {
+    emerald: { border: "border-emerald-500/30", bg: "bg-emerald-500/5", chip: "bg-emerald-500 text-background" },
+    red: { border: "border-red-500/30", bg: "bg-red-500/5", chip: "bg-red-500 text-background" },
+    primary: { border: "border-primary/40", bg: "bg-primary/5", chip: "bg-primary text-primary-foreground" },
+  }[tone];
   return (
-    <div
-      className="flex-1 rounded-lg p-4 border"
-      style={{
-        borderColor: `${color}55`,
-        backgroundColor: `${color}10`,
-      }}
-    >
+    <div className={cn("flex-1 rounded-lg p-4 border", tones.border, tones.bg)}>
       <div className="flex items-center gap-2 mb-1">
         <span
-          className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold tabular-nums"
-          style={{ backgroundColor: color, color: "#0E1726" }}
+          className={cn(
+            "inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold tabular-nums",
+            tones.chip
+          )}
         >
           {step}
         </span>
-        <span className="font-semibold text-[#EAEFF8] text-sm">{title}</span>
+        <span className="font-semibold text-foreground text-sm">{title}</span>
       </div>
-      <p className="text-xs leading-snug text-[#8595B4]">{desc}</p>
+      <p className="text-xs leading-snug text-muted-foreground">{desc}</p>
     </div>
   );
 }
@@ -1078,7 +1000,7 @@ function FormulaBox({
 function FormulaOp({ icon }: { icon: React.ReactNode }) {
   return (
     <div className="flex items-center justify-center md:px-1">
-      <div className="text-[#C8A35B]">{icon}</div>
+      <div className="text-primary">{icon}</div>
     </div>
   );
 }
@@ -1102,26 +1024,24 @@ function DrillContent({
   const [showTranscript, setShowTranscript] = useState(false);
   const criterios = Object.entries(a.notas_criterios ?? {});
 
-  // Penalidade total (a partir dos alertas detectados × rubrica)
   const penalidadeTotal = (a.alertas_compliance ?? []).reduce((s, cod) => {
     const r = rubricaByCodigo.get(cod);
     return s + (r?.penalidade ?? 0);
   }, 0);
 
+  const geralTone = notaTone(a.nota_geral);
+
   return (
     <>
       <DialogHeader>
         <DialogTitle className="text-left">
-          <div
-            className="text-[10px] uppercase tracking-[0.18em] font-medium mb-1"
-            style={{ color: SIG.brass }}
-          >
+          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold mb-1">
             Detalhamento da reunião
           </div>
-          <div className="text-xl font-serif font-semibold text-[#EAEFF8]">
+          <div className="text-xl font-bold text-foreground">
             {lead?.empresa || lead?.nome || meet?.meeting_title || "Reunião"}
           </div>
-          <div className="text-xs text-[#8595B4] font-normal mt-0.5">
+          <div className="text-xs text-muted-foreground font-normal mt-0.5">
             {a.closer ?? "—"} ·{" "}
             {meet?.meeting_date
               ? new Date(meet.meeting_date).toLocaleString("pt-BR")
@@ -1131,36 +1051,24 @@ function DrillContent({
       </DialogHeader>
 
       {/* Equação da nota */}
-      <div
-        className="rounded-lg p-4 flex items-center justify-center gap-3 flex-wrap"
-        style={{ backgroundColor: "#1C2C49", border: "1px solid rgba(176,198,232,0.12)" }}
-      >
+      <div className="rounded-lg p-4 flex items-center justify-center gap-3 flex-wrap border border-border bg-muted/30">
         <div className="text-center">
-          <div className="text-[9px] uppercase tracking-[0.18em] text-[#8595B4] mb-1">
-            Técnica
-          </div>
-          <div className="text-3xl font-serif font-bold tabular-nums" style={{ color: SIG.teal }}>
+          <div className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground mb-1">Técnica</div>
+          <div className="text-3xl font-bold tabular-nums text-emerald-400">
             {a.nota_tecnica == null ? "—" : Math.round(a.nota_tecnica)}
           </div>
         </div>
-        <Minus className="h-5 w-5 text-[#8595B4]" />
+        <Minus className="h-5 w-5 text-muted-foreground" />
         <div className="text-center">
-          <div className="text-[9px] uppercase tracking-[0.18em] text-[#8595B4] mb-1">
-            Penalidades
-          </div>
-          <div className="text-3xl font-serif font-bold tabular-nums" style={{ color: SIG.red }}>
+          <div className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground mb-1">Penalidades</div>
+          <div className="text-3xl font-bold tabular-nums text-red-500">
             {penalidadeTotal > 0 ? penalidadeTotal : "0"}
           </div>
         </div>
-        <Equal className="h-5 w-5 text-[#8595B4]" />
+        <Equal className="h-5 w-5 text-muted-foreground" />
         <div className="text-center">
-          <div className="text-[9px] uppercase tracking-[0.18em] text-[#8595B4] mb-1">
-            Nota geral
-          </div>
-          <div
-            className="text-4xl font-serif font-bold tabular-nums"
-            style={{ color: sigColor(a.nota_geral) }}
-          >
+          <div className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground mb-1">Nota geral</div>
+          <div className={cn("text-4xl font-bold tabular-nums", geralTone.text)}>
             {a.nota_geral == null ? "—" : Math.round(a.nota_geral)}
           </div>
         </div>
@@ -1169,14 +1077,8 @@ function DrillContent({
       <div className="space-y-4">
         {/* Alertas */}
         {a.alertas_compliance && a.alertas_compliance.length > 0 && (
-          <div
-            className="rounded-lg p-4 border"
-            style={{ borderColor: `${SIG.red}55`, backgroundColor: `${SIG.red}10` }}
-          >
-            <div
-              className="flex items-center gap-2 font-semibold mb-2 text-sm"
-              style={{ color: SIG.red }}
-            >
+          <div className="rounded-lg p-4 border border-red-500/30 bg-red-500/5">
+            <div className="flex items-center gap-2 font-semibold mb-2 text-sm text-red-500">
               <AlertTriangle className="h-4 w-4" /> Alertas de compliance
             </div>
             <div className="flex flex-wrap gap-2">
@@ -1185,17 +1087,10 @@ function DrillContent({
                 return (
                   <span
                     key={cod}
-                    className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md border tabular-nums"
-                    style={{
-                      borderColor: `${SIG.red}66`,
-                      backgroundColor: `${SIG.red}22`,
-                      color: "#EAEFF8",
-                    }}
+                    className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md border border-red-500/40 bg-red-500/10 text-foreground tabular-nums"
                   >
                     {r?.penalidade != null && (
-                      <span style={{ color: SIG.red }} className="font-bold">
-                        −{r.penalidade}
-                      </span>
+                      <span className="text-red-500 font-bold">−{r.penalidade}</span>
                     )}
                     {r?.titulo ?? cod}
                   </span>
@@ -1208,29 +1103,29 @@ function DrillContent({
         {/* Breakdown */}
         {criterios.length > 0 && (
           <div>
-            <h3 className="text-sm font-semibold text-[#EAEFF8] mb-3">Breakdown por critério</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-3">Breakdown por critério</h3>
             <div className="space-y-2.5">
               {criterios.map(([cod, nota]) => {
                 const r = rubricaByCodigo.get(cod);
                 const pct = Math.max(0, Math.min(100, (Number(nota) / 10) * 100));
-                const c = sigColor(Number(nota) * 10);
+                const t = notaTone(Number(nota) * 10);
                 return (
                   <div key={cod}>
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-[#EAEFF8]">
+                      <span className="text-foreground">
                         {r?.titulo ?? cod}
                         {r?.peso != null && (
-                          <span className="text-[#8595B4]"> · peso {r.peso}</span>
+                          <span className="text-muted-foreground"> · peso {r.peso}</span>
                         )}
                       </span>
-                      <span className="font-mono font-semibold tabular-nums" style={{ color: c }}>
+                      <span className={cn("font-mono font-semibold tabular-nums", t.text)}>
                         {Number(nota).toFixed(1)}/10
                       </span>
                     </div>
-                    <div className="h-2 bg-[#0E1726] rounded-full overflow-hidden">
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full"
-                        style={{ width: `${pct}%`, backgroundColor: c }}
+                        style={{ width: `${pct}%`, backgroundColor: t.hex }}
                       />
                     </div>
                   </div>
@@ -1242,21 +1137,12 @@ function DrillContent({
 
         {/* Resumo do treinador */}
         {a.resumo_treinador && (
-          <div
-            className="rounded-lg p-4 relative pl-5"
-            style={{ backgroundColor: "#1C2C49" }}
-          >
-            <span
-              className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full"
-              style={{ backgroundColor: SIG.brass }}
-            />
-            <div
-              className="text-[10px] uppercase tracking-[0.18em] mb-1.5"
-              style={{ color: SIG.brass }}
-            >
+          <div className="rounded-lg p-4 relative pl-5 bg-muted/30 border border-border">
+            <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full bg-primary" />
+            <div className="text-[10px] uppercase tracking-[0.18em] mb-1.5 text-primary font-semibold">
               Resumo do treinador
             </div>
-            <p className="text-sm text-[#EAEFF8] whitespace-pre-wrap leading-relaxed">
+            <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
               {a.resumo_treinador}
             </p>
           </div>
@@ -1265,17 +1151,11 @@ function DrillContent({
         {/* Fortes & melhorias */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {a.pontos_fortes && a.pontos_fortes.length > 0 && (
-            <div
-              className="rounded-lg p-4 border"
-              style={{ borderColor: `${SIG.green}55`, backgroundColor: `${SIG.green}10` }}
-            >
-              <div
-                className="font-semibold mb-2 text-sm flex items-center gap-1.5"
-                style={{ color: SIG.green }}
-              >
+            <div className="rounded-lg p-4 border border-emerald-500/30 bg-emerald-500/5">
+              <div className="font-semibold mb-2 text-sm text-emerald-400 flex items-center gap-1.5">
                 ▲ Pontos fortes
               </div>
-              <ul className="space-y-1 text-sm text-[#EAEFF8]">
+              <ul className="space-y-1 text-sm text-foreground">
                 {a.pontos_fortes.map((p, i) => (
                   <li key={i}>• {p}</li>
                 ))}
@@ -1283,17 +1163,11 @@ function DrillContent({
             </div>
           )}
           {a.pontos_melhoria && a.pontos_melhoria.length > 0 && (
-            <div
-              className="rounded-lg p-4 border"
-              style={{ borderColor: `${SIG.amber}55`, backgroundColor: `${SIG.amber}10` }}
-            >
-              <div
-                className="font-semibold mb-2 text-sm flex items-center gap-1.5"
-                style={{ color: SIG.amber }}
-              >
+            <div className="rounded-lg p-4 border border-yellow-500/30 bg-yellow-500/5">
+              <div className="font-semibold mb-2 text-sm text-yellow-500 flex items-center gap-1.5">
                 ▼ A treinar
               </div>
-              <ul className="space-y-1 text-sm text-[#EAEFF8]">
+              <ul className="space-y-1 text-sm text-foreground">
                 {a.pontos_melhoria.map((p, i) => (
                   <li key={i}>• {p}</li>
                 ))}
@@ -1305,39 +1179,24 @@ function DrillContent({
         {/* Gatilhos */}
         {a.gatilhos_detectados && a.gatilhos_detectados.length > 0 && (
           <div>
-            <h3 className="text-sm font-semibold text-[#EAEFF8] mb-2">Gatilhos detectados</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-2">Gatilhos detectados</h3>
             <div className="flex flex-wrap gap-2">
               {a.gatilhos_detectados.map((g, i) => (
-                <span
-                  key={i}
-                  className="text-xs px-2.5 py-1 rounded-md border border-[rgba(176,198,232,0.2)] bg-[#1C2C49] text-[#EAEFF8]"
-                >
-                  {g}
-                </span>
+                <Badge key={i} variant="secondary">{g}</Badge>
               ))}
             </div>
           </div>
         )}
 
         {/* Actions */}
-        <div className="flex flex-wrap gap-2 pt-3 border-t border-[rgba(176,198,232,0.12)]">
+        <div className="flex flex-wrap gap-2 pt-3 border-t border-border">
           {meet && (meet.summary || meet.transcript) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowTranscript((v) => !v)}
-              className="bg-transparent border-[rgba(176,198,232,0.2)] text-[#EAEFF8] hover:bg-[#1C2C49]"
-            >
+            <Button variant="outline" size="sm" onClick={() => setShowTranscript((v) => !v)}>
               {showTranscript ? "Ocultar" : "Ver transcrição/resumo"}
             </Button>
           )}
           {isAdmin && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onReavaliar}
-              className="bg-transparent border-[rgba(200,163,91,0.4)] text-[#C8A35B] hover:bg-[rgba(200,163,91,0.08)] hover:text-[#C8A35B]"
-            >
+            <Button variant="outline" size="sm" onClick={onReavaliar}>
               <RefreshCw className="h-3.5 w-3.5 mr-1" />
               Reavaliar
             </Button>
@@ -1347,14 +1206,14 @@ function DrillContent({
         {showTranscript && meet && (
           <div className="space-y-2">
             {meet.summary && (
-              <div className="rounded-lg p-3 text-sm whitespace-pre-wrap bg-[#1C2C49] border border-[rgba(176,198,232,0.12)] text-[#EAEFF8]">
-                <div className="text-xs font-semibold mb-1 text-[#8595B4]">Resumo</div>
+              <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm whitespace-pre-wrap text-foreground">
+                <div className="text-xs font-semibold mb-1 text-muted-foreground">Resumo</div>
                 {meet.summary}
               </div>
             )}
             {meet.transcript && (
-              <div className="rounded-lg p-3 text-xs whitespace-pre-wrap max-h-96 overflow-y-auto bg-[#1C2C49] border border-[rgba(176,198,232,0.12)] text-[#EAEFF8]">
-                <div className="text-xs font-semibold mb-1 text-[#8595B4]">Transcrição</div>
+              <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs whitespace-pre-wrap max-h-96 overflow-y-auto text-foreground">
+                <div className="text-xs font-semibold mb-1 text-muted-foreground">Transcrição</div>
                 {meet.transcript}
               </div>
             )}
