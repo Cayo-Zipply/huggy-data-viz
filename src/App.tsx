@@ -13,6 +13,7 @@ import Settings from "@/pages/Settings";
 import Contratos from "@/pages/Contratos";
 import Feedbacks from "@/pages/Feedbacks";
 import MaterialApoio from "@/pages/MaterialApoio";
+import SalesEnablement from "@/pages/SalesEnablement";
 import { AppSidebar } from "@/components/AppSidebar";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { NovidadesModal } from "@/components/NovidadesModal";
@@ -184,6 +185,7 @@ const App = () => (
               <Route path="/configuracoes" element={<RoleGuard roles={["admin"]}><Settings /></RoleGuard>} />
               <Route path="/feedbacks" element={<RoleGuard roles={["admin"]}><Feedbacks /></RoleGuard>} />
               <Route path="/material-apoio" element={<MaterialApoio />} />
+              <Route path="/sales-enablement" element={<SalesEnablement />} />
             </Route>
 
             <Route path="/" element={<Navigate to="/pipeline" replace />} />
