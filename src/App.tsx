@@ -13,6 +13,7 @@ import Settings from "@/pages/Settings";
 import Contratos from "@/pages/Contratos";
 import Feedbacks from "@/pages/Feedbacks";
 import MaterialApoio from "@/pages/MaterialApoio";
+import SalesEnablement from "@/pages/SalesEnablement";
 import { AppSidebar } from "@/components/AppSidebar";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { NovidadesModal } from "@/components/NovidadesModal";
