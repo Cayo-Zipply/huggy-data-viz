@@ -17,6 +17,7 @@ import {
   Gauge,
   BookOpen,
   KeyRound,
+  Sparkles,
 } from "lucide-react";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { cn } from "@/lib/utils";
