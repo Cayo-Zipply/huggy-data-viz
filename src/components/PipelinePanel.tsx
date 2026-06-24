@@ -296,7 +296,7 @@ export function PipelinePanel() {
           return;
         }
         // Pede confirmação + data da venda antes de mover
-        setGanhoPending({ cardId, cardNome: card.nome, valorDividaAtual: card.valor_divida ?? null });
+        setGanhoPending({ cardId, cardNome: card.nome, valorDividaAtual: card.valor_divida ?? null, responsavelJuridicoAtual: (card as any).responsavel_juridico ?? null });
       });
       return;
     }
