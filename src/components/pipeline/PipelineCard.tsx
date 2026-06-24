@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, formatDocumento } from "@/lib/utils";
 import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
   ChevronDown, ChevronUp, Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap,
@@ -258,7 +258,9 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
                     ) : (
                       <button onClick={() => startEdit(f.key, (card as any)[f.key]?.toString() || "")}
                         className="flex-1 text-left text-xs text-muted-foreground hover:text-foreground truncate">
-                        {(card as any)[f.key] || `Adicionar ${f.label}...`}
+                        {(card as any)[f.key]
+                          ? (f.key === "cnpj" ? formatDocumento((card as any)[f.key]) : (card as any)[f.key])
+                          : `Adicionar ${f.label}...`}
                       </button>
                     )}
                   </div>

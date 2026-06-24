@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, memo } from "react";
-import { cn } from "@/lib/utils";
+import { cn, formatDocumento } from "@/lib/utils";
 import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
   Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap,
@@ -415,7 +415,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
     ...(card.lead_status === "ganho" ? [{ key: "emails" as SectionKey, label: "E-mails", icon: Mail }] : []),
   ];
 
-  const renderEditableField = (field: string, label: string, icon: React.ReactNode, currentValue: string | null | undefined, type: string = "text") => (
+  const renderEditableField = (field: string, label: string, icon: React.ReactNode, currentValue: string | null | undefined, type: string = "text", displayFormatter?: (v: string) => string) => (
     <div className="flex items-center gap-3 py-2">
       <div className="text-muted-foreground flex-shrink-0">{icon}</div>
       <div className="flex-1 min-w-0">
@@ -435,11 +435,14 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
         ) : (
           <button onClick={() => startEdit(field, currentValue?.toString() || "")} className="text-sm text-foreground hover:text-primary transition-colors text-left w-full truncate">
             {(() => {
+              const raw = currentValue?.toString() || "";
+              const display = raw && displayFormatter ? displayFormatter(raw) : raw;
               const draft = loadDraft(card.id, field);
-              if (draft !== null && draft !== (currentValue?.toString() || "")) {
-                return <span className="text-amber-400">{draft} <span className="text-[10px] italic">(rascunho)</span></span>;
+              if (draft !== null && draft !== raw) {
+                const draftDisplay = displayFormatter ? displayFormatter(draft) : draft;
+                return <span className="text-amber-400">{draftDisplay} <span className="text-[10px] italic">(rascunho)</span></span>;
               }
-              return currentValue || <span className="text-muted-foreground italic">Adicionar...</span>;
+              return display || <span className="text-muted-foreground italic">Adicionar...</span>;
             })()}
           </button>
         )}
@@ -655,7 +658,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                 )}
                 {renderEditableField("email", "Email", <Mail size={16} />, card.email)}
                 <Separator className="my-1" />
-                {renderEditableField("cnpj", "CNPJ", <Building2 size={16} />, card.cnpj)}
+                {renderEditableField("cnpj", "CPF / CNPJ", <Building2 size={16} />, card.cnpj, "text", formatDocumento)}
                 <Separator className="my-1" />
                 {/* Valor do Negócio - currency input */}
                 <div className="flex items-center gap-3 py-2">

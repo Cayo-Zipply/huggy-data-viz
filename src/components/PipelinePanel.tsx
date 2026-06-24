@@ -83,7 +83,7 @@ export function PipelinePanel() {
   const [drawerOpen, setDrawerOpen] = useState(() => sessionStorage.getItem(PIPELINE_UI_KEYS.drawerOpen) === "true");
   const [noShowPending, setNoShowPending] = useState<{ cardId: string; date: Date | undefined } | null>(null);
   const [lossPending, setLossPending] = useState<{ cardId: string; motivo: string; detalhe: string } | null>(null);
-  const [ganhoPending, setGanhoPending] = useState<{ cardId: string; cardNome: string; valorDividaAtual: number | null } | null>(null);
+  const [ganhoPending, setGanhoPending] = useState<{ cardId: string; cardNome: string; valorDividaAtual: number | null; responsavelJuridicoAtual: string | null } | null>(null);
   const [burnOpen, setBurnOpen] = useState(false);
   const { toast } = useToast();
 
@@ -296,7 +296,7 @@ export function PipelinePanel() {
           return;
         }
         // Pede confirmação + data da venda antes de mover
-        setGanhoPending({ cardId, cardNome: card.nome, valorDividaAtual: card.valor_divida ?? null });
+        setGanhoPending({ cardId, cardNome: card.nome, valorDividaAtual: card.valor_divida ?? null, responsavelJuridicoAtual: (card as any).responsavel_juridico ?? null });
       });
       return;
     }
@@ -314,13 +314,17 @@ export function PipelinePanel() {
     setNoShowPending(null);
   };
 
-  const confirmGanho = async (dataVenda: string, valorDivida: number) => {
+  const confirmGanho = async (dataVenda: string, valorDivida: number, responsavelJuridico: string) => {
     if (!ganhoPending) return;
-    const { cardId, valorDividaAtual } = ganhoPending;
+    const { cardId, valorDividaAtual, responsavelJuridicoAtual } = ganhoPending;
     setGanhoPending(null);
-    // 0. Persiste valor da dívida se mudou (obrigatório para painel de fechamentos)
-    if (valorDivida !== valorDividaAtual) {
-      await updateCard(cardId, { valor_divida: valorDivida } as any);
+    // 0. Persiste valor da dívida e responsável jurídico (obrigatórios).
+    //    O responsável jurídico precisa estar salvo antes do disparo do onboarding.
+    const patch: Record<string, unknown> = {};
+    if (valorDivida !== valorDividaAtual) patch.valor_divida = valorDivida;
+    if (responsavelJuridico !== (responsavelJuridicoAtual ?? "")) patch.responsavel_juridico = responsavelJuridico;
+    if (Object.keys(patch).length > 0) {
+      await updateCard(cardId, patch as any);
     }
     // 1. Move para "Contrato Assinado" (registra histórico de etapa)
     await moveCard(cardId, "contrato_assinado" as Stage);
@@ -803,7 +807,7 @@ export function PipelinePanel() {
             toast({ title: "Contrato obrigatório", description: "É necessário anexar o contrato assinado antes de marcar como Ganho.", variant: "destructive" });
             return;
           }
-          setGanhoPending({ cardId: cid, cardNome: c.nome, valorDividaAtual: c.valor_divida ?? null });
+          setGanhoPending({ cardId: cid, cardNome: c.nome, valorDividaAtual: c.valor_divida ?? null, responsavelJuridicoAtual: (c as any).responsavel_juridico ?? null });
         }}
         onMarkLost={handleLossRequest}
         onCreateTask={createTask}
@@ -905,6 +909,7 @@ export function PipelinePanel() {
         open={!!ganhoPending}
         leadNome={ganhoPending?.cardNome ?? ""}
         valorDividaAtual={ganhoPending?.valorDividaAtual ?? null}
+        responsavelJuridicoAtual={ganhoPending?.responsavelJuridicoAtual ?? null}
         onConfirm={confirmGanho}
         onCancel={() => setGanhoPending(null)}
       />

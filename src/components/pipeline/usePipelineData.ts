@@ -117,6 +117,7 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     tipo_documento: (row.tipo_documento === "cpf" || row.tipo_documento === "cnpj") ? row.tipo_documento : null,
     data_venda: row.data_venda || null,
     assistente_juridico: row.assistente_juridico || null,
+    responsavel_juridico: row.responsavel_juridico || null,
     cnpjs_adicionais: Array.isArray(row.cnpjs_adicionais) ? row.cnpjs_adicionais : [],
     socios_adicionais: Array.isArray(row.socios_adicionais) ? row.socios_adicionais : [],
   } as any;
@@ -211,7 +212,7 @@ export function usePipelineData(actorName: string) {
       "data_primeiro_pagamento","dia_demais_pagamentos","prazo_entrega_relatorios",
       "prazo_contrato","valor_proposta",
       "endereco","cidade","estado","cep","zapsign_signed_at","fim_de_semana",
-      "tipo_documento","data_venda","assistente_juridico",
+      "tipo_documento","data_venda","assistente_juridico","responsavel_juridico",
       "cnpjs_adicionais","socios_adicionais",
     ].join(",");
     const HIST_COLS = "lead_id,etapa_de,etapa_para,created_at,closer";
@@ -465,6 +466,7 @@ export function usePipelineData(actorName: string) {
       tipo_documento: null,
       data_venda: null,
       assistente_juridico: null,
+      responsavel_juridico: null,
     };
 
     const firstTask = {
@@ -543,6 +545,7 @@ export function usePipelineData(actorName: string) {
     if (updates.cep !== undefined) dbUpdates.cep = updates.cep;
     if (updates.data_venda !== undefined) dbUpdates.data_venda = updates.data_venda;
     if (updates.assistente_juridico !== undefined) dbUpdates.assistente_juridico = updates.assistente_juridico;
+    if (updates.responsavel_juridico !== undefined) dbUpdates.responsavel_juridico = updates.responsavel_juridico;
     if ((updates as any).cnpjs_adicionais !== undefined) dbUpdates.cnpjs_adicionais = (updates as any).cnpjs_adicionais;
     if ((updates as any).socios_adicionais !== undefined) dbUpdates.socios_adicionais = (updates as any).socios_adicionais;
 

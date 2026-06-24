@@ -72,6 +72,7 @@ export interface PipelineCard {
   tipo_documento: "cpf" | "cnpj" | null;
   data_venda: string | null;
   assistente_juridico: string | null;
+  responsavel_juridico: string | null;
 }
 
 export interface PipelineTask {
