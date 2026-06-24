@@ -545,6 +545,7 @@ export function usePipelineData(actorName: string) {
     if (updates.cep !== undefined) dbUpdates.cep = updates.cep;
     if (updates.data_venda !== undefined) dbUpdates.data_venda = updates.data_venda;
     if (updates.assistente_juridico !== undefined) dbUpdates.assistente_juridico = updates.assistente_juridico;
+    if (updates.responsavel_juridico !== undefined) dbUpdates.responsavel_juridico = updates.responsavel_juridico;
     if ((updates as any).cnpjs_adicionais !== undefined) dbUpdates.cnpjs_adicionais = (updates as any).cnpjs_adicionais;
     if ((updates as any).socios_adicionais !== undefined) dbUpdates.socios_adicionais = (updates as any).socios_adicionais;
 
