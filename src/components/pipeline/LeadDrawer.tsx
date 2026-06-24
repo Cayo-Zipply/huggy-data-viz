@@ -658,7 +658,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                 )}
                 {renderEditableField("email", "Email", <Mail size={16} />, card.email)}
                 <Separator className="my-1" />
-                {renderEditableField("cnpj", "CNPJ", <Building2 size={16} />, card.cnpj)}
+                {renderEditableField("cnpj", "CPF / CNPJ", <Building2 size={16} />, card.cnpj, "text", formatDocumento)}
                 <Separator className="my-1" />
                 {/* Valor do Negócio - currency input */}
                 <div className="flex items-center gap-3 py-2">
