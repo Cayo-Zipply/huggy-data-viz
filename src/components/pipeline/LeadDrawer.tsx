@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, memo } from "react";
-import { cn } from "@/lib/utils";
+import { cn, formatDocumento } from "@/lib/utils";
 import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
   Clock, Trophy, XCircle, UserCircle, Plus, Check, History, Info, ListChecks, Zap,
