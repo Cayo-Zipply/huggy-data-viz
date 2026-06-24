@@ -83,7 +83,7 @@ export function PipelinePanel() {
   const [drawerOpen, setDrawerOpen] = useState(() => sessionStorage.getItem(PIPELINE_UI_KEYS.drawerOpen) === "true");
   const [noShowPending, setNoShowPending] = useState<{ cardId: string; date: Date | undefined } | null>(null);
   const [lossPending, setLossPending] = useState<{ cardId: string; motivo: string; detalhe: string } | null>(null);
-  const [ganhoPending, setGanhoPending] = useState<{ cardId: string; cardNome: string; valorDividaAtual: number | null } | null>(null);
+  const [ganhoPending, setGanhoPending] = useState<{ cardId: string; cardNome: string; valorDividaAtual: number | null; responsavelJuridicoAtual: string | null } | null>(null);
   const [burnOpen, setBurnOpen] = useState(false);
   const { toast } = useToast();
 
