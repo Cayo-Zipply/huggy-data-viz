@@ -803,7 +803,7 @@ export function PipelinePanel() {
             toast({ title: "Contrato obrigatório", description: "É necessário anexar o contrato assinado antes de marcar como Ganho.", variant: "destructive" });
             return;
           }
-          setGanhoPending({ cardId: cid, cardNome: c.nome, valorDividaAtual: c.valor_divida ?? null });
+          setGanhoPending({ cardId: cid, cardNome: c.nome, valorDividaAtual: c.valor_divida ?? null, responsavelJuridicoAtual: (c as any).responsavel_juridico ?? null });
         }}
         onMarkLost={handleLossRequest}
         onCreateTask={createTask}
