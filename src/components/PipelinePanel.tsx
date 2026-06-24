@@ -909,6 +909,7 @@ export function PipelinePanel() {
         open={!!ganhoPending}
         leadNome={ganhoPending?.cardNome ?? ""}
         valorDividaAtual={ganhoPending?.valorDividaAtual ?? null}
+        responsavelJuridicoAtual={ganhoPending?.responsavelJuridicoAtual ?? null}
         onConfirm={confirmGanho}
         onCancel={() => setGanhoPending(null)}
       />
