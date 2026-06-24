@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Document as DocxDocument, Packer, Paragraph as DocxParagraph, TextRun as DocxTextRun } from "docx";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AgendarReuniaoDialog } from "./AgendarReuniaoDialog";
 import { EditarReuniaoDialog } from "./EditarReuniaoDialog";
 import { ReunioesAgendadasList } from "./ReunioesAgendadasList";
