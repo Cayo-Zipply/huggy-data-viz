@@ -314,13 +314,17 @@ export function PipelinePanel() {
     setNoShowPending(null);
   };
 
-  const confirmGanho = async (dataVenda: string, valorDivida: number) => {
+  const confirmGanho = async (dataVenda: string, valorDivida: number, responsavelJuridico: string) => {
     if (!ganhoPending) return;
-    const { cardId, valorDividaAtual } = ganhoPending;
+    const { cardId, valorDividaAtual, responsavelJuridicoAtual } = ganhoPending;
     setGanhoPending(null);
-    // 0. Persiste valor da dívida se mudou (obrigatório para painel de fechamentos)
-    if (valorDivida !== valorDividaAtual) {
-      await updateCard(cardId, { valor_divida: valorDivida } as any);
+    // 0. Persiste valor da dívida e responsável jurídico (obrigatórios).
+    //    O responsável jurídico precisa estar salvo antes do disparo do onboarding.
+    const patch: Record<string, unknown> = {};
+    if (valorDivida !== valorDividaAtual) patch.valor_divida = valorDivida;
+    if (responsavelJuridico !== (responsavelJuridicoAtual ?? "")) patch.responsavel_juridico = responsavelJuridico;
+    if (Object.keys(patch).length > 0) {
+      await updateCard(cardId, patch as any);
     }
     // 1. Move para "Contrato Assinado" (registra histórico de etapa)
     await moveCard(cardId, "contrato_assinado" as Stage);
