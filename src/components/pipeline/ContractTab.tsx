@@ -144,6 +144,7 @@ export function ContractTab({ card, onUpdate }: Props) {
 
   const [tipo, setTipo] = useState<ContractType | "">(card.tipo_contrato || "");
   const [form, setForm] = useState(buildInitialForm);
+  const [responsavelJuridico, setResponsavelJuridico] = useState<string>(card.responsavel_juridico || "");
   const [valorMensalidade, setValorMensalidade] = useState<number | null>(card.valor_mensalidade ?? null);
   const [valorDivida, setValorDivida] = useState<number | null>(card.valor_divida ?? null);
   const [valorProposta, setValorProposta] = useState<number | null>(card.valor_proposta ?? null);
@@ -183,6 +184,7 @@ export function ContractTab({ card, onUpdate }: Props) {
   useEffect(() => {
     setTipo(card.tipo_contrato || "");
     setForm(buildInitialForm());
+    setResponsavelJuridico(card.responsavel_juridico || "");
     setValorMensalidade(card.valor_mensalidade ?? null);
     setValorDivida(card.valor_divida ?? null);
     setValorProposta(card.valor_proposta ?? null);
@@ -233,6 +235,7 @@ export function ContractTab({ card, onUpdate }: Props) {
     if (valorMensalidade === null || valorMensalidade === 0) errs.push("Valor da Mensalidade");
     if (!form.qtd_salarios_minimos.trim()) errs.push("Qtd Salários Mínimos");
     if (!form.porcentagem_exito.trim()) errs.push("Porcentagem de Êxito");
+    if (!responsavelJuridico.trim()) errs.push("Assistente Jurídico Responsável");
     if (!form.data_primeiro_pagamento) errs.push("Data do Primeiro Pagamento");
     if (!form.dia_demais_pagamentos) errs.push("Dia dos Demais Pagamentos");
     if (!form.prazo_entrega_relatorios.trim()) errs.push("Prazo Entrega Relatórios");
@@ -268,6 +271,7 @@ export function ContractTab({ card, onUpdate }: Props) {
       valor_mensalidade: valorMensalidade,
       qtd_salarios_minimos: form.qtd_salarios_minimos || null,
       porcentagem_exito: form.porcentagem_exito || null,
+      responsavel_juridico: responsavelJuridico || null,
       valor_divida: valorDivida,
       valor_proposta: valorProposta,
       data_primeiro_pagamento: form.data_primeiro_pagamento || null,
@@ -883,6 +887,20 @@ ${signLink}`;
               <div>
                 <label className="text-[11px] text-muted-foreground mb-1 block">Prazo do Contrato</label>
                 <input value={form.prazo_contrato} onChange={e => updateField("prazo_contrato", e.target.value)} placeholder="Ex: 12 meses" className={inputClass("")} />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-1 block">Assistente Jurídico Responsável *</label>
+                <select
+                  value={responsavelJuridico}
+                  onChange={e => setResponsavelJuridico(e.target.value)}
+                  className={inputClass("Assistente Jurídico Responsável")}
+                >
+                  <option value="" disabled>Selecione o assistente</option>
+                  <option value="Clara Nolasco">Clara Nolasco</option>
+                  <option value="Maria Eduarda">Maria Eduarda</option>
+                  <option value="Lorelayne Morais">Lorelayne Morais</option>
+                </select>
+                <p className="text-[11px] text-muted-foreground mt-1">Carteira que receberá o lead no momento da assinatura.</p>
               </div>
             </div>
           </div>
