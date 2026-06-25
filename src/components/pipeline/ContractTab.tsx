@@ -144,6 +144,7 @@ export function ContractTab({ card, onUpdate }: Props) {
 
   const [tipo, setTipo] = useState<ContractType | "">(card.tipo_contrato || "");
   const [form, setForm] = useState(buildInitialForm);
+  const [responsavelJuridico, setResponsavelJuridico] = useState<string>(card.responsavel_juridico || "");
   const [valorMensalidade, setValorMensalidade] = useState<number | null>(card.valor_mensalidade ?? null);
   const [valorDivida, setValorDivida] = useState<number | null>(card.valor_divida ?? null);
   const [valorProposta, setValorProposta] = useState<number | null>(card.valor_proposta ?? null);
