@@ -271,6 +271,7 @@ export function ContractTab({ card, onUpdate }: Props) {
       valor_mensalidade: valorMensalidade,
       qtd_salarios_minimos: form.qtd_salarios_minimos || null,
       porcentagem_exito: form.porcentagem_exito || null,
+      responsavel_juridico: responsavelJuridico || null,
       valor_divida: valorDivida,
       valor_proposta: valorProposta,
       data_primeiro_pagamento: form.data_primeiro_pagamento || null,
