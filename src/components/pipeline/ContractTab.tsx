@@ -184,6 +184,7 @@ export function ContractTab({ card, onUpdate }: Props) {
   useEffect(() => {
     setTipo(card.tipo_contrato || "");
     setForm(buildInitialForm());
+    setResponsavelJuridico(card.responsavel_juridico || "");
     setValorMensalidade(card.valor_mensalidade ?? null);
     setValorDivida(card.valor_divida ?? null);
     setValorProposta(card.valor_proposta ?? null);
