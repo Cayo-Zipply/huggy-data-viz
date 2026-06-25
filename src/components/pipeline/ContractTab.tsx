@@ -235,6 +235,7 @@ export function ContractTab({ card, onUpdate }: Props) {
     if (valorMensalidade === null || valorMensalidade === 0) errs.push("Valor da Mensalidade");
     if (!form.qtd_salarios_minimos.trim()) errs.push("Qtd Salários Mínimos");
     if (!form.porcentagem_exito.trim()) errs.push("Porcentagem de Êxito");
+    if (!responsavelJuridico.trim()) errs.push("Assistente Jurídico Responsável");
     if (!form.data_primeiro_pagamento) errs.push("Data do Primeiro Pagamento");
     if (!form.dia_demais_pagamentos) errs.push("Dia dos Demais Pagamentos");
     if (!form.prazo_entrega_relatorios.trim()) errs.push("Prazo Entrega Relatórios");
