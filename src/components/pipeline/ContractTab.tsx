@@ -888,6 +888,20 @@ ${signLink}`;
                 <label className="text-[11px] text-muted-foreground mb-1 block">Prazo do Contrato</label>
                 <input value={form.prazo_contrato} onChange={e => updateField("prazo_contrato", e.target.value)} placeholder="Ex: 12 meses" className={inputClass("")} />
               </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground mb-1 block">Assistente Jurídico Responsável *</label>
+                <select
+                  value={responsavelJuridico}
+                  onChange={e => setResponsavelJuridico(e.target.value)}
+                  className={inputClass("Assistente Jurídico Responsável")}
+                >
+                  <option value="" disabled>Selecione o assistente</option>
+                  <option value="Clara Nolasco">Clara Nolasco</option>
+                  <option value="Maria Eduarda">Maria Eduarda</option>
+                  <option value="Lorelayne Morais">Lorelayne Morais</option>
+                </select>
+                <p className="text-[11px] text-muted-foreground mt-1">Carteira que receberá o lead no momento da assinatura.</p>
+              </div>
             </div>
           </div>
 
