@@ -120,6 +120,7 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     responsavel_juridico: row.responsavel_juridico || null,
     cnpjs_adicionais: Array.isArray(row.cnpjs_adicionais) ? row.cnpjs_adicionais : [],
     socios_adicionais: Array.isArray(row.socios_adicionais) ? row.socios_adicionais : [],
+    origem_divida: row.origem_divida || null,
   } as any;
 }
 
@@ -213,7 +214,7 @@ export function usePipelineData(actorName: string) {
       "prazo_contrato","valor_proposta",
       "endereco","cidade","estado","cep","zapsign_signed_at","fim_de_semana",
       "tipo_documento","data_venda","assistente_juridico","responsavel_juridico",
-      "cnpjs_adicionais","socios_adicionais",
+      "cnpjs_adicionais","socios_adicionais","origem_divida",
     ].join(",");
     const HIST_COLS = "lead_id,etapa_de,etapa_para,created_at,closer";
 
@@ -548,6 +549,7 @@ export function usePipelineData(actorName: string) {
     if (updates.responsavel_juridico !== undefined) dbUpdates.responsavel_juridico = updates.responsavel_juridico;
     if ((updates as any).cnpjs_adicionais !== undefined) dbUpdates.cnpjs_adicionais = (updates as any).cnpjs_adicionais;
     if ((updates as any).socios_adicionais !== undefined) dbUpdates.socios_adicionais = (updates as any).socios_adicionais;
+    if ((updates as any).origem_divida !== undefined) dbUpdates.origem_divida = (updates as any).origem_divida;
 
 
     if (Object.keys(dbUpdates).length) {
