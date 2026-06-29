@@ -121,6 +121,12 @@ export default function Contratos() {
     }
   };
 
+  // Mesma fonte do Farol (card "CONTRATO ASSINADO"): lead em ganho OU etapa contrato_assinado.
+  // Período de "Fechamento" aplicado sobre data_venda (com fallbacks idênticos ao Farol).
+  // NÃO filtrar por contrato_status — contratos feitos por fora ficam 'pendente' e somem.
+  const getFechamentoRef = (c: any) =>
+    c.data_venda || c.zapsign_signed_at || c.contrato_preparado_em || c.stage_changed_at || c.created_at;
+
   const contratos = useMemo(() => {
     let filtered = cards.filter(
       c => c.lead_status === "ganho" || c.stage === "contrato_assinado"
@@ -134,7 +140,7 @@ export default function Contratos() {
     }
     if (fechadoDe) {
       filtered = filtered.filter(c => {
-        const d = c.zapsign_signed_at || c.contrato_preparado_em;
+        const d = getFechamentoRef(c);
         return d ? new Date(d) >= fechadoDe : false;
       });
     }
@@ -142,7 +148,7 @@ export default function Contratos() {
       const end = new Date(fechadoAte);
       end.setHours(23, 59, 59);
       filtered = filtered.filter(c => {
-        const d = c.zapsign_signed_at || c.contrato_preparado_em;
+        const d = getFechamentoRef(c);
         return d ? new Date(d) <= end : false;
       });
     }
