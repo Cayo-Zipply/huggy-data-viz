@@ -120,6 +120,7 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     responsavel_juridico: row.responsavel_juridico || null,
     cnpjs_adicionais: Array.isArray(row.cnpjs_adicionais) ? row.cnpjs_adicionais : [],
     socios_adicionais: Array.isArray(row.socios_adicionais) ? row.socios_adicionais : [],
+    origem_divida: row.origem_divida || null,
   } as any;
 }
 
