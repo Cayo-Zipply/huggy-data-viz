@@ -106,6 +106,11 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
   const removerExtra = (e: string) => setExtras(extras.filter(x => x !== e));
 
   const criar = async () => {
+    const faltando = missingLeadBasics(card as any);
+    if (faltando.length) {
+      toast.error(`Para agendar a reunião, preencha: ${faltando.join(", ")}.`);
+      return;
+    }
     if (!leadEmailValido) {
       toast.error("Lead sem e-mail válido — adicione no card antes de agendar.");
       return;
