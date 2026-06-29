@@ -548,6 +548,7 @@ export function usePipelineData(actorName: string) {
     if (updates.responsavel_juridico !== undefined) dbUpdates.responsavel_juridico = updates.responsavel_juridico;
     if ((updates as any).cnpjs_adicionais !== undefined) dbUpdates.cnpjs_adicionais = (updates as any).cnpjs_adicionais;
     if ((updates as any).socios_adicionais !== undefined) dbUpdates.socios_adicionais = (updates as any).socios_adicionais;
+    if ((updates as any).origem_divida !== undefined) dbUpdates.origem_divida = (updates as any).origem_divida;
 
 
     if (Object.keys(dbUpdates).length) {
