@@ -273,9 +273,8 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
                     className="flex-1 text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground"
                   >
                     <option value="">Origem da dívida...</option>
-                    <option value="PGFN">PGFN</option>
-                    <option value="Receita">Receita Federal</option>
-                    <option value="Nao informado">Não informado</option>
+                    <option value="pgfn">PGFN</option>
+                    <option value="receita_federal">Receita Federal</option>
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
