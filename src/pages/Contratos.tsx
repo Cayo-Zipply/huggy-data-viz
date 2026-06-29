@@ -355,17 +355,16 @@ export default function Contratos() {
                   <TableCell className="text-xs">{c.cnpj || "—"}</TableCell>
                   <TableCell className="text-xs">{c.telefone || "—"}</TableCell>
                   <TableCell className="text-xs">{c.email || "—"}</TableCell>
-                  <TableCell className="text-xs">{formatBRL(c.valor_mensalidade || c.deal_value || 0)}</TableCell>
+                  <TableCell className="text-xs">{formatBRL((c.valor_mensalidade && c.valor_mensalidade > 0) ? c.valor_mensalidade : (c.deal_value || 0))}</TableCell>
                   <TableCell className="text-xs">{c.porcentagem_exito ? `${c.porcentagem_exito}%` : "—"}</TableCell>
                   <TableCell className="text-xs">{c.estado || "—"}</TableCell>
                   <TableCell className="text-xs">{c.owner || "—"}</TableCell>
                   <TableCell className="text-xs">{format(new Date(c.created_at), "dd/MM/yy")}</TableCell>
                   <TableCell className="text-xs">
-                    {c.zapsign_signed_at
-                      ? format(new Date(c.zapsign_signed_at), "dd/MM/yy")
-                      : c.contrato_preparado_em
-                        ? format(new Date(c.contrato_preparado_em), "dd/MM/yy")
-                        : "—"}
+                    {(() => {
+                      const d = getFechamentoRef(c);
+                      return d ? format(new Date(d), "dd/MM/yy") : "—";
+                    })()}
                   </TableCell>
                   <TableCell className="text-xs">
                     <Button variant="outline" size="sm" className="h-7 px-2 text-[10px] gap-1" onClick={() => downloadContrato(c)}>
