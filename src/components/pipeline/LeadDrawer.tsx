@@ -694,8 +694,8 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                       className="w-full text-sm bg-muted/50 border border-border rounded-md px-2.5 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                     >
                       <option value="">Não informado</option>
-                      <option value="PGFN">PGFN</option>
-                      <option value="Receita">Receita Federal</option>
+                      <option value="pgfn">PGFN</option>
+                      <option value="receita_federal">Receita Federal</option>
                     </select>
                   </div>
                 </div>
