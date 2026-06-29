@@ -239,6 +239,11 @@ export function ContractTab({ card, onUpdate }: Props) {
     if (!form.data_primeiro_pagamento) errs.push("Data do Primeiro Pagamento");
     if (!form.dia_demais_pagamentos) errs.push("Dia dos Demais Pagamentos");
     if (!form.prazo_entrega_relatorios.trim()) errs.push("Prazo Entrega Relatórios");
+    // Dados básicos do lead exigidos no mesmo padrão do agendamento de reunião
+    if (!valorDivida || valorDivida <= 0) errs.push("Valor da Dívida");
+    const origem = ((card as any).origem_divida || "").toLowerCase();
+    if (origem !== "pgfn" && origem !== "receita_federal") errs.push("Origem da Dívida (Receita/PGFN)");
+    if (!form.estado.trim()) errs.push("Estado (UF)");
     if (isCNPJType) {
       cnpjsAdicionais.forEach((c, i) => {
         if (!c.empresa?.trim()) errs.push(`CNPJ adicional #${i + 1}: Empresa`);
