@@ -213,7 +213,7 @@ export function usePipelineData(actorName: string) {
       "prazo_contrato","valor_proposta",
       "endereco","cidade","estado","cep","zapsign_signed_at","fim_de_semana",
       "tipo_documento","data_venda","assistente_juridico","responsavel_juridico",
-      "cnpjs_adicionais","socios_adicionais",
+      "cnpjs_adicionais","socios_adicionais","origem_divida",
     ].join(",");
     const HIST_COLS = "lead_id,etapa_de,etapa_para,created_at,closer";
 
