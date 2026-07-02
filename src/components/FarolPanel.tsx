@@ -624,11 +624,21 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
     const fatFaltaPace = Math.max(0, fatMetaAteAlvo - realizadoFat);
     const fatAtingTotal = metaFatTotal > 0 ? (projecaoFat / metaFatTotal) * 100 : 0;
 
-    const rrTotal = reunioesRealizadas.length;
-    const metaRRTotal = closerRows.reduce((s, c) => {
+    const rrTotalLocal = reunioesRealizadas.length;
+    const metaRRTotalLocal = closerRows.reduce((s, c) => {
       const g = goals.find(x => x.closer === c && x.month === monthKey);
       return s + (g?.reunioes_realizadas_meta || 0);
     }, 0);
+
+    // Card "Reuniões Realizadas" (Visão Geral): usa a mesma fonte RPC da seção Pré-vendas.
+    // Fallback para o cálculo local quando a RPC estiver indisponível ou houver filtro semanal.
+    const useSdrRpc = rpcSdrRows && weekFilter === "all";
+    const rrTotal = useSdrRpc
+      ? rpcSdrRows.reduce((s, r: any) => s + Number(r.reunioes_realizadas || 0), 0)
+      : rrTotalLocal;
+    const metaRRTotal = useSdrRpc
+      ? rpcSdrRows.reduce((s, r: any) => s + Number(r.meta_reunioes || 0), 0)
+      : metaRRTotalLocal;
     const rrMetaAteAlvo = metaRRTotal * fatorPace;
     const rrPaceDiario = (metaRRTotal > 0 && du.restantes > 0)
       ? Math.max(0, Math.ceil((metaRRTotal - rrTotal) / du.restantes))
@@ -637,7 +647,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
     const rrGap = rrTotal - rrMetaAteAlvo;
 
     const totalVendas = inboundTotal.vendas;
-    const convAtual = rrTotal > 0 ? (totalVendas / rrTotal) * 100 : 0;
+    const convAtual = rrTotalLocal > 0 ? (totalVendas / rrTotalLocal) * 100 : 0;
     const convPctAlvo = metaConvAlvo > 0 ? (convAtual / metaConvAlvo) * 100 : 0;
     const convGap = convAtual - metaConvAlvo;
     const ticketMedio = totalVendas > 0 ? realizadoFat / totalVendas : 0;
@@ -650,10 +660,16 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
       .map(d => ({ closer: d.closer, value: d.realizado }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 3);
-    const topByRR = realCloserRows
-      .map(d => ({ closer: d.closer, value: reunioesRealizadas.filter(c => canonical(c.owner) === d.closer).length }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 3);
+    const topByRR = useSdrRpc
+      ? rpcSdrRows
+          .filter((r: any) => Number(r.reunioes_realizadas || 0) > 0)
+          .map((r: any) => ({ closer: canonical(String(r.closer || "Sem responsável")), value: Number(r.reunioes_realizadas || 0) }))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 3)
+      : realCloserRows
+          .map(d => ({ closer: d.closer, value: reunioesRealizadas.filter(c => canonical(c.owner) === d.closer).length }))
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 3);
     const topByContratos = realCloserRows
       .map(d => ({ closer: d.closer, value: d.contratos }))
       .sort((a, b) => b.value - a.value)
@@ -688,7 +704,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
       },
       rankings: { topByFat, topByRR },
     };
-  }, [inboundData, inboundTotal, preVendasTotal, reunioesRealizadas.length, closerRows, goals, monthKey, passedBD, ratio, fatorPace, du.restantes, contratosMes.length, contratosEnviados, contratosAssinados]);
+  }, [inboundData, inboundTotal, preVendasTotal, rpcSdrRows, weekFilter, reunioesRealizadas.length, closerRows, goals, monthKey, passedBD, ratio, fatorPace, du.restantes, contratosMes.length, contratosEnviados, contratosAssinados]);
 
 
   return (
