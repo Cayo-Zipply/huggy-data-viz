@@ -373,6 +373,33 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
   }, [closerNames, closerCards, canonical]);
 
   const inboundData = useMemo(() => {
+    // Fonte oficial: RPC `farol_metricas_time` — mesmos números para todos
+    // os usuários logados. Se a RPC ainda não respondeu, cai no cálculo
+    // legado a partir dos `cards` (que sofre RLS por closer).
+    if (rpcRows && rpcRows.length >= 0 && weekFilter === "all") {
+      const rows = rpcRows.map((r: any) => {
+        const closer = canonical(String(r.closer || "Sem responsável"));
+        const vendas = Number(r.contratos || 0);
+        const realizado = Number(r.faturamento || 0);
+        const meta = Number(r.meta_faturamento || 0);
+        const metaAteAlvo = meta * fatorPace;
+        const projecao = passedBD > 0 ? Math.round(realizado * ratio) : 0;
+        const ticket = Number(r.ticket_medio || (vendas > 0 ? realizado / vendas : 0));
+        const tktProjetado = Number(r.meta_ticket_medio || 0) > 0
+          ? Number(r.meta_ticket_medio)
+          : (Number(r.meta_contratos || 0) > 0 && meta > 0 ? meta / Number(r.meta_contratos) : 0);
+        const tktParaFalta = tktProjetado > 0 ? tktProjetado : ticket;
+        const falta = tktParaFalta > 0 ? Math.max(0, Math.ceil((metaAteAlvo - realizado) / tktParaFalta)) : 0;
+        const diferenca = projecao - meta;
+        const pctMeta = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
+        const atingTotal = pctMeta;
+        const conv = Number(r.conversao || 0);
+        const contratos = vendas;
+        return { closer, vendas, realizado, meta, metaAteAlvo, projecao, falta, diferenca, pctMeta, atingTotal, conv, ticket, tktProjetado, contratos, unassigned: 0 };
+      });
+      return rows.filter(r => r.meta > 0 || r.realizado > 0 || r.vendas > 0 || r.contratos > 0);
+    }
+
     const rows = closerRows
       .map(closer => {
         // "Vendas" e "Contratos" são a mesma métrica — usamos contratos como fonte única de verdade
@@ -416,7 +443,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
       });
     }
     return rows;
-  }, [closerRows, contratosMes, reunioesRealizadas, goals, monthKey, passedBD, ratio, fatorPace]);
+  }, [rpcRows, weekFilter, closerRows, contratosMes, reunioesRealizadas, goals, monthKey, passedBD, ratio, fatorPace, canonical]);
 
   const inboundTotal = useMemo(() => {
     const vendas = inboundData.reduce((s, d) => s + d.vendas, 0);
