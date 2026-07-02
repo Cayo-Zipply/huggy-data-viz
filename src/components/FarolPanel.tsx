@@ -137,9 +137,27 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
   const [debugRR, setDebugRR] = useState<{ owner: string } | null>(null);
   const [realizadoDrill, setRealizadoDrill] = useState<{ closer: string | null; label: string } | null>(null);
   const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
+  const [rpcRows, setRpcRows] = useState<any[] | null>(null);
 
   const monthKey = getMonthKey(selectedMonth);
   const excludedKey = `farol_excluded_rr_${monthKey}`;
+
+  // Fonte oficial das métricas do Farol: RPC do backend (mesmos números para
+  // todos os usuários logados, independente do RLS aplicado ao pipe).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await (supabase as any).rpc("farol_metricas_time", { p_mes: monthKey });
+      if (cancelled) return;
+      if (error) {
+        console.error("[Farol] farol_metricas_time RPC error:", error);
+        setRpcRows(null);
+        return;
+      }
+      setRpcRows(Array.isArray(data) ? data : []);
+    })();
+    return () => { cancelled = true; };
+  }, [monthKey]);
 
   // Load excluded card ids from localStorage when month changes
   useEffect(() => {
