@@ -160,6 +160,22 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
     return () => { cancelled = true; };
   }, [monthKey]);
 
+  // Fonte oficial das métricas de PRÉ-VENDAS (SDR): RPC `farol_metricas_sdr`.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await (supabase as any).rpc("farol_metricas_sdr", { p_mes: monthKey });
+      if (cancelled) return;
+      if (error) {
+        console.error("[Farol] farol_metricas_sdr RPC error:", error);
+        setRpcSdrRows(null);
+        return;
+      }
+      setRpcSdrRows(Array.isArray(data) ? data : []);
+    })();
+    return () => { cancelled = true; };
+  }, [monthKey]);
+
   // Load excluded card ids from localStorage when month changes
   useEffect(() => {
     try {
