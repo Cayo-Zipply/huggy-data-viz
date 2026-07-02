@@ -138,6 +138,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
   const [realizadoDrill, setRealizadoDrill] = useState<{ closer: string | null; label: string } | null>(null);
   const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
   const [rpcRows, setRpcRows] = useState<any[] | null>(null);
+  const [rpcSdrRows, setRpcSdrRows] = useState<any[] | null>(null);
 
   const monthKey = getMonthKey(selectedMonth);
   const excludedKey = `farol_excluded_rr_${monthKey}`;
@@ -155,6 +156,22 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
         return;
       }
       setRpcRows(Array.isArray(data) ? data : []);
+    })();
+    return () => { cancelled = true; };
+  }, [monthKey]);
+
+  // Fonte oficial das métricas de PRÉ-VENDAS (SDR): RPC `farol_metricas_sdr`.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await (supabase as any).rpc("farol_metricas_sdr", { p_mes: monthKey });
+      if (cancelled) return;
+      if (error) {
+        console.error("[Farol] farol_metricas_sdr RPC error:", error);
+        setRpcSdrRows(null);
+        return;
+      }
+      setRpcSdrRows(Array.isArray(data) ? data : []);
     })();
     return () => { cancelled = true; };
   }, [monthKey]);
@@ -476,6 +493,38 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
   }, [sdrNames, closerNames, closerCards, canonical]);
 
   const preVendasData = useMemo(() => {
+    // Fonte oficial: RPC `farol_metricas_sdr` (mesmos números para todos).
+    // Fallback para o cálculo local quando a RPC estiver indisponível ou houver
+    // filtro semanal ativo (a RPC opera sempre no mês inteiro).
+    if (rpcSdrRows && weekFilter === "all") {
+      const rows = rpcSdrRows.map((r: any) => {
+        const sdr = r.closer || "—";
+        const rm = Number(r.reunioes_marcadas ?? 0);
+        const rr = Number(r.reunioes_realizadas ?? 0);
+        const ns = Number(r.no_shows ?? 0);
+        const meta = Number(r.meta_reunioes ?? 0);
+        const metaRR = meta; // RPC entrega uma única meta por closer
+
+        const metaAteAlvo = metaRR * fatorPace;
+        const projecao = passedBD > 0 ? Math.round(rm * ratio) : 0;
+        const projecaoRR = passedBD > 0 ? Math.round(rr * ratio) : 0;
+        const falta = Math.max(0, metaRR - rr);
+        const projetado = projecaoRR;
+        const pctMeta = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
+        const atingTotal = metaRR > 0 ? Math.round((projecaoRR / metaRR) * 100) : 0;
+        const paceDiarioRR = (metaRR > 0 && du.restantes > 0)
+          ? Math.max(0, Math.ceil((metaRR - rr) / du.restantes))
+          : 0;
+        const conv = rm > 0 ? Math.round((rr / rm) * 100) : 0;
+        return {
+          sdr, vendas: 0, reunioesMarcadas: rm, reunioesRealizadas: rr,
+          meta, metaRR, metaAteAlvo, projecao, falta, projetado,
+          pctMeta, atingTotal, paceDiarioRR, conv, noShows: ns, unassigned: 0,
+        };
+      }).filter(r => r.meta > 0 || r.metaRR > 0 || r.reunioesMarcadas > 0 || r.reunioesRealizadas > 0);
+      return rows;
+    }
+
     const rows = sdrRows
       .map(sdr => {
         const rm = reunioesMarcadas.filter(c => canonical(c.owner) === sdr).length;
@@ -519,7 +568,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
       });
     }
     return rows;
-  }, [sdrRows, sdrNames, closerNames, reunioesMarcadas, reunioesRealizadas, reunioesAgendadasAbertas, noShowsMes, ganhosMes, goals, monthKey, passedBD, ratio, fatorPace, du.restantes]);
+  }, [rpcSdrRows, weekFilter, sdrRows, sdrNames, closerNames, reunioesMarcadas, reunioesRealizadas, reunioesAgendadasAbertas, noShowsMes, ganhosMes, goals, monthKey, passedBD, ratio, fatorPace, du.restantes, canonical, contratosMes]);
 
   const preVendasTotal = useMemo(() => {
     const rm = preVendasData.reduce((s, d) => s + d.reunioesMarcadas, 0);
@@ -533,7 +582,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
     const atingTotal = metaRR > 0 ? Math.round((projetado / metaRR) * 100) : 0;
     const conv = rm > 0 ? Math.round((rr / rm) * 100) : 0;
     const noShows = preVendasData.reduce((s, d) => s + d.noShows, 0);
-    const taxaShowDenom = rr + noShows + reunioesAgendadasAbertas.length;
+    const taxaShowDenom = rr + noShows;
     const taxaShow = taxaShowDenom > 0 ? ((rr / taxaShowDenom) * 100).toFixed(1) : "0";
     const metaAteAlvo = (metaRR || meta) * fatorPace;
     const paceDiarioRR = (metaRR > 0 && du.restantes > 0)
