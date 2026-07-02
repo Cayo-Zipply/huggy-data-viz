@@ -138,6 +138,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
   const [realizadoDrill, setRealizadoDrill] = useState<{ closer: string | null; label: string } | null>(null);
   const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
   const [rpcRows, setRpcRows] = useState<any[] | null>(null);
+  const [rpcSdrRows, setRpcSdrRows] = useState<any[] | null>(null);
 
   const monthKey = getMonthKey(selectedMonth);
   const excludedKey = `farol_excluded_rr_${monthKey}`;
