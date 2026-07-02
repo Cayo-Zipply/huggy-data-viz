@@ -25,6 +25,7 @@ import { Separator } from "@/components/ui/separator";
 import type { PipelineCard as CardType, PipelineTask, LossCategory } from "./types";
 import { LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
 import { ContractTab } from "./ContractTab";
+import { GrupoWhatsappSection } from "./GrupoWhatsappSection";
 import { AbaAnexos } from "@/components/lead/aba-anexos";
 import type { PipelineLabel } from "@/hooks/useLabels";
 import { CallButton } from "./CallButton";
@@ -140,7 +141,7 @@ interface Props {
   onOpenLead?: (id: string) => void;
 }
 
-type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "contrato" | "anexo" | "chamadas" | "reunioes" | "emails" | "acoes";
+type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "contrato" | "anexo" | "chamadas" | "reunioes" | "emails" | "grupo_wpp" | "acoes";
 
 export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onSaveObservation, labels = [], cardLabels = [], onAddLabel, onRemoveLabel, ownerOptions: ownerOptionsProp, duplicates = [], onDelete, onOpenLead }: Props) {
   const { user, isAdmin, profile } = useAuth();
@@ -414,6 +415,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
     { key: "contrato", label: "Contrato", icon: FileSignature },
     { key: "anexo", label: "Anexo", icon: Paperclip },
     ...(card.lead_status === "ganho" ? [{ key: "emails" as SectionKey, label: "E-mails", icon: Mail }] : []),
+    ...(card.lead_status === "ganho" ? [{ key: "grupo_wpp" as SectionKey, label: "Grupo WPP", icon: MessageSquare }] : []),
   ];
 
   const renderEditableField = (field: string, label: string, icon: React.ReactNode, currentValue: string | null | undefined, type: string = "text", displayFormatter?: (v: string) => string) => (
@@ -1140,6 +1142,11 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
             {/* CONTRATO */}
             {activeSection === "contrato" && (
               <ContractTab card={card} onUpdate={onUpdate} />
+            )}
+
+            {/* GRUPO WHATSAPP — só para ganhos */}
+            {activeSection === "grupo_wpp" && card.lead_status === "ganho" && (
+              <GrupoWhatsappSection leadId={card.id} />
             )}
 
             {/* ANEXO */}
