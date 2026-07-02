@@ -647,7 +647,12 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
     const rrGap = rrTotal - rrMetaAteAlvo;
 
     const totalVendas = inboundTotal.vendas;
-    const convAtual = rrTotalLocal > 0 ? (totalVendas / rrTotalLocal) * 100 : 0;
+    // Card "Taxa de Conversão" (Visão Geral): mesma fonte RPC do "Conv. por closer".
+    const useTimeRpcForConv = rpcRows && weekFilter === "all";
+    const rrTotalRpc = useTimeRpcForConv
+      ? rpcRows.reduce((s, r: any) => s + Number(r.reunioes_realizadas || 0), 0)
+      : rrTotalLocal;
+    const convAtual = rrTotalRpc > 0 ? (totalVendas / rrTotalRpc) * 100 : 0;
     const convPctAlvo = metaConvAlvo > 0 ? (convAtual / metaConvAlvo) * 100 : 0;
     const convGap = convAtual - metaConvAlvo;
     const ticketMedio = totalVendas > 0 ? realizadoFat / totalVendas : 0;
