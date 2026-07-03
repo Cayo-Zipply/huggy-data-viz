@@ -28,6 +28,7 @@ import { useMarketingOverrides } from "@/hooks/useMarketingOverrides";
 import { useMarketingLive } from "@/hooks/useMarketingLive";
 import { CampaignSelector } from "@/components/CampaignSelector";
 import { FarolCloserCards } from "@/components/FarolCloserCards";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const location = useLocation();
