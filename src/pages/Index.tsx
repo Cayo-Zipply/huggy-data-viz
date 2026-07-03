@@ -172,12 +172,47 @@ const Index = () => {
     : undefined;
 
 
-  const reunioesRealizadas = isHardcoded
+  let reunioesRealizadas = isHardcoded
     ? (currentSales?.funnel?.reunioes?.realizado || 0)
     : (overrideAtual?.manual_reunioes ?? live.leadsStats?.reunioesRealizadas ?? 0);
-  const reunioesMarcadas = isHardcoded
+  let reunioesMarcadas: number | undefined = isHardcoded
     ? undefined
     : (live.leadsStats?.reunioesAgendadas ?? 0);
+
+  // Snapshot congelado de meses encerrados (farol_snapshot_mensal).
+  // Se o mês selecionado é diferente do mês corrente e há snapshot,
+  // sobrescreve os números do funil/cards.
+  const currentYYYYMM = useMemo(
+    () => new Date().toISOString().slice(0, 7),
+    []
+  );
+  const [snapshot, setSnapshot] = useState<any>(null);
+  useEffect(() => {
+    setSnapshot(null);
+    if (!selectedMonthYYYYMM || selectedMonthYYYYMM === currentYYYYMM) return;
+    let cancelled = false;
+    supabase
+      .from("farol_snapshot_mensal" as any)
+      .select("*")
+      .eq("mes", selectedMonthYYYYMM)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setSnapshot(data);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedMonthYYYYMM, currentYYYYMM]);
+
+  if (snapshot) {
+    effectiveVendas = Number(snapshot.vendas) || 0;
+    effectiveFaturamento = Number(snapshot.faturamento) || 0;
+    effectiveMensagens = Number(snapshot.mensagens) || 0;
+    effectiveMensagensEfetivas = Number(snapshot.mensagens) || 0;
+    reunioesRealizadas = Number(snapshot.reunioes_realizadas) || 0;
+    reunioesMarcadas = Number(snapshot.reunioes_marcadas) || 0;
+  }
+
   const custoPorReuniao = reunioesRealizadas > 0
     ? investimentoView / reunioesRealizadas
     : 0;
