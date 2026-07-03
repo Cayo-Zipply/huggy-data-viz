@@ -146,32 +146,6 @@ const Index = () => {
   let effectiveFaturamento = isHardcoded
     ? (currentData?.faturamento || 0)
     : (overrideAtual?.manual_faturamento ?? live.leadsStats?.faturamento ?? 0);
-
-  const prevEffectiveMensagens = isHardcoded
-    ? (previousData?.mensagens || 0)
-    : (live.leadsStatsPrev?.mensagens ?? 0);
-  const prevEffectiveMensagensEfetivas = isHardcoded
-    ? (previousData?.mensagensEfetivas || 0)
-    : (live.leadsStatsPrev?.mensagens ?? 0);
-  const prevEffectiveVendas = isHardcoded
-    ? (previousData?.vendas || 0)
-    : (overridePrev?.manual_vendas ?? live.leadsStatsPrev?.vendas ?? 0);
-
-  // CPA from live data
-  const liveCpa = effectiveVendas > 0 ? investimentoView / effectiveVendas : 0;
-  const cpaView = isHardcoded ? (currentData?.cpa ?? 0) : liveCpa;
-  const prevCpaView = isHardcoded
-    ? previousData?.cpa
-    : (prevEffectiveVendas > 0 ? (prevInvestimentoView ?? 0) / prevEffectiveVendas : undefined);
-
-  const conversaoGeral = effectiveMensagens > 0
-    ? (effectiveVendas / effectiveMensagens) * 100
-    : 0;
-  const previousConversaoGeral = prevEffectiveMensagens > 0
-    ? (prevEffectiveVendas / prevEffectiveMensagens) * 100
-    : undefined;
-
-
   let reunioesRealizadas = isHardcoded
     ? (currentSales?.funnel?.reunioes?.realizado || 0)
     : (overrideAtual?.manual_reunioes ?? live.leadsStats?.reunioesRealizadas ?? 0);
@@ -181,7 +155,7 @@ const Index = () => {
 
   // Snapshot congelado de meses encerrados (farol_snapshot_mensal).
   // Se o mês selecionado é diferente do mês corrente e há snapshot,
-  // sobrescreve os números do funil/cards.
+  // sobrescreve os números do funil/cards e as taxas são recalculadas.
   const currentYYYYMM = useMemo(
     () => new Date().toISOString().slice(0, 7),
     []
@@ -212,6 +186,30 @@ const Index = () => {
     reunioesRealizadas = Number(snapshot.reunioes_realizadas) || 0;
     reunioesMarcadas = Number(snapshot.reunioes_marcadas) || 0;
   }
+
+  const prevEffectiveMensagens = isHardcoded
+    ? (previousData?.mensagens || 0)
+    : (live.leadsStatsPrev?.mensagens ?? 0);
+  const prevEffectiveMensagensEfetivas = isHardcoded
+    ? (previousData?.mensagensEfetivas || 0)
+    : (live.leadsStatsPrev?.mensagens ?? 0);
+  const prevEffectiveVendas = isHardcoded
+    ? (previousData?.vendas || 0)
+    : (overridePrev?.manual_vendas ?? live.leadsStatsPrev?.vendas ?? 0);
+
+  // CPA from live data
+  const liveCpa = effectiveVendas > 0 ? investimentoView / effectiveVendas : 0;
+  const cpaView = isHardcoded ? (currentData?.cpa ?? 0) : liveCpa;
+  const prevCpaView = isHardcoded
+    ? previousData?.cpa
+    : (prevEffectiveVendas > 0 ? (prevInvestimentoView ?? 0) / prevEffectiveVendas : undefined);
+
+  const conversaoGeral = effectiveMensagens > 0
+    ? (effectiveVendas / effectiveMensagens) * 100
+    : 0;
+  const previousConversaoGeral = prevEffectiveMensagens > 0
+    ? (prevEffectiveVendas / prevEffectiveMensagens) * 100
+    : undefined;
 
   const custoPorReuniao = reunioesRealizadas > 0
     ? investimentoView / reunioesRealizadas
