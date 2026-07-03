@@ -28,6 +28,7 @@ import { useMarketingOverrides } from "@/hooks/useMarketingOverrides";
 import { useMarketingLive } from "@/hooks/useMarketingLive";
 import { CampaignSelector } from "@/components/CampaignSelector";
 import { FarolCloserCards } from "@/components/FarolCloserCards";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const location = useLocation();
@@ -137,14 +138,54 @@ const Index = () => {
 
   // Mensagens/Vendas: hardcoded uses currentData (which has static values),
   // dynamic uses live counts from `leads`
-  const effectiveMensagens = isHardcoded ? (currentData?.mensagens || 0) : (live.leadsStats?.mensagens ?? 0);
-  const effectiveMensagensEfetivas = isHardcoded ? (currentData?.mensagensEfetivas || 0) : (live.leadsStats?.mensagens ?? 0);
-  const effectiveVendas = isHardcoded
+  let effectiveMensagens = isHardcoded ? (currentData?.mensagens || 0) : (live.leadsStats?.mensagens ?? 0);
+  let effectiveMensagensEfetivas = isHardcoded ? (currentData?.mensagensEfetivas || 0) : (live.leadsStats?.mensagens ?? 0);
+  let effectiveVendas = isHardcoded
     ? (currentData?.vendas || 0)
     : (overrideAtual?.manual_vendas ?? live.leadsStats?.vendas ?? 0);
-  const effectiveFaturamento = isHardcoded
+  let effectiveFaturamento = isHardcoded
     ? (currentData?.faturamento || 0)
     : (overrideAtual?.manual_faturamento ?? live.leadsStats?.faturamento ?? 0);
+  let reunioesRealizadas = isHardcoded
+    ? (currentSales?.funnel?.reunioes?.realizado || 0)
+    : (overrideAtual?.manual_reunioes ?? live.leadsStats?.reunioesRealizadas ?? 0);
+  let reunioesMarcadas: number | undefined = isHardcoded
+    ? undefined
+    : (live.leadsStats?.reunioesAgendadas ?? 0);
+
+  // Snapshot congelado de meses encerrados (farol_snapshot_mensal).
+  // Se o mês selecionado é diferente do mês corrente e há snapshot,
+  // sobrescreve os números do funil/cards e as taxas são recalculadas.
+  const currentYYYYMM = useMemo(
+    () => new Date().toISOString().slice(0, 7),
+    []
+  );
+  const [snapshot, setSnapshot] = useState<any>(null);
+  useEffect(() => {
+    setSnapshot(null);
+    if (!selectedMonthYYYYMM || selectedMonthYYYYMM === currentYYYYMM) return;
+    let cancelled = false;
+    supabase
+      .from("farol_snapshot_mensal" as any)
+      .select("*")
+      .eq("mes", selectedMonthYYYYMM)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setSnapshot(data);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedMonthYYYYMM, currentYYYYMM]);
+
+  if (snapshot) {
+    effectiveVendas = Number(snapshot.vendas) || 0;
+    effectiveFaturamento = Number(snapshot.faturamento) || 0;
+    effectiveMensagens = Number(snapshot.mensagens) || 0;
+    effectiveMensagensEfetivas = Number(snapshot.mensagens) || 0;
+    reunioesRealizadas = Number(snapshot.reunioes_realizadas) || 0;
+    reunioesMarcadas = Number(snapshot.reunioes_marcadas) || 0;
+  }
 
   const prevEffectiveMensagens = isHardcoded
     ? (previousData?.mensagens || 0)
@@ -170,13 +211,6 @@ const Index = () => {
     ? (prevEffectiveVendas / prevEffectiveMensagens) * 100
     : undefined;
 
-
-  const reunioesRealizadas = isHardcoded
-    ? (currentSales?.funnel?.reunioes?.realizado || 0)
-    : (overrideAtual?.manual_reunioes ?? live.leadsStats?.reunioesRealizadas ?? 0);
-  const reunioesMarcadas = isHardcoded
-    ? undefined
-    : (live.leadsStats?.reunioesAgendadas ?? 0);
   const custoPorReuniao = reunioesRealizadas > 0
     ? investimentoView / reunioesRealizadas
     : 0;
