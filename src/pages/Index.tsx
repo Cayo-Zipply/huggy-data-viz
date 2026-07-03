@@ -138,12 +138,12 @@ const Index = () => {
 
   // Mensagens/Vendas: hardcoded uses currentData (which has static values),
   // dynamic uses live counts from `leads`
-  const effectiveMensagens = isHardcoded ? (currentData?.mensagens || 0) : (live.leadsStats?.mensagens ?? 0);
-  const effectiveMensagensEfetivas = isHardcoded ? (currentData?.mensagensEfetivas || 0) : (live.leadsStats?.mensagens ?? 0);
-  const effectiveVendas = isHardcoded
+  let effectiveMensagens = isHardcoded ? (currentData?.mensagens || 0) : (live.leadsStats?.mensagens ?? 0);
+  let effectiveMensagensEfetivas = isHardcoded ? (currentData?.mensagensEfetivas || 0) : (live.leadsStats?.mensagens ?? 0);
+  let effectiveVendas = isHardcoded
     ? (currentData?.vendas || 0)
     : (overrideAtual?.manual_vendas ?? live.leadsStats?.vendas ?? 0);
-  const effectiveFaturamento = isHardcoded
+  let effectiveFaturamento = isHardcoded
     ? (currentData?.faturamento || 0)
     : (overrideAtual?.manual_faturamento ?? live.leadsStats?.faturamento ?? 0);
 
