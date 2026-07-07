@@ -63,6 +63,9 @@ export interface PipelineCard {
   prazo_entrega_relatorios: number | null;
   prazo_contrato: string | null;
   valor_proposta: number | null;
+  qtd_mensalidades_iniciais: number | null;
+  valor_demais_mensalidades: number | null;
+  qtd_mensalidades_demais: number | null;
   endereco: string | null;
   cidade: string | null;
   estado: string | null;
