@@ -214,7 +214,7 @@ export function usePipelineData(actorName: string) {
       "representante_nome","representante_cpf",
       "valor_mensalidade","qtd_salarios_minimos","porcentagem_exito",
       "data_primeiro_pagamento","dia_demais_pagamentos","prazo_entrega_relatorios",
-      "prazo_contrato","valor_proposta",
+      "prazo_contrato","valor_proposta","qtd_mensalidades_iniciais","valor_demais_mensalidades","qtd_mensalidades_demais",
       "endereco","cidade","estado","cep","zapsign_signed_at","fim_de_semana",
       "tipo_documento","data_venda","assistente_juridico","responsavel_juridico",
       "cnpjs_adicionais","socios_adicionais","origem_divida",
