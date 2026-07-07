@@ -464,7 +464,7 @@ export function usePipelineData(actorName: string) {
       contrato_status: null, contrato_file_url: null, contrato_preparado_em: null, contrato_preparado_por: null,
       tipo_contrato: null, representante_nome: null, representante_cpf: null, valor_mensalidade: null,
       qtd_salarios_minimos: null, porcentagem_exito: null, data_primeiro_pagamento: null, dia_demais_pagamentos: null,
-      prazo_entrega_relatorios: null, prazo_contrato: null, valor_proposta: null, endereco: null, cidade: null,
+      prazo_entrega_relatorios: null, prazo_contrato: null, valor_proposta: null, qtd_mensalidades_iniciais: null, valor_demais_mensalidades: null, qtd_mensalidades_demais: null, endereco: null, cidade: null,
       estado: null, cep: null, zapsign_signed_at: null,
       fim_de_semana: isWeekendSP(data.created_at || now),
       tipo_documento: null,
