@@ -422,7 +422,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
         // "Vendas" e "Contratos" são a mesma métrica — usamos contratos como fonte única de verdade
         const ganhos = contratosMes.filter(c => canonical(c.owner) === closer);
         const vendas = ganhos.length;
-        const realizado = ganhos.reduce((s, c) => s + (c.deal_value || 0), 0);
+        const realizado = ganhos.reduce((s, c) => s + ((c.valor_mensalidade != null && c.valor_mensalidade > 0) ? c.valor_mensalidade : (c.deal_value || 0)), 0);
         const goal = goals.find(g => canonical(g.closer) === closer && g.month === monthKey);
         const meta = goal?.faturamento_meta || 0;
         const metaAteAlvo = meta * fatorPace;
