@@ -307,7 +307,7 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
     }));
     setValorMensalidade(prev => prev ?? card.valor_mensalidade ?? null);
     setValorDivida(prev => prev ?? card.valor_divida ?? null);
-    setValorProposta(prev => prev ?? card.valor_proposta ?? null);
+    
   }, [card.empresa, card.cnpj, card.representante_nome, card.representante_cpf, card.email, card.telefone, card.endereco, card.cidade, card.estado, card.cep, card.qtd_salarios_minimos, card.porcentagem_exito, card.data_primeiro_pagamento, card.dia_demais_pagamentos, card.prazo_entrega_relatorios, card.prazo_contrato, card.valor_mensalidade, card.valor_divida, card.valor_proposta, card.nome]);
 
 
