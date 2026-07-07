@@ -652,11 +652,23 @@ ${signLink}`;
           </p>
         )}
 
-        {card.contrato_file_url && (
-          <button onClick={() => handleDownloadFile(card.contrato_file_url!, `contrato_${card.nome || card.id}.docx`)} className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20 w-fit">
-            <Download size={16} />Baixar Word
+        <div className="flex flex-wrap gap-2">
+          {card.contrato_file_url && (
+            <button onClick={() => handleDownloadFile(card.contrato_file_url!, `contrato_${card.nome || card.id}.docx`)} className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20 w-fit">
+              <Download size={16} />Baixar Word
+            </button>
+          )}
+          <button
+            onClick={handleCopyMensagem}
+            disabled={copyMsgLoading}
+            className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg border border-border bg-background hover:bg-muted text-foreground disabled:opacity-40 w-fit"
+          >
+            {copyMsgLoading ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
+            Copiar mensagem
           </button>
-        )}
+        </div>
+
+        {renderMissingModal()}
 
         {card.contrato_status === "gerado" && (
           <p className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-3 border border-border/50">
