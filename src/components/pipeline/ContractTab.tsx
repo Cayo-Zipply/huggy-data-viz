@@ -193,7 +193,53 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
   );
   const [sociosAdicionais, setSociosAdicionais] = useState<SocioAdicional[]>(
     Array.isArray((card as any).socios_adicionais) ? (card as any).socios_adicionais : []
-  );
+  const [missingModal, setMissingModal] = useState<{ open: boolean; faltando: MissingItem[]; recomendado: MissingItem[] }>({ open: false, faltando: [], recomendado: [] });
+  const [copyMsgLoading, setCopyMsgLoading] = useState(false);
+
+  const openMissingModal = (faltando: MissingItem[], recomendado: MissingItem[]) => {
+    setMissingModal({ open: true, faltando, recomendado });
+  };
+
+  const runCheckThen = async (fn: () => Promise<void> | void) => {
+    try {
+      const data = await invokeContractFunction({ lead_id: card.id, action: "check" });
+      if (data?.pronto === false) {
+        openMissingModal(data.faltando || [], data.recomendado || []);
+        return;
+      }
+      await fn();
+    } catch (e: any) {
+      if (e?.missing) {
+        openMissingModal(e.missing.faltando, e.missing.recomendado);
+        return;
+      }
+      toast.error(e?.message || "Erro ao verificar contrato");
+    }
+  };
+
+  const handleCopyMensagem = async () => {
+    setCopyMsgLoading(true);
+    try {
+      const data = await invokeContractFunction({ lead_id: card.id, action: "mensagem" });
+      const msg = data?.mensagem || "";
+      if (!msg) { toast.error("Mensagem indisponível"); return; }
+      await navigator.clipboard.writeText(msg);
+      if (data?.tem_link === false) {
+        toast.warning("Mensagem copiada, mas o contrato ainda não tem link de assinatura — gere/envie o contrato primeiro.");
+      } else {
+        toast.success("Mensagem copiada!");
+      }
+    } catch (e: any) {
+      if (e?.missing) {
+        openMissingModal(e.missing.faltando, e.missing.recomendado);
+      } else {
+        toast.error(e?.message || "Não foi possível copiar a mensagem");
+      }
+    } finally {
+      setCopyMsgLoading(false);
+    }
+  };
+
 
   const handleOpenSignedContract = async () => {
     setLoadingSignedUrl(true);
