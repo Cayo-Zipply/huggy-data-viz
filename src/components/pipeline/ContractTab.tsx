@@ -1001,9 +1001,46 @@ ${signLink}`;
             <p className="text-xs font-medium text-foreground uppercase tracking-wider mb-3">Dados Financeiros</p>
             <div className="space-y-3">
               <div>
-                <label className="text-[11px] text-muted-foreground mb-1 block">Valor da Mensalidade (R$) *</label>
-                <InputMoedaBRL value={valorMensalidade} onChange={setValorMensalidade} hasError={errors.includes("Valor da Mensalidade")} />
+                <label className="text-[11px] text-muted-foreground mb-1 block">
+                  {escalonada ? "Valor das mensalidades iniciais (R$) *" : "Valor da Mensalidade (R$) *"}
+                </label>
+                <InputMoedaBRL value={valorMensalidade} onChange={setValorMensalidade} hasError={errors.includes("Valor da Mensalidade") || errors.includes("Valor das mensalidades iniciais")} />
               </div>
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-3 py-2">
+                <div>
+                  <p className="text-xs font-medium text-foreground">Mensalidade escalonada</p>
+                  <p className="text-[11px] text-muted-foreground">Valores diferentes no início e no restante do contrato</p>
+                </div>
+                <Switch checked={escalonada} onCheckedChange={setEscalonada} />
+              </div>
+              {escalonada && (
+                <div className="space-y-3 rounded-lg border border-border bg-muted/10 p-3">
+                  <div>
+                    <label className="text-[11px] text-muted-foreground mb-1 block">Quantidade de mensalidades iniciais *</label>
+                    <input
+                      type="number" min={1}
+                      value={qtdIniciais}
+                      onChange={e => setQtdIniciais(e.target.value)}
+                      placeholder="Ex: 6"
+                      className={inputClass(errors.includes("Qtd mensalidades iniciais") ? "Qtd mensalidades iniciais" : "")}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-muted-foreground mb-1 block">Valor das demais mensalidades (R$) *</label>
+                    <InputMoedaBRL value={valorDemais} onChange={setValorDemais} hasError={errors.includes("Valor das demais mensalidades")} />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-muted-foreground mb-1 block">Quantidade de mensalidades restantes (opcional)</label>
+                    <input
+                      type="number" min={1}
+                      value={qtdDemais}
+                      onChange={e => setQtdDemais(e.target.value)}
+                      placeholder="Ex: 6"
+                      className={inputClass("")}
+                    />
+                  </div>
+                </div>
+              )}
               <div>
                 <label className="text-[11px] text-muted-foreground mb-1 block">Quantidade de Salários Mínimos *</label>
                 <input value={form.qtd_salarios_minimos} onChange={e => updateField("qtd_salarios_minimos", e.target.value)} placeholder="0 a 10" className={inputClass("Qtd Salários Mínimos")} />
@@ -1015,10 +1052,6 @@ ${signLink}`;
               <div>
                 <label className="text-[11px] text-muted-foreground mb-1 block">Valor da Dívida (R$)</label>
                 <InputMoedaBRL value={valorDivida} onChange={setValorDivida} />
-              </div>
-              <div>
-                <label className="text-[11px] text-muted-foreground mb-1 block">Valor da Proposta (R$)</label>
-                <InputMoedaBRL value={valorProposta} onChange={setValorProposta} />
               </div>
             </div>
           </div>
