@@ -24,6 +24,7 @@ const maskCPF = (v: string) => v.replace(/\D/g, "").slice(0, 11)
   .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 const maskCEP = (v: string) => v.replace(/\D/g, "").slice(0, 8).replace(/(\d{5})(\d)/, "$1-$2");
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import { InputMoedaBRL } from "@/components/ui/input-moeda-brl";
 import { toast } from "sonner";
 import type { PipelineCard as CardType, ContractType, ContractStatus, Stage } from "./types";
