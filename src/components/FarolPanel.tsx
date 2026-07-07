@@ -1165,7 +1165,8 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
                 const db = new Date(b.data_venda || b.zapsign_signed_at || b.contrato_preparado_em || b.stage_changed_at || b.created_at || 0).getTime();
                 return da - db;
               });
-            const total = list.reduce((s, c) => s + (c.deal_value || 0), 0);
+            const saleVal = (c: any) => (c.valor_mensalidade != null && c.valor_mensalidade > 0) ? c.valor_mensalidade : (c.deal_value || 0);
+            const total = list.reduce((s, c) => s + saleVal(c), 0);
             const STATUS_OK = new Set(["assinado"]);
             return (
               <>
