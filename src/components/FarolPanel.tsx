@@ -1196,7 +1196,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
                             onClick={() => { setRealizadoDrill(null); openCard(c.id); }}
                           >
                             <TableCell className="text-xs font-medium">{c.nome}</TableCell>
-                            <TableCell className="text-xs text-right">{formatBRL(c.deal_value || 0)}</TableCell>
+                            <TableCell className="text-xs text-right">{formatBRL(saleVal(c))}</TableCell>
                             <TableCell className="text-xs text-center">{dt ? new Date(dt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "—"}</TableCell>
                             <TableCell className="text-xs">
                               <span className={cn("inline-block px-1.5 py-0.5 rounded text-[10px]", naoAssinado ? "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300" : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300")}>
