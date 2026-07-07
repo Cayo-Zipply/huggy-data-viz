@@ -1019,8 +1019,8 @@ ${signLink}`;
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* ZapSign */}
               <button
-                onClick={() => handleAction("zapsign")}
-                disabled={actionLoading !== null || !isFormValid()}
+                onClick={() => runCheckThen(() => handleAction("zapsign"))}
+                disabled={actionLoading !== null}
                 className="flex flex-col items-center gap-1.5 px-4 py-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-40 border border-primary/20"
               >
                 {actionLoading === "zapsign" ? <Loader2 size={20} className="animate-spin" /> : <FileSignature size={20} />}
@@ -1030,8 +1030,8 @@ ${signLink}`;
 
               {/* Download */}
               <button
-                onClick={() => handleAction("download")}
-                disabled={actionLoading !== null || !isFormValid()}
+                onClick={() => runCheckThen(() => handleAction("download"))}
+                disabled={actionLoading !== null}
                 className="flex flex-col items-center gap-1.5 px-4 py-4 rounded-xl bg-muted text-foreground hover:bg-muted/80 transition-all disabled:opacity-40 border border-border"
               >
                 {actionLoading === "download" ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
@@ -1041,8 +1041,8 @@ ${signLink}`;
 
               {/* WhatsApp */}
               <button
-                onClick={() => handleAction("whatsapp")}
-                disabled={actionLoading !== null || !isFormValid()}
+                onClick={() => runCheckThen(() => handleAction("whatsapp"))}
+                disabled={actionLoading !== null}
                 className="flex flex-col items-center gap-1.5 px-4 py-4 rounded-xl text-white hover:opacity-90 transition-all disabled:opacity-40 border border-emerald-600/30"
                 style={{ backgroundColor: "#25D366" }}
               >
@@ -1051,6 +1051,16 @@ ${signLink}`;
                 <span className="text-[10px] opacity-80">Abre WhatsApp Web</span>
               </button>
             </div>
+
+            {/* Copiar mensagem */}
+            <button
+              onClick={handleCopyMensagem}
+              disabled={copyMsgLoading}
+              className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted text-foreground disabled:opacity-40"
+            >
+              {copyMsgLoading ? <Loader2 size={14} className="animate-spin" /> : <Copy size={14} />}
+              Copiar mensagem
+            </button>
 
             {/* Post-action feedback */}
             {lastResult && (
