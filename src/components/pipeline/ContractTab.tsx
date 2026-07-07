@@ -103,13 +103,47 @@ async function parseEdgeFunctionError(error: any, fallback: string): Promise<str
   return error?.message || fallback;
 }
 
-async function invokeContractFunction(body: { lead_id: string; action: "zapsign" | "download" | "whatsapp" | "preview" }) {
+type MissingItem = { campo: string; label: string };
+
+async function parseMissingFromError(error: any): Promise<{ faltando: MissingItem[]; recomendado: MissingItem[] } | null> {
+  try {
+    const ctx = error?.context;
+    let parsed: any = null;
+    if (ctx && typeof ctx.json === "function") {
+      try { parsed = await ctx.clone().json(); } catch {
+        try { const txt = await ctx.clone().text(); parsed = txt ? JSON.parse(txt) : null; } catch {}
+      }
+    } else if (typeof ctx?.body === "string") {
+      try { parsed = JSON.parse(ctx.body); } catch {}
+    } else if (ctx?.body && typeof ctx.body === "object") {
+      parsed = ctx.body;
+    }
+    if (parsed?.missing_labels && Array.isArray(parsed.missing_labels)) {
+      const faltando: MissingItem[] = parsed.missing_labels.map((x: any) =>
+        typeof x === "string" ? { campo: x, label: x } : { campo: x.campo || x.label, label: x.label || x.campo }
+      );
+      const recomendado: MissingItem[] = Array.isArray(parsed.recomendado)
+        ? parsed.recomendado.map((x: any) => typeof x === "string" ? { campo: x, label: x } : x)
+        : [];
+      return { faltando, recomendado };
+    }
+  } catch {}
+  return null;
+}
+
+async function invokeContractFunction(body: { lead_id: string; action: "zapsign" | "download" | "whatsapp" | "preview" | "check" | "mensagem" }) {
   const { data, error } = await supabase.functions.invoke("generate-contract-docx", { body });
   if (error) {
+    const missing = await parseMissingFromError(error);
+    if (missing) {
+      const err: any = new Error("missing_fields");
+      err.missing = missing;
+      throw err;
+    }
     const msg = await parseEdgeFunctionError(error, "Erro ao gerar contrato");
     throw new Error(msg);
   }
-  return data as ContractFunctionResult;
+  return data as any;
 }
 
 interface Props {
