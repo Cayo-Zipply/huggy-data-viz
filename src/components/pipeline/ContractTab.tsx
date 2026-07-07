@@ -193,6 +193,7 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
   );
   const [sociosAdicionais, setSociosAdicionais] = useState<SocioAdicional[]>(
     Array.isArray((card as any).socios_adicionais) ? (card as any).socios_adicionais : []
+  );
   const [missingModal, setMissingModal] = useState<{ open: boolean; faltando: MissingItem[]; recomendado: MissingItem[] }>({ open: false, faltando: [], recomendado: [] });
   const [copyMsgLoading, setCopyMsgLoading] = useState(false);
 
