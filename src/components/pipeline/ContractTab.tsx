@@ -273,7 +273,10 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
     setResponsavelJuridico(card.responsavel_juridico || "");
     setValorMensalidade(card.valor_mensalidade ?? null);
     setValorDivida(card.valor_divida ?? null);
-    setValorProposta(card.valor_proposta ?? null);
+    setEscalonada(((card as any).valor_demais_mensalidades ?? null) != null);
+    setQtdIniciais((card as any).qtd_mensalidades_iniciais != null ? String((card as any).qtd_mensalidades_iniciais) : "");
+    setValorDemais((card as any).valor_demais_mensalidades ?? null);
+    setQtdDemais((card as any).qtd_mensalidades_demais != null ? String((card as any).qtd_mensalidades_demais) : "");
     setCnpjsAdicionais(Array.isArray((card as any).cnpjs_adicionais) ? (card as any).cnpjs_adicionais : []);
     setSociosAdicionais(Array.isArray((card as any).socios_adicionais) ? (card as any).socios_adicionais : []);
     setLastResult(null);
