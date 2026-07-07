@@ -149,9 +149,10 @@ async function invokeContractFunction(body: { lead_id: string; action: "zapsign"
 interface Props {
   card: CardType;
   onUpdate: (id: string, u: Partial<CardType>) => void;
+  onNavigateToDados?: () => void;
 }
 
-export function ContractTab({ card, onUpdate }: Props) {
+export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
   const isGenerated = card.contrato_status && card.contrato_status !== "pendente";
 
   // Pré-preenche campos do contrato a partir dos dados do card.
