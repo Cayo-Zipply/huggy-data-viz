@@ -449,7 +449,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
     // Sem responsável (closer) — só aparece quando há valor real (>0)
     const semOwnerGanhos = contratosMes.filter(c => !c.owner);
     const semOwnerReuniao = reunioesRealizadas.filter(c => !c.owner);
-    const realizadoSem = semOwnerGanhos.reduce((s, c) => s + (c.deal_value || 0), 0);
+    const realizadoSem = semOwnerGanhos.reduce((s, c) => s + ((c.valor_mensalidade != null && c.valor_mensalidade > 0) ? c.valor_mensalidade : (c.deal_value || 0)), 0);
     if (semOwnerGanhos.length > 0 || realizadoSem > 0) {
       rows.push({
         closer: "Sem responsável",
