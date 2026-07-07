@@ -516,6 +516,62 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
   const inputClass = (fieldName: string) =>
     `w-full text-sm bg-muted/50 border rounded-md px-3 py-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary ${errors.includes(fieldName) ? "border-red-500" : "border-border"}`;
 
+  const renderMissingModal = () => (
+    <Dialog open={missingModal.open} onOpenChange={(o) => setMissingModal(prev => ({ ...prev, open: o }))}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Faltam informações para gerar o contrato</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {missingModal.faltando.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-red-500 uppercase tracking-wider">Obrigatórios</p>
+              <ul className="space-y-1.5">
+                {missingModal.faltando.map((it, i) => (
+                  <li key={`f-${i}`} className="flex items-center gap-2 text-sm text-foreground">
+                    <AlertTriangle size={14} className="text-red-500 flex-shrink-0" />
+                    {it.label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {missingModal.recomendado.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-amber-500 uppercase tracking-wider">Recomendado preencher também:</p>
+              <ul className="space-y-1.5">
+                {missingModal.recomendado.map((it, i) => (
+                  <li key={`r-${i}`} className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <AlertTriangle size={14} className="text-amber-500 flex-shrink-0" />
+                    {it.label}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[11px] text-muted-foreground">Esses campos não bloqueiam a geração, mas sairão em branco no contrato.</p>
+            </div>
+          )}
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              onClick={() => setMissingModal(prev => ({ ...prev, open: false }))}
+              className="text-sm px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted text-foreground"
+            >
+              Fechar
+            </button>
+            <button
+              onClick={() => {
+                setMissingModal(prev => ({ ...prev, open: false }));
+                onNavigateToDados?.();
+              }}
+              className="text-sm px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              Preencher agora
+            </button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   // ── GENERATED / ENVIADO / ASSINADO VIEW ──
   if (isGenerated) {
     const statusInfo = STATUS_BADGES[card.contrato_status!] || { label: card.contrato_status, color: "bg-muted text-foreground" };
