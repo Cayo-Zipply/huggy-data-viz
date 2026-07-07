@@ -375,15 +375,10 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
   };
 
   const handleAction = async (action: "zapsign" | "download" | "whatsapp") => {
-    const errs = validate();
-    if (errs.length) {
-      setErrors(errs);
-      toast.error(`Campos obrigatórios faltando: ${errs.join(", ")}`);
-      return;
-    }
     setErrors([]);
     setActionLoading(action);
     setLastResult(null);
+
 
     try {
       await saveFields();
