@@ -627,10 +627,11 @@ ${signLink}`;
                   <ExternalLink size={12} /> Abrir
                 </a>
                 <button
-                  onClick={copyProposal}
-                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary"
+                  onClick={handleCopyMensagem}
+                  disabled={copyMsgLoading}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary disabled:opacity-40"
                 >
-                  <Copy size={12} /> Copiar mensagem com o Link
+                  {copyMsgLoading ? <Loader2 size={12} className="animate-spin" /> : <Copy size={12} />} Copiar mensagem
                 </button>
               </div>
             </div>
