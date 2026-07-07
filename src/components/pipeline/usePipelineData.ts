@@ -543,6 +543,9 @@ export function usePipelineData(actorName: string) {
     if (updates.prazo_entrega_relatorios !== undefined) dbUpdates.prazo_entrega_relatorios = updates.prazo_entrega_relatorios;
     if (updates.prazo_contrato !== undefined) dbUpdates.prazo_contrato = updates.prazo_contrato;
     if (updates.valor_proposta !== undefined) dbUpdates.valor_proposta = updates.valor_proposta;
+    if ((updates as any).qtd_mensalidades_iniciais !== undefined) dbUpdates.qtd_mensalidades_iniciais = (updates as any).qtd_mensalidades_iniciais;
+    if ((updates as any).valor_demais_mensalidades !== undefined) dbUpdates.valor_demais_mensalidades = (updates as any).valor_demais_mensalidades;
+    if ((updates as any).qtd_mensalidades_demais !== undefined) dbUpdates.qtd_mensalidades_demais = (updates as any).qtd_mensalidades_demais;
     if (updates.endereco !== undefined) dbUpdates.endereco = updates.endereco;
     if (updates.cidade !== undefined) dbUpdates.cidade = updates.cidade;
     if (updates.estado !== undefined) dbUpdates.estado = updates.estado;
