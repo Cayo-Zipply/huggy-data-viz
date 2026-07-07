@@ -103,21 +103,56 @@ async function parseEdgeFunctionError(error: any, fallback: string): Promise<str
   return error?.message || fallback;
 }
 
-async function invokeContractFunction(body: { lead_id: string; action: "zapsign" | "download" | "whatsapp" | "preview" }) {
+type MissingItem = { campo: string; label: string };
+
+async function parseMissingFromError(error: any): Promise<{ faltando: MissingItem[]; recomendado: MissingItem[] } | null> {
+  try {
+    const ctx = error?.context;
+    let parsed: any = null;
+    if (ctx && typeof ctx.json === "function") {
+      try { parsed = await ctx.clone().json(); } catch {
+        try { const txt = await ctx.clone().text(); parsed = txt ? JSON.parse(txt) : null; } catch {}
+      }
+    } else if (typeof ctx?.body === "string") {
+      try { parsed = JSON.parse(ctx.body); } catch {}
+    } else if (ctx?.body && typeof ctx.body === "object") {
+      parsed = ctx.body;
+    }
+    if (parsed?.missing_labels && Array.isArray(parsed.missing_labels)) {
+      const faltando: MissingItem[] = parsed.missing_labels.map((x: any) =>
+        typeof x === "string" ? { campo: x, label: x } : { campo: x.campo || x.label, label: x.label || x.campo }
+      );
+      const recomendado: MissingItem[] = Array.isArray(parsed.recomendado)
+        ? parsed.recomendado.map((x: any) => typeof x === "string" ? { campo: x, label: x } : x)
+        : [];
+      return { faltando, recomendado };
+    }
+  } catch {}
+  return null;
+}
+
+async function invokeContractFunction(body: { lead_id: string; action: "zapsign" | "download" | "whatsapp" | "preview" | "check" | "mensagem" }) {
   const { data, error } = await supabase.functions.invoke("generate-contract-docx", { body });
   if (error) {
+    const missing = await parseMissingFromError(error);
+    if (missing) {
+      const err: any = new Error("missing_fields");
+      err.missing = missing;
+      throw err;
+    }
     const msg = await parseEdgeFunctionError(error, "Erro ao gerar contrato");
     throw new Error(msg);
   }
-  return data as ContractFunctionResult;
+  return data as any;
 }
 
 interface Props {
   card: CardType;
   onUpdate: (id: string, u: Partial<CardType>) => void;
+  onNavigateToDados?: () => void;
 }
 
-export function ContractTab({ card, onUpdate }: Props) {
+export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
   const isGenerated = card.contrato_status && card.contrato_status !== "pendente";
 
   // Pré-preenche campos do contrato a partir dos dados do card.
@@ -159,6 +194,53 @@ export function ContractTab({ card, onUpdate }: Props) {
   const [sociosAdicionais, setSociosAdicionais] = useState<SocioAdicional[]>(
     Array.isArray((card as any).socios_adicionais) ? (card as any).socios_adicionais : []
   );
+  const [missingModal, setMissingModal] = useState<{ open: boolean; faltando: MissingItem[]; recomendado: MissingItem[] }>({ open: false, faltando: [], recomendado: [] });
+  const [copyMsgLoading, setCopyMsgLoading] = useState(false);
+
+  const openMissingModal = (faltando: MissingItem[], recomendado: MissingItem[]) => {
+    setMissingModal({ open: true, faltando, recomendado });
+  };
+
+  const runCheckThen = async (fn: () => Promise<void> | void) => {
+    try {
+      const data = await invokeContractFunction({ lead_id: card.id, action: "check" });
+      if (data?.pronto === false) {
+        openMissingModal(data.faltando || [], data.recomendado || []);
+        return;
+      }
+      await fn();
+    } catch (e: any) {
+      if (e?.missing) {
+        openMissingModal(e.missing.faltando, e.missing.recomendado);
+        return;
+      }
+      toast.error(e?.message || "Erro ao verificar contrato");
+    }
+  };
+
+  const handleCopyMensagem = async () => {
+    setCopyMsgLoading(true);
+    try {
+      const data = await invokeContractFunction({ lead_id: card.id, action: "mensagem" });
+      const msg = data?.mensagem || "";
+      if (!msg) { toast.error("Mensagem indisponível"); return; }
+      await navigator.clipboard.writeText(msg);
+      if (data?.tem_link === false) {
+        toast.warning("Mensagem copiada, mas o contrato ainda não tem link de assinatura — gere/envie o contrato primeiro.");
+      } else {
+        toast.success("Mensagem copiada!");
+      }
+    } catch (e: any) {
+      if (e?.missing) {
+        openMissingModal(e.missing.faltando, e.missing.recomendado);
+      } else {
+        toast.error(e?.message || "Não foi possível copiar a mensagem");
+      }
+    } finally {
+      setCopyMsgLoading(false);
+    }
+  };
+
 
   const handleOpenSignedContract = async () => {
     setLoadingSignedUrl(true);
@@ -293,15 +375,10 @@ export function ContractTab({ card, onUpdate }: Props) {
   };
 
   const handleAction = async (action: "zapsign" | "download" | "whatsapp") => {
-    const errs = validate();
-    if (errs.length) {
-      setErrors(errs);
-      toast.error(`Campos obrigatórios faltando: ${errs.join(", ")}`);
-      return;
-    }
     setErrors([]);
     setActionLoading(action);
     setLastResult(null);
+
 
     try {
       await saveFields();
@@ -375,8 +452,12 @@ export function ContractTab({ card, onUpdate }: Props) {
       }
       // Aviso Slack #closer (idempotente; só envia se lead já estiver ganho)
       notifySlackGanho(card.id);
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Erro ao gerar contrato");
+    } catch (e: any) {
+      if (e?.missing) {
+        openMissingModal(e.missing.faltando, e.missing.recomendado);
+      } else {
+        toast.error(e instanceof Error ? e.message : "Erro ao gerar contrato");
+      }
     } finally {
       setActionLoading(null);
     }
@@ -434,6 +515,62 @@ export function ContractTab({ card, onUpdate }: Props) {
 
   const inputClass = (fieldName: string) =>
     `w-full text-sm bg-muted/50 border rounded-md px-3 py-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary ${errors.includes(fieldName) ? "border-red-500" : "border-border"}`;
+
+  const renderMissingModal = () => (
+    <Dialog open={missingModal.open} onOpenChange={(o) => setMissingModal(prev => ({ ...prev, open: o }))}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Faltam informações para gerar o contrato</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {missingModal.faltando.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-red-500 uppercase tracking-wider">Obrigatórios</p>
+              <ul className="space-y-1.5">
+                {missingModal.faltando.map((it, i) => (
+                  <li key={`f-${i}`} className="flex items-center gap-2 text-sm text-foreground">
+                    <AlertTriangle size={14} className="text-red-500 flex-shrink-0" />
+                    {it.label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {missingModal.recomendado.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-amber-500 uppercase tracking-wider">Recomendado preencher também:</p>
+              <ul className="space-y-1.5">
+                {missingModal.recomendado.map((it, i) => (
+                  <li key={`r-${i}`} className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <AlertTriangle size={14} className="text-amber-500 flex-shrink-0" />
+                    {it.label}
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[11px] text-muted-foreground">Esses campos não bloqueiam a geração, mas sairão em branco no contrato.</p>
+            </div>
+          )}
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              onClick={() => setMissingModal(prev => ({ ...prev, open: false }))}
+              className="text-sm px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted text-foreground"
+            >
+              Fechar
+            </button>
+            <button
+              onClick={() => {
+                setMissingModal(prev => ({ ...prev, open: false }));
+                onNavigateToDados?.();
+              }}
+              className="text-sm px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              Preencher agora
+            </button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 
   // ── GENERATED / ENVIADO / ASSINADO VIEW ──
   if (isGenerated) {
@@ -546,10 +683,11 @@ ${signLink}`;
                   <ExternalLink size={12} /> Abrir
                 </a>
                 <button
-                  onClick={copyProposal}
-                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary"
+                  onClick={handleCopyMensagem}
+                  disabled={copyMsgLoading}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary disabled:opacity-40"
                 >
-                  <Copy size={12} /> Copiar mensagem com o Link
+                  {copyMsgLoading ? <Loader2 size={12} className="animate-spin" /> : <Copy size={12} />} Copiar mensagem
                 </button>
               </div>
             </div>
@@ -570,11 +708,23 @@ ${signLink}`;
           </p>
         )}
 
-        {card.contrato_file_url && (
-          <button onClick={() => handleDownloadFile(card.contrato_file_url!, `contrato_${card.nome || card.id}.docx`)} className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20 w-fit">
-            <Download size={16} />Baixar Word
+        <div className="flex flex-wrap gap-2">
+          {card.contrato_file_url && (
+            <button onClick={() => handleDownloadFile(card.contrato_file_url!, `contrato_${card.nome || card.id}.docx`)} className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20 w-fit">
+              <Download size={16} />Baixar Word
+            </button>
+          )}
+          <button
+            onClick={handleCopyMensagem}
+            disabled={copyMsgLoading}
+            className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg border border-border bg-background hover:bg-muted text-foreground disabled:opacity-40 w-fit"
+          >
+            {copyMsgLoading ? <Loader2 size={16} className="animate-spin" /> : <Copy size={16} />}
+            Copiar mensagem
           </button>
-        )}
+        </div>
+
+        {renderMissingModal()}
 
         {card.contrato_status === "gerado" && (
           <p className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-3 border border-border/50">
@@ -937,8 +1087,8 @@ ${signLink}`;
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* ZapSign */}
               <button
-                onClick={() => handleAction("zapsign")}
-                disabled={actionLoading !== null || !isFormValid()}
+                onClick={() => runCheckThen(() => handleAction("zapsign"))}
+                disabled={actionLoading !== null}
                 className="flex flex-col items-center gap-1.5 px-4 py-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-40 border border-primary/20"
               >
                 {actionLoading === "zapsign" ? <Loader2 size={20} className="animate-spin" /> : <FileSignature size={20} />}
@@ -948,8 +1098,8 @@ ${signLink}`;
 
               {/* Download */}
               <button
-                onClick={() => handleAction("download")}
-                disabled={actionLoading !== null || !isFormValid()}
+                onClick={() => runCheckThen(() => handleAction("download"))}
+                disabled={actionLoading !== null}
                 className="flex flex-col items-center gap-1.5 px-4 py-4 rounded-xl bg-muted text-foreground hover:bg-muted/80 transition-all disabled:opacity-40 border border-border"
               >
                 {actionLoading === "download" ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
@@ -959,8 +1109,8 @@ ${signLink}`;
 
               {/* WhatsApp */}
               <button
-                onClick={() => handleAction("whatsapp")}
-                disabled={actionLoading !== null || !isFormValid()}
+                onClick={() => runCheckThen(() => handleAction("whatsapp"))}
+                disabled={actionLoading !== null}
                 className="flex flex-col items-center gap-1.5 px-4 py-4 rounded-xl text-white hover:opacity-90 transition-all disabled:opacity-40 border border-emerald-600/30"
                 style={{ backgroundColor: "#25D366" }}
               >
@@ -969,6 +1119,16 @@ ${signLink}`;
                 <span className="text-[10px] opacity-80">Abre WhatsApp Web</span>
               </button>
             </div>
+
+            {/* Copiar mensagem */}
+            <button
+              onClick={handleCopyMensagem}
+              disabled={copyMsgLoading}
+              className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted text-foreground disabled:opacity-40"
+            >
+              {copyMsgLoading ? <Loader2 size={14} className="animate-spin" /> : <Copy size={14} />}
+              Copiar mensagem
+            </button>
 
             {/* Post-action feedback */}
             {lastResult && (
@@ -1051,6 +1211,8 @@ ${signLink}`;
           </p>
         </DialogContent>
       </Dialog>
+
+      {renderMissingModal()}
     </div>
   );
 }

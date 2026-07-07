@@ -1141,7 +1141,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
 
             {/* CONTRATO */}
             {activeSection === "contrato" && (
-              <ContractTab card={card} onUpdate={onUpdate} />
+              <ContractTab card={card} onUpdate={onUpdate} onNavigateToDados={() => setActiveSection("dados")} />
             )}
 
             {/* GRUPO WHATSAPP — só para ganhos */}
