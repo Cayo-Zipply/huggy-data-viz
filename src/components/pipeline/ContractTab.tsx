@@ -183,7 +183,10 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
   const [responsavelJuridico, setResponsavelJuridico] = useState<string>(card.responsavel_juridico || "");
   const [valorMensalidade, setValorMensalidade] = useState<number | null>(card.valor_mensalidade ?? null);
   const [valorDivida, setValorDivida] = useState<number | null>(card.valor_divida ?? null);
-  const [valorProposta, setValorProposta] = useState<number | null>(card.valor_proposta ?? null);
+  const [escalonada, setEscalonada] = useState<boolean>(((card as any).valor_demais_mensalidades ?? null) != null);
+  const [qtdIniciais, setQtdIniciais] = useState<string>((card as any).qtd_mensalidades_iniciais != null ? String((card as any).qtd_mensalidades_iniciais) : "");
+  const [valorDemais, setValorDemais] = useState<number | null>((card as any).valor_demais_mensalidades ?? null);
+  const [qtdDemais, setQtdDemais] = useState<string>((card as any).qtd_mensalidades_demais != null ? String((card as any).qtd_mensalidades_demais) : "");
   const [actionLoading, setActionLoading] = useState<"zapsign" | "download" | "whatsapp" | "preview" | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [lastResult, setLastResult] = useState<{ action: string; data: ContractFunctionResult } | null>(null);
