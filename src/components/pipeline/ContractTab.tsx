@@ -321,7 +321,11 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
     if (!form.representante_nome.trim()) errs.push("Nome do Representante");
     if (!form.representante_cpf.trim()) errs.push("CPF do Representante");
     if (!form.email.trim()) errs.push("Email");
-    if (valorMensalidade === null || valorMensalidade === 0) errs.push("Valor da Mensalidade");
+    if (valorMensalidade === null || valorMensalidade === 0) errs.push(escalonada ? "Valor das mensalidades iniciais" : "Valor da Mensalidade");
+    if (escalonada) {
+      if (!qtdIniciais.trim() || Number(qtdIniciais) <= 0) errs.push("Qtd mensalidades iniciais");
+      if (valorDemais === null || valorDemais === 0) errs.push("Valor das demais mensalidades");
+    }
     if (!form.qtd_salarios_minimos.trim()) errs.push("Qtd Salários Mínimos");
     if (!form.porcentagem_exito.trim()) errs.push("Porcentagem de Êxito");
     if (!responsavelJuridico.trim()) errs.push("Assistente Jurídico Responsável");
