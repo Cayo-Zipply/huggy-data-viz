@@ -1086,10 +1086,6 @@ ${signLink}`;
                 <input type="number" min={1} max={20} value={form.prazo_entrega_relatorios} onChange={e => updateField("prazo_entrega_relatorios", e.target.value)} className={inputClass("Prazo Entrega Relatórios")} />
               </div>
               <div>
-                <label className="text-[11px] text-muted-foreground mb-1 block">Prazo do Contrato</label>
-                <input value={form.prazo_contrato} onChange={e => updateField("prazo_contrato", e.target.value)} placeholder="Ex: 12 meses" className={inputClass("")} />
-              </div>
-              <div>
                 <label className="text-[11px] text-muted-foreground mb-1 block">Assistente Jurídico Responsável *</label>
                 <select
                   value={responsavelJuridico}
