@@ -108,6 +108,9 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     prazo_entrega_relatorios: row.prazo_entrega_relatorios != null ? Number(row.prazo_entrega_relatorios) : null,
     prazo_contrato: row.prazo_contrato || null,
     valor_proposta: row.valor_proposta != null ? Number(row.valor_proposta) : null,
+    qtd_mensalidades_iniciais: row.qtd_mensalidades_iniciais != null ? Number(row.qtd_mensalidades_iniciais) : null,
+    valor_demais_mensalidades: row.valor_demais_mensalidades != null ? Number(row.valor_demais_mensalidades) : null,
+    qtd_mensalidades_demais: row.qtd_mensalidades_demais != null ? Number(row.qtd_mensalidades_demais) : null,
     endereco: row.endereco || null,
     cidade: row.cidade || null,
     estado: row.estado || null,
@@ -211,7 +214,7 @@ export function usePipelineData(actorName: string) {
       "representante_nome","representante_cpf",
       "valor_mensalidade","qtd_salarios_minimos","porcentagem_exito",
       "data_primeiro_pagamento","dia_demais_pagamentos","prazo_entrega_relatorios",
-      "prazo_contrato","valor_proposta",
+      "prazo_contrato","valor_proposta","qtd_mensalidades_iniciais","valor_demais_mensalidades","qtd_mensalidades_demais",
       "endereco","cidade","estado","cep","zapsign_signed_at","fim_de_semana",
       "tipo_documento","data_venda","assistente_juridico","responsavel_juridico",
       "cnpjs_adicionais","socios_adicionais","origem_divida",
@@ -461,7 +464,7 @@ export function usePipelineData(actorName: string) {
       contrato_status: null, contrato_file_url: null, contrato_preparado_em: null, contrato_preparado_por: null,
       tipo_contrato: null, representante_nome: null, representante_cpf: null, valor_mensalidade: null,
       qtd_salarios_minimos: null, porcentagem_exito: null, data_primeiro_pagamento: null, dia_demais_pagamentos: null,
-      prazo_entrega_relatorios: null, prazo_contrato: null, valor_proposta: null, endereco: null, cidade: null,
+      prazo_entrega_relatorios: null, prazo_contrato: null, valor_proposta: null, qtd_mensalidades_iniciais: null, valor_demais_mensalidades: null, qtd_mensalidades_demais: null, endereco: null, cidade: null,
       estado: null, cep: null, zapsign_signed_at: null,
       fim_de_semana: isWeekendSP(data.created_at || now),
       tipo_documento: null,
@@ -540,6 +543,9 @@ export function usePipelineData(actorName: string) {
     if (updates.prazo_entrega_relatorios !== undefined) dbUpdates.prazo_entrega_relatorios = updates.prazo_entrega_relatorios;
     if (updates.prazo_contrato !== undefined) dbUpdates.prazo_contrato = updates.prazo_contrato;
     if (updates.valor_proposta !== undefined) dbUpdates.valor_proposta = updates.valor_proposta;
+    if ((updates as any).qtd_mensalidades_iniciais !== undefined) dbUpdates.qtd_mensalidades_iniciais = (updates as any).qtd_mensalidades_iniciais;
+    if ((updates as any).valor_demais_mensalidades !== undefined) dbUpdates.valor_demais_mensalidades = (updates as any).valor_demais_mensalidades;
+    if ((updates as any).qtd_mensalidades_demais !== undefined) dbUpdates.qtd_mensalidades_demais = (updates as any).qtd_mensalidades_demais;
     if (updates.endereco !== undefined) dbUpdates.endereco = updates.endereco;
     if (updates.cidade !== undefined) dbUpdates.cidade = updates.cidade;
     if (updates.estado !== undefined) dbUpdates.estado = updates.estado;

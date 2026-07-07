@@ -24,6 +24,7 @@ const maskCPF = (v: string) => v.replace(/\D/g, "").slice(0, 11)
   .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 const maskCEP = (v: string) => v.replace(/\D/g, "").slice(0, 8).replace(/(\d{5})(\d)/, "$1-$2");
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import { InputMoedaBRL } from "@/components/ui/input-moeda-brl";
 import { toast } from "sonner";
 import type { PipelineCard as CardType, ContractType, ContractStatus, Stage } from "./types";
@@ -182,7 +183,10 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
   const [responsavelJuridico, setResponsavelJuridico] = useState<string>(card.responsavel_juridico || "");
   const [valorMensalidade, setValorMensalidade] = useState<number | null>(card.valor_mensalidade ?? null);
   const [valorDivida, setValorDivida] = useState<number | null>(card.valor_divida ?? null);
-  const [valorProposta, setValorProposta] = useState<number | null>(card.valor_proposta ?? null);
+  const [escalonada, setEscalonada] = useState<boolean>(((card as any).valor_demais_mensalidades ?? null) != null);
+  const [qtdIniciais, setQtdIniciais] = useState<string>((card as any).qtd_mensalidades_iniciais != null ? String((card as any).qtd_mensalidades_iniciais) : "");
+  const [valorDemais, setValorDemais] = useState<number | null>((card as any).valor_demais_mensalidades ?? null);
+  const [qtdDemais, setQtdDemais] = useState<string>((card as any).qtd_mensalidades_demais != null ? String((card as any).qtd_mensalidades_demais) : "");
   const [actionLoading, setActionLoading] = useState<"zapsign" | "download" | "whatsapp" | "preview" | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [lastResult, setLastResult] = useState<{ action: string; data: ContractFunctionResult } | null>(null);
@@ -269,7 +273,10 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
     setResponsavelJuridico(card.responsavel_juridico || "");
     setValorMensalidade(card.valor_mensalidade ?? null);
     setValorDivida(card.valor_divida ?? null);
-    setValorProposta(card.valor_proposta ?? null);
+    setEscalonada(((card as any).valor_demais_mensalidades ?? null) != null);
+    setQtdIniciais((card as any).qtd_mensalidades_iniciais != null ? String((card as any).qtd_mensalidades_iniciais) : "");
+    setValorDemais((card as any).valor_demais_mensalidades ?? null);
+    setQtdDemais((card as any).qtd_mensalidades_demais != null ? String((card as any).qtd_mensalidades_demais) : "");
     setCnpjsAdicionais(Array.isArray((card as any).cnpjs_adicionais) ? (card as any).cnpjs_adicionais : []);
     setSociosAdicionais(Array.isArray((card as any).socios_adicionais) ? (card as any).socios_adicionais : []);
     setLastResult(null);
@@ -300,7 +307,7 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
     }));
     setValorMensalidade(prev => prev ?? card.valor_mensalidade ?? null);
     setValorDivida(prev => prev ?? card.valor_divida ?? null);
-    setValorProposta(prev => prev ?? card.valor_proposta ?? null);
+    
   }, [card.empresa, card.cnpj, card.representante_nome, card.representante_cpf, card.email, card.telefone, card.endereco, card.cidade, card.estado, card.cep, card.qtd_salarios_minimos, card.porcentagem_exito, card.data_primeiro_pagamento, card.dia_demais_pagamentos, card.prazo_entrega_relatorios, card.prazo_contrato, card.valor_mensalidade, card.valor_divida, card.valor_proposta, card.nome]);
 
 
@@ -314,7 +321,11 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
     if (!form.representante_nome.trim()) errs.push("Nome do Representante");
     if (!form.representante_cpf.trim()) errs.push("CPF do Representante");
     if (!form.email.trim()) errs.push("Email");
-    if (valorMensalidade === null || valorMensalidade === 0) errs.push("Valor da Mensalidade");
+    if (valorMensalidade === null || valorMensalidade === 0) errs.push(escalonada ? "Valor das mensalidades iniciais" : "Valor da Mensalidade");
+    if (escalonada) {
+      if (!qtdIniciais.trim() || Number(qtdIniciais) <= 0) errs.push("Qtd mensalidades iniciais");
+      if (valorDemais === null || valorDemais === 0) errs.push("Valor das demais mensalidades");
+    }
     if (!form.qtd_salarios_minimos.trim()) errs.push("Qtd Salários Mínimos");
     if (!form.porcentagem_exito.trim()) errs.push("Porcentagem de Êxito");
     if (!responsavelJuridico.trim()) errs.push("Assistente Jurídico Responsável");
@@ -360,7 +371,9 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
       porcentagem_exito: form.porcentagem_exito || null,
       responsavel_juridico: responsavelJuridico || null,
       valor_divida: valorDivida,
-      valor_proposta: valorProposta,
+      qtd_mensalidades_iniciais: escalonada ? (qtdIniciais ? parseInt(qtdIniciais) : null) : null,
+      valor_demais_mensalidades: escalonada ? valorDemais : null,
+      qtd_mensalidades_demais: escalonada ? (qtdDemais ? parseInt(qtdDemais) : null) : null,
       data_primeiro_pagamento: form.data_primeiro_pagamento || null,
       dia_demais_pagamentos: form.dia_demais_pagamentos || null,
       prazo_entrega_relatorios: form.prazo_entrega_relatorios ? parseInt(form.prazo_entrega_relatorios) : null,
@@ -988,9 +1001,46 @@ ${signLink}`;
             <p className="text-xs font-medium text-foreground uppercase tracking-wider mb-3">Dados Financeiros</p>
             <div className="space-y-3">
               <div>
-                <label className="text-[11px] text-muted-foreground mb-1 block">Valor da Mensalidade (R$) *</label>
-                <InputMoedaBRL value={valorMensalidade} onChange={setValorMensalidade} hasError={errors.includes("Valor da Mensalidade")} />
+                <label className="text-[11px] text-muted-foreground mb-1 block">
+                  {escalonada ? "Valor das mensalidades iniciais (R$) *" : "Valor da Mensalidade (R$) *"}
+                </label>
+                <InputMoedaBRL value={valorMensalidade} onChange={setValorMensalidade} hasError={errors.includes("Valor da Mensalidade") || errors.includes("Valor das mensalidades iniciais")} />
               </div>
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-3 py-2">
+                <div>
+                  <p className="text-xs font-medium text-foreground">Mensalidade escalonada</p>
+                  <p className="text-[11px] text-muted-foreground">Valores diferentes no início e no restante do contrato</p>
+                </div>
+                <Switch checked={escalonada} onCheckedChange={setEscalonada} />
+              </div>
+              {escalonada && (
+                <div className="space-y-3 rounded-lg border border-border bg-muted/10 p-3">
+                  <div>
+                    <label className="text-[11px] text-muted-foreground mb-1 block">Quantidade de mensalidades iniciais *</label>
+                    <input
+                      type="number" min={1}
+                      value={qtdIniciais}
+                      onChange={e => setQtdIniciais(e.target.value)}
+                      placeholder="Ex: 6"
+                      className={inputClass(errors.includes("Qtd mensalidades iniciais") ? "Qtd mensalidades iniciais" : "")}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-muted-foreground mb-1 block">Valor das demais mensalidades (R$) *</label>
+                    <InputMoedaBRL value={valorDemais} onChange={setValorDemais} hasError={errors.includes("Valor das demais mensalidades")} />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-muted-foreground mb-1 block">Quantidade de mensalidades restantes (opcional)</label>
+                    <input
+                      type="number" min={1}
+                      value={qtdDemais}
+                      onChange={e => setQtdDemais(e.target.value)}
+                      placeholder="Ex: 6"
+                      className={inputClass("")}
+                    />
+                  </div>
+                </div>
+              )}
               <div>
                 <label className="text-[11px] text-muted-foreground mb-1 block">Quantidade de Salários Mínimos *</label>
                 <input value={form.qtd_salarios_minimos} onChange={e => updateField("qtd_salarios_minimos", e.target.value)} placeholder="0 a 10" className={inputClass("Qtd Salários Mínimos")} />
@@ -1002,10 +1052,6 @@ ${signLink}`;
               <div>
                 <label className="text-[11px] text-muted-foreground mb-1 block">Valor da Dívida (R$)</label>
                 <InputMoedaBRL value={valorDivida} onChange={setValorDivida} />
-              </div>
-              <div>
-                <label className="text-[11px] text-muted-foreground mb-1 block">Valor da Proposta (R$)</label>
-                <InputMoedaBRL value={valorProposta} onChange={setValorProposta} />
               </div>
             </div>
           </div>
@@ -1038,10 +1084,6 @@ ${signLink}`;
               <div>
                 <label className="text-[11px] text-muted-foreground mb-1 block">Prazo Entrega Relatórios (dias úteis) *</label>
                 <input type="number" min={1} max={20} value={form.prazo_entrega_relatorios} onChange={e => updateField("prazo_entrega_relatorios", e.target.value)} className={inputClass("Prazo Entrega Relatórios")} />
-              </div>
-              <div>
-                <label className="text-[11px] text-muted-foreground mb-1 block">Prazo do Contrato</label>
-                <input value={form.prazo_contrato} onChange={e => updateField("prazo_contrato", e.target.value)} placeholder="Ex: 12 meses" className={inputClass("")} />
               </div>
               <div>
                 <label className="text-[11px] text-muted-foreground mb-1 block">Assistente Jurídico Responsável *</label>

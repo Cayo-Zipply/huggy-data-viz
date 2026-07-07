@@ -422,7 +422,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
         // "Vendas" e "Contratos" são a mesma métrica — usamos contratos como fonte única de verdade
         const ganhos = contratosMes.filter(c => canonical(c.owner) === closer);
         const vendas = ganhos.length;
-        const realizado = ganhos.reduce((s, c) => s + (c.deal_value || 0), 0);
+        const realizado = ganhos.reduce((s, c) => s + ((c.valor_mensalidade != null && c.valor_mensalidade > 0) ? c.valor_mensalidade : (c.deal_value || 0)), 0);
         const goal = goals.find(g => canonical(g.closer) === closer && g.month === monthKey);
         const meta = goal?.faturamento_meta || 0;
         const metaAteAlvo = meta * fatorPace;
@@ -449,7 +449,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
     // Sem responsável (closer) — só aparece quando há valor real (>0)
     const semOwnerGanhos = contratosMes.filter(c => !c.owner);
     const semOwnerReuniao = reunioesRealizadas.filter(c => !c.owner);
-    const realizadoSem = semOwnerGanhos.reduce((s, c) => s + (c.deal_value || 0), 0);
+    const realizadoSem = semOwnerGanhos.reduce((s, c) => s + ((c.valor_mensalidade != null && c.valor_mensalidade > 0) ? c.valor_mensalidade : (c.deal_value || 0)), 0);
     if (semOwnerGanhos.length > 0 || realizadoSem > 0) {
       rows.push({
         closer: "Sem responsável",
@@ -1165,7 +1165,8 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
                 const db = new Date(b.data_venda || b.zapsign_signed_at || b.contrato_preparado_em || b.stage_changed_at || b.created_at || 0).getTime();
                 return da - db;
               });
-            const total = list.reduce((s, c) => s + (c.deal_value || 0), 0);
+            const saleVal = (c: any) => (c.valor_mensalidade != null && c.valor_mensalidade > 0) ? c.valor_mensalidade : (c.deal_value || 0);
+            const total = list.reduce((s, c) => s + saleVal(c), 0);
             const STATUS_OK = new Set(["assinado"]);
             return (
               <>
@@ -1195,7 +1196,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
                             onClick={() => { setRealizadoDrill(null); openCard(c.id); }}
                           >
                             <TableCell className="text-xs font-medium">{c.nome}</TableCell>
-                            <TableCell className="text-xs text-right">{formatBRL(c.deal_value || 0)}</TableCell>
+                            <TableCell className="text-xs text-right">{formatBRL(saleVal(c))}</TableCell>
                             <TableCell className="text-xs text-center">{dt ? new Date(dt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "—"}</TableCell>
                             <TableCell className="text-xs">
                               <span className={cn("inline-block px-1.5 py-0.5 rounded text-[10px]", naoAssinado ? "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300" : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300")}>
