@@ -804,7 +804,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
           subLabel={`meta até ${dataAlvoLabel}: ${formatBRL(globais.faturamento.metaAteAlvo)}`}
           progress={globais.faturamento.pacePct}
           progressLabel={`Pace ${Math.round(globais.faturamento.pacePct)}%`}
-          footerLeft={{ label: "Falta p/ pace", value: formatBRL(globais.faturamento.faltaPace), tone: globais.faturamento.faltaPace > 0 ? "red" : "green" }}
+          footerLeft={paceFooterProps(globais.faturamento.realizado, globais.faturamento.metaAteAlvo, formatBRL)}
           footerRight={{ label: "Por closer", value: <RankList items={globais.rankings.topByFat} format={(v) => formatBRL(v)} /> }}
         />
         <HeroCard
