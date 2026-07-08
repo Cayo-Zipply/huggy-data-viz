@@ -582,8 +582,8 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
     const atingTotal = metaRR > 0 ? Math.round((projetado / metaRR) * 100) : 0;
     const conv = rm > 0 ? Math.round((rr / rm) * 100) : 0;
     const noShows = preVendasData.reduce((s, d) => s + d.noShows, 0);
-    const taxaShowDenom = rr + noShows;
-    const taxaShow = taxaShowDenom > 0 ? ((rr / taxaShowDenom) * 100).toFixed(1) : "0";
+    // Taxa de show = reuniões realizadas / reuniões marcadas (fonte única).
+    const taxaShow = rm > 0 ? ((rr / rm) * 100).toFixed(1) : "0";
     const metaAteAlvo = (metaRR || meta) * fatorPace;
     const paceDiarioRR = (metaRR > 0 && du.restantes > 0)
       ? Math.max(0, Math.ceil((metaRR - rr) / du.restantes))
