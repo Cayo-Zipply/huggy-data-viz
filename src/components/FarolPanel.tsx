@@ -804,7 +804,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
           subLabel={`meta até ${dataAlvoLabel}: ${formatBRL(globais.faturamento.metaAteAlvo)}`}
           progress={globais.faturamento.pacePct}
           progressLabel={`Pace ${Math.round(globais.faturamento.pacePct)}%`}
-          footerLeft={{ label: "Falta p/ pace", value: formatBRL(globais.faturamento.faltaPace), tone: globais.faturamento.faltaPace > 0 ? "red" : "green" }}
+          footerLeft={paceFooterProps(globais.faturamento.realizado, globais.faturamento.metaAteAlvo, formatBRL)}
           footerRight={{ label: "Por closer", value: <RankList items={globais.rankings.topByFat} format={(v) => formatBRL(v)} /> }}
         />
         <HeroCard
@@ -836,8 +836,8 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
           metaLabel={globais.contratos.meta > 0 ? `/ ${globais.contratos.meta}` : "meta não cadastrada"}
           subLabel={`meta até ${dataAlvoLabel}: ${Math.round(globais.contratos.metaAteAlvo)}`}
           progress={globais.contratos.meta > 0 ? (globais.contratos.fechados / globais.contratos.meta) * 100 : 0}
-          progressLabel={`Pace até ${dataAlvoLabel}`}
-          footerLeft={{ label: "Assinados geral", value: String(globais.contratos.assinados) }}
+          progressLabel={`Pace até ${dataAlvoLabel} · ${globais.contratos.assinados} assinados`}
+          footerLeft={paceFooterProps(globais.contratos.fechados, globais.contratos.metaAteAlvo, (v) => String(Math.round(v)))}
           footerRight={{ label: "Por closer", value: <RankList items={globais.contratos.topByContratos} format={(v) => String(v)} /> }}
         />
         </div>
@@ -1243,6 +1243,19 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
 
 // ── Edit Goals Dialog ──
 // ── Hero Card ──
+
+function paceFooterProps(
+  realizado: number,
+  metaAteAlvo: number,
+  format: (v: number) => string,
+) {
+  const diff = realizado - metaAteAlvo;
+  if (diff >= 0) {
+    return { label: "À FRENTE DO PACE", value: `+${format(diff)}`, tone: "green" as const };
+  }
+  return { label: "Falta p/ pace", value: format(Math.abs(diff)), tone: "red" as const };
+}
+
 function HeroCard({
   icon, title, value, valueAccent, metaLabel, subLabel, progress, progressLabel, footerLeft, footerRight,
 }: {
