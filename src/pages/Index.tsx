@@ -187,6 +187,32 @@ const Index = () => {
     reunioesMarcadas = Number(snapshot.reunioes_marcadas) || 0;
   }
 
+  // Fonte oficial de reuniões (marcadas/realizadas) no funil de Marketing:
+  // RPC `farol_metricas_sdr` (mesma usada na aba SDR). Evita duplicação de
+  // cards espelho SDR/Closer e usa data_reuniao em fuso America/Sao_Paulo.
+  // Snapshot de meses encerrados tem precedência.
+  const [sdrReunioes, setSdrReunioes] = useState<{ marcadas: number; realizadas: number } | null>(null);
+  useEffect(() => {
+    setSdrReunioes(null);
+    if (!selectedMonthYYYYMM || isHardcoded) return;
+    let cancelled = false;
+    (supabase as any)
+      .rpc("farol_metricas_sdr", { p_mes: selectedMonthYYYYMM })
+      .then(({ data, error }: any) => {
+        if (cancelled || error || !Array.isArray(data)) return;
+        const marcadas = data.reduce((s: number, r: any) => s + Number(r.reunioes_marcadas ?? 0), 0);
+        const realizadas = data.reduce((s: number, r: any) => s + Number(r.reunioes_realizadas ?? 0), 0);
+        setSdrReunioes({ marcadas, realizadas });
+      });
+    return () => { cancelled = true; };
+  }, [selectedMonthYYYYMM, isHardcoded]);
+
+  if (!snapshot && sdrReunioes && !isHardcoded) {
+    reunioesMarcadas = sdrReunioes.marcadas;
+    reunioesRealizadas = sdrReunioes.realizadas;
+  }
+
+
   const prevEffectiveMensagens = isHardcoded
     ? (previousData?.mensagens || 0)
     : (live.leadsStatsPrev?.mensagens ?? 0);
