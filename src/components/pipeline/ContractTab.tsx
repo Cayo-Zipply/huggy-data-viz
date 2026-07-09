@@ -198,6 +198,26 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
   const [sociosAdicionais, setSociosAdicionais] = useState<SocioAdicional[]>(
     Array.isArray((card as any).socios_adicionais) ? (card as any).socios_adicionais : []
   );
+  const [validandoRep, setValidandoRep] = useState(false);
+  const [validacaoOpen, setValidacaoOpen] = useState(false);
+  const [validacaoResultado, setValidacaoResultado] = useState<any>(null);
+
+  const handleValidarRepresentante = async () => {
+    setValidandoRep(true);
+    setValidacaoResultado(null);
+    setValidacaoOpen(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("validar-representante", {
+        body: { lead_id: card.id },
+      });
+      if (error) throw error;
+      setValidacaoResultado(data);
+    } catch (e: any) {
+      setValidacaoResultado({ status: "erro", detalhe: e?.message || "Erro ao consultar Receita" });
+    } finally {
+      setValidandoRep(false);
+    }
+  };
   const [missingModal, setMissingModal] = useState<{ open: boolean; faltando: MissingItem[]; recomendado: MissingItem[] }>({ open: false, faltando: [], recomendado: [] });
   const [copyMsgLoading, setCopyMsgLoading] = useState(false);
 
