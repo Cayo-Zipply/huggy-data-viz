@@ -201,10 +201,18 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
   const [validandoRep, setValidandoRep] = useState(false);
   const [validacaoOpen, setValidacaoOpen] = useState(false);
   const [validacaoResultado, setValidacaoResultado] = useState<any>(null);
+  const [buscandoInfoqualy, setBuscandoInfoqualy] = useState(false);
+  const [infoqualyResultado, setInfoqualyResultado] = useState<any>(null);
+  const [sociosSelecionados, setSociosSelecionados] = useState<Record<string, boolean>>({});
+  const [salvandoSocios, setSalvandoSocios] = useState(false);
+
+  const normCpf = (v: any) => String(v || "").replace(/\D/g, "");
 
   const handleValidarRepresentante = async () => {
     setValidandoRep(true);
     setValidacaoResultado(null);
+    setInfoqualyResultado(null);
+    setSociosSelecionados({});
     setValidacaoOpen(true);
     try {
       const { data, error } = await supabase.functions.invoke("validar-representante", {
@@ -216,6 +224,49 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
       setValidacaoResultado({ status: "erro", detalhe: e?.message || "Erro ao consultar Receita" });
     } finally {
       setValidandoRep(false);
+    }
+  };
+
+  const handleBuscarSociosInfoqualy = async () => {
+    setBuscandoInfoqualy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("validar-representante", {
+        body: { lead_id: card.id, force_infoqualy: true },
+      });
+      if (error) throw error;
+      setInfoqualyResultado(data);
+      const atuais: any[] = Array.isArray(data?.socios_adicionais_atuais) ? data.socios_adicionais_atuais : [];
+      const preMarcados: Record<string, boolean> = {};
+      atuais.forEach((s) => { const k = normCpf(s.cpf); if (k) preMarcados[k] = true; });
+      setSociosSelecionados(preMarcados);
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao consultar sócios (InfoQualy)");
+    } finally {
+      setBuscandoInfoqualy(false);
+    }
+  };
+
+  const handleSalvarSocios = async () => {
+    const disponiveis: any[] = Array.isArray(infoqualyResultado?.socios) ? infoqualyResultado.socios : [];
+    const socios = disponiveis
+      .filter((s) => !s.e_representante && sociosSelecionados[normCpf(s.cpf)])
+      .map((s) => ({ nome: s.socio || s.nome, cpf: s.cpf }));
+    setSalvandoSocios(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("validar-representante", {
+        body: { lead_id: card.id, action: "salvar_socios", socios },
+      });
+      if (error) throw error;
+      const salvos: any[] = Array.isArray(data?.socios_salvos) ? data.socios_salvos : socios;
+      toast.success(`${salvos.length} sócio(s) salvos no contrato`);
+      if (Array.isArray(salvos)) {
+        setSociosAdicionais(salvos.map((s: any) => ({ nome: s.nome, cpf: s.cpf })));
+        onUpdate(card.id, { socios_adicionais: salvos } as any);
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao salvar sócios");
+    } finally {
+      setSalvandoSocios(false);
     }
   };
   const [missingModal, setMissingModal] = useState<{ open: boolean; faltando: MissingItem[]; recomendado: MissingItem[] }>({ open: false, faltando: [], recomendado: [] });
