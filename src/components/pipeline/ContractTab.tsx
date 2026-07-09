@@ -1395,8 +1395,69 @@ ${signLink}`;
               </div>
             );
           })()}
-        </DialogContent>
-      </Dialog>
+
+          {!validandoRep && validacaoResultado && (
+            <div className="border-t border-border pt-3 space-y-3">
+              {!infoqualyResultado && (
+                <button
+                  type="button"
+                  onClick={handleBuscarSociosInfoqualy}
+                  disabled={buscandoInfoqualy}
+                  className="w-full text-xs px-3 py-2 rounded-md border border-border hover:bg-accent disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {buscandoInfoqualy ? <Loader2 size={14} className="animate-spin" /> : <Shield size={14} />}
+                  {buscandoInfoqualy ? "Consultando InfoQualy..." : "Buscar sócios p/ contrato (consulta paga)"}
+                </button>
+              )}
+
+              {infoqualyResultado && (() => {
+                const socios: any[] = Array.isArray(infoqualyResultado.socios) ? infoqualyResultado.socios : [];
+                return (
+                  <div className="space-y-2">
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Sócios encontrados (InfoQualy)</p>
+                    {socios.length === 0 && <p className="text-xs text-muted-foreground">Nenhum sócio retornado.</p>}
+                    <div className="space-y-1.5">
+                      {socios.map((s: any, i: number) => {
+                        const key = normCpf(s.cpf);
+                        const isRep = !!s.e_representante;
+                        const checked = isRep ? false : !!sociosSelecionados[key];
+                        return (
+                          <label
+                            key={i}
+                            className={`flex items-start gap-2 text-xs bg-muted/30 rounded-md p-2 ${isRep ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:bg-muted/50"}`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="mt-0.5"
+                              checked={checked}
+                              disabled={isRep}
+                              onChange={(e) => setSociosSelecionados((prev) => ({ ...prev, [key]: e.target.checked }))}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-foreground truncate">{s.socio || s.nome || "—"}</p>
+                              <p className="text-[10px] text-muted-foreground truncate">
+                                {s.qualificacao || "—"}{s.cpf ? ` · ${s.cpf}` : ""}
+                                {isRep ? " · já é o representante" : ""}
+                              </p>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSalvarSocios}
+                      disabled={salvandoSocios}
+                      className="w-full text-xs px-3 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {salvandoSocios ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                      Salvar sócios no contrato
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
 
       {renderMissingModal()}
     </div>
