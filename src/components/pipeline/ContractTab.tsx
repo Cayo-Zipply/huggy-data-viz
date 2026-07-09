@@ -1286,6 +1286,67 @@ ${signLink}`;
         </DialogContent>
       </Dialog>
 
+      <Dialog open={validacaoOpen} onOpenChange={setValidacaoOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Validação do Representante</DialogTitle>
+          </DialogHeader>
+          {validandoRep && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-6">
+              <Loader2 size={16} className="animate-spin" /> Consultando Receita...
+            </div>
+          )}
+          {!validandoRep && validacaoResultado && (() => {
+            const status: string = validacaoResultado.status || "";
+            const detalhe: string = validacaoResultado.detalhe || validacaoResultado.motivo || "";
+            let Icon = Shield;
+            let color = "text-muted-foreground";
+            if (status.startsWith("validado")) { Icon = ShieldCheck; color = "text-emerald-500"; }
+            else if (status === "divergencia_cpf" || status === "divergencia_nome") { Icon = ShieldAlert; color = "text-amber-500"; }
+            else if (status === "nao_encontrado") { Icon = ShieldX; color = "text-red-500"; }
+            else if (status === "sem_qsa" || status === "nao_aplicavel") { Icon = Shield; color = "text-muted-foreground"; }
+            else if (status === "erro") { Icon = ShieldX; color = "text-red-500"; }
+            const socios = Array.isArray(validacaoResultado.socios) ? validacaoResultado.socios : [];
+            return (
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <Icon size={22} className={color} />
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium ${color}`}>{status || "sem status"}</p>
+                    {detalhe && <p className="text-xs text-muted-foreground mt-0.5">{detalhe}</p>}
+                  </div>
+                </div>
+                {socios.length > 0 && (
+                  <div className="border-t border-border pt-3">
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Sócios (QSA)</p>
+                    <div className="space-y-2">
+                      {socios.map((s: any, i: number) => (
+                        <div key={i} className="flex items-start gap-3 text-xs bg-muted/30 rounded-md p-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-foreground truncate">{s.socio || "—"}</p>
+                            {s.qualificacao && <p className="text-[10px] text-muted-foreground truncate">{s.qualificacao}</p>}
+                          </div>
+                          <div className="flex flex-col gap-1 text-[10px]">
+                            <span className="flex items-center gap-1">
+                              {s.nome_confere ? <CheckCircle2 size={11} className="text-emerald-500" /> : <XCircle size={11} className="text-red-500" />}
+                              Nome
+                            </span>
+                            <span className="flex items-center gap-1">
+                              {s.cpf_confere ? <CheckCircle2 size={11} className="text-emerald-500" /> : <XCircle size={11} className="text-red-500" />}
+                              CPF
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
       {renderMissingModal()}
     </div>
   );
