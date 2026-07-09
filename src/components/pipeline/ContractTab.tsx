@@ -1458,6 +1458,9 @@ ${signLink}`;
               })()}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
 
       {renderMissingModal()}
     </div>
