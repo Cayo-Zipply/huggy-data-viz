@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink, MessageCircle, Eye, Plus, Trash2, Copy, Send, CheckCircle2, AlertTriangle } from "lucide-react";
+import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink, MessageCircle, Eye, Plus, Trash2, Copy, Send, CheckCircle2, AlertTriangle, ShieldCheck, ShieldAlert, ShieldX, Shield, XCircle } from "lucide-react";
 import { ZapsignHistory } from "./ZapsignHistory";
 
 type CnpjAdicional = {
@@ -198,6 +198,26 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
   const [sociosAdicionais, setSociosAdicionais] = useState<SocioAdicional[]>(
     Array.isArray((card as any).socios_adicionais) ? (card as any).socios_adicionais : []
   );
+  const [validandoRep, setValidandoRep] = useState(false);
+  const [validacaoOpen, setValidacaoOpen] = useState(false);
+  const [validacaoResultado, setValidacaoResultado] = useState<any>(null);
+
+  const handleValidarRepresentante = async () => {
+    setValidandoRep(true);
+    setValidacaoResultado(null);
+    setValidacaoOpen(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("validar-representante", {
+        body: { lead_id: card.id },
+      });
+      if (error) throw error;
+      setValidacaoResultado(data);
+    } catch (e: any) {
+      setValidacaoResultado({ status: "erro", detalhe: e?.message || "Erro ao consultar Receita" });
+    } finally {
+      setValidandoRep(false);
+    }
+  };
   const [missingModal, setMissingModal] = useState<{ open: boolean; faltando: MissingItem[]; recomendado: MissingItem[] }>({ open: false, faltando: [], recomendado: [] });
   const [copyMsgLoading, setCopyMsgLoading] = useState(false);
 
@@ -791,7 +811,19 @@ ${signLink}`;
                 </>
               )}
               <div>
-                <label className="text-[11px] text-muted-foreground mb-1 block">Nome Completo do Representante *</label>
+                <div className="flex items-center justify-between mb-1 gap-2">
+                  <label className="text-[11px] text-muted-foreground block">Nome Completo do Representante *</label>
+                  <button
+                    type="button"
+                    onClick={handleValidarRepresentante}
+                    disabled={validandoRep}
+                    className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md border border-border bg-muted/40 hover:bg-muted text-foreground disabled:opacity-60"
+                    title="Consultar CNPJ na Receita e comparar com o representante"
+                  >
+                    {validandoRep ? <Loader2 size={11} className="animate-spin" /> : <ShieldCheck size={11} />}
+                    {validandoRep ? "Consultando Receita..." : "Validar representante"}
+                  </button>
+                </div>
                 <input value={form.representante_nome} onChange={e => updateField("representante_nome", e.target.value)} className={inputClass("Nome do Representante")} />
               </div>
               <div>
@@ -1251,6 +1283,67 @@ ${signLink}`;
           <p className="text-[11px] text-muted-foreground">
             ⓘ Prévia renderizada via Office Online. Pode levar alguns segundos para carregar. Os campos não preenchidos aparecem como "_______________".
           </p>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={validacaoOpen} onOpenChange={setValidacaoOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Validação do Representante</DialogTitle>
+          </DialogHeader>
+          {validandoRep && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-6">
+              <Loader2 size={16} className="animate-spin" /> Consultando Receita...
+            </div>
+          )}
+          {!validandoRep && validacaoResultado && (() => {
+            const status: string = validacaoResultado.status || "";
+            const detalhe: string = validacaoResultado.detalhe || validacaoResultado.motivo || "";
+            let Icon = Shield;
+            let color = "text-muted-foreground";
+            if (status.startsWith("validado")) { Icon = ShieldCheck; color = "text-emerald-500"; }
+            else if (status === "divergencia_cpf" || status === "divergencia_nome") { Icon = ShieldAlert; color = "text-amber-500"; }
+            else if (status === "nao_encontrado") { Icon = ShieldX; color = "text-red-500"; }
+            else if (status === "sem_qsa" || status === "nao_aplicavel") { Icon = Shield; color = "text-muted-foreground"; }
+            else if (status === "erro") { Icon = ShieldX; color = "text-red-500"; }
+            const socios = Array.isArray(validacaoResultado.socios) ? validacaoResultado.socios : [];
+            return (
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <Icon size={22} className={color} />
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium ${color}`}>{status || "sem status"}</p>
+                    {detalhe && <p className="text-xs text-muted-foreground mt-0.5">{detalhe}</p>}
+                  </div>
+                </div>
+                {socios.length > 0 && (
+                  <div className="border-t border-border pt-3">
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Sócios (QSA)</p>
+                    <div className="space-y-2">
+                      {socios.map((s: any, i: number) => (
+                        <div key={i} className="flex items-start gap-3 text-xs bg-muted/30 rounded-md p-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-foreground truncate">{s.socio || "—"}</p>
+                            {s.qualificacao && <p className="text-[10px] text-muted-foreground truncate">{s.qualificacao}</p>}
+                          </div>
+                          <div className="flex flex-col gap-1 text-[10px]">
+                            <span className="flex items-center gap-1">
+                              {s.nome_confere ? <CheckCircle2 size={11} className="text-emerald-500" /> : <XCircle size={11} className="text-red-500" />}
+                              Nome
+                            </span>
+                            <span className="flex items-center gap-1">
+                              {s.cpf_confere ? <CheckCircle2 size={11} className="text-emerald-500" /> : <XCircle size={11} className="text-red-500" />}
+                              CPF
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
