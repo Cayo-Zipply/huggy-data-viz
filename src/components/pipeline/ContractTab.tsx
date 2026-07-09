@@ -811,7 +811,19 @@ ${signLink}`;
                 </>
               )}
               <div>
-                <label className="text-[11px] text-muted-foreground mb-1 block">Nome Completo do Representante *</label>
+                <div className="flex items-center justify-between mb-1 gap-2">
+                  <label className="text-[11px] text-muted-foreground block">Nome Completo do Representante *</label>
+                  <button
+                    type="button"
+                    onClick={handleValidarRepresentante}
+                    disabled={validandoRep}
+                    className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md border border-border bg-muted/40 hover:bg-muted text-foreground disabled:opacity-60"
+                    title="Consultar CNPJ na Receita e comparar com o representante"
+                  >
+                    {validandoRep ? <Loader2 size={11} className="animate-spin" /> : <ShieldCheck size={11} />}
+                    {validandoRep ? "Consultando Receita..." : "Validar representante"}
+                  </button>
+                </div>
                 <input value={form.representante_nome} onChange={e => updateField("representante_nome", e.target.value)} className={inputClass("Nome do Representante")} />
               </div>
               <div>
