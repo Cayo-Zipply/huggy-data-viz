@@ -21,6 +21,7 @@ interface Props {
   onUpdated?: () => void;
   cliente?: string;
   empresa?: string | null;
+  closer?: string | null;
   meetLink?: string | null;
 }
 
