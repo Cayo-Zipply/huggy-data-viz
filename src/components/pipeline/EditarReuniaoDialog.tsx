@@ -177,6 +177,7 @@ export function EditarReuniaoDialog({ reuniao, open, onOpenChange, onUpdated, cl
                 const msg = buildReuniaoMessage({
                   cliente: cliente || "",
                   empresa: empresa ?? null,
+                  closer: closer ?? null,
                   data_inicio: inicioISO,
                   data_fim: fimISO,
                   link,
