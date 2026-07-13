@@ -40,42 +40,66 @@ function timeAgo(iso: string) {
   return `há ${d}d`;
 }
 
+const PAGE_SIZE = 20;
+
 export function NotificationBell() {
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [items, setItems] = useState<Recipient[]>([]);
   const [open, setOpen] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const fetchItems = useCallback(async () => {
+  const fetchPage = useCallback(async (pageIdx: number, replace: boolean) => {
+    if (!user?.id) return;
+    setLoadingMore(true);
+    const from = pageIdx * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
     const { data, error } = await supabase
       .from("notification_recipients" as any)
       .select(
         "id, read_at, created_at, notification:notifications(id, title, message, created_by_nome, created_at, lead_id, tipo)"
       )
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false })
-      .limit(50);
+      .range(from, to);
+    setLoadingMore(false);
     if (error) {
       console.warn("notif fetch:", error.message);
       return;
     }
-    setItems((data as any) ?? []);
-  }, []);
+    const rows = (data as any) ?? [];
+    setHasMore(rows.length === PAGE_SIZE);
+    setItems((prev) => (replace ? rows : [...prev, ...rows]));
+  }, [user?.id]);
+
+  const refresh = useCallback(() => {
+    setPage(0);
+    fetchPage(0, true);
+  }, [fetchPage]);
 
   useEffect(() => {
     if (!user?.id) return;
-    fetchItems();
+    refresh();
     const channel = supabase
       .channel("notif-bell")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notification_recipients", filter: `user_id=eq.${user.id}` },
-        () => fetchItems()
+        () => refresh()
       )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, fetchItems]);
+  }, [user?.id, refresh]);
+
+  const loadMore = () => {
+    const next = page + 1;
+    setPage(next);
+    fetchPage(next, false);
+  };
 
   const unread = items.filter((i) => i.read_at === null).length;
 
@@ -84,15 +108,17 @@ export function NotificationBell() {
       .from("notification_recipients" as any)
       .update({ read_at: new Date().toISOString() })
       .eq("id", id);
-    fetchItems();
+    refresh();
   };
 
   const markAll = async () => {
+    if (!user?.id) return;
     await supabase
       .from("notification_recipients" as any)
       .update({ read_at: new Date().toISOString() })
+      .eq("user_id", user.id)
       .is("read_at", null);
-    fetchItems();
+    refresh();
   };
 
   return (
