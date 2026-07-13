@@ -187,6 +187,7 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
                   const msg = buildReuniaoMessage({
                     cliente: card.nome,
                     empresa: card.empresa ?? null,
+                    closer: card.owner ?? null,
                     data_inicio: new Date(dataHora).toISOString(),
                     data_fim: fimISO,
                     link: resultado.meet_link,
