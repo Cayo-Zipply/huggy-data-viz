@@ -170,7 +170,7 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
             )}
             {r.meet_link && (
               <button
-                onClick={() => navigator.clipboard.writeText(buildMensagem(r, lead.nome, lead.empresa)).then(() => toast.success("Mensagem copiada!"))}
+                onClick={() => navigator.clipboard.writeText(buildMensagem(r, lead.nome, lead.empresa, lead.closer)).then(() => toast.success("Mensagem copiada!"))}
                 className="text-xs px-2 py-1 bg-emerald-500/10 text-emerald-400 rounded-md hover:bg-emerald-500/20 flex items-center gap-1">
                 <MessageSquare size={11} />Copiar mensagem
               </button>
