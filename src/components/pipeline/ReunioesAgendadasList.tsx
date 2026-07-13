@@ -44,20 +44,28 @@ function partsSP(iso: string) {
   };
 }
 
-function buildMensagem(r: Reuniao, cliente: string, empresa: string | null) {
+const NOME_COMPLETO_CLOSER: Record<string, string> = {
+  "Luka": "Luka Freitas",
+  "Fillipe": "Fillipe Amorim",
+  "Danilo Domiciano": "Danilo Domiciano",
+};
+
+function buildMensagem(r: Reuniao, cliente: string, empresa: string | null, closer: string | null) {
   const ini = partsSP(r.data_inicio);
   const fim = r.data_fim ? partsSP(r.data_fim) : null;
   const primeiroNome = (cliente || "").trim().split(/\s+/)[0] || cliente;
   const dataExt = `${ini.weekday}, ${ini.date}`;
   const horario = fim ? `${ini.time} às ${fim.time}` : `às ${ini.time}`;
   const empresaLinha = empresa && empresa.trim() ? `\n🏢 *Empresa:* ${empresa.trim()}` : "";
+  const nomeCloser = closer ? (NOME_COMPLETO_CLOSER[closer] || closer) : "";
+  const especialistaLinha = nomeCloser ? `\n🧑‍⚖️ *Especialista:* ${nomeCloser}` : "";
   return `📌 *Reunião confirmada — Pena Quadros Advocacia*
 
 ${primeiroNome}, está tudo certo! Sua reunião está agendada:
 ${empresaLinha}
 🗓️ *Data:* ${dataExt}
 🕐 *Horário:* ${horario}
-💻 *Link da reunião:* ${r.meet_link || ""}
+💻 *Link da reunião:* ${r.meet_link || ""}${especialistaLinha}
 
 Qualquer dúvida, estou à disposição. Até lá!`;
 }
