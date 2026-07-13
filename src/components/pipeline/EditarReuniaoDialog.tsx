@@ -21,6 +21,7 @@ interface Props {
   onUpdated?: () => void;
   cliente?: string;
   empresa?: string | null;
+  closer?: string | null;
   meetLink?: string | null;
 }
 
@@ -41,7 +42,7 @@ function normalizeConvidados(c: Reuniao["convidados"]): string[] {
   return c.map(x => (typeof x === "string" ? x : x?.email ?? "")).filter(Boolean);
 }
 
-export function EditarReuniaoDialog({ reuniao, open, onOpenChange, onUpdated, cliente, empresa, meetLink }: Props) {
+export function EditarReuniaoDialog({ reuniao, open, onOpenChange, onUpdated, cliente, empresa, closer, meetLink }: Props) {
   const [titulo, setTitulo] = useState("");
   const [dataHora, setDataHora] = useState("");
   const [duracao, setDuracao] = useState(60);
@@ -176,6 +177,7 @@ export function EditarReuniaoDialog({ reuniao, open, onOpenChange, onUpdated, cl
                 const msg = buildReuniaoMessage({
                   cliente: cliente || "",
                   empresa: empresa ?? null,
+                  closer: closer ?? null,
                   data_inicio: inicioISO,
                   data_fim: fimISO,
                   link,

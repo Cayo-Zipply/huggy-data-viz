@@ -44,20 +44,28 @@ function partsSP(iso: string) {
   };
 }
 
-function buildMensagem(r: Reuniao, cliente: string, empresa: string | null) {
+const NOME_COMPLETO_CLOSER: Record<string, string> = {
+  "Luka": "Luka Freitas",
+  "Fillipe": "Fillipe Amorim",
+  "Danilo Domiciano": "Danilo Domiciano",
+};
+
+function buildMensagem(r: Reuniao, cliente: string, empresa: string | null, closer: string | null) {
   const ini = partsSP(r.data_inicio);
   const fim = r.data_fim ? partsSP(r.data_fim) : null;
   const primeiroNome = (cliente || "").trim().split(/\s+/)[0] || cliente;
   const dataExt = `${ini.weekday}, ${ini.date}`;
   const horario = fim ? `${ini.time} às ${fim.time}` : `às ${ini.time}`;
   const empresaLinha = empresa && empresa.trim() ? `\n🏢 *Empresa:* ${empresa.trim()}` : "";
+  const nomeCloser = closer ? (NOME_COMPLETO_CLOSER[closer] || closer) : "";
+  const especialistaLinha = nomeCloser ? `\n🧑‍⚖️ *Especialista:* ${nomeCloser}` : "";
   return `📌 *Reunião confirmada — Pena Quadros Advocacia*
 
 ${primeiroNome}, está tudo certo! Sua reunião está agendada:
 ${empresaLinha}
 🗓️ *Data:* ${dataExt}
 🕐 *Horário:* ${horario}
-💻 *Link da reunião:* ${r.meet_link || ""}
+💻 *Link da reunião:* ${r.meet_link || ""}${especialistaLinha}
 
 Qualquer dúvida, estou à disposição. Até lá!`;
 }
@@ -67,7 +75,7 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Reuniao | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
-  const [lead, setLead] = useState<{ nome: string; empresa: string | null }>({ nome: "", empresa: null });
+  const [lead, setLead] = useState<{ nome: string; empresa: string | null; closer: string | null }>({ nome: "", empresa: null, closer: null });
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -86,10 +94,10 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
     (async () => {
       const { data } = await (supabase as any)
         .from("leads")
-        .select("nome, empresa")
+        .select("nome, empresa, closer")
         .eq("id", leadId)
         .maybeSingle();
-      if (data) setLead({ nome: data.nome || "", empresa: data.empresa ?? null });
+      if (data) setLead({ nome: data.nome || "", empresa: data.empresa ?? null, closer: data.closer ?? null });
     })();
   }, [leadId]);
 
@@ -162,7 +170,7 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
             )}
             {r.meet_link && (
               <button
-                onClick={() => navigator.clipboard.writeText(buildMensagem(r, lead.nome, lead.empresa)).then(() => toast.success("Mensagem copiada!"))}
+                onClick={() => navigator.clipboard.writeText(buildMensagem(r, lead.nome, lead.empresa, lead.closer)).then(() => toast.success("Mensagem copiada!"))}
                 className="text-xs px-2 py-1 bg-emerald-500/10 text-emerald-400 rounded-md hover:bg-emerald-500/20 flex items-center gap-1">
                 <MessageSquare size={11} />Copiar mensagem
               </button>
@@ -201,6 +209,7 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
         onUpdated={fetchItems}
         cliente={lead.nome}
         empresa={lead.empresa}
+        closer={lead.closer}
         meetLink={editing?.meet_link ?? null}
       />
     </div>
