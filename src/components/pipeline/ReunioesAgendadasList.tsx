@@ -75,7 +75,7 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Reuniao | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
-  const [lead, setLead] = useState<{ nome: string; empresa: string | null }>({ nome: "", empresa: null });
+  const [lead, setLead] = useState<{ nome: string; empresa: string | null; closer: string | null }>({ nome: "", empresa: null, closer: null });
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -94,10 +94,10 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
     (async () => {
       const { data } = await (supabase as any)
         .from("leads")
-        .select("nome, empresa")
+        .select("nome, empresa, closer")
         .eq("id", leadId)
         .maybeSingle();
-      if (data) setLead({ nome: data.nome || "", empresa: data.empresa ?? null });
+      if (data) setLead({ nome: data.nome || "", empresa: data.empresa ?? null, closer: data.closer ?? null });
     })();
   }, [leadId]);
 
