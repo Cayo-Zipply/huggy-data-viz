@@ -149,69 +149,81 @@ export function NotificationBell() {
               </button>
             )}
           </div>
-          <ScrollArea className="max-h-96">
+          <ScrollArea className="max-h-[70vh]">
             {items.length === 0 ? (
               <p className="p-6 text-center text-xs text-muted-foreground">
                 Sem notificações
               </p>
             ) : (
-              <ul className="divide-y">
-                {items.map((r) => {
-                  const n = r.notification;
-                  if (!n) return null;
-                  const unreadItem = r.read_at === null;
-                  const tipoIcon =
-                    n.tipo === "contrato_assinado" ? "✅" :
-                    n.tipo === "contrato_aberto" ? "📄" : null;
-                  const tipoAccent =
-                    n.tipo === "contrato_assinado" ? "border-l-2 border-emerald-500" :
-                    n.tipo === "contrato_aberto" ? "border-l-2 border-amber-500" : "";
-                  const handleClick = () => {
-                    if (unreadItem) markOne(r.id);
-                    if (n.lead_id) {
-                      setOpen(false);
-                      navigate("/pipeline");
-                      // dispatch after route change so PipelinePanel handler is mounted
-                      setTimeout(() => {
-                        window.dispatchEvent(
-                          new CustomEvent("open-lead-card", { detail: { leadId: n.lead_id } })
-                        );
-                      }, 50);
-                    }
-                  };
-                  return (
-                    <li
-                      key={r.id}
-                      onClick={handleClick}
-                      className={cn(
-                        "p-3 cursor-pointer hover:bg-accent/50 transition-colors",
-                        unreadItem && "bg-primary/5",
-                        tipoAccent
-                      )}
-                    >
-                      <div className="flex items-start gap-2">
-                        {unreadItem && (
-                          <span className="mt-1.5 h-2 w-2 rounded-full bg-primary shrink-0" />
+              <>
+                <ul className="divide-y">
+                  {items.map((r) => {
+                    const n = r.notification;
+                    if (!n) return null;
+                    const unreadItem = r.read_at === null;
+                    const tipoIcon =
+                      n.tipo === "contrato_assinado" ? "✅" :
+                      n.tipo === "contrato_aberto" ? "📄" : null;
+                    const tipoAccent =
+                      n.tipo === "contrato_assinado" ? "border-l-2 border-emerald-500" :
+                      n.tipo === "contrato_aberto" ? "border-l-2 border-amber-500" : "";
+                    const handleClick = () => {
+                      if (unreadItem) markOne(r.id);
+                      if (n.lead_id) {
+                        setOpen(false);
+                        navigate("/pipeline");
+                        setTimeout(() => {
+                          window.dispatchEvent(
+                            new CustomEvent("open-lead-card", { detail: { leadId: n.lead_id } })
+                          );
+                        }, 50);
+                      }
+                    };
+                    return (
+                      <li
+                        key={r.id}
+                        onClick={handleClick}
+                        className={cn(
+                          "p-3 cursor-pointer hover:bg-accent/50 transition-colors",
+                          unreadItem && "bg-primary/10",
+                          tipoAccent
                         )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold">
-                            {tipoIcon && <span className="mr-1">{tipoIcon}</span>}
-                            {n.title}
-                          </p>
-                          <p className="text-xs text-muted-foreground whitespace-pre-wrap">
-                            {n.message}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground mt-1">
-                            {n.created_by_nome ? `${n.created_by_nome} · ` : ""}
-                            {timeAgo(n.created_at)}
-                            {n.lead_id ? " · clique para abrir o card" : ""}
-                          </p>
+                      >
+                        <div className="flex items-start gap-2">
+                          {unreadItem && (
+                            <span className="mt-1.5 h-2 w-2 rounded-full bg-primary shrink-0" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold">
+                              {tipoIcon && <span className="mr-1">{tipoIcon}</span>}
+                              {n.title}
+                            </p>
+                            <p className="text-xs text-muted-foreground whitespace-pre-wrap">
+                              {n.message}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground mt-1">
+                              {n.created_by_nome ? `${n.created_by_nome} · ` : ""}
+                              {timeAgo(n.created_at)}
+                              {n.lead_id ? " · clique para abrir o card" : ""}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+                      </li>
+                    );
+                  })}
+                </ul>
+                {hasMore && (
+                  <div className="p-2 border-t">
+                    <button
+                      onClick={loadMore}
+                      disabled={loadingMore}
+                      className="w-full text-xs py-2 rounded hover:bg-accent/50 text-muted-foreground disabled:opacity-50"
+                    >
+                      {loadingMore ? "Carregando..." : "Carregar mais"}
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </ScrollArea>
         </PopoverContent>
