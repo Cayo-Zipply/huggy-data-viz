@@ -205,6 +205,15 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
   const [infoqualyResultado, setInfoqualyResultado] = useState<any>(null);
   const [sociosSelecionados, setSociosSelecionados] = useState<Record<string, boolean>>({});
   const [salvandoSocios, setSalvandoSocios] = useState(false);
+  const [representantePrincipalKey, setRepresentantePrincipalKey] = useState<string>("");
+
+  const handleSelecionarRepresentantePrincipal = (s: any) => {
+    const cpfDigits = normCpf(s.cpf);
+    const cpfMasked = maskCPF(cpfDigits);
+    const nome = String(s.socio || s.nome || "").trim();
+    setForm(prev => ({ ...prev, representante_nome: nome, representante_cpf: cpfMasked }));
+    setRepresentantePrincipalKey(cpfDigits);
+  };
 
   const normCpf = (v: any) => String(v || "").replace(/\D/g, "");
 
