@@ -1357,8 +1357,14 @@ ${signLink}`;
             </div>
           )}
           {!validandoRep && validacaoResultado && (() => {
-            const status: string = validacaoResultado.status || "";
-            const detalhe: string = validacaoResultado.detalhe || validacaoResultado.motivo || "";
+            const cpfPrincipalDigits = normCpf(form.representante_cpf || "");
+            const sociosInfoqualy: any[] = Array.isArray(infoqualyResultado?.socios) ? infoqualyResultado.socios : [];
+            const sociosQsa: any[] = Array.isArray(validacaoResultado.socios) ? validacaoResultado.socios : [];
+            const bateComSocio = !!cpfPrincipalDigits && [...sociosInfoqualy, ...sociosQsa].some((s: any) => normCpf(s.cpf) === cpfPrincipalDigits);
+            const statusOriginal: string = validacaoResultado.status || "";
+            const detalheOriginal: string = validacaoResultado.detalhe || validacaoResultado.motivo || "";
+            const status = bateComSocio ? "validado" : statusOriginal;
+            const detalhe = bateComSocio ? "Representante principal corresponde a um sócio da empresa." : detalheOriginal;
             let Icon = Shield;
             let color = "text-muted-foreground";
             if (status.startsWith("validado")) { Icon = ShieldCheck; color = "text-emerald-500"; }
