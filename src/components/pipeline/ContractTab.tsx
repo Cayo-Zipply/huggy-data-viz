@@ -205,6 +205,15 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
   const [infoqualyResultado, setInfoqualyResultado] = useState<any>(null);
   const [sociosSelecionados, setSociosSelecionados] = useState<Record<string, boolean>>({});
   const [salvandoSocios, setSalvandoSocios] = useState(false);
+  const [representantePrincipalKey, setRepresentantePrincipalKey] = useState<string>("");
+
+  const handleSelecionarRepresentantePrincipal = (s: any) => {
+    const cpfDigits = normCpf(s.cpf);
+    const cpfMasked = maskCPF(cpfDigits);
+    const nome = String(s.socio || s.nome || "").trim();
+    setForm(prev => ({ ...prev, representante_nome: nome, representante_cpf: cpfMasked }));
+    setRepresentantePrincipalKey(cpfDigits);
+  };
 
   const normCpf = (v: any) => String(v || "").replace(/\D/g, "");
 
@@ -1348,8 +1357,14 @@ ${signLink}`;
             </div>
           )}
           {!validandoRep && validacaoResultado && (() => {
-            const status: string = validacaoResultado.status || "";
-            const detalhe: string = validacaoResultado.detalhe || validacaoResultado.motivo || "";
+            const cpfPrincipalDigits = normCpf(form.representante_cpf || "");
+            const sociosInfoqualy: any[] = Array.isArray(infoqualyResultado?.socios) ? infoqualyResultado.socios : [];
+            const sociosQsa: any[] = Array.isArray(validacaoResultado.socios) ? validacaoResultado.socios : [];
+            const bateComSocio = !!cpfPrincipalDigits && [...sociosInfoqualy, ...sociosQsa].some((s: any) => normCpf(s.cpf) === cpfPrincipalDigits);
+            const statusOriginal: string = validacaoResultado.status || "";
+            const detalheOriginal: string = validacaoResultado.detalhe || validacaoResultado.motivo || "";
+            const status = bateComSocio ? "validado" : statusOriginal;
+            const detalhe = bateComSocio ? "Representante principal corresponde a um sócio da empresa." : detalheOriginal;
             let Icon = Shield;
             let color = "text-muted-foreground";
             if (status.startsWith("validado")) { Icon = ShieldCheck; color = "text-emerald-500"; }
@@ -1421,10 +1436,11 @@ ${signLink}`;
                         const key = normCpf(s.cpf);
                         const isRep = !!s.e_representante;
                         const checked = isRep ? false : !!sociosSelecionados[key];
+                        const isPrincipal = representantePrincipalKey === key || (!!card.representante_cpf && normCpf(card.representante_cpf) === key);
                         return (
-                          <label
+                          <div
                             key={i}
-                            className={`flex items-start gap-2 text-xs bg-muted/30 rounded-md p-2 ${isRep ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:bg-muted/50"}`}
+                            className={`flex items-start gap-2 text-xs rounded-md p-2 border ${isPrincipal ? "bg-emerald-500/10 border-emerald-500/50" : "bg-muted/30 border-transparent"} ${isRep ? "opacity-60" : ""}`}
                           >
                             <input
                               type="checkbox"
@@ -1432,15 +1448,24 @@ ${signLink}`;
                               checked={checked}
                               disabled={isRep}
                               onChange={(e) => setSociosSelecionados((prev) => ({ ...prev, [key]: e.target.checked }))}
+                              title="Marcar para adicionar à lista de sócios do contrato"
                             />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-foreground truncate">{s.socio || s.nome || "—"}</p>
+                            <button
+                              type="button"
+                              onClick={() => handleSelecionarRepresentantePrincipal(s)}
+                              className="flex-1 min-w-0 text-left hover:opacity-80 cursor-pointer"
+                              title="Clique para definir como Representante Principal"
+                            >
+                              <p className={`font-medium truncate ${isPrincipal ? "text-emerald-500" : "text-foreground"}`}>
+                                {s.socio || s.nome || "—"}
+                                {isPrincipal && " · representante principal"}
+                              </p>
                               <p className="text-[10px] text-muted-foreground truncate">
                                 {s.qualificacao || "—"}{s.cpf ? ` · ${s.cpf}` : ""}
                                 {isRep ? " · já é o representante" : ""}
                               </p>
-                            </div>
-                          </label>
+                            </button>
+                          </div>
                         );
                       })}
                     </div>
