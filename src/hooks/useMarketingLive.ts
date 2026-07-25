@@ -202,7 +202,7 @@ function aggregateLeads(rows: any[], monthYYYYMM: string): LeadsStats {
 
   const vendas = vendasRows.length;
   const faturamento = vendasRows.reduce(
-    (s: number, l: any) => s + Number(l.valor_negocio ?? 0),
+    (s: number, l: any) => s + Number(l.valor_mensalidade ?? 0),
     0,
   );
 
