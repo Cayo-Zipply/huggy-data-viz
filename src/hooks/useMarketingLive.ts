@@ -148,7 +148,7 @@ async function fetchLeadsRaw(monthYYYYMM: string): Promise<any[]> {
   const { inicioIso, fimIso } = monthRange(monthYYYYMM);
   const { data, error } = await supabaseExt
     .from("leads")
-    .select("id, etapa_atual, closer, status, valor_negocio, data_venda, data_reuniao, data_ultima_mudanca_etapa, created_at")
+    .select("id, etapa_atual, closer, status, valor_negocio, valor_mensalidade, data_venda, data_reuniao, data_ultima_mudanca_etapa, created_at")
     .or(
       `and(created_at.gte.${inicioIso},created_at.lte.${fimIso}),and(data_venda.gte.${inicioIso},data_venda.lte.${fimIso}),and(data_reuniao.gte.${inicioIso},data_reuniao.lte.${fimIso}),and(data_ultima_mudanca_etapa.gte.${inicioIso},data_ultima_mudanca_etapa.lte.${fimIso})`,
     );
@@ -202,7 +202,7 @@ function aggregateLeads(rows: any[], monthYYYYMM: string): LeadsStats {
 
   const vendas = vendasRows.length;
   const faturamento = vendasRows.reduce(
-    (s: number, l: any) => s + Number(l.valor_negocio ?? 0),
+    (s: number, l: any) => s + Number(l.valor_mensalidade ?? 0),
     0,
   );
 
@@ -234,7 +234,7 @@ function aggregateLeads(rows: any[], monthYYYYMM: string): LeadsStats {
   vendasRows.forEach((l: any) => {
     const b = ensure(l.closer);
     b.vendas += 1;
-    b.faturamento += Number(l.valor_negocio ?? 0);
+    b.faturamento += Number(l.valor_mensalidade ?? 0);
   });
   map.forEach((b) => {
     b.ticketMedioRealizado = b.vendas > 0 ? b.faturamento / b.vendas : 0;
