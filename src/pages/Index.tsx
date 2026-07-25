@@ -187,6 +187,39 @@ const Index = () => {
     reunioesMarcadas = Number(snapshot.reunioes_marcadas) || 0;
   }
 
+  // Faturamento / Vendas — espelho exato do Farol: soma da RPC
+  // `farol_metricas_time` (mesma fonte usada em FarolPanel). Garante que
+  // o card Faturamento do Marketing bate 1:1 com o Farol.
+  const [farolTimeRows, setFarolTimeRows] = useState<any[] | null>(null);
+  useEffect(() => {
+    setFarolTimeRows(null);
+    if (!selectedMonthYYYYMM || isHardcoded) return;
+    let cancelled = false;
+    (supabase as any)
+      .rpc("farol_metricas_time", { p_mes: selectedMonthYYYYMM })
+      .then(({ data, error }: any) => {
+        if (cancelled) return;
+        if (!error && Array.isArray(data)) setFarolTimeRows(data);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedMonthYYYYMM, isHardcoded]);
+
+  if (!snapshot && farolTimeRows && !isHardcoded && overrideAtual?.manual_faturamento == null) {
+    effectiveFaturamento = farolTimeRows.reduce(
+      (s, r: any) => s + Number(r.faturamento || 0),
+      0,
+    );
+  }
+  if (!snapshot && farolTimeRows && !isHardcoded && overrideAtual?.manual_vendas == null) {
+    effectiveVendas = farolTimeRows.reduce(
+      (s, r: any) => s + Number(r.contratos || 0),
+      0,
+    );
+  }
+
+
   // Fonte oficial de reuniões (marcadas/realizadas) no funil de Marketing:
   // RPC `farol_metricas_sdr` (mesma usada na aba SDR). Evita duplicação de
   // cards espelho SDR/Closer e usa data_reuniao em fuso America/Sao_Paulo.
