@@ -234,7 +234,7 @@ function aggregateLeads(rows: any[], monthYYYYMM: string): LeadsStats {
   vendasRows.forEach((l: any) => {
     const b = ensure(l.closer);
     b.vendas += 1;
-    b.faturamento += Number(l.valor_negocio ?? 0);
+    b.faturamento += Number(l.valor_mensalidade ?? 0);
   });
   map.forEach((b) => {
     b.ticketMedioRealizado = b.vendas > 0 ? b.faturamento / b.vendas : 0;
