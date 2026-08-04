@@ -1344,7 +1344,7 @@ function RankList({ items, format }: { items: { closer: string; value: number }[
           >
             <PersonAvatar
               name={t.closer}
-              className="h-3.5 w-3.5"
+              className="h-4 w-4"
               fallback={<span className="text-[8px] leading-none">{medals[i]}</span>}
             />
             <span className="font-medium text-foreground truncate">{first}</span>
