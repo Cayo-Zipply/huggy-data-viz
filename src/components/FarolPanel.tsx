@@ -879,6 +879,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
                         <AlertTriangle className="w-3.5 h-3.5 text-destructive animate-pulse" />
                       </button>
                     )}
+                    <PersonAvatar name={d.closer} className="h-6 w-6" />
                     {d.closer}
                   </div>
                 </TableCell>
@@ -975,6 +976,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
                         <AlertTriangle className="w-3.5 h-3.5 text-destructive animate-pulse" />
                       </button>
                     )}
+                    <PersonAvatar name={d.sdr} className="h-6 w-6" />
                     {d.sdr}
                   </div>
                 </TableCell>
@@ -1338,7 +1340,11 @@ function RankList({ items, format }: { items: { closer: string; value: number }[
             key={t.closer}
             className="grid grid-cols-[14px_1fr_auto] items-center gap-1.5 text-[11px] leading-tight tabular-nums"
           >
-            <span className="text-[11px] leading-none">{medals[i]}</span>
+            <PersonAvatar
+              name={t.closer}
+              className="h-3.5 w-3.5"
+              fallback={<span className="text-[8px] leading-none">{medals[i]}</span>}
+            />
             <span className="font-medium text-foreground truncate">{first}</span>
             <span className="font-semibold text-foreground/90">{format(t.value)}</span>
           </div>

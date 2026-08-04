@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { PersonAvatar } from "@/components/PersonAvatar";
 
 /* ---------------- Types ---------------- */
 type Avaliacao = {
@@ -602,7 +603,10 @@ export default function SalesEnablement() {
                               {i + 1}
                             </td>
                             <td className="px-2 py-4">
-                              <div className="font-semibold text-foreground">{r.closer}</div>
+                              <div className="flex items-center gap-2">
+                                <PersonAvatar name={r.closer} className="h-7 w-7" />
+                                <span className="font-semibold text-foreground">{r.closer}</span>
+                              </div>
                             </td>
                             <td className="px-2 py-4">
                               <NotaPill value={r.nota_media} />
