@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { User } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { PersonAvatar } from "@/components/PersonAvatar";
 import { Progress } from "@/components/ui/progress";
 import { InputMoedaBRL } from "@/components/ui/input-moeda-brl";
 import { formatCurrency } from "@/data/marketingData";
@@ -128,9 +129,7 @@ export function CloserCardsGrid({
               <Card key={c.closer} className="p-5 hover:shadow-md transition-shadow">
                 {/* Header */}
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <User className="h-5 w-5 text-primary" />
-                  </div>
+                  <PersonAvatar name={c.closer} className="h-10 w-10" fallback={<User className="h-5 w-5 text-primary" />} />
                   <h4 className="font-semibold text-base text-foreground truncate">{c.closer}</h4>
                 </div>
 

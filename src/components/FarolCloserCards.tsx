@@ -1,5 +1,6 @@
 import { User, TrendingUp, TrendingDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { PersonAvatar } from "@/components/PersonAvatar";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/data/marketingData";
 import type { CloserBreakdown, MetaCloser } from "@/hooks/useMarketingLive";
@@ -159,9 +160,7 @@ function FarolCloserCard({ c, meta, totalDU, duAteHoje }: FarolCardProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-            <User className="h-5 w-5 text-primary" />
-          </div>
+          <PersonAvatar name={c.closer} className="h-10 w-10" fallback={<User className="h-5 w-5 text-primary" />} />
           <h4 className="font-semibold text-base text-foreground truncate">{c.closer}</h4>
         </div>
         <span className="text-[11px] text-muted-foreground bg-muted px-2 py-1 rounded-full whitespace-nowrap">

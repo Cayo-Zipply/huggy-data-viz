@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { AvatarUploader } from "@/components/AvatarUploader";
 import {
   BarChart3,
   Users,
@@ -98,10 +98,11 @@ export function AppSidebar() {
       <div className="border-t border-sidebar-border p-3 space-y-3">
         <ThemeToggle />
         <div className="flex items-center gap-2">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={undefined} />
-            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-          </Avatar>
+          <AvatarUploader
+            initials={initials}
+            currentUrl={(profile as any)?.avatar_url ?? null}
+          />
+
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-sidebar-foreground truncate">
               {profile?.nome ?? profile?.email ?? "Usuário"}
