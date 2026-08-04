@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { AlertTriangle, Settings, Target, CalendarDays, DollarSign, Users, Percent, FileSignature } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PersonAvatar } from "@/components/PersonAvatar";
+
 import { useTeamMembers, type TeamMember } from "@/hooks/useTeamMembers";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabaseExt as supabase } from "@/lib/supabaseExternal";
