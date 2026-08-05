@@ -14,6 +14,7 @@ import Contratos from "@/pages/Contratos";
 import Feedbacks from "@/pages/Feedbacks";
 import MaterialApoio from "@/pages/MaterialApoio";
 import SalesEnablement from "@/pages/SalesEnablement";
+import Pool from "@/pages/Pool";
 import { AppSidebar } from "@/components/AppSidebar";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { NovidadesModal } from "@/components/NovidadesModal";
@@ -186,6 +187,7 @@ const App = () => (
               <Route path="/feedbacks" element={<RoleGuard roles={["admin"]}><Feedbacks /></RoleGuard>} />
               <Route path="/material-apoio" element={<MaterialApoio />} />
               <Route path="/sales-enablement" element={<SalesEnablement />} />
+              <Route path="/pool" element={<Pool />} />
             </Route>
 
             <Route path="/" element={<Navigate to="/pipeline" replace />} />
