@@ -877,26 +877,19 @@ function DesempenhoTab({
 
   const ordered = useMemo(() => {
     const arr = [...rows];
-    if (sort === "nota") {
-      arr.sort((a, b) => {
-        const pa = a.posicao ?? 999;
-        const pb = b.posicao ?? 999;
-        if (pa !== pb) return pa - pb;
-        return (b.final_media ?? 0) - (a.final_media ?? 0);
-      });
-      return arr;
-    }
     const key = (r: DesempenhoMeta) =>
-      sort === "roi"
+      ordenarPor === "nota"
+        ? r.tecnica_media
+        : ordenarPor === "roi"
         ? r.roi
-        : sort === "conversao"
+        : ordenarPor === "conversao"
         ? r.conversao
-        : sort === "faturamento"
+        : ordenarPor === "faturamento"
         ? r.faturamento
         : r.vendas;
     arr.sort((a, b) => (key(b) ?? -Infinity) - (key(a) ?? -Infinity));
     return arr;
-  }, [rows, sort]);
+  }, [rows, ordenarPor]);
 
   if (loading) {
     return <p className="text-sm text-muted-foreground">Carregando…</p>;
