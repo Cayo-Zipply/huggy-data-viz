@@ -32,6 +32,40 @@ import { cn } from "@/lib/utils";
 import { PersonAvatar } from "@/components/PersonAvatar";
 
 /* ---------------- Types ---------------- */
+type MesOption = { mes: string; is_atual: boolean | null };
+
+type EvolucaoRow = {
+  closer: string | null;
+  mes: string | null;
+  mes_ant: string | null;
+  reunioes_notadas: number | null;
+  tecnica_media: number | null;
+  tecnica_ant: number | null;
+  delta_tecnica: number | null;
+  final_media: number | null;
+  final_ant: number | null;
+  delta_final: number | null;
+  v2_media: number | null;
+  v2_ant: number | null;
+  delta_v2: number | null;
+  melhor_crit: string | null;
+  melhor_crit_nome: string | null;
+  melhor_delta: number | null;
+  pior_crit: string | null;
+  pior_crit_nome: string | null;
+  pior_delta: number | null;
+  resumo: string | null;
+};
+
+type NotasMensaisRow = {
+  closer: string | null;
+  mes: string;
+  reunioes_notadas: number | null;
+  tecnica_media: number | null;
+  final_media: number | null;
+  v2_media: number | null;
+} & Record<string, any>;
+
 type DesempenhoMeta = {
   closer: string | null;
   mes: string | null;
