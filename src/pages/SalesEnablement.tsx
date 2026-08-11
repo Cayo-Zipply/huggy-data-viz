@@ -1498,6 +1498,31 @@ function ReuniaoDetalhe({
 }) {
   const [obs, setObs] = useState(r.outcome_obs ?? "");
   const [saving, setSaving] = useState<string | null>(null);
+  const [motivoIgnorar, setMotivoIgnorar] = useState("");
+  const [ignorando, setIgnorando] = useState(false);
+  const ignorada = !!r.ignorada;
+
+  const toggleIgnorar = async (ignorar: boolean) => {
+    setIgnorando(true);
+    const { error } = await (supabase as any).rpc("se_ignorar_reuniao", {
+      p_reuniao_id: r.reuniao_id,
+      p_ignorar: ignorar,
+      p_motivo: ignorar && motivoIgnorar.trim() ? motivoIgnorar.trim() : null,
+    });
+    setIgnorando(false);
+    if (error) {
+      toast({
+        title: "Não foi possível atualizar",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({
+      title: ignorar ? "Reunião excluída da conta" : "Reunião restaurada",
+    });
+    onSaved();
+  };
 
   const registrar = async (resultado: string) => {
     setSaving(resultado);
