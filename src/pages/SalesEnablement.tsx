@@ -88,7 +88,8 @@ type DesempenhoMeta = {
   custo_por_venda: number | null;
   custo_reuniao: number | null;
   roi: number | null;
-
+  posicao: number | null;
+  medalha: string | null;
 };
 
 type Alerta = {
