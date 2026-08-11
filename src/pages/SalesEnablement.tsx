@@ -862,7 +862,7 @@ function DesempenhoTab({
   alertas: Alerta[];
   loading: boolean;
 }) {
-  const [sort, setSort] = useState<LbSort>("nota");
+  const [ordenarPor, setOrdenarPor] = useState<LbSort>("nota");
   const [open, setOpen] = useState<Record<string, boolean>>({});
 
   const totais = useMemo(() => {
