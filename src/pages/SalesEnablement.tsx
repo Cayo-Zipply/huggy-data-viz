@@ -131,6 +131,8 @@ type ReuniaoSE = {
   modelo: string | null;
   prompt_versao: string | null;
   rubrica_versao: string | null;
+  ignorada?: boolean | null;
+  ignorada_motivo?: string | null;
 };
 
 type RubricaRow = {
@@ -1496,6 +1498,31 @@ function ReuniaoDetalhe({
 }) {
   const [obs, setObs] = useState(r.outcome_obs ?? "");
   const [saving, setSaving] = useState<string | null>(null);
+  const [motivoIgnorar, setMotivoIgnorar] = useState("");
+  const [ignorando, setIgnorando] = useState(false);
+  const ignorada = !!r.ignorada;
+
+  const toggleIgnorar = async (ignorar: boolean) => {
+    setIgnorando(true);
+    const { error } = await (supabase as any).rpc("se_ignorar_reuniao", {
+      p_reuniao_id: r.reuniao_id,
+      p_ignorar: ignorar,
+      p_motivo: ignorar && motivoIgnorar.trim() ? motivoIgnorar.trim() : null,
+    });
+    setIgnorando(false);
+    if (error) {
+      toast({
+        title: "Não foi possível atualizar",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({
+      title: ignorar ? "Reunião excluída da conta" : "Reunião restaurada",
+    });
+    onSaved();
+  };
 
   const registrar = async (resultado: string) => {
     setSaving(resultado);
@@ -1689,6 +1716,53 @@ function ReuniaoDetalhe({
           Churn −8. Apenas staff pode registrar.
         </p>
       </div>
+
+      {/* Excluir da conta */}
+      <div className="border border-border rounded-lg p-4 space-y-3 bg-card">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h4 className="text-sm font-semibold text-foreground">
+            Excluir da conta
+          </h4>
+          {ignorada && (
+            <span className="text-[11px] px-2 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-500">
+              excluída{r.ignorada_motivo ? ` · ${r.ignorada_motivo}` : ""}
+            </span>
+          )}
+        </div>
+        {ignorada ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={ignorando}
+            onClick={() => void toggleIgnorar(false)}
+          >
+            {ignorando ? "Salvando…" : "Trazer de volta"}
+          </Button>
+        ) : (
+          <>
+            <Input
+              placeholder="Motivo (opcional): no-show, não é call de closer…"
+              value={motivoIgnorar}
+              onChange={(e) => setMotivoIgnorar(e.target.value)}
+              className="h-9"
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={ignorando}
+              onClick={() => void toggleIgnorar(true)}
+              className="border-red-500/40 text-red-500 hover:bg-red-500/10"
+            >
+              {ignorando ? "Salvando…" : "Excluir da conta"}
+            </Button>
+          </>
+        )}
+        <p className="text-[10px] text-muted-foreground">
+          Remove a reunião das contagens e médias. Reversível. Apenas staff.
+        </p>
+      </div>
+
+
 
       <p className="text-[10px] text-muted-foreground pt-1 border-t border-border">
         {[r.modelo, r.prompt_versao, r.rubrica_versao].filter(Boolean).join(" · ")}
