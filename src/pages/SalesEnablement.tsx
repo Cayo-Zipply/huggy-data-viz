@@ -928,10 +928,10 @@ function DesempenhoTab({
             <button
               key={s.key}
               type="button"
-              onClick={() => setSort(s.key)}
+              onClick={() => setOrdenarPor(s.key)}
               className={cn(
                 "px-3 py-1 rounded-full text-xs font-semibold border transition-colors",
-                sort === s.key
+                ordenarPor === s.key
                   ? "bg-primary text-primary-foreground border-primary"
                   : "bg-muted/40 text-muted-foreground border-border hover:text-foreground",
               )}
