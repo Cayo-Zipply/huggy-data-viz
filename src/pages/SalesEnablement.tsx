@@ -862,7 +862,7 @@ function DesempenhoTab({
   alertas: Alerta[];
   loading: boolean;
 }) {
-  const [sort, setSort] = useState<LbSort>("nota");
+  const [ordenarPor, setOrdenarPor] = useState<LbSort>("nota");
   const [open, setOpen] = useState<Record<string, boolean>>({});
 
   const totais = useMemo(() => {
@@ -877,26 +877,19 @@ function DesempenhoTab({
 
   const ordered = useMemo(() => {
     const arr = [...rows];
-    if (sort === "nota") {
-      arr.sort((a, b) => {
-        const pa = a.posicao ?? 999;
-        const pb = b.posicao ?? 999;
-        if (pa !== pb) return pa - pb;
-        return (b.final_media ?? 0) - (a.final_media ?? 0);
-      });
-      return arr;
-    }
     const key = (r: DesempenhoMeta) =>
-      sort === "roi"
+      ordenarPor === "nota"
+        ? r.tecnica_media
+        : ordenarPor === "roi"
         ? r.roi
-        : sort === "conversao"
+        : ordenarPor === "conversao"
         ? r.conversao
-        : sort === "faturamento"
+        : ordenarPor === "faturamento"
         ? r.faturamento
         : r.vendas;
     arr.sort((a, b) => (key(b) ?? -Infinity) - (key(a) ?? -Infinity));
     return arr;
-  }, [rows, sort]);
+  }, [rows, ordenarPor]);
 
   if (loading) {
     return <p className="text-sm text-muted-foreground">Carregando…</p>;
@@ -935,10 +928,10 @@ function DesempenhoTab({
             <button
               key={s.key}
               type="button"
-              onClick={() => setSort(s.key)}
+              onClick={() => setOrdenarPor(s.key)}
               className={cn(
                 "px-3 py-1 rounded-full text-xs font-semibold border transition-colors",
-                sort === s.key
+                ordenarPor === s.key
                   ? "bg-primary text-primary-foreground border-primary"
                   : "bg-muted/40 text-muted-foreground border-border hover:text-foreground",
               )}
@@ -951,7 +944,8 @@ function DesempenhoTab({
 
       {/* Linhas */}
       <div className="space-y-2">
-        {ordered.map((d) => {
+        {ordered.map((d, idx) => {
+          const medalha = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : null;
           const id = `${d.closer}-${d.mes}`;
           const isOpen = !!open[id];
           const elapsed =
@@ -975,11 +969,11 @@ function DesempenhoTab({
                 className="w-full text-left px-3 sm:px-4 py-2.5 flex items-center gap-3"
               >
                 <span className="w-7 text-center text-lg shrink-0">
-                  {d.medalha ? (
-                    d.medalha
+                  {medalha ? (
+                    medalha
                   ) : (
                     <span className="text-sm text-muted-foreground">
-                      {d.posicao ?? "—"}
+                      {idx + 1}
                     </span>
                   )}
                 </span>
