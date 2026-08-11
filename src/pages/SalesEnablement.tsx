@@ -1717,6 +1717,53 @@ function ReuniaoDetalhe({
         </p>
       </div>
 
+      {/* Excluir da conta */}
+      <div className="border border-border rounded-lg p-4 space-y-3 bg-card">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h4 className="text-sm font-semibold text-foreground">
+            Excluir da conta
+          </h4>
+          {ignorada && (
+            <span className="text-[11px] px-2 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-500">
+              excluída{r.ignorada_motivo ? ` · ${r.ignorada_motivo}` : ""}
+            </span>
+          )}
+        </div>
+        {ignorada ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={ignorando}
+            onClick={() => void toggleIgnorar(false)}
+          >
+            {ignorando ? "Salvando…" : "Trazer de volta"}
+          </Button>
+        ) : (
+          <>
+            <Input
+              placeholder="Motivo (opcional): no-show, não é call de closer…"
+              value={motivoIgnorar}
+              onChange={(e) => setMotivoIgnorar(e.target.value)}
+              className="h-9"
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={ignorando}
+              onClick={() => void toggleIgnorar(true)}
+              className="border-red-500/40 text-red-500 hover:bg-red-500/10"
+            >
+              {ignorando ? "Salvando…" : "Excluir da conta"}
+            </Button>
+          </>
+        )}
+        <p className="text-[10px] text-muted-foreground">
+          Remove a reunião das contagens e médias. Reversível. Apenas staff.
+        </p>
+      </div>
+
+
+
       <p className="text-[10px] text-muted-foreground pt-1 border-t border-border">
         {[r.modelo, r.prompt_versao, r.rubrica_versao].filter(Boolean).join(" · ")}
       </p>
