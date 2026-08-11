@@ -273,25 +273,47 @@ function MiniCriterio({ code, value }: { code: string; value: number }) {
 
 /* ---------------- Page ---------------- */
 export default function SalesEnablement() {
-  const mes = currentMonth();
+  const [mesSelecionado, setMesSelecionado] = useState<string>("");
+
+  const { data: meses = [] } = useQuery({
+    queryKey: ["se-meses"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("vw_se_meses").select("*");
+      if (error) throw error;
+      return (data ?? []) as MesOption[];
+    },
+  });
+
+  // seleciona por padrão o mês is_atual (fallback: primeiro da lista)
+  const mes =
+    mesSelecionado ||
+    meses.find((m) => m.is_atual)?.mes ||
+    meses[0]?.mes ||
+    currentMonth();
+
+  const enabled = !!mes;
 
   const { data: desempenho = [], isLoading: loadingDes } = useQuery({
-    queryKey: ["se-desempenho-meta"],
+    queryKey: ["se-desempenho-meta", mes],
+    enabled,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vw_se_desempenho_meta")
-        .select("*");
+        .select("*")
+        .eq("mes", mes);
       if (error) throw error;
       return (data ?? []) as DesempenhoMeta[];
     },
   });
 
   const { data: alertas = [] } = useQuery({
-    queryKey: ["se-alertas"],
+    queryKey: ["se-alertas", mes],
+    enabled,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vw_se_alertas")
         .select("*")
+        .eq("mes", mes)
         .order("ordem", { ascending: true });
       if (error) throw error;
       return (data ?? []) as Alerta[];
@@ -299,13 +321,40 @@ export default function SalesEnablement() {
   });
 
   const { data: reunioes = [], isLoading: loadingReu } = useQuery({
-    queryKey: ["se-reunioes"],
+    queryKey: ["se-reunioes", mes],
+    enabled,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vw_se_reunioes")
-        .select("*");
+        .select("*")
+        .eq("mes", mes);
       if (error) throw error;
       return (data ?? []) as ReuniaoSE[];
+    },
+  });
+
+  const { data: evolucao = [], isLoading: loadingEvo } = useQuery({
+    queryKey: ["se-evolucao", mes],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vw_se_evolucao")
+        .select("*")
+        .eq("mes", mes);
+      if (error) throw error;
+      return (data ?? []) as EvolucaoRow[];
+    },
+  });
+
+  const { data: notasMensais = [] } = useQuery({
+    queryKey: ["se-notas-mensais"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vw_se_notas_mensais")
+        .select("*")
+        .order("mes", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as NotasMensaisRow[];
     },
   });
 
@@ -321,35 +370,46 @@ export default function SalesEnablement() {
     },
   });
 
-  /* KPIs */
+  /* KPIs — sempre do mês selecionado */
   const kpis = useMemo(() => {
-    const doMes = reunioes.filter((r) =>
-      (r.quando_local ?? r.meeting_date ?? "").startsWith(mes)
-    );
-    const base = doMes.length ? doMes : reunioes;
     const avg = (arr: (number | null)[]) => {
       const v = arr.filter((n): n is number => typeof n === "number");
       return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0;
     };
     return {
-      total: doMes.length,
-      tecnica: avg(base.map((r) => r.nota_tecnica)),
-      final: avg(base.map((r) => r.nota_final)),
+      total: reunioes.length,
+      tecnica: avg(reunioes.map((r) => r.nota_tecnica)),
+      final: avg(reunioes.map((r) => r.nota_final)),
       vendas: desempenho.reduce((a, d) => a + (d.vendas ?? 0), 0),
       faturamento: desempenho.reduce((a, d) => a + (d.faturamento ?? 0), 0),
     };
-  }, [reunioes, desempenho, mes]);
+  }, [reunioes, desempenho]);
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" strokeWidth={1.5} />
-          Sales Enablement
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Desempenho vs meta, reuniões avaliadas e rubrica de avaliação · {mes}
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" strokeWidth={1.5} />
+            Sales Enablement
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Desempenho vs meta, reuniões avaliadas, evolução e rubrica
+          </p>
+        </div>
+        <Select value={mes} onValueChange={setMesSelecionado}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Mês" />
+          </SelectTrigger>
+          <SelectContent>
+            {meses.map((m) => (
+              <SelectItem key={m.mes} value={m.mes}>
+                {m.mes}
+                {m.is_atual ? " · atual" : ""}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </header>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
@@ -372,12 +432,13 @@ export default function SalesEnablement() {
         <TabsList>
           <TabsTrigger value="desempenho">Desempenho vs Meta</TabsTrigger>
           <TabsTrigger value="reunioes">Reuniões</TabsTrigger>
+          <TabsTrigger value="evolucao">Evolução</TabsTrigger>
           <TabsTrigger value="rubrica">Rubrica</TabsTrigger>
         </TabsList>
 
         <TabsContent value="desempenho" className="mt-4">
           <DesempenhoTab
-            rows={desempenho}
+            rows={desempenho.filter((d) => (d.meta_realizadas ?? 0) > 0)}
             alertas={alertas}
             loading={loadingDes}
           />
@@ -387,6 +448,14 @@ export default function SalesEnablement() {
           <ReunioesTab rows={reunioes} loading={loadingReu} />
         </TabsContent>
 
+        <TabsContent value="evolucao" className="mt-4">
+          <EvolucaoTab
+            rows={evolucao}
+            notas={notasMensais}
+            loading={loadingEvo}
+          />
+        </TabsContent>
+
         <TabsContent value="rubrica" className="mt-4">
           <RubricaTab rows={rubrica} />
         </TabsContent>
@@ -394,6 +463,243 @@ export default function SalesEnablement() {
     </div>
   );
 }
+
+/* ---------------- Evolução ---------------- */
+function DeltaBadge({ v }: { v: number | null }) {
+  if (v == null) return null;
+  const up = v >= 0;
+  return (
+    <span
+      className={cn(
+        "text-[10px] font-semibold px-1.5 py-0.5 rounded",
+        up
+          ? "bg-emerald-500/15 text-emerald-500"
+          : "bg-red-500/15 text-red-500"
+      )}
+    >
+      {up ? "+" : ""}
+      {v.toFixed(1)}
+    </span>
+  );
+}
+
+function EvolucaoTab({
+  rows,
+  notas,
+  loading,
+}: {
+  rows: EvolucaoRow[];
+  notas: NotasMensaisRow[];
+  loading: boolean;
+}) {
+  const visiveis = useMemo(
+    () => rows.filter((r) => (r.reunioes_notadas ?? 0) >= 3),
+    [rows]
+  );
+
+  const closersVisiveis = useMemo(
+    () => new Set(visiveis.map((r) => r.closer ?? "")),
+    [visiveis]
+  );
+
+  const notasFiltradas = useMemo(
+    () =>
+      notas.filter(
+        (n) =>
+          closersVisiveis.has(n.closer ?? "") && (n.reunioes_notadas ?? 0) >= 3
+      ),
+    [notas, closersVisiveis]
+  );
+
+  if (loading) return <p className="text-sm text-muted-foreground">Carregando…</p>;
+
+  if (!visiveis.length) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Sem dados de evolução com volume suficiente (mín. 3 reuniões notadas)
+        para este mês.
+      </p>
+    );
+  }
+
+  const porCloser = Array.from(
+    new Set(notasFiltradas.map((n) => n.closer ?? ""))
+  ).sort();
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 lg:grid-cols-2">
+        {visiveis.map((r) => (
+          <div
+            key={`${r.closer}-${r.mes}`}
+            className="bg-card border border-border rounded-lg p-4 space-y-3"
+          >
+            <div className="flex items-center gap-3">
+              <PersonAvatar name={r.closer} className="h-9 w-9" />
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-foreground truncate">
+                  {r.closer ?? "—"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {r.mes_ant ?? "—"} → {r.mes ?? "—"} ·{" "}
+                  {r.reunioes_notadas ?? 0} reuniões notadas
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-muted/40 rounded-md p-2.5">
+                <p className="text-[10px] uppercase text-muted-foreground mb-1">
+                  Técnica
+                </p>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    {r.tecnica_ant ?? "—"}
+                  </span>
+                  <span className="text-muted-foreground">→</span>
+                  <span
+                    className={cn(
+                      "text-sm font-semibold",
+                      notaClass(r.tecnica_media)
+                    )}
+                  >
+                    {r.tecnica_media ?? "—"}
+                  </span>
+                  <DeltaBadge v={r.delta_tecnica} />
+                </div>
+              </div>
+              <div className="bg-muted/40 rounded-md p-2.5">
+                <p className="text-[10px] uppercase text-muted-foreground mb-1">
+                  V2
+                </p>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    {r.v2_ant ?? "—"}
+                  </span>
+                  <span className="text-muted-foreground">→</span>
+                  <span
+                    className={cn(
+                      "text-sm font-semibold",
+                      notaClass(r.v2_media)
+                    )}
+                  >
+                    {r.v2_media ?? "—"}
+                  </span>
+                  <DeltaBadge v={r.delta_v2} />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <p className="text-muted-foreground">Mais subiu</p>
+                <p className="text-emerald-500 font-medium">
+                  {r.melhor_crit_nome ??
+                    CRITERIO_LABELS[r.melhor_crit ?? ""] ??
+                    "—"}{" "}
+                  {r.melhor_delta != null &&
+                    `(${r.melhor_delta >= 0 ? "+" : ""}${r.melhor_delta.toFixed(1)})`}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Mais caiu</p>
+                <p className="text-red-500 font-medium">
+                  {r.pior_crit_nome ??
+                    CRITERIO_LABELS[r.pior_crit ?? ""] ??
+                    "—"}{" "}
+                  {r.pior_delta != null &&
+                    `(${r.pior_delta >= 0 ? "+" : ""}${r.pior_delta.toFixed(1)})`}
+                </p>
+              </div>
+            </div>
+
+            {r.resumo && (
+              <p className="text-xs text-muted-foreground bg-muted/40 rounded-md p-2.5">
+                {r.resumo}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-foreground">
+          Evolução por etapa da call (todos os meses)
+        </h3>
+        {porCloser.map((c) => {
+          const linhas = notasFiltradas
+            .filter((n) => (n.closer ?? "") === c)
+            .sort((a, b) => (a.mes ?? "").localeCompare(b.mes ?? ""));
+          return (
+            <div
+              key={c}
+              className="bg-card border border-border rounded-lg overflow-hidden"
+            >
+              <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
+                <PersonAvatar name={c} className="h-6 w-6" />
+                <p className="text-sm font-medium text-foreground">{c}</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/50 text-muted-foreground">
+                    <tr>
+                      <th className="text-left px-3 py-2 font-medium">Mês</th>
+                      {CRITERIO_ORDER.map((code) => (
+                        <th
+                          key={code}
+                          className="text-left px-3 py-2 font-medium whitespace-nowrap"
+                        >
+                          {CRITERIO_LABELS[code]}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {linhas.map((n) => (
+                      <tr key={n.mes} className="border-t border-border">
+                        <td className="px-3 py-2 font-medium text-foreground whitespace-nowrap">
+                          {n.mes}
+                        </td>
+                        {CRITERIO_ORDER.map((code) => {
+                          const v = (n as any)[code] as number | null;
+                          return (
+                            <td key={code} className="px-3 py-2 min-w-[90px]">
+                              <div className="flex items-center gap-1.5">
+                                <div className="h-1.5 w-12 rounded-full bg-muted overflow-hidden">
+                                  <div
+                                    className={cn(
+                                      "h-full rounded-full",
+                                      (v ?? 0) >= 8
+                                        ? "bg-emerald-500"
+                                        : (v ?? 0) >= 6
+                                        ? "bg-yellow-500"
+                                        : "bg-red-500"
+                                    )}
+                                    style={{
+                                      width: `${Math.min(100, ((v ?? 0) / 10) * 100)}%`,
+                                    }}
+                                  />
+                                </div>
+                                <span className="text-foreground">
+                                  {v ?? "—"}
+                                </span>
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 
 /* ---------------- Tab 1 ---------------- */
 function DesempenhoTab({
