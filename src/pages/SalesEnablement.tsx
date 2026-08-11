@@ -879,7 +879,7 @@ function DesempenhoTab({
     const arr = [...rows];
     const key = (r: DesempenhoMeta) =>
       ordenarPor === "nota"
-        ? r.tecnica_media
+        ? r.final_media ?? r.tecnica_media
         : ordenarPor === "roi"
         ? r.roi
         : ordenarPor === "conversao"
