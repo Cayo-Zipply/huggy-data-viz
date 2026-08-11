@@ -1,6 +1,8 @@
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo, Fragment } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseExternal";
+import { useToast } from "@/hooks/use-toast";
+
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -27,6 +29,7 @@ import {
   Star,
   DollarSign,
   ShieldAlert,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PersonAvatar } from "@/components/PersonAvatar";
@@ -114,6 +117,12 @@ type ReuniaoSE = {
   nota_tecnica: number | null;
   nota_final: number | null;
   nota_v2: number | null;
+  nota: number | null;
+  penalidades: number | null;
+  bonus_outcome: number | null;
+  outcome_resultado: string | null;
+  outcome_obs: string | null;
+  outcome_em: string | null;
   guardrails: string[] | null;
   notas_criterios: Record<string, number> | null;
   pontos_fortes: string[] | null;
@@ -145,14 +154,14 @@ const GUARDRAIL_LABELS: Record<string, string> = {
 };
 
 const CRITERIO_LABELS: Record<string, string> = {
-  abertura: "Abertura",
+  abertura: "Abertura & Rapport",
   diagnostico: "Diagnóstico",
-  agitacao_urgencia: "Agitação / Urgência",
+  agitacao_urgencia: "Implicação",
   metodo_pqa: "Método PQA",
-  ancoragem_valor: "Ancoragem de valor",
-  contorno_objecoes: "Contorno de objeções",
-  fechamento_call: "Fechamento em call",
-  jornada_confianca: "Jornada de confiança",
+  ancoragem_valor: "Ancoragem",
+  contorno_objecoes: "Objeções",
+  fechamento_call: "Fechamento",
+  jornada_confianca: "Jornada",
 };
 
 const CRITERIO_ORDER = [
@@ -871,7 +880,7 @@ function DesempenhoTab({
         const pa = a.posicao ?? 999;
         const pb = b.posicao ?? 999;
         if (pa !== pb) return pa - pb;
-        return (b.tecnica_media ?? 0) - (a.tecnica_media ?? 0);
+        return (b.final_media ?? 0) - (a.final_media ?? 0);
       });
       return arr;
     }
@@ -989,12 +998,12 @@ function DesempenhoTab({
                   <p
                     className={cn(
                       "text-lg font-semibold tabular-nums leading-none",
-                      notaClass(d.tecnica_media),
+                      notaClass(d.final_media),
                     )}
                   >
-                    {d.tecnica_media ?? "—"}
+                    {d.final_media ?? "—"}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">técnica</p>
+                  <p className="text-[10px] text-muted-foreground">nota</p>
                 </div>
 
                 <div className="hidden md:grid flex-1 grid-cols-4 gap-3 min-w-0">
@@ -1172,9 +1181,56 @@ type SortKey =
   | "empresa"
   | "closer"
   | "etapa_atual"
-  | "nota_tecnica"
-  | "nota_final"
-  | "nota_v2";
+  | "nota";
+
+const OUTCOME_META: Record<
+  string,
+  { label: string; emoji: string; cls: string }
+> = {
+  pagou: {
+    label: "Pagou",
+    emoji: "💰",
+    cls: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30",
+  },
+  continuou: {
+    label: "Continuou",
+    emoji: "🔁",
+    cls: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30",
+  },
+  churnou: {
+    label: "Churn",
+    emoji: "⚠️",
+    cls: "bg-red-500/15 text-red-500 border-red-500/30",
+  },
+  perdido: {
+    label: "Perdido",
+    emoji: "🚫",
+    cls: "bg-muted text-muted-foreground border-border",
+  },
+  apresentacao_boa: {
+    label: "Apresentação boa",
+    emoji: "📊",
+    cls: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30",
+  },
+  apresentacao_ruim: {
+    label: "Apresentação ruim",
+    emoji: "📉",
+    cls: "bg-red-500/15 text-red-500 border-red-500/30",
+  },
+};
+
+const OUTCOME_BOTOES: {
+  key: string;
+  label: string;
+  variant: "ok" | "bad" | "neutral";
+}[] = [
+  { key: "pagou", label: "Pagou", variant: "ok" },
+  { key: "continuou", label: "Continuou", variant: "ok" },
+  { key: "churnou", label: "Churn", variant: "bad" },
+  { key: "perdido", label: "Perdido", variant: "neutral" },
+  { key: "apresentacao_boa", label: "Apresentação boa", variant: "ok" },
+  { key: "apresentacao_ruim", label: "Apresentação ruim", variant: "bad" },
+];
 
 function ReunioesTab({
   rows,
@@ -1183,13 +1239,14 @@ function ReunioesTab({
   rows: ReuniaoSE[];
   loading: boolean;
 }) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [busca, setBusca] = useState("");
   const [closer, setCloser] = useState("all");
-  const [notaExib, setNotaExib] = useState<"final" | "tecnica" | "v2">("final");
   const [soHoje, setSoHoje] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("quando_local");
   const [sortAsc, setSortAsc] = useState(false);
-  const [sel, setSel] = useState<ReuniaoSE | null>(null);
+  const [aberta, setAberta] = useState<string | null>(null);
 
   const closers = useMemo(
     () =>
@@ -1247,13 +1304,6 @@ function ReunioesTab({
     </th>
   );
 
-  const notaExibida = (r: ReuniaoSE) =>
-    notaExib === "final"
-      ? r.nota_final
-      : notaExib === "tecnica"
-        ? r.nota_tecnica
-        : r.nota_v2;
-
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
@@ -1276,19 +1326,6 @@ function ReunioesTab({
             ))}
           </SelectContent>
         </Select>
-        <Select
-          value={notaExib}
-          onValueChange={(v) => setNotaExib(v as typeof notaExib)}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="final">Nota Final</SelectItem>
-            <SelectItem value="tecnica">Nota Técnica</SelectItem>
-            <SelectItem value="v2">Nota v2</SelectItem>
-          </SelectContent>
-        </Select>
         <Button
           variant={soHoje ? "default" : "outline"}
           size="sm"
@@ -1305,236 +1342,361 @@ function ReunioesTab({
         <table className="w-full text-sm">
           <thead className="text-xs text-muted-foreground border-b border-border">
             <tr>
+              <th className="w-8" />
               <Th k="quando_local">Quando</Th>
               <Th k="empresa">Empresa</Th>
               <Th k="closer">Closer</Th>
               <Th k="etapa_atual">Etapa</Th>
-              <Th k="nota_tecnica">Téc</Th>
-              <Th k="nota_final">Final</Th>
-              <Th k="nota_v2">v2</Th>
+              <Th k="nota">Nota</Th>
               <th className="text-left px-3 py-2 font-medium">Guardrails</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={8} className="px-3 py-6 text-muted-foreground">
+                <td colSpan={7} className="px-3 py-6 text-muted-foreground">
                   Carregando…
                 </td>
               </tr>
             )}
             {!loading && filtered.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-3 py-6 text-muted-foreground">
+                <td colSpan={7} className="px-3 py-6 text-muted-foreground">
                   Nenhuma reunião encontrada.
                 </td>
               </tr>
             )}
-            {filtered.map((r) => (
-              <tr
-                key={r.reuniao_id}
-                onClick={() => setSel(r)}
-                className="border-b border-border/50 last:border-0 hover:bg-muted/40 cursor-pointer"
-              >
-                <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
-                  {fmtQuando(r.quando_local ?? r.meeting_date)}
-                </td>
-                <td className="px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-foreground">{r.empresa ?? "—"}</span>
-                    {r.lead_status === "ganho" && (
-                      <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[10px]">
-                        ganho
-                      </Badge>
+            {filtered.map((r) => {
+              const open = aberta === r.reuniao_id;
+              const oc = r.outcome_resultado
+                ? OUTCOME_META[r.outcome_resultado]
+                : null;
+              return (
+                <Fragment key={r.reuniao_id}>
+                  <tr
+                    onClick={() => setAberta(open ? null : r.reuniao_id)}
+                    className={cn(
+                      "border-b border-border/50 hover:bg-muted/40 cursor-pointer",
+                      open && "bg-muted/30"
                     )}
-                  </div>
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap">
-                  {r.closer ? (
-                    <div className="flex items-center gap-2">
-                      <PersonAvatar name={r.closer} className="h-6 w-6" />
-                      <span className="text-foreground">{r.closer}</span>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
+                  >
+                    <td className="pl-3 text-muted-foreground">
+                      <ChevronRight
+                        className={cn(
+                          "h-4 w-4 transition-transform",
+                          open && "rotate-90 text-primary"
+                        )}
+                      />
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
+                      {fmtQuando(r.quando_local ?? r.meeting_date)}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-foreground">
+                          {r.empresa ?? "—"}
+                        </span>
+                        {r.lead_status === "ganho" && (
+                          <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[10px]">
+                            ganho
+                          </Badge>
+                        )}
+                        {oc && (
+                          <span
+                            className={cn(
+                              "text-[10px] px-1.5 py-0.5 rounded border whitespace-nowrap",
+                              oc.cls
+                            )}
+                          >
+                            {oc.emoji} {oc.label}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      {r.closer ? (
+                        <div className="flex items-center gap-2">
+                          <PersonAvatar name={r.closer} className="h-6 w-6" />
+                          <span className="text-foreground">{r.closer}</span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                      {r.etapa_atual ?? "—"}
+                    </td>
+                    <td
+                      className={cn(
+                        "px-3 py-2 font-semibold",
+                        notaClass(r.nota)
+                      )}
+                    >
+                      {r.nota ?? "—"}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="flex flex-wrap gap-1">
+                        {(r.guardrails ?? []).map((g) => (
+                          <span
+                            key={g}
+                            title={GUARDRAIL_LABELS[g] ?? g}
+                            className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-500 border border-red-500/20 whitespace-nowrap"
+                          >
+                            {g.split("_")[0]}
+                          </span>
+                        ))}
+                        {!(r.guardrails ?? []).length && (
+                          <span className="text-xs text-muted-foreground">
+                            —
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                  {open && (
+                    <tr className="border-b border-border/50">
+                      <td colSpan={7} className="px-4 py-4 bg-muted/10">
+                        <ReuniaoDetalhe
+                          r={r}
+                          onSaved={() => {
+                            void queryClient.invalidateQueries({
+                              queryKey: ["se-reunioes"],
+                            });
+                            void queryClient.invalidateQueries({
+                              queryKey: ["se-desempenho-meta"],
+                            });
+                          }}
+                          toast={toast}
+                        />
+                      </td>
+                    </tr>
                   )}
-                </td>
-                <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
-                  {r.etapa_atual ?? "—"}
-                </td>
-                <td
-                  className={cn(
-                    "px-3 py-2 font-semibold",
-                    notaClass(r.nota_tecnica),
-                    notaExib === "tecnica" && "bg-muted/40"
-                  )}
-                >
-                  {r.nota_tecnica ?? "—"}
-                </td>
-                <td
-                  className={cn(
-                    "px-3 py-2 font-semibold",
-                    notaClass(r.nota_final),
-                    notaExib === "final" && "bg-muted/40"
-                  )}
-                >
-                  {r.nota_final ?? "—"}
-                </td>
-                <td
-                  className={cn(
-                    "px-3 py-2 font-semibold",
-                    notaClass(r.nota_v2),
-                    notaExib === "v2" && "bg-muted/40"
-                  )}
-                >
-                  {r.nota_v2 ?? "—"}
-                </td>
-                <td className="px-3 py-2">
-                  <div className="flex flex-wrap gap-1">
-                    {(r.guardrails ?? []).map((g) => (
-                      <span
-                        key={g}
-                        title={GUARDRAIL_LABELS[g] ?? g}
-                        className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-500 border border-red-500/20 whitespace-nowrap"
-                      >
-                        {g.split("_")[0]}
-                      </span>
-                    ))}
-                    {!(r.guardrails ?? []).length && (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
+                </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-      <Dialog open={!!sel} onOpenChange={(o) => !o && setSel(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          {sel && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  {sel.empresa ?? "Reunião"}
-                  {sel.lead_status === "ganho" && (
-                    <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[10px]">
-                      ganho
-                    </Badge>
-                  )}
-                </DialogTitle>
-                <p className="text-xs text-muted-foreground">
-                  {fmtQuando(sel.quando_local ?? sel.meeting_date)} ·{" "}
-                  {sel.closer ?? "sem closer"} · {sel.etapa_atual ?? "—"}
-                </p>
-              </DialogHeader>
-
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  ["Técnica", sel.nota_tecnica],
-                  ["Final", sel.nota_final],
-                  ["v2", sel.nota_v2],
-                ].map(([l, v]) => (
-                  <div
-                    key={l as string}
-                    className="bg-muted/40 rounded-lg p-3 text-center"
-                  >
-                    <p className="text-xs text-muted-foreground">{l}</p>
-                    <p
-                      className={cn(
-                        "text-xl font-semibold",
-                        notaClass(v as number | null)
-                      )}
-                    >
-                      {(v as number | null) ?? "—"}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              {sel.notas_criterios && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-foreground">
-                    Critérios
-                  </h3>
-                  <div className="grid sm:grid-cols-2 gap-x-4 gap-y-2">
-                    {CRITERIO_ORDER.filter(
-                      (c) => sel.notas_criterios?.[c] != null
-                    ).map((c) => (
-                      <MiniCriterio
-                        key={c}
-                        code={c}
-                        value={Number(sel.notas_criterios![c])}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {(sel.guardrails ?? []).length > 0 && (
-                <div className="space-y-1">
-                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                    <ShieldAlert className="h-4 w-4 text-red-500" />
-                    Guardrails acionados
-                  </h3>
-                  <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-0.5">
-                    {(sel.guardrails ?? []).map((g) => (
-                      <li key={g}>{GUARDRAIL_LABELS[g] ?? g}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {(sel.pontos_melhoria ?? []).length > 0 && (
-                <div className="space-y-1">
-                  <h3 className="text-sm font-semibold text-foreground">
-                    Pontos de melhoria
-                  </h3>
-                  <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-0.5">
-                    {(sel.pontos_melhoria ?? []).map((p, i) => (
-                      <li key={i}>{p}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {(sel.pontos_fortes ?? []).length > 0 && (
-                <div className="space-y-1">
-                  <h3 className="text-sm font-semibold text-foreground">
-                    Pontos fortes
-                  </h3>
-                  <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-0.5">
-                    {(sel.pontos_fortes ?? []).map((p, i) => (
-                      <li key={i}>{p}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {sel.resumo_treinador && (
-                <div className="space-y-1">
-                  <h3 className="text-sm font-semibold text-foreground">
-                    Resumo do treinador
-                  </h3>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {sel.resumo_treinador}
-                  </p>
-                </div>
-              )}
-
-              <p className="text-[10px] text-muted-foreground pt-2 border-t border-border">
-                {[sel.modelo, sel.prompt_versao, sel.rubrica_versao]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </p>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <p className="text-[11px] text-muted-foreground">
+        Nota ≥70 🟢 · 50–69 🟡 · 35–49 🟠 · &lt;35 🔴
+      </p>
     </div>
   );
 }
+
+function ReuniaoDetalhe({
+  r,
+  onSaved,
+  toast,
+}: {
+  r: ReuniaoSE;
+  onSaved: () => void;
+  toast: ReturnType<typeof useToast>["toast"];
+}) {
+  const [obs, setObs] = useState(r.outcome_obs ?? "");
+  const [saving, setSaving] = useState<string | null>(null);
+
+  const registrar = async (resultado: string) => {
+    setSaving(resultado);
+    const { error } = await (supabase as any).rpc("se_registrar_outcome", {
+      p_lead_id: r.lead_id,
+      p_resultado: resultado,
+      p_observacao: obs.trim() ? obs.trim() : null,
+      p_readai_meeting_id: r.reuniao_id,
+      p_valor: null,
+    });
+    setSaving(null);
+    if (error) {
+      toast({
+        title: "Não foi possível registrar",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({
+      title: "Resultado registrado",
+      description: OUTCOME_META[resultado]?.label ?? resultado,
+    });
+    onSaved();
+  };
+
+  const partes: string[] = [`Técnica ${r.nota_tecnica ?? 0}`];
+  if ((r.penalidades ?? 0) !== 0)
+    partes.push(`− ${Math.abs(r.penalidades ?? 0)} penalidades`);
+  if ((r.bonus_outcome ?? 0) !== 0)
+    partes.push(
+      `${(r.bonus_outcome ?? 0) > 0 ? "+" : "−"} ${Math.abs(r.bonus_outcome ?? 0)} resultado`
+    );
+
+  const ocAtual = r.outcome_resultado ? OUTCOME_META[r.outcome_resultado] : null;
+
+  return (
+    <div className="space-y-5">
+      {/* Cabeçalho + nota */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-base font-semibold text-foreground">
+              {r.empresa ?? "Reunião"}
+            </h3>
+            {r.lead_status === "ganho" && (
+              <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[10px]">
+                ganho
+              </Badge>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {fmtQuando(r.quando_local ?? r.meeting_date)} ·{" "}
+            {r.closer ?? "sem closer"} · {r.etapa_atual ?? "—"}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className={cn("text-3xl font-semibold", notaClass(r.nota))}>
+            {r.nota ?? "—"}
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            {partes.join(" ")} = {r.nota ?? "—"}
+          </p>
+        </div>
+      </div>
+
+      {/* Critérios */}
+      {r.notas_criterios && (
+        <div className="space-y-2">
+          <h4 className="text-sm font-semibold text-foreground">Critérios</h4>
+          <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
+            {CRITERIO_ORDER.filter((c) => r.notas_criterios?.[c] != null).map(
+              (c) => (
+                <MiniCriterio
+                  key={c}
+                  code={c}
+                  value={Number(r.notas_criterios![c])}
+                />
+              )
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Guardrails */}
+      {(r.guardrails ?? []).length > 0 && (
+        <div className="space-y-1">
+          <h4 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+            <ShieldAlert className="h-4 w-4 text-red-500" />
+            Guardrails acionados
+          </h4>
+          <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-0.5">
+            {(r.guardrails ?? []).map((g) => (
+              <li key={g}>{GUARDRAIL_LABELS[g] ?? g}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="grid md:grid-cols-2 gap-5">
+        {(r.pontos_fortes ?? []).length > 0 && (
+          <div className="space-y-1">
+            <h4 className="text-sm font-semibold text-foreground">
+              Pontos fortes
+            </h4>
+            <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-0.5">
+              {(r.pontos_fortes ?? []).map((p, i) => (
+                <li key={i}>{p}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {(r.pontos_melhoria ?? []).length > 0 && (
+          <div className="space-y-1">
+            <h4 className="text-sm font-semibold text-foreground">
+              Pontos de melhoria
+            </h4>
+            <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-0.5">
+              {(r.pontos_melhoria ?? []).map((p, i) => (
+                <li key={i}>{p}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {r.resumo_treinador && (
+        <div className="space-y-1">
+          <h4 className="text-sm font-semibold text-foreground">
+            Resumo do treinador
+          </h4>
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+            {r.resumo_treinador}
+          </p>
+        </div>
+      )}
+
+      {/* Calibragem */}
+      <div className="border border-border rounded-lg p-4 space-y-3 bg-card">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h4 className="text-sm font-semibold text-foreground">Calibragem</h4>
+          {ocAtual ? (
+            <span
+              className={cn(
+                "text-[11px] px-2 py-0.5 rounded border",
+                ocAtual.cls
+              )}
+            >
+              {ocAtual.emoji} {ocAtual.label}
+              {r.outcome_em ? ` · ${fmtQuando(r.outcome_em)}` : ""}
+            </span>
+          ) : (
+            <span className="text-[11px] text-muted-foreground">
+              Sem resultado registrado
+            </span>
+          )}
+        </div>
+        {r.outcome_obs && (
+          <p className="text-xs text-muted-foreground whitespace-pre-wrap">
+            {r.outcome_obs}
+          </p>
+        )}
+        <Input
+          placeholder="Observação (opcional)"
+          value={obs}
+          onChange={(e) => setObs(e.target.value)}
+          className="h-9"
+        />
+        <div className="flex flex-wrap gap-2">
+          {OUTCOME_BOTOES.map((b) => (
+            <Button
+              key={b.key}
+              size="sm"
+              variant="outline"
+              disabled={!!saving || !r.lead_id}
+              onClick={() => void registrar(b.key)}
+              className={cn(
+                b.variant === "ok" &&
+                  "border-emerald-500/40 text-emerald-500 hover:bg-emerald-500/10",
+                b.variant === "bad" &&
+                  "border-red-500/40 text-red-500 hover:bg-red-500/10",
+                b.variant === "neutral" && "text-muted-foreground"
+              )}
+            >
+              {saving === b.key ? "Salvando…" : b.label}
+            </Button>
+          ))}
+        </div>
+        <p className="text-[10px] text-muted-foreground">
+          Pagou/Continuou +15 · Apresentação boa +5 · Apresentação ruim −5 ·
+          Churn −8. Apenas staff pode registrar.
+        </p>
+      </div>
+
+      <p className="text-[10px] text-muted-foreground pt-1 border-t border-border">
+        {[r.modelo, r.prompt_versao, r.rubrica_versao].filter(Boolean).join(" · ")}
+      </p>
+    </div>
+  );
+}
+
 
 /* ---------------- Tab 3 ---------------- */
 function RubricaTab({ rows }: { rows: RubricaRow[] }) {
