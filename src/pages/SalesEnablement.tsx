@@ -131,6 +131,8 @@ type ReuniaoSE = {
   modelo: string | null;
   prompt_versao: string | null;
   rubrica_versao: string | null;
+  ignorada?: boolean | null;
+  ignorada_motivo?: string | null;
 };
 
 type RubricaRow = {
