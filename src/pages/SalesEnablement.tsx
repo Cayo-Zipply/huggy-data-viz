@@ -88,7 +88,8 @@ type DesempenhoMeta = {
   custo_por_venda: number | null;
   custo_reuniao: number | null;
   roi: number | null;
-
+  posicao: number | null;
+  medalha: string | null;
 };
 
 type Alerta = {
@@ -192,6 +193,7 @@ function sevStyles(sev: string | null | undefined) {
     case "critico":
       return { bar: "bg-red-500", text: "text-red-500" };
     case "atencao":
+    case "warn":
       return { bar: "bg-yellow-500", text: "text-yellow-500" };
     case "ok":
       return { bar: "bg-emerald-500", text: "text-emerald-500" };
@@ -740,7 +742,106 @@ function EvolucaoTab({
 }
 
 
-/* ---------------- Tab 1 ---------------- */
+/* ---------------- Tab 1 — Leaderboard ---------------- */
+type LbSort = "nota" | "roi" | "conversao" | "faturamento" | "vendas";
+
+const LB_SORTS: { key: LbSort; label: string }[] = [
+  { key: "nota", label: "Nota" },
+  { key: "roi", label: "ROI" },
+  { key: "conversao", label: "Conversão" },
+  { key: "faturamento", label: "Faturamento" },
+  { key: "vendas", label: "Vendas" },
+];
+
+function brlK(n: number | null | undefined) {
+  if (n == null) return "—";
+  if (Math.abs(n) >= 1000)
+    return `R$${(n / 1000).toLocaleString("pt-BR", {
+      maximumFractionDigits: 1,
+    })}k`;
+  return brl(n);
+}
+
+function roiFmt(roi: number | null | undefined) {
+  if (roi == null) return "—";
+  return `${roi.toLocaleString("pt-BR", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })}×`;
+}
+
+type Status = "ok" | "warn" | "crit" | "none";
+
+function statusPace(
+  atual: number | null,
+  meta: number | null,
+  elapsed: number,
+): Status {
+  if (!meta || meta <= 0) return "none";
+  const alvo = meta * Math.max(0.01, Math.min(1, elapsed));
+  const pace = (atual ?? 0) / alvo;
+  if (pace >= 1) return "ok";
+  if (pace >= 0.7) return "warn";
+  return "crit";
+}
+
+function statusTaxa(atual: number | null, meta: number | null): Status {
+  if (!meta || meta <= 0) return "none";
+  const v = atual ?? 0;
+  if (v >= meta) return "ok";
+  if (v >= meta * 0.8) return "warn";
+  return "crit";
+}
+
+function statusRoi(roi: number | null): Status {
+  if (roi == null) return "none";
+  if (roi >= 3) return "ok";
+  if (roi >= 2) return "warn";
+  return "crit";
+}
+
+const DOT: Record<Status, string> = {
+  ok: "bg-emerald-500",
+  warn: "bg-yellow-500",
+  crit: "bg-red-500",
+  none: "bg-muted-foreground/40",
+};
+
+function StatusDot({ s }: { s: Status }) {
+  return (
+    <span
+      className={cn("inline-block h-1.5 w-1.5 rounded-full shrink-0", DOT[s])}
+    />
+  );
+}
+
+function LbChip({
+  label,
+  value,
+  sub,
+  status,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  status: Status;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[10px] uppercase tracking-wide text-muted-foreground truncate">
+        {label}
+      </p>
+      <p className="text-[13px] font-semibold text-foreground tabular-nums truncate flex items-center gap-1.5">
+        {value}
+        <StatusDot s={status} />
+      </p>
+      {sub && (
+        <p className="text-[10px] text-muted-foreground truncate">{sub}</p>
+      )}
+    </div>
+  );
+}
+
 function DesempenhoTab({
   rows,
   alertas,
@@ -750,6 +851,42 @@ function DesempenhoTab({
   alertas: Alerta[];
   loading: boolean;
 }) {
+  const [sort, setSort] = useState<LbSort>("nota");
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+
+  const totais = useMemo(() => {
+    const rois = rows.map((r) => r.roi).filter((r): r is number => r != null);
+    return {
+      reunioes: rows.reduce((a, r) => a + (r.realizadas ?? 0), 0),
+      vendas: rows.reduce((a, r) => a + (r.vendas ?? 0), 0),
+      faturamento: rows.reduce((a, r) => a + (r.faturamento ?? 0), 0),
+      roi: rois.length ? rois.reduce((a, b) => a + b, 0) / rois.length : null,
+    };
+  }, [rows]);
+
+  const ordered = useMemo(() => {
+    const arr = [...rows];
+    if (sort === "nota") {
+      arr.sort((a, b) => {
+        const pa = a.posicao ?? 999;
+        const pb = b.posicao ?? 999;
+        if (pa !== pb) return pa - pb;
+        return (b.tecnica_media ?? 0) - (a.tecnica_media ?? 0);
+      });
+      return arr;
+    }
+    const key = (r: DesempenhoMeta) =>
+      sort === "roi"
+        ? r.roi
+        : sort === "conversao"
+        ? r.conversao
+        : sort === "faturamento"
+        ? r.faturamento
+        : r.vendas;
+    arr.sort((a, b) => (key(b) ?? -Infinity) - (key(a) ?? -Infinity));
+    return arr;
+  }, [rows, sort]);
+
   if (loading) {
     return <p className="text-sm text-muted-foreground">Carregando…</p>;
   }
@@ -762,149 +899,269 @@ function DesempenhoTab({
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      {rows.map((d) => {
-        const ratio =
-          d.dias_mes && d.dias_mes > 0
-            ? Math.min(1, (d.dia_atual ?? 0) / d.dias_mes)
-            : 1;
-        const meus = alertas
-          .filter((a) => (a.closer ?? "") === (d.closer ?? ""))
-          .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
-
-        return (
-          <div
-            key={`${d.closer}-${d.mes}`}
-            className="bg-card border border-border rounded-lg p-4 space-y-4"
-          >
-            <div className="flex items-center gap-3">
-              <PersonAvatar name={d.closer} className="h-9 w-9" />
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-foreground truncate">
-                  {d.closer ?? "—"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {d.reunioes_notadas ?? 0} reuniões notadas · dia{" "}
-                  {d.dia_atual ?? "—"}/{d.dias_mes ?? "—"}
-                </p>
-              </div>
-              <div className="text-right text-xs">
-                <p className={cn("font-semibold", notaClass(d.tecnica_media))}>
-                  Téc {d.tecnica_media ?? "—"}
-                </p>
-                <p className={cn("font-semibold", notaClass(d.final_media))}>
-                  Final {d.final_media ?? "—"}
-                </p>
-              </div>
+    <div className="space-y-3">
+      {/* Faixa de totais + ordenação */}
+      <div className="bg-card border border-border rounded-lg px-4 py-3 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-wrap gap-6">
+          {[
+            { l: "Reuniões", v: String(totais.reunioes) },
+            { l: "Vendas", v: String(totais.vendas) },
+            { l: "Faturamento", v: brlK(totais.faturamento) },
+            { l: "ROI médio", v: roiFmt(totais.roi) },
+          ].map((k) => (
+            <div key={k.l}>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                {k.l}
+              </p>
+              <p className="text-base font-semibold text-foreground tabular-nums">
+                {k.v}
+              </p>
             </div>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {LB_SORTS.map((s) => (
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => setSort(s.key)}
+              className={cn(
+                "px-3 py-1 rounded-full text-xs font-semibold border transition-colors",
+                sort === s.key
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-muted/40 text-muted-foreground border-border hover:text-foreground",
+              )}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-            <div className="space-y-3">
-              <MetaBar
-                label="Reuniões realizadas"
-                atual={d.realizadas ?? 0}
-                meta={d.meta_realizadas ?? 0}
-                pace={(d.meta_realizadas ?? 0) * ratio}
-              />
-              <MetaBar
-                label="Vendas"
-                atual={d.vendas ?? 0}
-                meta={d.meta_vendas ?? 0}
-                pace={(d.meta_vendas ?? 0) * ratio}
-              />
-              <MetaBar
-                label="Conversão"
-                atual={d.conversao ?? 0}
-                meta={d.meta_conversao ?? 0}
-                format={(n) => `${Math.round(n)}%`}
-              />
-              <MetaBar
-                label="Ticket médio"
-                atual={d.ticket_medio ?? 0}
-                meta={d.meta_ticket_medio ?? 0}
-                format={brl}
-              />
-              <MetaBar
-                label="Faturamento"
-                atual={d.faturamento ?? 0}
-                meta={d.meta_faturamento ?? 0}
-                format={brl}
-                pace={(d.meta_faturamento ?? 0) * ratio}
-              />
-            </div>
+      {/* Linhas */}
+      <div className="space-y-2">
+        {ordered.map((d) => {
+          const id = `${d.closer}-${d.mes}`;
+          const isOpen = !!open[id];
+          const elapsed =
+            d.dias_mes && d.dias_mes > 0
+              ? Math.min(1, (d.dia_atual ?? 0) / d.dias_mes)
+              : 1;
+          const ratio = elapsed;
+          const sRoi = statusRoi(d.roi);
+          const meus = alertas
+            .filter((a) => (a.closer ?? "") === (d.closer ?? ""))
+            .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
 
-            <div className="rounded-md border border-border bg-muted/30 p-3">
-              <div className="flex items-baseline justify-between mb-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Eficiência
-                </p>
-                <p className="text-[11px] text-muted-foreground">
-                  custo/reunião {d.custo_reuniao != null ? brl(d.custo_reuniao) : "—"}
-                </p>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <p className="text-[11px] text-muted-foreground">Investido</p>
-                  <p className="text-sm font-semibold text-foreground tabular-nums">
-                    {d.investido != null ? brl(d.investido) : "—"}
-                  </p>
+          return (
+            <div
+              key={id}
+              className="bg-card border border-border rounded-xl overflow-hidden transition-colors hover:border-primary/40"
+            >
+              <button
+                type="button"
+                onClick={() => setOpen((o) => ({ ...o, [id]: !o[id] }))}
+                className="w-full text-left px-3 sm:px-4 py-2.5 flex items-center gap-3"
+              >
+                <span className="w-7 text-center text-lg shrink-0">
+                  {d.medalha ? (
+                    d.medalha
+                  ) : (
+                    <span className="text-sm text-muted-foreground">
+                      {d.posicao ?? "—"}
+                    </span>
+                  )}
+                </span>
+
+                <div className="flex items-center gap-2.5 min-w-0 w-[190px] shrink-0">
+                  <PersonAvatar name={d.closer} className="h-8 w-8" />
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground truncate text-sm">
+                      {d.closer ?? "—"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {d.reunioes_notadas ?? 0} reuniões notadas
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[11px] text-muted-foreground">Custo/venda</p>
-                  <p className="text-sm font-semibold text-foreground tabular-nums">
-                    {d.custo_por_venda != null ? brl(d.custo_por_venda) : "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-muted-foreground">ROI</p>
+
+                <div className="w-14 text-center shrink-0">
                   <p
                     className={cn(
-                      "text-sm font-semibold tabular-nums",
-                      d.roi == null
-                        ? "text-muted-foreground"
-                        : d.roi >= 3
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : d.roi >= 2
-                        ? "text-amber-500"
-                        : "text-destructive",
+                      "text-lg font-semibold tabular-nums leading-none",
+                      notaClass(d.tecnica_media),
                     )}
                   >
-                    {d.roi != null
-                      ? `${d.roi.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}×`
-                      : "—"}
+                    {d.tecnica_media ?? "—"}
                   </p>
+                  <p className="text-[10px] text-muted-foreground">técnica</p>
                 </div>
-              </div>
-            </div>
 
+                <div className="hidden md:grid flex-1 grid-cols-4 gap-3 min-w-0">
+                  <LbChip
+                    label="Reuniões"
+                    value={`${d.realizadas ?? 0}/${d.meta_realizadas ?? 0}`}
+                    status={statusPace(d.realizadas, d.meta_realizadas, elapsed)}
+                  />
+                  <LbChip
+                    label="Conversão"
+                    value={`${Math.round(d.conversao ?? 0)}%`}
+                    sub={`meta ${Math.round(d.meta_conversao ?? 0)}%`}
+                    status={statusTaxa(d.conversao, d.meta_conversao)}
+                  />
+                  <LbChip
+                    label="Faturamento"
+                    value={brlK(d.faturamento)}
+                    sub={`de ${brlK(d.meta_faturamento)}`}
+                    status={statusPace(
+                      d.faturamento,
+                      d.meta_faturamento,
+                      elapsed,
+                    )}
+                  />
+                  <LbChip
+                    label="Custo/venda"
+                    value={
+                      d.custo_por_venda != null ? brlK(d.custo_por_venda) : "—"
+                    }
+                    status="none"
+                  />
+                </div>
 
-            {meus.length > 0 && (
-              <div className="space-y-2 pt-1">
-                {meus.map((a, i) => {
-                  const s = sevStyles(a.severidade);
-                  return (
-                    <div
-                      key={i}
-                      className="flex gap-3 bg-muted/40 rounded-md p-2.5"
-                    >
-                      <div className={cn("w-1 rounded-full shrink-0", s.bar)} />
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-foreground">
-                          {a.titulo}
-                        </p>
-                        {a.sugestao && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {a.sugestao}
+                <span
+                  className={cn(
+                    "shrink-0 px-2.5 py-1 rounded-lg text-[13px] font-bold tabular-nums",
+                    sRoi === "ok"
+                      ? "bg-emerald-500/15 text-emerald-500"
+                      : sRoi === "warn"
+                      ? "bg-yellow-500/15 text-yellow-500"
+                      : sRoi === "crit"
+                      ? "bg-red-500/15 text-red-500"
+                      : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {roiFmt(d.roi)}
+                </span>
+
+                <span
+                  className={cn(
+                    "shrink-0 text-muted-foreground transition-transform text-xs w-4 text-center",
+                    isOpen && "rotate-90",
+                  )}
+                >
+                  ▶
+                </span>
+              </button>
+
+              {isOpen && (
+                <div className="border-t border-border px-3 sm:px-4 py-4 space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <MetaBar
+                      label="Reuniões realizadas"
+                      atual={d.realizadas ?? 0}
+                      meta={d.meta_realizadas ?? 0}
+                      pace={(d.meta_realizadas ?? 0) * ratio}
+                    />
+                    <MetaBar
+                      label="Vendas"
+                      atual={d.vendas ?? 0}
+                      meta={d.meta_vendas ?? 0}
+                      pace={(d.meta_vendas ?? 0) * ratio}
+                    />
+                    <MetaBar
+                      label="Conversão"
+                      atual={d.conversao ?? 0}
+                      meta={d.meta_conversao ?? 0}
+                      format={(n) => `${Math.round(n)}%`}
+                    />
+                    <MetaBar
+                      label="Ticket médio"
+                      atual={d.ticket_medio ?? 0}
+                      meta={d.meta_ticket_medio ?? 0}
+                      format={brl}
+                    />
+                    <MetaBar
+                      label="Faturamento"
+                      atual={d.faturamento ?? 0}
+                      meta={d.meta_faturamento ?? 0}
+                      format={brl}
+                      pace={(d.meta_faturamento ?? 0) * ratio}
+                    />
+                  </div>
+
+                  <div className="rounded-md border border-border bg-muted/30 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                      Eficiência
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                      {[
+                        {
+                          l: "Custo/reunião",
+                          v: d.custo_reuniao != null ? brl(d.custo_reuniao) : "—",
+                        },
+                        {
+                          l: "Investido",
+                          v: d.investido != null ? brl(d.investido) : "—",
+                        },
+                        {
+                          l: "Custo/venda",
+                          v:
+                            d.custo_por_venda != null
+                              ? brl(d.custo_por_venda)
+                              : "—",
+                        },
+                        { l: "ROI", v: roiFmt(d.roi) },
+                        { l: "Nota final", v: String(d.final_media ?? "—") },
+                      ].map((x) => (
+                        <div key={x.l}>
+                          <p className="text-[11px] text-muted-foreground">
+                            {x.l}
                           </p>
-                        )}
-                      </div>
+                          <p className="text-sm font-semibold text-foreground tabular-nums">
+                            {x.v}
+                          </p>
+                        </div>
+                      ))}
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        );
-      })}
+                  </div>
+
+                  {meus.length > 0 && (
+                    <div className="space-y-2">
+                      {meus.map((a, i) => {
+                        const s = sevStyles(a.severidade);
+                        return (
+                          <div
+                            key={i}
+                            className="flex gap-3 bg-muted/40 rounded-md p-2.5"
+                          >
+                            <div
+                              className={cn("w-1 rounded-full shrink-0", s.bar)}
+                            />
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-foreground">
+                                {a.titulo}
+                              </p>
+                              {a.sugestao && (
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {a.sugestao}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <p className="text-[11px] text-muted-foreground pt-1">
+        🟢 na meta/ritmo · 🟡 atenção · 🔴 abaixo
+      </p>
     </div>
   );
 }
