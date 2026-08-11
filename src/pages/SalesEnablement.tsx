@@ -944,7 +944,8 @@ function DesempenhoTab({
 
       {/* Linhas */}
       <div className="space-y-2">
-        {ordered.map((d) => {
+        {ordered.map((d, idx) => {
+          const medalha = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : null;
           const id = `${d.closer}-${d.mes}`;
           const isOpen = !!open[id];
           const elapsed =
