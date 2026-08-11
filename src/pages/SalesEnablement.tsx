@@ -193,6 +193,7 @@ function sevStyles(sev: string | null | undefined) {
     case "critico":
       return { bar: "bg-red-500", text: "text-red-500" };
     case "atencao":
+    case "warn":
       return { bar: "bg-yellow-500", text: "text-yellow-500" };
     case "ok":
       return { bar: "bg-emerald-500", text: "text-emerald-500" };
