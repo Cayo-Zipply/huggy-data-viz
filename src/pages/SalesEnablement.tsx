@@ -969,11 +969,11 @@ function DesempenhoTab({
                 className="w-full text-left px-3 sm:px-4 py-2.5 flex items-center gap-3"
               >
                 <span className="w-7 text-center text-lg shrink-0">
-                  {d.medalha ? (
-                    d.medalha
+                  {medalha ? (
+                    medalha
                   ) : (
                     <span className="text-sm text-muted-foreground">
-                      {d.posicao ?? "—"}
+                      {idx + 1}
                     </span>
                   )}
                 </span>
