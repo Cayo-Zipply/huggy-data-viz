@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseExternal";
 import { useToast } from "@/hooks/use-toast";
@@ -1003,7 +1003,7 @@ function DesempenhoTab({
                   >
                     {d.final_media ?? "—"}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">técnica</p>
+                  <p className="text-[10px] text-muted-foreground">nota</p>
                 </div>
 
                 <div className="hidden md:grid flex-1 grid-cols-4 gap-3 min-w-0">
@@ -1372,9 +1372,8 @@ function ReunioesTab({
                 ? OUTCOME_META[r.outcome_resultado]
                 : null;
               return (
-                <>
+                <Fragment key={r.reuniao_id}>
                   <tr
-                    key={r.reuniao_id}
                     onClick={() => setAberta(open ? null : r.reuniao_id)}
                     className={cn(
                       "border-b border-border/50 hover:bg-muted/40 cursor-pointer",
@@ -1455,7 +1454,7 @@ function ReunioesTab({
                     </td>
                   </tr>
                   {open && (
-                    <tr key={`${r.reuniao_id}-det`} className="border-b border-border/50">
+                    <tr className="border-b border-border/50">
                       <td colSpan={7} className="px-4 py-4 bg-muted/10">
                         <ReuniaoDetalhe
                           r={r}
@@ -1472,7 +1471,7 @@ function ReunioesTab({
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               );
             })}
           </tbody>
