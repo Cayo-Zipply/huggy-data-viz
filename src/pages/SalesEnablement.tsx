@@ -84,6 +84,11 @@ type DesempenhoMeta = {
   reunioes_notadas: number | null;
   dia_atual: number | null;
   dias_mes: number | null;
+  investido: number | null;
+  custo_por_venda: number | null;
+  custo_reuniao: number | null;
+  roi: number | null;
+
 };
 
 type Alerta = {
@@ -826,6 +831,51 @@ function DesempenhoTab({
                 pace={(d.meta_faturamento ?? 0) * ratio}
               />
             </div>
+
+            <div className="rounded-md border border-border bg-muted/30 p-3">
+              <div className="flex items-baseline justify-between mb-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Eficiência
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  custo/reunião {d.custo_reuniao != null ? brl(d.custo_reuniao) : "—"}
+                </p>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <p className="text-[11px] text-muted-foreground">Investido</p>
+                  <p className="text-sm font-semibold text-foreground tabular-nums">
+                    {d.investido != null ? brl(d.investido) : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-muted-foreground">Custo/venda</p>
+                  <p className="text-sm font-semibold text-foreground tabular-nums">
+                    {d.custo_por_venda != null ? brl(d.custo_por_venda) : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-muted-foreground">ROI</p>
+                  <p
+                    className={cn(
+                      "text-sm font-semibold tabular-nums",
+                      d.roi == null
+                        ? "text-muted-foreground"
+                        : d.roi >= 3
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : d.roi >= 2
+                        ? "text-amber-500"
+                        : "text-destructive",
+                    )}
+                  >
+                    {d.roi != null
+                      ? `${d.roi.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}×`
+                      : "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
 
             {meus.length > 0 && (
               <div className="space-y-2 pt-1">
