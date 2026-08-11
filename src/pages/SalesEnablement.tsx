@@ -29,6 +29,7 @@ import {
   Star,
   DollarSign,
   ShieldAlert,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PersonAvatar } from "@/components/PersonAvatar";
@@ -116,6 +117,12 @@ type ReuniaoSE = {
   nota_tecnica: number | null;
   nota_final: number | null;
   nota_v2: number | null;
+  nota: number | null;
+  penalidades: number | null;
+  bonus_outcome: number | null;
+  outcome_resultado: string | null;
+  outcome_obs: string | null;
+  outcome_em: string | null;
   guardrails: string[] | null;
   notas_criterios: Record<string, number> | null;
   pontos_fortes: string[] | null;
@@ -147,14 +154,14 @@ const GUARDRAIL_LABELS: Record<string, string> = {
 };
 
 const CRITERIO_LABELS: Record<string, string> = {
-  abertura: "Abertura",
+  abertura: "Abertura & Rapport",
   diagnostico: "Diagnóstico",
-  agitacao_urgencia: "Agitação / Urgência",
+  agitacao_urgencia: "Implicação",
   metodo_pqa: "Método PQA",
-  ancoragem_valor: "Ancoragem de valor",
-  contorno_objecoes: "Contorno de objeções",
-  fechamento_call: "Fechamento em call",
-  jornada_confianca: "Jornada de confiança",
+  ancoragem_valor: "Ancoragem",
+  contorno_objecoes: "Objeções",
+  fechamento_call: "Fechamento",
+  jornada_confianca: "Jornada",
 };
 
 const CRITERIO_ORDER = [
@@ -873,7 +880,7 @@ function DesempenhoTab({
         const pa = a.posicao ?? 999;
         const pb = b.posicao ?? 999;
         if (pa !== pb) return pa - pb;
-        return (b.tecnica_media ?? 0) - (a.tecnica_media ?? 0);
+        return (b.final_media ?? 0) - (a.final_media ?? 0);
       });
       return arr;
     }
@@ -991,10 +998,10 @@ function DesempenhoTab({
                   <p
                     className={cn(
                       "text-lg font-semibold tabular-nums leading-none",
-                      notaClass(d.tecnica_media),
+                      notaClass(d.final_media),
                     )}
                   >
-                    {d.tecnica_media ?? "—"}
+                    {d.final_media ?? "—"}
                   </p>
                   <p className="text-[10px] text-muted-foreground">técnica</p>
                 </div>
