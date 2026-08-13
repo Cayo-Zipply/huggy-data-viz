@@ -1490,6 +1490,8 @@ ${signLink}`;
       </Dialog>
 
 
+      <UploadContratoSection card={card} onUpdate={onUpdate} />
+
       {renderMissingModal()}
     </div>
   );
