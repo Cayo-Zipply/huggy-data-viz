@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink, MessageCircle, Eye, Plus, Trash2, Copy, Send, CheckCircle2, AlertTriangle, ShieldCheck, ShieldAlert, ShieldX, Shield, XCircle } from "lucide-react";
 import { ZapsignHistory } from "./ZapsignHistory";
+import { UploadContratoSection } from "./UploadContratoSection";
 
 type CnpjAdicional = {
   empresa: string;
