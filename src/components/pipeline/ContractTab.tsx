@@ -817,6 +817,8 @@ ${signLink}`;
           </button>
         </div>
 
+        <UploadContratoSection card={card} onUpdate={onUpdate} />
+
         {renderMissingModal()}
 
         {card.contrato_status === "gerado" && (
