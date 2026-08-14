@@ -403,7 +403,13 @@ const Index = () => {
               </div>
             )}
             </div>
+
+            {/* ===== Funil por Criativo ===== */}
+            <div className="mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-border">
+              <FunilCriativo />
+            </div>
           </div>
+
 
           {/* Rentabilidade Tab — kept mounted */}
           <div className={activeTab === "rentabilidade" ? "" : "hidden"}>
