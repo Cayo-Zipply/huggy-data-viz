@@ -42,8 +42,7 @@ export const FunilCriativo = () => {
   useEffect(() => {
     let cancelled = false;
     (supabase as any)
-      .from("vw_funil_criativo")
-      .select("*")
+      .rpc("fn_funil_criativo")
       .then(({ data }: any) => {
         if (cancelled) return;
         setRows(Array.isArray(data) ? (data as FunilCriativoRow[]) : []);
@@ -139,7 +138,7 @@ export const FunilCriativo = () => {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
           <h3 className="text-base font-semibold text-foreground">Funil por Criativo</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">Últimos 30 dias · atribuição via Tintim</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Este mês · atribuição via Tintim</p>
         </div>
         <select
           value={selected}
