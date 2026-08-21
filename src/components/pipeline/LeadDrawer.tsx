@@ -26,6 +26,7 @@ import type { PipelineCard as CardType, PipelineTask, LossCategory } from "./typ
 import { LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
 import { ContractTab } from "./ContractTab";
 import { GrupoWhatsappSection } from "./GrupoWhatsappSection";
+import { BotaoReengajarWhatsApp } from "./BotaoReengajarWhatsApp";
 import { AbaAnexos } from "@/components/lead/aba-anexos";
 import type { PipelineLabel } from "@/hooks/useLabels";
 import { CallButton } from "./CallButton";
