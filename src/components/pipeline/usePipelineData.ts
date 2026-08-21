@@ -124,6 +124,8 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     cnpjs_adicionais: Array.isArray(row.cnpjs_adicionais) ? row.cnpjs_adicionais : [],
     socios_adicionais: Array.isArray(row.socios_adicionais) ? row.socios_adicionais : [],
     origem_divida: row.origem_divida || null,
+    mensagem_recuperacao_enviada_em: row.mensagem_recuperacao_enviada_em || null,
+    mensagem_recuperacao_enviada_por: row.mensagem_recuperacao_enviada_por || null,
   } as any;
 }
 
@@ -218,6 +220,7 @@ export function usePipelineData(actorName: string) {
       "endereco","cidade","estado","cep","zapsign_signed_at","fim_de_semana",
       "tipo_documento","data_venda","assistente_juridico","responsavel_juridico",
       "cnpjs_adicionais","socios_adicionais","origem_divida",
+      "mensagem_recuperacao_enviada_em","mensagem_recuperacao_enviada_por",
     ].join(",");
     const HIST_COLS = "lead_id,etapa_de,etapa_para,created_at,closer";
 
@@ -471,6 +474,8 @@ export function usePipelineData(actorName: string) {
       data_venda: null,
       assistente_juridico: null,
       responsavel_juridico: null,
+      mensagem_recuperacao_enviada_em: null,
+      mensagem_recuperacao_enviada_por: null,
     };
 
     const firstTask = {
