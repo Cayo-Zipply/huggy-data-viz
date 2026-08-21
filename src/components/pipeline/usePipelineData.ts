@@ -474,6 +474,8 @@ export function usePipelineData(actorName: string) {
       data_venda: null,
       assistente_juridico: null,
       responsavel_juridico: null,
+      mensagem_recuperacao_enviada_em: null,
+      mensagem_recuperacao_enviada_por: null,
     };
 
     const firstTask = {
