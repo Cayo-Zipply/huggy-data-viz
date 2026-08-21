@@ -124,6 +124,8 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     cnpjs_adicionais: Array.isArray(row.cnpjs_adicionais) ? row.cnpjs_adicionais : [],
     socios_adicionais: Array.isArray(row.socios_adicionais) ? row.socios_adicionais : [],
     origem_divida: row.origem_divida || null,
+    mensagem_recuperacao_enviada_em: row.mensagem_recuperacao_enviada_em || null,
+    mensagem_recuperacao_enviada_por: row.mensagem_recuperacao_enviada_por || null,
   } as any;
 }
 

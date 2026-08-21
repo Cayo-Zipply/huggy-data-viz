@@ -76,6 +76,8 @@ export interface PipelineCard {
   data_venda: string | null;
   assistente_juridico: string | null;
   responsavel_juridico: string | null;
+  mensagem_recuperacao_enviada_em: string | null;
+  mensagem_recuperacao_enviada_por: string | null;
 }
 
 export interface PipelineTask {
