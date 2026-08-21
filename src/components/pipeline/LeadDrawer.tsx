@@ -26,6 +26,7 @@ import type { PipelineCard as CardType, PipelineTask, LossCategory } from "./typ
 import { LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
 import { ContractTab } from "./ContractTab";
 import { GrupoWhatsappSection } from "./GrupoWhatsappSection";
+import { BotaoReengajarWhatsApp } from "./BotaoReengajarWhatsApp";
 import { AbaAnexos } from "@/components/lead/aba-anexos";
 import type { PipelineLabel } from "@/hooks/useLabels";
 import { CallButton } from "./CallButton";
@@ -559,6 +560,18 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
             >
               <Video size={12} />Agendar reunião
             </button>
+            <BotaoReengajarWhatsApp
+              lead={{
+                id: card.id,
+                nome: card.nome,
+                closer: card.owner,
+                etapa_atual: STAGE_CONFIG[card.stage as keyof typeof STAGE_CONFIG]?.label || card.stage,
+                mensagem_recuperacao_enviada_em: card.mensagem_recuperacao_enviada_em,
+              }}
+              onSuccess={() => {
+                onUpdate(card.id, { mensagem_recuperacao_enviada_em: new Date().toISOString(), mensagem_recuperacao_enviada_por: user?.id } as any);
+              }}
+            />
             {card.lead_status === "aberto" && (
               <>
                 <button
