@@ -380,6 +380,15 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
             {/* Actions tab */}
             {tab === "acoes" && (
               <div className="space-y-2">
+                <BotaoReengajarWhatsApp
+                  lead={{
+                    id: card.id,
+                    nome: card.nome,
+                    closer: card.owner,
+                    etapa_atual: STAGE_CONFIG[card.stage].label,
+                    mensagem_recuperacao_enviada_em: card.mensagem_recuperacao_enviada_em,
+                  }}
+                />
                 {card.lead_status === "aberto" && (
                   <div className="flex gap-2">
                     <button onClick={() => onMarkWon(card.id)}
