@@ -11,6 +11,7 @@ import { LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./t
 import type { PipelineLabel } from "@/hooks/useLabels";
 import type { DuplicateInfo } from "@/hooks/useDuplicateLeads";
 import { CallButton } from "./CallButton";
+import { BotaoReengajarWhatsApp } from "./BotaoReengajarWhatsApp";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
