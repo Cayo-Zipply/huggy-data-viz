@@ -6,6 +6,8 @@ import { missingLeadBasics } from "@/lib/leadReadyChecks";
 import { supabase } from "@/lib/supabaseExternal";
 import { toast } from "sonner";
 import type { PipelineCard } from "./types";
+import { BotaoEnviarConfirmacao } from "./BotaoEnviarConfirmacao";
+import { useAuth } from "@/contexts/AuthContext";
 
 const CLOSER_MAP: Record<string, string> = {
   "Fillipe": "fillipe.amorim@penaquadros.com",
@@ -58,7 +60,17 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
   const [novoExtra, setNovoExtra] = useState("");
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState<{ meet_link: string; html_link: string; convidados: string[] } | null>(null);
+  const [createdReuniao, setCreatedReuniao] = useState<{
+    id: string;
+    data_inicio: string;
+    meet_link: string | null;
+    status: string;
+    confirmacao_manual_enviada_em: string | null;
+  } | null>(null);
   const [closerEmail, setCloserEmail] = useState<string | null>(null);
+  const { user, profile } = useAuth();
+  const userNome = profile?.nome ?? user?.email?.split("@")[0] ?? "Usuário";
+  const userId = user?.id ?? "";
 
   useEffect(() => {
     if (open && card) {
@@ -69,6 +81,7 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
       setExtras([]);
       setNovoExtra("");
       setResultado(null);
+      setCreatedReuniao(null);
       setCloserEmail(null);
 
       // Buscar e-mail do closer responsável
@@ -147,6 +160,7 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
 
       const out = data as { meet_link: string; html_link: string; convidados: string[] };
       setResultado(out);
+      fetchCreatedReuniao(out.meet_link);
       toast.success("Reunião criada! Convites enviados pelo Google Calendar.");
       onCreated?.();
     } catch (e: any) {
@@ -158,6 +172,25 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
 
   const copy = (text: string) => {
     navigator.clipboard.writeText(text).then(() => toast.success("Copiado!"));
+  };
+
+  const fetchCreatedReuniao = async (meetLink: string) => {
+    if (!card) return;
+    const { data } = await (supabase as any)
+      .from("reunioes_agendadas")
+      .select("id, data_inicio, meet_link, status, confirmacao_manual_enviada_em, confirmacao_manual_enviada_por")
+      .eq("lead_id", card.id)
+      .eq("meet_link", meetLink)
+      .maybeSingle();
+    if (data) {
+      setCreatedReuniao({
+        id: data.id,
+        data_inicio: data.data_inicio,
+        meet_link: data.meet_link,
+        status: data.status,
+        confirmacao_manual_enviada_em: data.confirmacao_manual_enviada_em,
+      });
+    }
   };
 
   return (
@@ -197,6 +230,15 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
                 className="text-xs px-2 py-1 bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-500/20 flex items-center gap-1">
                 <MessageSquare size={12} />Copiar mensagem
               </button>
+              {createdReuniao && (
+                <BotaoEnviarConfirmacao
+                  reuniao={createdReuniao}
+                  lead={{ closer: card.owner }}
+                  userNome={userNome}
+                  userId={userId}
+                  onSuccess={() => fetchCreatedReuniao(createdReuniao.meet_link || "")}
+                />
+              )}
             </div>
             <a href={resultado.html_link} target="_blank" rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 w-full py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90">
