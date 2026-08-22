@@ -4,6 +4,8 @@ import { Calendar, Loader2, MessageSquare, Plus, Trash2 } from "lucide-react";
 import { buildReuniaoMessage } from "@/lib/reuniaoMessage";
 import { supabase } from "@/lib/supabaseExternal";
 import { toast } from "sonner";
+import { BotaoEnviarConfirmacao } from "./BotaoEnviarConfirmacao";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Reuniao {
   id: string;
@@ -11,6 +13,8 @@ interface Reuniao {
   data_inicio: string;
   data_fim: string;
   meet_link?: string | null;
+  status?: string;
+  confirmacao_manual_enviada_em?: string | null;
   convidados: Array<string | { email?: string }> | null;
 }
 
@@ -49,6 +53,9 @@ export function EditarReuniaoDialog({ reuniao, open, onOpenChange, onUpdated, cl
   const [convidados, setConvidados] = useState<string[]>([]);
   const [novoEmail, setNovoEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const { user, profile } = useAuth();
+  const userNome = profile?.nome ?? user?.email?.split("@")[0] ?? "Usuário";
+  const userId = user?.id ?? "";
 
   useEffect(() => {
     if (open && reuniao) {
@@ -188,6 +195,19 @@ export function EditarReuniaoDialog({ reuniao, open, onOpenChange, onUpdated, cl
               className="flex-1 py-2 bg-emerald-500/10 text-emerald-400 rounded-md text-sm hover:bg-emerald-500/20 disabled:opacity-50 flex items-center justify-center gap-2">
               <MessageSquare size={14} />Copiar mensagem
             </button>
+            <BotaoEnviarConfirmacao
+              reuniao={{
+                id: reuniao.id,
+                data_inicio: reuniao.data_inicio,
+                meet_link: meetLink ?? reuniao.meet_link ?? null,
+                status: reuniao.status ?? "agendada",
+                confirmacao_manual_enviada_em: reuniao.confirmacao_manual_enviada_em ?? null,
+              }}
+              lead={{ closer: closer ?? null }}
+              userNome={userNome}
+              userId={userId}
+              onSuccess={onUpdated}
+            />
             <button onClick={salvar} disabled={loading}
               className="flex-1 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2">
               {loading ? <Loader2 size={14} className="animate-spin" /> : <Calendar size={14} />}
