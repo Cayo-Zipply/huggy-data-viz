@@ -81,6 +81,9 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
   const [editing, setEditing] = useState<Reuniao | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
   const [lead, setLead] = useState<{ nome: string; empresa: string | null; closer: string | null }>({ nome: "", empresa: null, closer: null });
+  const { user, profile } = useAuth();
+  const userNome = profile?.nome ?? user?.email?.split("@")[0] ?? "Usuário";
+  const userId = user?.id ?? "";
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
