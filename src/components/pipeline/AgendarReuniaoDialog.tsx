@@ -160,6 +160,7 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
 
       const out = data as { meet_link: string; html_link: string; convidados: string[] };
       setResultado(out);
+      fetchCreatedReuniao(out.meet_link);
       toast.success("Reunião criada! Convites enviados pelo Google Calendar.");
       onCreated?.();
     } catch (e: any) {
