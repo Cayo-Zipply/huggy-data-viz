@@ -180,6 +180,14 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
                 <MessageSquare size={11} />Copiar mensagem
               </button>
             )}
+            <BotaoEnviarConfirmacao
+              reuniao={r}
+              lead={{ closer: lead.closer }}
+              userNome={userNome}
+              userId={userId}
+              onSuccess={fetchItems}
+            />
+
             {r.status !== "cancelada" && (
               <>
                 <button onClick={() => setEditing(r)}
