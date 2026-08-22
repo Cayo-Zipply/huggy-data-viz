@@ -173,6 +173,25 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
     navigator.clipboard.writeText(text).then(() => toast.success("Copiado!"));
   };
 
+  const fetchCreatedReuniao = async (meetLink: string) => {
+    if (!card) return;
+    const { data } = await (supabase as any)
+      .from("reunioes_agendadas")
+      .select("id, data_inicio, meet_link, status, confirmacao_manual_enviada_em, confirmacao_manual_enviada_por")
+      .eq("lead_id", card.id)
+      .eq("meet_link", meetLink)
+      .maybeSingle();
+    if (data) {
+      setCreatedReuniao({
+        id: data.id,
+        data_inicio: data.data_inicio,
+        meet_link: data.meet_link,
+        status: data.status,
+        confirmacao_manual_enviada_em: data.confirmacao_manual_enviada_em,
+      });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
