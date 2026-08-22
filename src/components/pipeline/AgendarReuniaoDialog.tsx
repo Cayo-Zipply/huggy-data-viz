@@ -230,6 +230,15 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
                 className="text-xs px-2 py-1 bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-500/20 flex items-center gap-1">
                 <MessageSquare size={12} />Copiar mensagem
               </button>
+              {createdReuniao && (
+                <BotaoEnviarConfirmacao
+                  reuniao={createdReuniao}
+                  lead={{ closer: card.owner }}
+                  userNome={userNome}
+                  userId={userId}
+                  onSuccess={() => fetchCreatedReuniao(createdReuniao.meet_link || "")}
+                />
+              )}
             </div>
             <a href={resultado.html_link} target="_blank" rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 w-full py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90">
