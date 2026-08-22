@@ -4,6 +4,8 @@ import { Calendar, Copy, ExternalLink, Loader2, MessageSquare, Pencil, Video, X 
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { EditarReuniaoDialog } from "./EditarReuniaoDialog";
+import { BotaoEnviarConfirmacao } from "./BotaoEnviarConfirmacao";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Reuniao {
   id: string;
@@ -15,7 +17,10 @@ interface Reuniao {
   status: string;
   criado_por_nome: string | null;
   convidados: Array<string | { email?: string }> | null;
+  confirmacao_manual_enviada_em: string | null;
+  confirmacao_manual_enviada_por: string | null;
 }
+
 
 const statusStyle: Record<string, string> = {
   agendada: "bg-blue-500/20 text-blue-400",
