@@ -81,6 +81,7 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
       setExtras([]);
       setNovoExtra("");
       setResultado(null);
+      setCreatedReuniao(null);
       setCloserEmail(null);
 
       // Buscar e-mail do closer responsável
