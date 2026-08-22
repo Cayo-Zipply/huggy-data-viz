@@ -60,7 +60,17 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
   const [novoExtra, setNovoExtra] = useState("");
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState<{ meet_link: string; html_link: string; convidados: string[] } | null>(null);
+  const [createdReuniao, setCreatedReuniao] = useState<{
+    id: string;
+    data_inicio: string;
+    meet_link: string | null;
+    status: string;
+    confirmacao_manual_enviada_em: string | null;
+  } | null>(null);
   const [closerEmail, setCloserEmail] = useState<string | null>(null);
+  const { user, profile } = useAuth();
+  const userNome = profile?.nome ?? user?.email?.split("@")[0] ?? "Usuário";
+  const userId = user?.id ?? "";
 
   useEffect(() => {
     if (open && card) {
