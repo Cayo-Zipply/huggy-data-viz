@@ -6,6 +6,8 @@ import { missingLeadBasics } from "@/lib/leadReadyChecks";
 import { supabase } from "@/lib/supabaseExternal";
 import { toast } from "sonner";
 import type { PipelineCard } from "./types";
+import { BotaoEnviarConfirmacao } from "./BotaoEnviarConfirmacao";
+import { useAuth } from "@/contexts/AuthContext";
 
 const CLOSER_MAP: Record<string, string> = {
   "Fillipe": "fillipe.amorim@penaquadros.com",
