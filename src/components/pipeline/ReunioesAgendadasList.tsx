@@ -86,7 +86,7 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
     setLoading(true);
     const { data, error } = await (supabase as any)
       .from("reunioes_agendadas")
-      .select("id, titulo, data_inicio, data_fim, meet_link, html_link, status, criado_por_nome, convidados")
+      .select("id, titulo, data_inicio, data_fim, meet_link, html_link, status, criado_por_nome, convidados, confirmacao_manual_enviada_em, confirmacao_manual_enviada_por")
       .eq("lead_id", leadId)
       .order("data_inicio", { ascending: false });
     if (!error) setItems((data || []) as Reuniao[]);
