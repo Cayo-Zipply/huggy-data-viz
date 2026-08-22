@@ -4,6 +4,8 @@ import { Calendar, Copy, ExternalLink, Loader2, MessageSquare, Pencil, Video, X 
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { EditarReuniaoDialog } from "./EditarReuniaoDialog";
+import { BotaoEnviarConfirmacao } from "./BotaoEnviarConfirmacao";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Reuniao {
   id: string;
@@ -15,7 +17,10 @@ interface Reuniao {
   status: string;
   criado_por_nome: string | null;
   convidados: Array<string | { email?: string }> | null;
+  confirmacao_manual_enviada_em: string | null;
+  confirmacao_manual_enviada_por: string | null;
 }
+
 
 const statusStyle: Record<string, string> = {
   agendada: "bg-blue-500/20 text-blue-400",
@@ -76,12 +81,15 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
   const [editing, setEditing] = useState<Reuniao | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
   const [lead, setLead] = useState<{ nome: string; empresa: string | null; closer: string | null }>({ nome: "", empresa: null, closer: null });
+  const { user, profile } = useAuth();
+  const userNome = profile?.nome ?? user?.email?.split("@")[0] ?? "Usuário";
+  const userId = user?.id ?? "";
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
     const { data, error } = await (supabase as any)
       .from("reunioes_agendadas")
-      .select("id, titulo, data_inicio, data_fim, meet_link, html_link, status, criado_por_nome, convidados")
+      .select("id, titulo, data_inicio, data_fim, meet_link, html_link, status, criado_por_nome, convidados, confirmacao_manual_enviada_em, confirmacao_manual_enviada_por")
       .eq("lead_id", leadId)
       .order("data_inicio", { ascending: false });
     if (!error) setItems((data || []) as Reuniao[]);
@@ -175,6 +183,14 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
                 <MessageSquare size={11} />Copiar mensagem
               </button>
             )}
+            <BotaoEnviarConfirmacao
+              reuniao={r}
+              lead={{ closer: lead.closer }}
+              userNome={userNome}
+              userId={userId}
+              onSuccess={fetchItems}
+            />
+
             {r.status !== "cancelada" && (
               <>
                 <button onClick={() => setEditing(r)}
