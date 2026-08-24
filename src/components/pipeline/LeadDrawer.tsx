@@ -568,6 +568,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                 etapa_atual: STAGE_CONFIG[card.stage as keyof typeof STAGE_CONFIG]?.label || card.stage,
                 mensagem_recuperacao_enviada_em: card.mensagem_recuperacao_enviada_em,
               }}
+              userRole={profile?.role ?? ""}
               onSuccess={() => {
                 onUpdate(card.id, { mensagem_recuperacao_enviada_em: new Date().toISOString(), mensagem_recuperacao_enviada_por: user?.id } as any);
               }}

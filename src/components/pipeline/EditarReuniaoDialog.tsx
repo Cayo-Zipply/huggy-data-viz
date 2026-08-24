@@ -206,6 +206,7 @@ export function EditarReuniaoDialog({ reuniao, open, onOpenChange, onUpdated, cl
               lead={{ closer: closer ?? null }}
               userNome={userNome}
               userId={userId}
+              userRole={profile?.role ?? ""}
               onSuccess={onUpdated}
             />
             <button onClick={salvar} disabled={loading}

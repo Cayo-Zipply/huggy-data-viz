@@ -236,6 +236,7 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
                   lead={{ closer: card.owner }}
                   userNome={userNome}
                   userId={userId}
+                  userRole={profile?.role ?? ""}
                   onSuccess={() => fetchCreatedReuniao(createdReuniao.meet_link || "")}
                 />
               )}

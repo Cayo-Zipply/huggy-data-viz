@@ -22,13 +22,14 @@ interface Lead {
 
 interface Props {
   lead: Lead;
+  userRole?: string;
   onSuccess?: () => void;
 }
 
 const ETAPAS_PERMITIDAS = ["Reunião Realizada", "Link Enviado"];
 const EDGE_URL = "https://riyfdcmmabvpcubusujw.supabase.co/functions/v1/enviar-msg-recuperacao";
 
-export function BotaoReengajarWhatsApp({ lead, onSuccess }: Props) {
+export function BotaoReengajarWhatsApp({ lead, userRole, onSuccess }: Props) {
   const { user, profile } = useAuth();
   const [enviando, setEnviando] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -38,7 +39,7 @@ export function BotaoReengajarWhatsApp({ lead, onSuccess }: Props) {
 
   const etapaOk = ETAPAS_PERMITIDAS.includes(lead.etapa_atual);
   const jaEnviado = !!lead.mensagem_recuperacao_enviada_em;
-  const ehResponsavel = lead.closer === userNome;
+  const ehResponsavel = lead.closer === userNome || userRole === "admin";
 
   if (!etapaOk) return null;
 
