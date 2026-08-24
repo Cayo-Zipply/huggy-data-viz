@@ -188,6 +188,7 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
               lead={{ closer: lead.closer }}
               userNome={userNome}
               userId={userId}
+              userRole={profile?.role ?? ""}
               onSuccess={fetchItems}
             />
 
