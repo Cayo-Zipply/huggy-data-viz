@@ -33,6 +33,15 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PersonAvatar } from "@/components/PersonAvatar";
+import {
+  AssertividadeTab,
+  DesfechoChip,
+  fmtDiasAssinatura,
+  type AssertividadeRow,
+  type NotaXConversaoRow,
+  type ReuniaoDesfechoRow,
+} from "@/components/se/AssertividadeTab";
+
 
 /* ---------------- Types ---------------- */
 type MesOption = { mes: string; is_atual: boolean | null };
