@@ -28,20 +28,21 @@ interface Props {
   lead: Lead;
   userNome: string;
   userId: string;
+  userRole?: string;
   onSuccess?: () => void;
 }
 
 const EDGE_URL =
   "https://riyfdcmmabvpcubusujw.supabase.co/functions/v1/enviar-confirmacao-manual";
 
-export function BotaoEnviarConfirmacao({ reuniao, lead, userNome, userId, onSuccess }: Props) {
+export function BotaoEnviarConfirmacao({ reuniao, lead, userNome, userId, userRole, onSuccess }: Props) {
   const [enviando, setEnviando] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
   if (reuniao.status !== "agendada") return null;
 
   const jaEnviado = !!reuniao.confirmacao_manual_enviada_em;
-  const ehResponsavel = lead.closer === userNome;
+  const ehResponsavel = lead.closer === userNome || userRole === "admin";
 
   if (jaEnviado) {
     const dataFmt = new Date(reuniao.confirmacao_manual_enviada_em!).toLocaleString("pt-BR", {
