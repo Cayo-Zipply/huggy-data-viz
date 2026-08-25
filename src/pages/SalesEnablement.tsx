@@ -1585,7 +1585,7 @@ function ReunioesTab({
                   </tr>
                   {open && (
                     <tr className="border-b border-border/50">
-                      <td colSpan={7} className="px-4 py-4 bg-muted/10">
+                      <td colSpan={9} className="px-4 py-4 bg-muted/10">
                         <ReuniaoDetalhe
                           r={r}
                           onSaved={() => {
