@@ -1330,18 +1330,22 @@ const OUTCOME_BOTOES: {
 function ReunioesTab({
   rows,
   loading,
+  desfechos,
 }: {
   rows: ReuniaoSE[];
   loading: boolean;
+  desfechos: Map<string, ReuniaoDesfechoRow>;
 }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [busca, setBusca] = useState("");
   const [closer, setCloser] = useState("all");
+  const [desfechoFiltro, setDesfechoFiltro] = useState("all");
   const [soHoje, setSoHoje] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("quando_local");
   const [sortAsc, setSortAsc] = useState(false);
   const [aberta, setAberta] = useState<string | null>(null);
+
 
   const closers = useMemo(
     () =>
