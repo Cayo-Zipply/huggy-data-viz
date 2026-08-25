@@ -1492,6 +1492,8 @@ function ReunioesTab({
               const oc = r.outcome_resultado
                 ? OUTCOME_META[r.outcome_resultado]
                 : null;
+              const df = r.lead_id ? desfechos.get(r.lead_id) : undefined;
+
               return (
                 <Fragment key={r.reuniao_id}>
                   <tr
