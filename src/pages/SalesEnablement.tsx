@@ -568,6 +568,7 @@ export default function SalesEnablement() {
       <Tabs defaultValue="desempenho">
         <TabsList>
           <TabsTrigger value="desempenho">Desempenho vs Meta</TabsTrigger>
+          <TabsTrigger value="assertividade">Assertividade</TabsTrigger>
           <TabsTrigger value="reunioes">Reuniões</TabsTrigger>
           <TabsTrigger value="evolucao">Evolução</TabsTrigger>
           <TabsTrigger value="rubrica">Rubrica</TabsTrigger>
@@ -576,14 +577,27 @@ export default function SalesEnablement() {
         <TabsContent value="desempenho" className="mt-4">
           <DesempenhoTab
             rows={desempenho.filter((d) => (d.meta_realizadas ?? 0) > 0)}
-            alertas={alertas}
+            alertas={alertasTodos}
             loading={loadingDes}
           />
         </TabsContent>
 
-        <TabsContent value="reunioes" className="mt-4">
-          <ReunioesTab rows={reunioes} loading={loadingReu} />
+        <TabsContent value="assertividade" className="mt-4">
+          <AssertividadeTab
+            rows={assertividade}
+            notaConversao={notaConversao}
+            loading={loadingAss}
+          />
         </TabsContent>
+
+        <TabsContent value="reunioes" className="mt-4">
+          <ReunioesTab
+            rows={reunioes}
+            loading={loadingReu}
+            desfechos={desfechoPorLead}
+          />
+        </TabsContent>
+
 
         <TabsContent value="evolucao" className="mt-4">
           <EvolucaoTab
