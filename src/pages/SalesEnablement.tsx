@@ -1556,6 +1556,13 @@ function ReunioesTab({
                       {r.nota ?? "—"}
                     </td>
                     <td className="px-3 py-2">
+                      <DesfechoChip desfecho={df?.desfecho ?? null} />
+                    </td>
+                    <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                      {fmtDiasAssinatura(df?.dias_link_ate_assinatura)}
+                    </td>
+                    <td className="px-3 py-2">
+
                       <div className="flex flex-wrap gap-1">
                         {(r.guardrails ?? []).map((g) => (
                           <span
