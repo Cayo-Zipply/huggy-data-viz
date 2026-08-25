@@ -1361,6 +1361,10 @@ function ReunioesTab({
       if (q && !(r.empresa ?? "").toLowerCase().includes(q)) return false;
       if (closer !== "all" && (r.closer ?? "") !== closer) return false;
       if (soHoje && !isToday(r.quando_local ?? r.meeting_date)) return false;
+      if (desfechoFiltro !== "all") {
+        const d = r.lead_id ? desfechos.get(r.lead_id) : undefined;
+        if ((d?.desfecho ?? "") !== desfechoFiltro) return false;
+      }
       return true;
     });
     out = [...out].sort((a, b) => {
@@ -1376,7 +1380,8 @@ function ReunioesTab({
       return sortAsc ? cmp : -cmp;
     });
     return out;
-  }, [rows, busca, closer, soHoje, sortKey, sortAsc]);
+  }, [rows, busca, closer, soHoje, sortKey, sortAsc, desfechoFiltro, desfechos]);
+
 
   const toggleSort = (k: SortKey) => {
     if (k === sortKey) setSortAsc((v) => !v);
