@@ -1430,6 +1430,18 @@ function ReunioesTab({
             ))}
           </SelectContent>
         </Select>
+        <Select value={desfechoFiltro} onValueChange={setDesfechoFiltro}>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Desfecho" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os desfechos</SelectItem>
+            <SelectItem value="assinou">assinou</SelectItem>
+            <SelectItem value="link na janela">link na janela</SelectItem>
+            <SelectItem value="link morto">link morto</SelectItem>
+            <SelectItem value="sem link">sem link</SelectItem>
+          </SelectContent>
+        </Select>
         <Button
           variant={soHoje ? "default" : "outline"}
           size="sm"
@@ -1452,24 +1464,29 @@ function ReunioesTab({
               <Th k="closer">Closer</Th>
               <Th k="etapa_atual">Etapa</Th>
               <Th k="nota">Nota</Th>
+              <th className="text-left px-3 py-2 font-medium">Desfecho</th>
+              <th className="text-left px-3 py-2 font-medium whitespace-nowrap">
+                Tempo até assinar
+              </th>
               <th className="text-left px-3 py-2 font-medium">Guardrails</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={7} className="px-3 py-6 text-muted-foreground">
+                <td colSpan={9} className="px-3 py-6 text-muted-foreground">
                   Carregando…
                 </td>
               </tr>
             )}
             {!loading && filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-6 text-muted-foreground">
+                <td colSpan={9} className="px-3 py-6 text-muted-foreground">
                   Nenhuma reunião encontrada.
                 </td>
               </tr>
             )}
+
             {filtered.map((r) => {
               const open = aberta === r.reuniao_id;
               const oc = r.outcome_resultado
