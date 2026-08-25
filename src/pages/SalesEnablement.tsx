@@ -431,6 +431,82 @@ export default function SalesEnablement() {
     },
   });
 
+  /* ----- Assertividade do link (views somente leitura) ----- */
+  const { data: assertividade = [], isLoading: loadingAss } = useQuery({
+    queryKey: ["se-assertividade", mes],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vw_se_assertividade")
+        .select("*")
+        .eq("mes", mes);
+      if (error) throw error;
+      return (data ?? []) as AssertividadeRow[];
+    },
+  });
+
+  const { data: notaConversao = [] } = useQuery({
+    queryKey: ["se-nota-x-conversao"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vw_se_nota_x_conversao")
+        .select("*");
+      if (error) throw error;
+      return (data ?? []) as NotaXConversaoRow[];
+    },
+  });
+
+  const { data: desfechos = [] } = useQuery({
+    queryKey: ["se-reuniao-desfecho", mes],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vw_se_reuniao_desfecho")
+        .select("*")
+        .eq("mes", mes);
+      if (error) throw error;
+      return (data ?? []) as ReuniaoDesfechoRow[];
+    },
+  });
+
+  const { data: alertasAss = [] } = useQuery({
+    queryKey: ["se-alertas-assertividade", mes],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vw_se_alertas_assertividade")
+        .select("*")
+        .eq("mes", mes);
+      if (error) throw error;
+      return (data ?? []) as Alerta[];
+    },
+  });
+
+  const SEV_ORDER: Record<string, number> = {
+    critico: 0,
+    atencao: 1,
+    info: 2,
+    ok: 3,
+  };
+  const alertasTodos = useMemo(
+    () =>
+      [...alertas, ...alertasAss].sort(
+        (a, b) =>
+          (a.ordem ?? 999) - (b.ordem ?? 999) ||
+          (SEV_ORDER[a.severidade ?? ""] ?? 9) -
+            (SEV_ORDER[b.severidade ?? ""] ?? 9)
+      ),
+    [alertas, alertasAss]
+  );
+
+  const desfechoPorLead = useMemo(() => {
+    const m = new Map<string, ReuniaoDesfechoRow>();
+    for (const d of desfechos) if (d.lead_id) m.set(d.lead_id, d);
+    return m;
+  }, [desfechos]);
+
+
+
   /* KPIs — sempre do mês selecionado */
   const kpis = useMemo(() => {
     const avg = (arr: (number | null)[]) => {
@@ -492,6 +568,7 @@ export default function SalesEnablement() {
       <Tabs defaultValue="desempenho">
         <TabsList>
           <TabsTrigger value="desempenho">Desempenho vs Meta</TabsTrigger>
+          <TabsTrigger value="assertividade">Assertividade</TabsTrigger>
           <TabsTrigger value="reunioes">Reuniões</TabsTrigger>
           <TabsTrigger value="evolucao">Evolução</TabsTrigger>
           <TabsTrigger value="rubrica">Rubrica</TabsTrigger>
@@ -500,14 +577,27 @@ export default function SalesEnablement() {
         <TabsContent value="desempenho" className="mt-4">
           <DesempenhoTab
             rows={desempenho.filter((d) => (d.meta_realizadas ?? 0) > 0)}
-            alertas={alertas}
+            alertas={alertasTodos}
             loading={loadingDes}
           />
         </TabsContent>
 
-        <TabsContent value="reunioes" className="mt-4">
-          <ReunioesTab rows={reunioes} loading={loadingReu} />
+        <TabsContent value="assertividade" className="mt-4">
+          <AssertividadeTab
+            rows={assertividade}
+            notaConversao={notaConversao}
+            loading={loadingAss}
+          />
         </TabsContent>
+
+        <TabsContent value="reunioes" className="mt-4">
+          <ReunioesTab
+            rows={reunioes}
+            loading={loadingReu}
+            desfechos={desfechoPorLead}
+          />
+        </TabsContent>
+
 
         <TabsContent value="evolucao" className="mt-4">
           <EvolucaoTab
@@ -1240,18 +1330,22 @@ const OUTCOME_BOTOES: {
 function ReunioesTab({
   rows,
   loading,
+  desfechos,
 }: {
   rows: ReuniaoSE[];
   loading: boolean;
+  desfechos: Map<string, ReuniaoDesfechoRow>;
 }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [busca, setBusca] = useState("");
   const [closer, setCloser] = useState("all");
+  const [desfechoFiltro, setDesfechoFiltro] = useState("all");
   const [soHoje, setSoHoje] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("quando_local");
   const [sortAsc, setSortAsc] = useState(false);
   const [aberta, setAberta] = useState<string | null>(null);
+
 
   const closers = useMemo(
     () =>
@@ -1267,6 +1361,10 @@ function ReunioesTab({
       if (q && !(r.empresa ?? "").toLowerCase().includes(q)) return false;
       if (closer !== "all" && (r.closer ?? "") !== closer) return false;
       if (soHoje && !isToday(r.quando_local ?? r.meeting_date)) return false;
+      if (desfechoFiltro !== "all") {
+        const d = r.lead_id ? desfechos.get(r.lead_id) : undefined;
+        if ((d?.desfecho ?? "") !== desfechoFiltro) return false;
+      }
       return true;
     });
     out = [...out].sort((a, b) => {
@@ -1282,7 +1380,8 @@ function ReunioesTab({
       return sortAsc ? cmp : -cmp;
     });
     return out;
-  }, [rows, busca, closer, soHoje, sortKey, sortAsc]);
+  }, [rows, busca, closer, soHoje, sortKey, sortAsc, desfechoFiltro, desfechos]);
+
 
   const toggleSort = (k: SortKey) => {
     if (k === sortKey) setSortAsc((v) => !v);
@@ -1331,6 +1430,18 @@ function ReunioesTab({
             ))}
           </SelectContent>
         </Select>
+        <Select value={desfechoFiltro} onValueChange={setDesfechoFiltro}>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Desfecho" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os desfechos</SelectItem>
+            <SelectItem value="assinou">assinou</SelectItem>
+            <SelectItem value="link na janela">link na janela</SelectItem>
+            <SelectItem value="link morto">link morto</SelectItem>
+            <SelectItem value="sem link">sem link</SelectItem>
+          </SelectContent>
+        </Select>
         <Button
           variant={soHoje ? "default" : "outline"}
           size="sm"
@@ -1353,29 +1464,36 @@ function ReunioesTab({
               <Th k="closer">Closer</Th>
               <Th k="etapa_atual">Etapa</Th>
               <Th k="nota">Nota</Th>
+              <th className="text-left px-3 py-2 font-medium">Desfecho</th>
+              <th className="text-left px-3 py-2 font-medium whitespace-nowrap">
+                Tempo até assinar
+              </th>
               <th className="text-left px-3 py-2 font-medium">Guardrails</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={7} className="px-3 py-6 text-muted-foreground">
+                <td colSpan={9} className="px-3 py-6 text-muted-foreground">
                   Carregando…
                 </td>
               </tr>
             )}
             {!loading && filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-6 text-muted-foreground">
+                <td colSpan={9} className="px-3 py-6 text-muted-foreground">
                   Nenhuma reunião encontrada.
                 </td>
               </tr>
             )}
+
             {filtered.map((r) => {
               const open = aberta === r.reuniao_id;
               const oc = r.outcome_resultado
                 ? OUTCOME_META[r.outcome_resultado]
                 : null;
+              const df = r.lead_id ? desfechos.get(r.lead_id) : undefined;
+
               return (
                 <Fragment key={r.reuniao_id}>
                   <tr
@@ -1440,6 +1558,13 @@ function ReunioesTab({
                       {r.nota ?? "—"}
                     </td>
                     <td className="px-3 py-2">
+                      <DesfechoChip desfecho={df?.desfecho ?? null} />
+                    </td>
+                    <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                      {fmtDiasAssinatura(df?.dias_link_ate_assinatura)}
+                    </td>
+                    <td className="px-3 py-2">
+
                       <div className="flex flex-wrap gap-1">
                         {(r.guardrails ?? []).map((g) => (
                           <span
@@ -1460,7 +1585,7 @@ function ReunioesTab({
                   </tr>
                   {open && (
                     <tr className="border-b border-border/50">
-                      <td colSpan={7} className="px-4 py-4 bg-muted/10">
+                      <td colSpan={9} className="px-4 py-4 bg-muted/10">
                         <ReuniaoDetalhe
                           r={r}
                           onSaved={() => {
