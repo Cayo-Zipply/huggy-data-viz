@@ -431,6 +431,82 @@ export default function SalesEnablement() {
     },
   });
 
+  /* ----- Assertividade do link (views somente leitura) ----- */
+  const { data: assertividade = [], isLoading: loadingAss } = useQuery({
+    queryKey: ["se-assertividade", mes],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vw_se_assertividade")
+        .select("*")
+        .eq("mes", mes);
+      if (error) throw error;
+      return (data ?? []) as AssertividadeRow[];
+    },
+  });
+
+  const { data: notaConversao = [] } = useQuery({
+    queryKey: ["se-nota-x-conversao"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vw_se_nota_x_conversao")
+        .select("*");
+      if (error) throw error;
+      return (data ?? []) as NotaXConversaoRow[];
+    },
+  });
+
+  const { data: desfechos = [] } = useQuery({
+    queryKey: ["se-reuniao-desfecho", mes],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vw_se_reuniao_desfecho")
+        .select("*")
+        .eq("mes", mes);
+      if (error) throw error;
+      return (data ?? []) as ReuniaoDesfechoRow[];
+    },
+  });
+
+  const { data: alertasAss = [] } = useQuery({
+    queryKey: ["se-alertas-assertividade", mes],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vw_se_alertas_assertividade")
+        .select("*")
+        .eq("mes", mes);
+      if (error) throw error;
+      return (data ?? []) as Alerta[];
+    },
+  });
+
+  const SEV_ORDER: Record<string, number> = {
+    critico: 0,
+    atencao: 1,
+    info: 2,
+    ok: 3,
+  };
+  const alertasTodos = useMemo(
+    () =>
+      [...alertas, ...alertasAss].sort(
+        (a, b) =>
+          (a.ordem ?? 999) - (b.ordem ?? 999) ||
+          (SEV_ORDER[a.severidade ?? ""] ?? 9) -
+            (SEV_ORDER[b.severidade ?? ""] ?? 9)
+      ),
+    [alertas, alertasAss]
+  );
+
+  const desfechoPorLead = useMemo(() => {
+    const m = new Map<string, ReuniaoDesfechoRow>();
+    for (const d of desfechos) if (d.lead_id) m.set(d.lead_id, d);
+    return m;
+  }, [desfechos]);
+
+
+
   /* KPIs — sempre do mês selecionado */
   const kpis = useMemo(() => {
     const avg = (arr: (number | null)[]) => {
