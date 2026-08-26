@@ -41,6 +41,8 @@ import {
   type NotaXConversaoRow,
   type ReuniaoDesfechoRow,
 } from "@/components/se/AssertividadeTab";
+import { PlacarTab } from "@/components/se/PlacarTab";
+import { useAuth } from "@/contexts/AuthContext";
 
 
 /* ---------------- Types ---------------- */
@@ -334,6 +336,8 @@ function MiniCriterio({ code, value }: { code: string; value: number }) {
 
 /* ---------------- Page ---------------- */
 export default function SalesEnablement() {
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === "admin";
   const [mesSelecionado, setMesSelecionado] = useState<string>("");
 
   const { data: meses = [] } = useQuery({
@@ -569,6 +573,7 @@ export default function SalesEnablement() {
         <TabsList>
           <TabsTrigger value="desempenho">Desempenho vs Meta</TabsTrigger>
           <TabsTrigger value="assertividade">Assertividade</TabsTrigger>
+          {isAdmin && <TabsTrigger value="placar">Placar</TabsTrigger>}
           <TabsTrigger value="reunioes">Reuniões</TabsTrigger>
           <TabsTrigger value="evolucao">Evolução</TabsTrigger>
           <TabsTrigger value="rubrica">Rubrica</TabsTrigger>
@@ -589,6 +594,12 @@ export default function SalesEnablement() {
             loading={loadingAss}
           />
         </TabsContent>
+
+        {isAdmin && (
+          <TabsContent value="placar" className="mt-4">
+            <PlacarTab meses={meses} />
+          </TabsContent>
+        )}
 
         <TabsContent value="reunioes" className="mt-4">
           <ReunioesTab
