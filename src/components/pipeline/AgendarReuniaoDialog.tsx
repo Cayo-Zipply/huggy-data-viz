@@ -208,7 +208,7 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
 
         {resultado ? (
           <div className="space-y-3">
-            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md">
+            <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/50 rounded-md">
               <Video size={16} className="text-emerald-400 flex-shrink-0" />
               <span className="text-sm flex-1 truncate">{resultado.meet_link}</span>
               <button onClick={() => copy(resultado.meet_link)} className="text-xs px-2 py-1 bg-muted rounded hover:bg-muted/80 flex items-center gap-1">

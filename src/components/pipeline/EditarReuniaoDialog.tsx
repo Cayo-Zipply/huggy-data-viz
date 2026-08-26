@@ -169,7 +169,7 @@ export function EditarReuniaoDialog({ reuniao, open, onOpenChange, onUpdated, cl
             </div>
           </div>
 
-          <div className="flex gap-2 pt-2">
+          <div className="flex flex-wrap gap-2 pt-2">
             <button onClick={() => onOpenChange(false)} disabled={loading}
               className="flex-1 py-2 bg-muted text-foreground rounded-md text-sm hover:bg-muted/80 disabled:opacity-50">
               Cancelar
