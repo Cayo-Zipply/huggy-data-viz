@@ -386,7 +386,7 @@ export function PlacarTab({
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
-                  <PersonAvatar nome={s.closer ?? ""} size="sm" />
+                  <PersonAvatar name={s.closer} className="h-7 w-7" />
                   <span className="text-sm font-medium truncate">
                     {s.closer ?? "—"}
                   </span>
