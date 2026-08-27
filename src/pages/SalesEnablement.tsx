@@ -532,7 +532,7 @@ export default function SalesEnablement() {
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" strokeWidth={1.5} />
-            Sales Enablement
+            Black Ops
           </h1>
           <p className="text-sm text-muted-foreground">
             Desempenho vs meta, reuniões avaliadas, evolução e rubrica
