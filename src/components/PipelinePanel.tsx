@@ -755,11 +755,18 @@ export function PipelinePanel() {
         {SUB_TABS.map(tab => {
           const Icon = tab.icon;
           const badge = tab.key === "hoje" ? todayPending : 0;
+          const active = subTab === tab.key;
           return (
             <button key={tab.key} onClick={() => setSubTab(tab.key)}
               className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap relative",
-                subTab === tab.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
-              <Icon size={14} strokeWidth={2.25} />{tab.label}
+                active ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+              <span className={cn(
+                "flex items-center justify-center rounded-md p-1 transition-colors",
+                active ? "bg-primary/10 text-primary" : "bg-muted/50 text-muted-foreground/80 group-hover:text-foreground"
+              )}>
+                <Icon size={14} strokeWidth={2.25} />
+              </span>
+              {tab.label}
               {badge > 0 && <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center shadow">{badge}</span>}
             </button>
           );
