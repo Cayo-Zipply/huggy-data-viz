@@ -81,14 +81,17 @@ export function AppSidebar() {
 
   const role = profile?.role ?? "closer";
   const secondaryRole = profile?.secondary_role;
-  const filtered = NAV_ITEMS.filter((item) => {
+  const canSee = (item: NavItem) => {
     if (item.roles.includes("admin") && isAdmin) return true;
     if (item.roles.includes("sdr") && isSdr) return true;
     if (item.roles.includes("closer") && isCloser) return true;
     if (item.roles.includes(role)) return true;
     if (secondaryRole && item.roles.includes(secondaryRole)) return true;
     return false;
-  });
+  };
+  const visibleGroups = MENU_GROUPS
+    .map((group) => ({ ...group, items: group.items.filter(canSee) }))
+    .filter((group) => group.items.length > 0);
   const initials = (profile?.nome ?? profile?.email ?? "U")
     .slice(0, 2)
     .toUpperCase();
