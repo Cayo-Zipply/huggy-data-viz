@@ -58,7 +58,8 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
     >
       <div className="sticky top-0 z-10 rounded-t-lg border-b border-border bg-card/95 px-3 py-2.5 backdrop-blur">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground flex-1 truncate">{cfg.label}</span>
+          {Icon && <Icon size={14} className={cn("shrink-0", cfg.color)} />}
+          <span className="text-[11px] font-bold uppercase tracking-wider text-foreground flex-1 truncate">{cfg.label}</span>
           <span className="text-[11px] font-medium text-muted-foreground tabular-nums">{cards.length}</span>
           {slaBreached > 0 && (
             <span
