@@ -25,21 +25,53 @@ import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 
-const NAV_ITEMS = [
-  { key: "/farol", label: "Farol", icon: Gauge, roles: ["admin", "sdr", "closer"] },
-  { key: "/pipeline", label: "Pipeline", icon: Kanban, roles: ["admin", "sdr", "closer"] },
-  { key: "/marketing", label: "Dashboard", icon: BarChart3, roles: ["admin"] },
-  { key: "/comparativo", label: "Comparativo", icon: GitCompare, roles: ["admin"] },
-  { key: "/rentabilidade", label: "Rentabilidade", icon: DollarSign, roles: ["admin"] },
-  { key: "/consolidado", label: "Consolidado", icon: PieChart, roles: ["admin"] },
-  { key: "/contratos", label: "Contratos", icon: FileText, roles: ["admin", "sdr", "closer"] },
-  { key: "/usuarios", label: "Usuários", icon: UsersRound, roles: ["admin"] },
-  { key: "/configuracoes", label: "Configurações", icon: Settings, roles: ["admin"] },
-  { key: "/feedbacks", label: "Feedbacks", icon: MessageSquarePlus, roles: ["admin"] },
-  { key: "/pool", label: "Modo Pool", icon: Flame, roles: ["admin", "closer"] },
-  { key: "/sales-enablement", label: "Sales Enablement", icon: Sparkles, roles: ["admin", "sdr", "closer"] },
-  { key: "/material-apoio", label: "Material de Apoio", icon: BookOpen, roles: ["admin", "sdr", "closer"] },
-  { key: "/ajuda", label: "Ajuda", icon: HelpCircle, roles: ["admin", "sdr", "closer"] },
+interface NavItem {
+  key: string;
+  label: string;
+  icon: any;
+  roles: string[];
+}
+
+const MENU_GROUPS: { label: string; items: NavItem[] }[] = [
+  {
+    label: "OPERAÇÃO",
+    items: [
+      { key: "/farol", label: "Farol", icon: Gauge, roles: ["admin", "sdr", "closer"] },
+      { key: "/pipeline", label: "Pipeline", icon: Kanban, roles: ["admin", "sdr", "closer"] },
+      { key: "/pool", label: "Modo Pool", icon: Flame, roles: ["admin", "closer"] },
+    ],
+  },
+  {
+    label: "ANÁLISE",
+    items: [
+      { key: "/marketing", label: "Dashboard", icon: BarChart3, roles: ["admin"] },
+      { key: "/comparativo", label: "Comparativo", icon: GitCompare, roles: ["admin"] },
+      { key: "/rentabilidade", label: "Rentabilidade", icon: DollarSign, roles: ["admin"] },
+      { key: "/consolidado", label: "Consolidado", icon: PieChart, roles: ["admin"] },
+    ],
+  },
+  {
+    label: "PERFORMANCE",
+    items: [
+      { key: "/sales-enablement", label: "Black Ops", icon: Sparkles, roles: ["admin", "sdr", "closer"] },
+      { key: "/material-apoio", label: "Material de Apoio", icon: BookOpen, roles: ["admin", "sdr", "closer"] },
+    ],
+  },
+  {
+    label: "ADMINISTRAÇÃO",
+    items: [
+      { key: "/contratos", label: "Contratos", icon: FileText, roles: ["admin", "sdr", "closer"] },
+      { key: "/usuarios", label: "Usuários", icon: UsersRound, roles: ["admin"] },
+      { key: "/configuracoes", label: "Configurações", icon: Settings, roles: ["admin"] },
+    ],
+  },
+  {
+    label: "SUPORTE",
+    items: [
+      { key: "/feedbacks", label: "Feedbacks", icon: MessageSquarePlus, roles: ["admin"] },
+      { key: "/ajuda", label: "Ajuda", icon: HelpCircle, roles: ["admin", "sdr", "closer"] },
+    ],
+  },
 ];
 
 export function AppSidebar() {
