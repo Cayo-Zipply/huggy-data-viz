@@ -109,26 +109,36 @@ export function AppSidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-2 space-y-0.5 overflow-y-auto">
-        {filtered.map((item) => {
-          const Icon = item.icon;
-          const active = location.pathname === item.key;
-          return (
-            <button
-              key={item.key}
-              onClick={() => navigate(item.key)}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors",
-                active
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-              )}
-            >
-              <Icon className="h-4 w-4" strokeWidth={1.5} />
-              {item.label}
-            </button>
-          );
-        })}
+      <nav className="flex-1 py-2 overflow-y-auto">
+        {visibleGroups.map((group, gi) => (
+          <div key={group.label}>
+            {gi > 0 && <div className="mx-4 my-3 border-t border-sidebar-border/60" />}
+            <p className="px-4 pt-1 pb-1.5 text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70 select-none">
+              {group.label}
+            </p>
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const active = location.pathname === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => navigate(item.key)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors",
+                      active
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                    )}
+                  >
+                    <Icon className="h-4 w-4" strokeWidth={1.5} />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* Footer */}
