@@ -36,22 +36,30 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Grava tokens do Google APENAS quando vêm de um login Google recém-realizado.
+ * Nunca sobrescreve token/refresh_token existente com valor vazio e nunca
+ * inventa `expires_at` — só usa o `expires_in` real devolvido pelo Google.
+ */
 async function persistGoogleToken(session: Session | null) {
   if (!session?.user?.id) return;
+  const provider = (session.user.app_metadata as any)?.provider;
+  if (provider !== "google") return;
+
   const providerToken = (session as any).provider_token as string | undefined;
   const refreshToken = (session as any).provider_refresh_token as string | undefined;
-  const expiresIn = (session as any).expires_in as number | undefined;
-  if (!providerToken && !refreshToken) return;
+  const expiresIn = (session as any).provider_token_expires_in as number | undefined;
+  if (!providerToken || !providerToken.trim()) return;
 
   const payload: any = {
     user_id: session.user.id,
     email: session.user.email,
+    access_token: providerToken,
   };
-  if (providerToken) {
-    payload.access_token = providerToken;
-    payload.expires_at = new Date(Date.now() + (expiresIn ?? 3600) * 1000).toISOString();
+  if (typeof expiresIn === "number" && expiresIn > 0) {
+    payload.expires_at = new Date(Date.now() + expiresIn * 1000).toISOString();
   }
-  if (refreshToken) {
+  if (refreshToken && refreshToken.trim()) {
     payload.refresh_token = refreshToken;
   }
 
@@ -60,6 +68,7 @@ async function persistGoogleToken(session: Session | null) {
     .upsert(payload, { onConflict: "user_id" });
   if (error) console.error("[persistGoogleToken] erro:", error.message);
 }
+
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
