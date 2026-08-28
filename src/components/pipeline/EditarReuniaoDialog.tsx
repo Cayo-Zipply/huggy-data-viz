@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabaseExternal";
 import { toast } from "sonner";
 import { BotaoEnviarConfirmacao } from "./BotaoEnviarConfirmacao";
 import { useAuth } from "@/contexts/AuthContext";
+import { edgeErrorMessage } from "@/lib/edgeError";
 
 interface Reuniao {
   id: string;
@@ -94,7 +95,7 @@ export function EditarReuniaoDialog({ reuniao, open, onOpenChange, onUpdated, cl
         },
       });
       if (error || (data as any)?.error) {
-        toast.error(`Erro: ${(data as any)?.error || error?.message || "desconhecido"}`);
+        toast.error(await edgeErrorMessage(error, data, "Erro ao atualizar reunião"), { duration: 10000 });
         setLoading(false);
         return;
       }

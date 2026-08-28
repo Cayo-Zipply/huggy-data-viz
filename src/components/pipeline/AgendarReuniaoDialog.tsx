@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import type { PipelineCard } from "./types";
 import { BotaoEnviarConfirmacao } from "./BotaoEnviarConfirmacao";
 import { useAuth } from "@/contexts/AuthContext";
+import { edgeErrorMessage } from "@/lib/edgeError";
 
 const CLOSER_MAP: Record<string, string> = {
   "Fillipe": "fillipe.amorim@penaquadros.com",
@@ -147,13 +148,8 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
       });
 
       if (error || (data as any)?.error) {
-        const msg = (data as any)?.error || error?.message || "Erro desconhecido";
-        const status = (data as any)?.gmail_status || (data as any)?.calendar_status;
-        if (status === 401 || status === 403) {
-          toast.error("Permissão Google insuficiente. Faça logout/login para reautorizar com acesso ao Calendar.");
-        } else {
-          toast.error(`Erro: ${msg}`);
-        }
+        const msg = await edgeErrorMessage(error, data, "Erro ao criar reunião");
+        toast.error(msg, { duration: 10000 });
         setLoading(false);
         return;
       }
