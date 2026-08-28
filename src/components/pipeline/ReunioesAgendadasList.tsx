@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { EditarReuniaoDialog } from "./EditarReuniaoDialog";
 import { BotaoEnviarConfirmacao } from "./BotaoEnviarConfirmacao";
 import { useAuth } from "@/contexts/AuthContext";
+import { edgeErrorMessage } from "@/lib/edgeError";
 
 interface Reuniao {
   id: string;
@@ -120,7 +121,7 @@ export function ReunioesAgendadasList({ leadId, refreshKey }: { leadId: string; 
         body: { reuniao_id: r.id },
       });
       if (error || (data as any)?.error) {
-        toast.error(`Erro: ${(data as any)?.error || error?.message || "desconhecido"}`);
+        toast.error(await edgeErrorMessage(error, data, "Erro ao cancelar reunião"), { duration: 10000 });
         return;
       }
       toast.success("Reunião cancelada.");

@@ -17,6 +17,7 @@ import { sbExt } from "@/lib/supabaseExternal";
 import type { EmailEnvio, EmailEnvioDestinatario, EmailTipo } from "@/hooks/useEmailEnvios";
 import type { PipelineCard } from "./types";
 import { toast } from "sonner";
+import { edgeErrorMessage } from "@/lib/edgeError";
 
 interface Props {
   open: boolean;
@@ -255,7 +256,7 @@ export function EmailReviewModal({ open, onOpenChange, tipo, leadId, card, onUpd
       const { error } = await db.functions.invoke("gerar-rascunhos-ganho", {
         body: { lead_id: leadId, tipo, force: true },
       });
-      if (error) throw error;
+      if (error) throw new Error(await edgeErrorMessage(error, null, "Erro ao gerar rascunho"));
       toast.success("Rascunho gerado");
       const fresh = await fetchLatestEnvio();
       hydrate(fresh);
@@ -323,10 +324,7 @@ export function EmailReviewModal({ open, onOpenChange, tipo, leadId, card, onUpd
         body: { envio_id: envio.id, remetente_email: userEmail, remetente_nome: userName },
       });
       if (error) {
-        const msg = error.message || "";
-        if (msg.includes("401") || msg.includes("403")) {
-          toast.error("Permissão Google insuficiente. Faça logout e login com Google novamente.");
-        } else { toast.error("Erro ao enviar: " + msg); }
+        toast.error(await edgeErrorMessage(error, null, "Erro ao enviar e-mail"), { duration: 10000 });
         return;
       }
       toast.success("E-mail enviado com sucesso!");

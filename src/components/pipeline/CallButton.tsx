@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabaseExt } from "@/lib/supabaseExternal";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { edgeErrorMessage } from "@/lib/edgeError";
 
 const SOFTPHONE_URL = "https://linkfyscale.ipboxcloud.com.br:9139/ipbox/";
 const IN_CALL_TIMEOUT_MS = 5 * 60 * 1000; // 5 min
@@ -134,7 +135,7 @@ export function CallButton({ leadId, className, size = "md", onCallSynced }: Cal
         body: payload,
       });
       if (error || (data && data.error) || (data && data.ok === false)) {
-        toast.error(data?.error || error?.message || "Erro ao discar");
+        toast.error(await edgeErrorMessage(error, data, "Erro ao discar"), { duration: 10000 });
         return;
       }
       toast.success(`Discando ${data?.numero ?? ""}... atenda no softphone`);
@@ -181,7 +182,7 @@ export function CallButton({ leadId, className, size = "md", onCallSynced }: Cal
         body: payload,
       });
       if (error || (data && data.error)) {
-        toast.error(data?.error || error?.message || "Erro ao encerrar");
+        toast.error(await edgeErrorMessage(error, data, "Erro ao encerrar"), { duration: 10000 });
         return;
       }
       if (!opts?.silent) {
