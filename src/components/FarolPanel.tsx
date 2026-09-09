@@ -740,26 +740,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
               {unassignedCards.length} sem responsável
             </Button>
           )}
-          <div className="flex items-center gap-1.5 text-xs">
-            <CalendarDays className="w-3.5 h-3.5 text-primary" />
-            <span className="uppercase tracking-wider text-muted-foreground hidden sm:inline">Projeção até</span>
-            <input
-              type="date"
-              value={fmtISO(dataAlvo)}
-              min={fmtISO(start)}
-              max={fmtISO(new Date(year, month + 1, 0))}
-              onChange={(e) => {
-                const [y, m, d] = e.target.value.split("-").map(Number);
-                setDataAlvo(new Date(y, m - 1, d));
-              }}
-              className="border border-border rounded-md px-2 py-1 bg-background text-foreground"
-            />
-            {!isToday && (
-              <button onClick={() => setDataAlvo(new Date())} className="text-[10px] text-primary underline">
-                hoje
-              </button>
-            )}
-          </div>
+          <FarolDatePicker value={dataAlvo} onChange={setDataAlvo} />
           <select
             value={selectedMonth.toISOString()}
             onChange={e => setSelectedMonth(new Date(e.target.value))}
