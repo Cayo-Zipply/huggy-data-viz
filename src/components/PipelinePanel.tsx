@@ -33,6 +33,7 @@ import { dedupeOwnerNames, sameOwner } from "@/lib/ownerNormalization";
 import { useDuplicateLeads } from "@/hooks/useDuplicateLeads";
 import { NotificationBell } from "@/components/NotificationBell";
 import { PendenciaEmailBanner } from "@/components/pipeline/PendenciaEmailBanner";
+import { useAnotacoesNaoLidas } from "@/hooks/useAnotacoesNaoLidas";
 
 const SUB_TABS = [
   { key: "kanban", label: "Kanban", icon: LayoutGrid },
@@ -87,6 +88,8 @@ export function PipelinePanel() {
   const [ganhoPending, setGanhoPending] = useState<{ cardId: string; cardNome: string; valorDividaAtual: number | null; responsavelJuridicoAtual: string | null } | null>(null);
   const [burnOpen, setBurnOpen] = useState(false);
   const { toast } = useToast();
+  const { naoLidos: obsNaoLidas, marcarLida: marcarObsLida } = useAnotacoesNaoLidas();
+  const [obsDestaqueId, setObsDestaqueId] = useState<string | null>(null);
 
   // Bulk selection state (admin only)
   const [bulkMode, setBulkMode] = useState(false);
@@ -420,6 +423,10 @@ export function PipelinePanel() {
     }
     setSelectedCardId(card.id);
     setDrawerOpen(true);
+    if (obsNaoLidas.has(card.id)) {
+      setObsDestaqueId(card.id);
+      marcarObsLida(card.id); // dispara e segue — não bloqueia a abertura
+    }
   };
 
   const handleDrawerOpenChange = (open: boolean) => {
@@ -789,6 +796,7 @@ export function PipelinePanel() {
                 slaRule={getRuleForStage(s)}
                 ownerOptions={ownerOptions}
                 duplicatesMap={duplicatesMap}
+                obsNaoLidas={obsNaoLidas}
                 onUpdate={updateCard} onDrop={handleDrop} onMarkWon={markWon} onMarkLost={handleLossRequest}
                 onCreateTask={createTask} onToggleTask={toggleTask} onCardClick={handleCardClick}
                 onDelete={deleteCard} />
@@ -829,6 +837,7 @@ export function PipelinePanel() {
         onRemoveLabel={removeLabelFromCard}
         ownerOptions={ownerOptions}
         duplicates={selectedCard ? duplicatesMap.get(selectedCard.id) || [] : []}
+        highlightObs={obsDestaqueId !== null && obsDestaqueId === selectedCard?.id}
         onDelete={async (id) => {
           await deleteCard(id);
           setDrawerOpen(false);
