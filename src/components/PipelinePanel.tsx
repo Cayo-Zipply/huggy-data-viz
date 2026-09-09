@@ -516,6 +516,8 @@ export function PipelinePanel() {
 
   return (
     <div className="space-y-2">
+      <PendenciaEmailBanner />
+
       {pendingHandoff && (
         <HandoffChecklist
           leadName={cards.find(c => c.id === pendingHandoff.cardId)?.nome || ""}
