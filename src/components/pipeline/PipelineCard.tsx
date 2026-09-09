@@ -30,11 +30,12 @@ interface Props {
   onToggleTask: (id: string) => void;
   onCardClick?: (card: CardType) => void;
   onDelete?: (id: string) => void;
+  obsNaoLida?: boolean;
 }
 
 type Tab = "info" | "historico" | "tarefas" | "acoes";
 
-export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, ownerOptions: ownerOptionsProp, duplicates = [], onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick, onDelete }: Props) {
+export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, ownerOptions: ownerOptionsProp, duplicates = [], onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick, onDelete, obsNaoLida = false }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [tab, setTab] = useState<Tab>("info");
   const [editing, setEditing] = useState<string | null>(null);
