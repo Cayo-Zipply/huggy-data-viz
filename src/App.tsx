@@ -15,6 +15,7 @@ import Feedbacks from "@/pages/Feedbacks";
 import MaterialApoio from "@/pages/MaterialApoio";
 import SalesEnablement from "@/pages/SalesEnablement";
 import Pool from "@/pages/Pool";
+import PendenciasPosVenda from "@/pages/PendenciasPosVenda";
 import { AppSidebar } from "@/components/AppSidebar";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { NovidadesModal } from "@/components/NovidadesModal";
@@ -188,6 +189,7 @@ const App = () => (
               <Route path="/material-apoio" element={<MaterialApoio />} />
               <Route path="/sales-enablement" element={<SalesEnablement />} />
               <Route path="/pool" element={<Pool />} />
+              <Route path="/pendencias-pos-venda" element={<PendenciasPosVenda />} />
             </Route>
 
             <Route path="/" element={<Navigate to="/pipeline" replace />} />

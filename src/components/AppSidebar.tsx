@@ -19,10 +19,12 @@ import {
   KeyRound,
   Sparkles,
   Flame,
+  MailWarning,
 } from "lucide-react";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { usePendenciasEmail } from "@/hooks/usePendenciasEmail";
 
 
 interface NavItem {
@@ -30,6 +32,7 @@ interface NavItem {
   label: string;
   icon: any;
   roles: string[];
+  badge?: "pendencias";
 }
 
 const MENU_GROUPS: { label: string; items: NavItem[] }[] = [
@@ -39,6 +42,7 @@ const MENU_GROUPS: { label: string; items: NavItem[] }[] = [
       { key: "/farol", label: "Farol", icon: Gauge, roles: ["admin", "sdr", "closer"] },
       { key: "/pipeline", label: "Pipeline", icon: Kanban, roles: ["admin", "sdr", "closer"] },
       { key: "/pool", label: "Modo Pool", icon: Flame, roles: ["admin", "closer"] },
+      { key: "/pendencias-pos-venda", label: "Pendências pós-venda", icon: MailWarning, roles: ["admin", "sdr", "closer"], badge: "pendencias" },
     ],
   },
   {
