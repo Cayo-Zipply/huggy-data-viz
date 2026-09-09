@@ -766,7 +766,9 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
         </div>
       </div>
 
-      {!isToday && (
+      {mostraFotografia && <FarolSnapshotPanel data={dataAlvo} />}
+
+      {!isToday && !mostraFotografia && (
         <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-xs text-foreground">
           📅 Visualizando projeção até <strong>{dataAlvo.toLocaleDateString("pt-BR")}</strong>. Os números abaixo mostram quanto você precisa ter atingido até essa data para estar em pace.
         </div>
