@@ -1273,6 +1273,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
             {/* E-MAILS pós-ganho */}
             {activeSection === "emails" && card.lead_status === "ganho" && (
               <div className="space-y-4">
+                <EmailPendenciaStatus leadId={card.id} isWon empresa={card.nome} />
                 {(["juridico", "financeiro"] as EmailTipo[]).map((tipo) => {
                   const envio = latestByTipo(tipo);
                   const status = envio?.status;
