@@ -84,6 +84,7 @@ function fileToBase64(file: File): Promise<string> {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { CalendarDays } from "lucide-react";
+import { EmailPendenciaStatus } from "@/components/pipeline/EmailPendenciaStatus";
 
 function DataReuniaoRealizadaBadge({ value, onChange }: { value: string | null; onChange: (iso: string | null) => void }) {
   const [openPop, setOpenPop] = useState(false);
@@ -1273,6 +1274,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
             {/* E-MAILS pós-ganho */}
             {activeSection === "emails" && card.lead_status === "ganho" && (
               <div className="space-y-4">
+                <EmailPendenciaStatus leadId={card.id} isWon empresa={card.nome} />
                 {(["juridico", "financeiro"] as EmailTipo[]).map((tipo) => {
                   const envio = latestByTipo(tipo);
                   const status = envio?.status;

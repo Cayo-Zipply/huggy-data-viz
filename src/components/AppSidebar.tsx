@@ -19,10 +19,12 @@ import {
   KeyRound,
   Sparkles,
   Flame,
+  MailWarning,
 } from "lucide-react";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { usePendenciasEmail } from "@/hooks/usePendenciasEmail";
 
 
 interface NavItem {
@@ -30,6 +32,7 @@ interface NavItem {
   label: string;
   icon: any;
   roles: string[];
+  badge?: "pendencias";
 }
 
 const MENU_GROUPS: { label: string; items: NavItem[] }[] = [
@@ -39,6 +42,7 @@ const MENU_GROUPS: { label: string; items: NavItem[] }[] = [
       { key: "/farol", label: "Farol", icon: Gauge, roles: ["admin", "sdr", "closer"] },
       { key: "/pipeline", label: "Pipeline", icon: Kanban, roles: ["admin", "sdr", "closer"] },
       { key: "/pool", label: "Modo Pool", icon: Flame, roles: ["admin", "closer"] },
+      { key: "/pendencias-pos-venda", label: "Pendências pós-venda", icon: MailWarning, roles: ["admin", "sdr", "closer"], badge: "pendencias" },
     ],
   },
   {
@@ -78,6 +82,7 @@ export function AppSidebar() {
   const { profile, signOut, isSdr, isCloser, isAdmin } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { count, countVencidos } = usePendenciasEmail();
 
   const role = profile?.role ?? "closer";
   const secondaryRole = profile?.secondary_role;
@@ -120,6 +125,7 @@ export function AppSidebar() {
               {group.items.map((item) => {
                 const Icon = item.icon;
                 const active = location.pathname === item.key;
+                const showBadge = item.badge === "pendencias" && count > 0;
                 return (
                   <button
                     key={item.key}
@@ -131,8 +137,18 @@ export function AppSidebar() {
                         : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                     )}
                   >
-                    <Icon className="h-4 w-4" strokeWidth={1.5} />
-                    {item.label}
+                    <Icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+                    <span className="flex-1 text-left truncate">{item.label}</span>
+                    {showBadge && (
+                      <span
+                        className={cn(
+                          "shrink-0 min-w-[18px] text-center text-[10px] font-semibold rounded-full px-1.5 py-0.5 text-white",
+                          countVencidos > 0 ? "bg-destructive" : "bg-amber-500"
+                        )}
+                      >
+                        {count}
+                      </span>
+                    )}
                   </button>
                 );
               })}

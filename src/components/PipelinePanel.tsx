@@ -32,6 +32,7 @@ import { useLeadHistory } from "@/hooks/useLeadHistory";
 import { dedupeOwnerNames, sameOwner } from "@/lib/ownerNormalization";
 import { useDuplicateLeads } from "@/hooks/useDuplicateLeads";
 import { NotificationBell } from "@/components/NotificationBell";
+import { PendenciaEmailBanner } from "@/components/pipeline/PendenciaEmailBanner";
 
 const SUB_TABS = [
   { key: "kanban", label: "Kanban", icon: LayoutGrid },
@@ -516,6 +517,8 @@ export function PipelinePanel() {
 
   return (
     <div className="space-y-2">
+      <PendenciaEmailBanner />
+
       {pendingHandoff && (
         <HandoffChecklist
           leadName={cards.find(c => c.id === pendingHandoff.cardId)?.nome || ""}
