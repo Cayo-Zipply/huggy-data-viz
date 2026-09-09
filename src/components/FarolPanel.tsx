@@ -266,6 +266,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
     return dataAlvo.getDate() === t.getDate() && dataAlvo.getMonth() === t.getMonth() && dataAlvo.getFullYear() === t.getFullYear();
   })();
   const dataAlvoLabel = dataAlvo.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  const mostraFotografia = isSnapshotDate(dataAlvo);
 
   const months = useMemo(() => {
     const arr: Date[] = [];
