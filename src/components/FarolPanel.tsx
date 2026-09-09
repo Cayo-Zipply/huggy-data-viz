@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { AlertTriangle, Settings, Target, CalendarDays, DollarSign, Users, Percent, FileSignature } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PersonAvatar } from "@/components/PersonAvatar";
+import { FarolDatePicker, FarolSnapshotPanel, isSnapshotDate } from "@/components/FarolSnapshotPanel";
 
 import { useTeamMembers, type TeamMember } from "@/hooks/useTeamMembers";
 import { useAuth } from "@/contexts/AuthContext";
@@ -265,6 +266,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
     return dataAlvo.getDate() === t.getDate() && dataAlvo.getMonth() === t.getMonth() && dataAlvo.getFullYear() === t.getFullYear();
   })();
   const dataAlvoLabel = dataAlvo.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  const mostraFotografia = isSnapshotDate(dataAlvo);
 
   const months = useMemo(() => {
     const arr: Date[] = [];
@@ -740,26 +742,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
               {unassignedCards.length} sem responsável
             </Button>
           )}
-          <div className="flex items-center gap-1.5 text-xs">
-            <CalendarDays className="w-3.5 h-3.5 text-primary" />
-            <span className="uppercase tracking-wider text-muted-foreground hidden sm:inline">Projeção até</span>
-            <input
-              type="date"
-              value={fmtISO(dataAlvo)}
-              min={fmtISO(start)}
-              max={fmtISO(new Date(year, month + 1, 0))}
-              onChange={(e) => {
-                const [y, m, d] = e.target.value.split("-").map(Number);
-                setDataAlvo(new Date(y, m - 1, d));
-              }}
-              className="border border-border rounded-md px-2 py-1 bg-background text-foreground"
-            />
-            {!isToday && (
-              <button onClick={() => setDataAlvo(new Date())} className="text-[10px] text-primary underline">
-                hoje
-              </button>
-            )}
-          </div>
+          <FarolDatePicker value={dataAlvo} onChange={setDataAlvo} />
           <select
             value={selectedMonth.toISOString()}
             onChange={e => setSelectedMonth(new Date(e.target.value))}
@@ -785,7 +768,9 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
         </div>
       </div>
 
-      {!isToday && (
+      {mostraFotografia && <FarolSnapshotPanel data={dataAlvo} />}
+
+      {!isToday && !mostraFotografia && (
         <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-xs text-foreground">
           📅 Visualizando projeção até <strong>{dataAlvo.toLocaleDateString("pt-BR")}</strong>. Os números abaixo mostram quanto você precisa ter atingido até essa data para estar em pace.
         </div>
