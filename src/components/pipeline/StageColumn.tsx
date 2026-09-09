@@ -27,9 +27,10 @@ interface Props {
   slaRule?: SlaRule;
   ownerOptions?: string[];
   duplicatesMap?: Map<string, DuplicateInfo[]>;
+  obsNaoLidas?: Set<string>;
 }
 
-export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, selectedIds, onToggleSelect, onUpdate, onDrop, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick, onDelete, slaRule, ownerOptions, duplicatesMap }: Props) {
+export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, selectedIds, onToggleSelect, onUpdate, onDrop, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick, onDelete, slaRule, ownerOptions, duplicatesMap, obsNaoLidas }: Props) {
   const cfg = STAGE_CONFIG[stageKey];
   const Icon = cfg.icon;
   const [dragOver, setDragOver] = useState(false);
@@ -118,7 +119,7 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
                 {selectedIds?.has(card.id) && "✓"}
               </div>
             )}
-            <PipelineCardItem card={card} tasks={tasks} cardLabels={getCardLabels?.(card.id) || []} slaHoras={slaRule?.sla_horas} ownerOptions={ownerOptions} duplicates={duplicatesMap?.get(card.id) || []} onUpdate={onUpdate}
+            <PipelineCardItem card={card} tasks={tasks} cardLabels={getCardLabels?.(card.id) || []} slaHoras={slaRule?.sla_horas} ownerOptions={ownerOptions} duplicates={duplicatesMap?.get(card.id) || []} obsNaoLida={obsNaoLidas?.has(card.id) || false} onUpdate={onUpdate}
               onMarkWon={onMarkWon} onMarkLost={onMarkLost} onCreateTask={onCreateTask} onToggleTask={onToggleTask}
               onCardClick={onCardClick} onDelete={onDelete} />
           </div>

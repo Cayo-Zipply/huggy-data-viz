@@ -141,11 +141,12 @@ interface Props {
   duplicates?: DuplicateInfo[];
   onDelete?: (id: string) => void | Promise<void>;
   onOpenLead?: (id: string) => void;
+  highlightObs?: boolean;
 }
 
 type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "contrato" | "anexo" | "chamadas" | "reunioes" | "emails" | "grupo_wpp" | "acoes";
 
-export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onSaveObservation, labels = [], cardLabels = [], onAddLabel, onRemoveLabel, ownerOptions: ownerOptionsProp, duplicates = [], onDelete, onOpenLead }: Props) {
+export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onSaveObservation, labels = [], cardLabels = [], onAddLabel, onRemoveLabel, ownerOptions: ownerOptionsProp, duplicates = [], onDelete, onOpenLead, highlightObs = false }: Props) {
   const { user, isAdmin, profile } = useAuth();
   const { activeOrigens } = useOrigensLeads();
   const db = supabaseExt as any;
@@ -1013,7 +1014,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                 )}
 
                 {/* New anotacoes from lead_anotacoes table */}
-                <div className="mb-6">
+                <div className={cn("mb-6", highlightObs && "rounded-md bg-[#FFFBEB] border-l-2 border-l-[#FBBF24] p-3")}>
                   <div className="flex items-center gap-2 mb-3">
                     <StickyNote size={14} className="text-primary" />
                     <p className="text-xs font-medium text-foreground uppercase tracking-wider">Observações</p>

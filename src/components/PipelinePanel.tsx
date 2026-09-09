@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Search, UserCircle, LayoutGrid, ListChecks, BarChart3, Target, Upload, Plus, ChevronDown, Trash2, ArrowRightLeft, UserPlus, CheckSquare, X, CalendarIcon, RefreshCw, Flame } from "lucide-react";
 import BurnFupDialog from "./pipeline/BurnFupDialog";
@@ -33,6 +33,7 @@ import { dedupeOwnerNames, sameOwner } from "@/lib/ownerNormalization";
 import { useDuplicateLeads } from "@/hooks/useDuplicateLeads";
 import { NotificationBell } from "@/components/NotificationBell";
 import { PendenciaEmailBanner } from "@/components/pipeline/PendenciaEmailBanner";
+import { useAnotacoesNaoLidas } from "@/hooks/useAnotacoesNaoLidas";
 
 const SUB_TABS = [
   { key: "kanban", label: "Kanban", icon: LayoutGrid },
@@ -87,6 +88,8 @@ export function PipelinePanel() {
   const [ganhoPending, setGanhoPending] = useState<{ cardId: string; cardNome: string; valorDividaAtual: number | null; responsavelJuridicoAtual: string | null } | null>(null);
   const [burnOpen, setBurnOpen] = useState(false);
   const { toast } = useToast();
+  const { naoLidos: obsNaoLidas, marcarLida: marcarObsLida } = useAnotacoesNaoLidas();
+  const [obsDestaqueId, setObsDestaqueId] = useState<string | null>(null);
 
   // Bulk selection state (admin only)
   const [bulkMode, setBulkMode] = useState(false);
@@ -134,12 +137,19 @@ export function PipelinePanel() {
   }, [drawerOpen, selectedCardId]);
 
   // Listen to global "open-lead-card" event (from notifications bell)
+  const obsNaoLidasRef = useRef(obsNaoLidas);
+  obsNaoLidasRef.current = obsNaoLidas;
+
   useEffect(() => {
     const handler = (e: Event) => {
       const leadId = (e as CustomEvent<{ leadId: string }>).detail?.leadId;
       if (!leadId) return;
       setSelectedCardId(leadId);
       setDrawerOpen(true);
+      if (obsNaoLidasRef.current.has(leadId)) {
+        setObsDestaqueId(leadId);
+        marcarObsLida(leadId);
+      }
     };
     window.addEventListener("open-lead-card", handler);
     return () => window.removeEventListener("open-lead-card", handler);
@@ -420,6 +430,10 @@ export function PipelinePanel() {
     }
     setSelectedCardId(card.id);
     setDrawerOpen(true);
+    if (obsNaoLidas.has(card.id)) {
+      setObsDestaqueId(card.id);
+      marcarObsLida(card.id); // dispara e segue — não bloqueia a abertura
+    }
   };
 
   const handleDrawerOpenChange = (open: boolean) => {
@@ -789,6 +803,7 @@ export function PipelinePanel() {
                 slaRule={getRuleForStage(s)}
                 ownerOptions={ownerOptions}
                 duplicatesMap={duplicatesMap}
+                obsNaoLidas={obsNaoLidas}
                 onUpdate={updateCard} onDrop={handleDrop} onMarkWon={markWon} onMarkLost={handleLossRequest}
                 onCreateTask={createTask} onToggleTask={toggleTask} onCardClick={handleCardClick}
                 onDelete={deleteCard} />
@@ -797,7 +812,7 @@ export function PipelinePanel() {
         </>
       )}
 
-      {subTab === "hoje" && <TasksPanel tasks={tasks} cards={cards} activeUser={activeUser} canViewAll={isAdmin} isAdmin={isAdmin} onToggle={toggleTask} onReschedule={rescheduleTask} onDeleteTask={deleteTask} onDeleteTasks={deleteTasks} onOpenCard={(id) => { setSelectedCardId(id); setDrawerOpen(true); }} />}
+      {subTab === "hoje" && <TasksPanel tasks={tasks} cards={cards} activeUser={activeUser} canViewAll={isAdmin} isAdmin={isAdmin} onToggle={toggleTask} onReschedule={rescheduleTask} onDeleteTask={deleteTask} onDeleteTasks={deleteTasks} onOpenCard={(id) => { setSelectedCardId(id); setDrawerOpen(true); if (obsNaoLidas.has(id)) { setObsDestaqueId(id); marcarObsLida(id); } }} />}
       {subTab === "dashboard" && <CRMDashboard cards={cards} activeUser={activeUser} canViewAll={isAdmin} owners={ownerOptions} />}
       {subTab === "metas" && <GoalsPanel cards={cards} goals={goals} activeUser={activeUser} canViewAll={isAdmin} owners={ownerOptions} onSave={upsertGoal} />}
 
@@ -829,6 +844,7 @@ export function PipelinePanel() {
         onRemoveLabel={removeLabelFromCard}
         ownerOptions={ownerOptions}
         duplicates={selectedCard ? duplicatesMap.get(selectedCard.id) || [] : []}
+        highlightObs={obsDestaqueId !== null && obsDestaqueId === selectedCard?.id}
         onDelete={async (id) => {
           await deleteCard(id);
           setDrawerOpen(false);

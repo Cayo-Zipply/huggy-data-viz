@@ -30,11 +30,12 @@ interface Props {
   onToggleTask: (id: string) => void;
   onCardClick?: (card: CardType) => void;
   onDelete?: (id: string) => void;
+  obsNaoLida?: boolean;
 }
 
 type Tab = "info" | "historico" | "tarefas" | "acoes";
 
-export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, ownerOptions: ownerOptionsProp, duplicates = [], onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick, onDelete }: Props) {
+export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, ownerOptions: ownerOptionsProp, duplicates = [], onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick, onDelete, obsNaoLida = false }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [tab, setTab] = useState<Tab>("info");
   const [editing, setEditing] = useState<string | null>(null);
@@ -116,6 +117,18 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
     )}>
       {/* Status accent — left bar */}
       <div className={cn("absolute left-0 top-0 bottom-0 w-[3px]", accentColor)} />
+
+      {/* Ponto de observação não lida */}
+      {obsNaoLida && (
+        <span
+          aria-label="Observação não lida"
+          title={(() => {
+            const txt = (card.anotacoes || "").trim();
+            return txt ? (txt.length > 120 ? txt.slice(0, 120) + "…" : txt) : "Observação não lida";
+          })()}
+          className="absolute top-2 right-2 z-10 w-1.5 h-1.5 rounded-full bg-[#FBBF24] dark:bg-[#FCD34D]"
+        />
+      )}
 
       <div className="p-3 pl-4">
         {/* Header — name + chevron */}
