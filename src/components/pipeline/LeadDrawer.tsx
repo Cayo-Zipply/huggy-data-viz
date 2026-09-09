@@ -84,6 +84,7 @@ function fileToBase64(file: File): Promise<string> {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { CalendarDays } from "lucide-react";
+import { EmailPendenciaStatus } from "@/components/pipeline/EmailPendenciaStatus";
 
 function DataReuniaoRealizadaBadge({ value, onChange }: { value: string | null; onChange: (iso: string | null) => void }) {
   const [openPop, setOpenPop] = useState(false);

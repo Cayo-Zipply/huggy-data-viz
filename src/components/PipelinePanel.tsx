@@ -32,6 +32,7 @@ import { useLeadHistory } from "@/hooks/useLeadHistory";
 import { dedupeOwnerNames, sameOwner } from "@/lib/ownerNormalization";
 import { useDuplicateLeads } from "@/hooks/useDuplicateLeads";
 import { NotificationBell } from "@/components/NotificationBell";
+import { PendenciaEmailBanner } from "@/components/pipeline/PendenciaEmailBanner";
 
 const SUB_TABS = [
   { key: "kanban", label: "Kanban", icon: LayoutGrid },
