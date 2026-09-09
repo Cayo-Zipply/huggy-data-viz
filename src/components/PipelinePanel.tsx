@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Search, UserCircle, LayoutGrid, ListChecks, BarChart3, Target, Upload, Plus, ChevronDown, Trash2, ArrowRightLeft, UserPlus, CheckSquare, X, CalendarIcon, RefreshCw, Flame } from "lucide-react";
 import BurnFupDialog from "./pipeline/BurnFupDialog";
@@ -137,12 +137,19 @@ export function PipelinePanel() {
   }, [drawerOpen, selectedCardId]);
 
   // Listen to global "open-lead-card" event (from notifications bell)
+  const obsNaoLidasRef = useRef(obsNaoLidas);
+  obsNaoLidasRef.current = obsNaoLidas;
+
   useEffect(() => {
     const handler = (e: Event) => {
       const leadId = (e as CustomEvent<{ leadId: string }>).detail?.leadId;
       if (!leadId) return;
       setSelectedCardId(leadId);
       setDrawerOpen(true);
+      if (obsNaoLidasRef.current.has(leadId)) {
+        setObsDestaqueId(leadId);
+        marcarObsLida(leadId);
+      }
     };
     window.addEventListener("open-lead-card", handler);
     return () => window.removeEventListener("open-lead-card", handler);
@@ -805,7 +812,7 @@ export function PipelinePanel() {
         </>
       )}
 
-      {subTab === "hoje" && <TasksPanel tasks={tasks} cards={cards} activeUser={activeUser} canViewAll={isAdmin} isAdmin={isAdmin} onToggle={toggleTask} onReschedule={rescheduleTask} onDeleteTask={deleteTask} onDeleteTasks={deleteTasks} onOpenCard={(id) => { setSelectedCardId(id); setDrawerOpen(true); }} />}
+      {subTab === "hoje" && <TasksPanel tasks={tasks} cards={cards} activeUser={activeUser} canViewAll={isAdmin} isAdmin={isAdmin} onToggle={toggleTask} onReschedule={rescheduleTask} onDeleteTask={deleteTask} onDeleteTasks={deleteTasks} onOpenCard={(id) => { setSelectedCardId(id); setDrawerOpen(true); if (obsNaoLidas.has(id)) { setObsDestaqueId(id); marcarObsLida(id); } }} />}
       {subTab === "dashboard" && <CRMDashboard cards={cards} activeUser={activeUser} canViewAll={isAdmin} owners={ownerOptions} />}
       {subTab === "metas" && <GoalsPanel cards={cards} goals={goals} activeUser={activeUser} canViewAll={isAdmin} owners={ownerOptions} onSave={upsertGoal} />}
 
