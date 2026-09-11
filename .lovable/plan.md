@@ -1,15 +1,40 @@
-## Problema
-O diálogo "Motivo da Perda" em `src/components/PipelinePanel.tsx` (linhas 819–847) usa uma lista hardcoded com apenas as 5 categorias (`Preço, Timing, Qualificação, Concorrência, Outros`), ignorando os motivos configurados em Settings → Motivos de Perda (tabela `motivos_perda`, já carregados via `useMotivosPerda` no mesmo arquivo).
+# Funil por Criativo v2
 
-## Correção (cirúrgica, só UI)
-Em `src/components/PipelinePanel.tsx`:
+## Objetivo
+Atualizar somente o card **Funil por Criativo** para consultar as duas RPCs existentes, permitir recortes compartilháveis por URL e manter o funil consistente com os dados calculados no banco.
 
-1. Substituir o `<option>` hardcoded por um loop sobre `activeMotivos`, agrupando por categoria (`<optgroup label={categoria}>`) para manter contexto visual. Adicionar uma opção final `"Outro"` que mantém o comportamento atual de exibir o textarea livre.
+## Implementação
+1. **Dados e estado**
+   - Trocar a consulta antiga por `fn_funil_criativo_v2` e carregar opções com `fn_funil_criativo_filtros`.
+   - Usar React Query com chaves contendo período, filtros e agrupamento; aplicar debounce de 300 ms aos filtros.
+   - Carregar opções apenas quando o período mudar e preservar os controles durante carregamento/erro.
+   - Ler e gravar `desde`, `ate`, `camp`, `conj`, `cri` e `agrupar` na URL; validar datas e limitar o início a 01/04/2026.
 
-2. Ajustar `confirmLoss` (linhas 455–466) para:
-   - tratar `motivo === "Outro"` (singular) como a flag de motivo livre (em vez de `"Outros"`);
-   - quando for um motivo do catálogo, salvar `loss_reason = nome do motivo` e `loss_category = categoria do motivo` (lookup em `activeMotivos`), preservando o enum atual (`preco | timing | concorrente | sem_budget | sem_resposta | outro`). Mapear a string da categoria para o enum; categorias customizadas caem em `outro`.
+2. **Controles**
+   - Criar seletor de período com atalhos, lista mensal e calendário de intervalo existente.
+   - Criar multi-select reutilizável, pesquisável e com contagens, seleção total, limpeza, truncamento e tooltip.
+   - Aplicar cascata Campanha → Conjunto → Criativo e remover seleções inválidas ao trocar período ou filtros superiores.
+   - Adicionar controle segmentado Criativo | Conjunto | Campanha.
 
-3. Ajustar a condição de habilitar o botão e o `onChange` para usar `"Outro"`.
+3. **Tabela e funil**
+   - Ampliar a tabela com todas as métricas solicitadas e custos apenas no agrupamento Campanha.
+   - Manter ordenação por cabeçalhos, linha sem atribuição sempre no fim, scroll interno e total fixo no rodapé.
+   - Permitir foco de linha e limpeza do foco; somar apenas as linhas retornadas para o total.
+   - Preservar o visual atual do funil, incluindo percentuais e gargalo, e acrescentar custos no modo Campanha.
 
-Nenhuma mudança em schema, hooks ou no `LeadDrawer`/`PipelineCard` (eles só leem `loss_reason`/`loss_category`).
+4. **Avisos e estados**
+   - Calcular cobertura exclusivamente a partir da RPC de filtros.
+   - Mostrar alertas de atribuição incompleta, coorte recente e indisponibilidade de gasto por criativo/conjunto.
+   - Adicionar skeletons, estado vazio com limpeza de filtros e erro com nova tentativa.
+   - Garantir empilhamento dos controles, tabela horizontal e funil abaixo em telas estreitas.
+
+## Validação
+- Conferir compilação e erros de execução.
+- Testar filtros, cascata, foco, agrupamentos, período mínimo e restauração por URL.
+- Conferir os números de agosto/2026 informados e o aviso de período recente no mês atual.
+- Validar visualmente em desktop e largura próxima de 400 px.
+
+## Limites
+- Nenhuma alteração no banco, schema ou funções existentes.
+- Nenhuma dependência nova.
+- Nenhuma mudança fora do card Funil por Criativo.
