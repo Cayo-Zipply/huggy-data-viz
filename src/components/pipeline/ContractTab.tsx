@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink, MessageCircle, Eye, Plus, Trash2, Copy, Send, CheckCircle2, AlertTriangle, ShieldCheck, ShieldAlert, ShieldX, Shield, XCircle } from "lucide-react";
 import { ZapsignHistory } from "./ZapsignHistory";
 
@@ -25,6 +25,8 @@ const maskCPF = (v: string) => v.replace(/\D/g, "").slice(0, 11)
 const maskCEP = (v: string) => v.replace(/\D/g, "").slice(0, 8).replace(/(\d{5})(\d)/, "$1-$2");
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { InputMoedaBRL } from "@/components/ui/input-moeda-brl";
 import { toast } from "sonner";
 import type { PipelineCard as CardType, ContractType, ContractStatus, Stage } from "./types";
@@ -75,6 +77,7 @@ const MISSING_FIELD_LABELS: Record<string, string> = {
   estado: "Estado (UF)",
   cep: "CEP",
   tipo_contrato: "Tipo de contrato",
+  debitos_entes: "Débitos municipais/estaduais: o cliente mencionou na reunião?",
 };
 
 async function parseEdgeFunctionError(error: any, fallback: string): Promise<string> {
@@ -119,10 +122,11 @@ async function parseMissingFromError(error: any): Promise<{ faltando: MissingIte
     } else if (ctx?.body && typeof ctx.body === "object") {
       parsed = ctx.body;
     }
-    if (parsed?.missing_labels && Array.isArray(parsed.missing_labels)) {
-      const faltando: MissingItem[] = parsed.missing_labels.map((x: any) =>
+    if ((parsed?.missing_labels && Array.isArray(parsed.missing_labels)) || Array.isArray(parsed?.missing)) {
+      const rawMissing = Array.isArray(parsed.missing_labels) ? parsed.missing_labels : parsed.missing;
+      const faltando: MissingItem[] = rawMissing.map((x: any) =>
         typeof x === "string" ? { campo: x, label: x } : { campo: x.campo || x.label, label: x.label || x.campo }
-      );
+      ).map((x: MissingItem) => ({ ...x, label: MISSING_FIELD_LABELS[x.campo] ?? x.label }));
       const recomendado: MissingItem[] = Array.isArray(parsed.recomendado)
         ? parsed.recomendado.map((x: any) => typeof x === "string" ? { campo: x, label: x } : x)
         : [];
@@ -206,6 +210,17 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
   const [sociosSelecionados, setSociosSelecionados] = useState<Record<string, boolean>>({});
   const [salvandoSocios, setSalvandoSocios] = useState(false);
   const [representantePrincipalKey, setRepresentantePrincipalKey] = useState<string>("");
+  const [debitos, setDebitos] = useState({
+    municipal: card.debito_municipal === true,
+    estadual: card.debito_estadual === true,
+    naoMencionou: card.debitos_nao_mencionou === true,
+    respondidoEm: card.debitos_respondido_em,
+    respondidoPor: card.debitos_respondido_por,
+  });
+  const [salvandoDebitos, setSalvandoDebitos] = useState(false);
+  const [destacarDebitos, setDestacarDebitos] = useState(false);
+  const debitosRef = useRef<HTMLDivElement>(null);
+  const debitosRespondidos = debitos.municipal || debitos.estadual || debitos.naoMencionou;
 
   const handleSelecionarRepresentantePrincipal = (s: any) => {
     const cpfDigits = normCpf(s.cpf);
@@ -285,17 +300,132 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
     setMissingModal({ open: true, faltando, recomendado });
   };
 
+  const scrollToDebitos = () => {
+    setMissingModal(prev => ({ ...prev, open: false }));
+    setDestacarDebitos(true);
+    requestAnimationFrame(() => debitosRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
+    window.setTimeout(() => setDestacarDebitos(false), 2500);
+  };
+
+  const salvarDebitos = async (campo: "municipal" | "estadual" | "naoMencionou", checked: boolean) => {
+    const anterior = debitos;
+    const next = campo === "naoMencionou"
+      ? { municipal: false, estadual: false, naoMencionou: checked }
+      : {
+          municipal: campo === "municipal" ? checked : debitos.municipal,
+          estadual: campo === "estadual" ? checked : debitos.estadual,
+          naoMencionou: false,
+        };
+    setDebitos(prev => ({ ...prev, ...next }));
+    setSalvandoDebitos(true);
+    const payload = {
+      debito_municipal: next.municipal,
+      debito_estadual: next.estadual,
+      debitos_nao_mencionou: next.naoMencionou,
+    };
+    const { error } = await (supabase as any).from("leads").update(payload).eq("id", card.id);
+    if (error) {
+      setDebitos(anterior);
+      toast.error("Não foi possível salvar a resposta sobre débitos");
+      setSalvandoDebitos(false);
+      return;
+    }
+    const { data, error: reloadError } = await (supabase as any)
+      .from("leads")
+      .select("debito_municipal,debito_estadual,debitos_nao_mencionou,debitos_respondido_em,debitos_respondido_por")
+      .eq("id", card.id)
+      .maybeSingle();
+    if (reloadError) {
+      toast.error("Resposta salva, mas não foi possível atualizar os detalhes");
+    } else if (data) {
+      const refreshed = {
+        municipal: data.debito_municipal === true,
+        estadual: data.debito_estadual === true,
+        naoMencionou: data.debitos_nao_mencionou === true,
+        respondidoEm: data.debitos_respondido_em || null,
+        respondidoPor: data.debitos_respondido_por || null,
+      };
+      setDebitos(refreshed);
+      onUpdate(card.id, {
+        debito_municipal: refreshed.municipal,
+        debito_estadual: refreshed.estadual,
+        debitos_nao_mencionou: refreshed.naoMencionou,
+        debitos_respondido_em: refreshed.respondidoEm,
+        debitos_respondido_por: refreshed.respondidoPor,
+      });
+    }
+    setSalvandoDebitos(false);
+  };
+
+  const debitosLabel = debitos.naoMencionou
+    ? "Débitos: não mencionou"
+    : debitos.municipal && debitos.estadual
+      ? "Débitos: Municipais e estaduais"
+      : debitos.municipal
+        ? "Débitos: Municipais"
+        : debitos.estadual
+          ? "Débitos: Estaduais"
+          : "Débitos: não informado";
+
+  const renderDebitosQuestion = () => (
+    <div
+      ref={debitosRef}
+      className={`rounded-lg border p-3 space-y-3 transition-colors ${!debitosRespondidos || destacarDebitos ? "border-amber-400 bg-amber-50 dark:bg-amber-950/20" : "border-border bg-muted/20"}`}
+    >
+      <p className="text-sm font-medium text-foreground">
+        O cliente mencionou débitos municipais ou estaduais na reunião? <span className="text-destructive">*</span>
+      </p>
+      <div className="flex flex-wrap gap-x-5 gap-y-2">
+        {[
+          { key: "municipal" as const, label: "Municipais", checked: debitos.municipal },
+          { key: "estadual" as const, label: "Estaduais", checked: debitos.estadual },
+          { key: "naoMencionou" as const, label: "Não mencionou", checked: debitos.naoMencionou },
+        ].map(option => (
+          <label key={option.key} className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+            <Checkbox
+              checked={option.checked}
+              disabled={salvandoDebitos}
+              onCheckedChange={value => salvarDebitos(option.key, value === true)}
+            />
+            {option.label}
+          </label>
+        ))}
+        {salvandoDebitos && <Loader2 size={14} className="animate-spin text-muted-foreground" aria-label="Salvando" />}
+      </div>
+      {!debitosRespondidos && <p className="text-xs text-amber-700 dark:text-amber-300">Obrigatório antes de enviar o contrato</p>}
+      {debitosRespondidos && debitos.respondidoPor && debitos.respondidoEm && (
+        <p className="text-xs text-muted-foreground">
+          Respondido por {debitos.respondidoPor} em {new Date(debitos.respondidoEm).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+        </p>
+      )}
+    </div>
+  );
+
   const runCheckThen = async (fn: () => Promise<void> | void) => {
     try {
       const data = await invokeContractFunction({ lead_id: card.id, action: "check" });
       if (data?.pronto === false) {
-        openMissingModal(data.faltando || [], data.recomendado || []);
+        const faltando = data.faltando || [];
+        const recomendado = data.recomendado || [];
+        const hasDebitos = [...faltando, ...recomendado].some((item: MissingItem | string) => (typeof item === "string" ? item : item.campo) === "debitos_entes");
+        if (hasDebitos) {
+          toast.error("Responda se o cliente mencionou débitos municipais/estaduais antes de enviar o contrato");
+          scrollToDebitos();
+        } else {
+          openMissingModal(faltando, recomendado);
+        }
         return;
       }
       await fn();
     } catch (e: any) {
       if (e?.missing) {
-        openMissingModal(e.missing.faltando, e.missing.recomendado);
+        const hasDebitos = [...e.missing.faltando, ...e.missing.recomendado].some((item: MissingItem) => item.campo === "debitos_entes");
+        if (hasDebitos) {
+          toast.error("Responda se o cliente mencionou débitos municipais/estaduais antes de enviar o contrato");
+          scrollToDebitos();
+        } else {
+          openMissingModal(e.missing.faltando, e.missing.recomendado);
+        }
         return;
       }
       toast.error(e?.message || "Erro ao verificar contrato");
@@ -359,6 +489,13 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
     setQtdDemais((card as any).qtd_mensalidades_demais != null ? String((card as any).qtd_mensalidades_demais) : "");
     setCnpjsAdicionais(Array.isArray((card as any).cnpjs_adicionais) ? (card as any).cnpjs_adicionais : []);
     setSociosAdicionais(Array.isArray((card as any).socios_adicionais) ? (card as any).socios_adicionais : []);
+    setDebitos({
+      municipal: card.debito_municipal === true,
+      estadual: card.debito_estadual === true,
+      naoMencionou: card.debitos_nao_mencionou === true,
+      respondidoEm: card.debitos_respondido_em,
+      respondidoPor: card.debitos_respondido_por,
+    });
     setLastResult(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card.id]);
@@ -547,7 +684,13 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
       notifySlackGanho(card.id);
     } catch (e: any) {
       if (e?.missing) {
-        openMissingModal(e.missing.faltando, e.missing.recomendado);
+        const hasDebitos = [...e.missing.faltando, ...e.missing.recomendado].some((item: MissingItem) => item.campo === "debitos_entes");
+        if (hasDebitos) {
+          toast.error("Responda se o cliente mencionou débitos municipais/estaduais antes de enviar o contrato");
+          scrollToDebitos();
+        } else {
+          openMissingModal(e.missing.faltando, e.missing.recomendado);
+        }
       } else {
         toast.error(e instanceof Error ? e.message : "Erro ao gerar contrato");
       }
@@ -623,7 +766,7 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
                 {missingModal.faltando.map((it, i) => (
                   <li key={`f-${i}`} className="flex items-center gap-2 text-sm text-foreground">
                     <AlertTriangle size={14} className="text-red-500 flex-shrink-0" />
-                    {it.label}
+                    {it.campo === "debitos_entes" ? <button type="button" onClick={scrollToDebitos} className="text-left hover:underline">{it.label}</button> : it.label}
                   </li>
                 ))}
               </ul>
@@ -636,7 +779,7 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
                 {missingModal.recomendado.map((it, i) => (
                   <li key={`r-${i}`} className="flex items-center gap-2 text-sm text-muted-foreground">
                     <AlertTriangle size={14} className="text-amber-500 flex-shrink-0" />
-                    {it.label}
+                    {it.campo === "debitos_entes" ? <button type="button" onClick={scrollToDebitos} className="text-left hover:underline">{it.label}</button> : it.label}
                   </li>
                 ))}
               </ul>
@@ -678,6 +821,7 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
         <div className="flex flex-wrap gap-2">
           <span className="text-xs px-2.5 py-1 rounded-full bg-primary/20 text-primary font-medium">{tipoLabel}</span>
           <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusInfo.color}`}>{statusInfo.label}</span>
+          <span className={`text-xs px-2.5 py-1 rounded-full font-medium bg-muted ${debitosRespondidos ? "text-foreground" : "text-muted-foreground"}`}>{debitosLabel}</span>
         </div>
 
         <p className="text-sm font-medium text-foreground">{docName}</p>
@@ -1196,6 +1340,7 @@ ${signLink}`;
 
           {/* Actions - 3 buttons */}
           <div className="pt-2 space-y-3">
+            {renderDebitosQuestion()}
             <div className="flex gap-2 flex-wrap">
               <button onClick={saveFields} className="text-sm px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground transition-colors border border-border">
                 Salvar Dados
@@ -1218,41 +1363,43 @@ ${signLink}`;
               </p>
             )}
 
+            <TooltipProvider>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* ZapSign */}
-              <button
+              <Tooltip><TooltipTrigger asChild><span className="block"><button
                 onClick={() => runCheckThen(() => handleAction("zapsign"))}
-                disabled={actionLoading !== null}
-                className="flex flex-col items-center gap-1.5 px-4 py-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-40 border border-primary/20"
+                disabled={actionLoading !== null || !debitosRespondidos}
+                className="flex w-full flex-col items-center gap-1.5 px-4 py-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-40 border border-primary/20"
               >
                 {actionLoading === "zapsign" ? <Loader2 size={20} className="animate-spin" /> : <FileSignature size={20} />}
                 <span className="text-sm font-medium">{actionLoading === "zapsign" ? "Enviando..." : "Enviar para ZapSign"}</span>
                 <span className="text-[10px] opacity-70">Assinatura eletrônica</span>
-              </button>
+              </button></span></TooltipTrigger>{!debitosRespondidos && <TooltipContent>Responda a pergunta sobre débitos municipais/estaduais</TooltipContent>}</Tooltip>
 
               {/* Download */}
-              <button
+              <Tooltip><TooltipTrigger asChild><span className="block"><button
                 onClick={() => runCheckThen(() => handleAction("download"))}
-                disabled={actionLoading !== null}
-                className="flex flex-col items-center gap-1.5 px-4 py-4 rounded-xl bg-muted text-foreground hover:bg-muted/80 transition-all disabled:opacity-40 border border-border"
+                disabled={actionLoading !== null || !debitosRespondidos}
+                className="flex w-full flex-col items-center gap-1.5 px-4 py-4 rounded-xl bg-muted text-foreground hover:bg-muted/80 transition-all disabled:opacity-40 border border-border"
               >
                 {actionLoading === "download" ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
                 <span className="text-sm font-medium">{actionLoading === "download" ? "Gerando..." : "Criar e Baixar"}</span>
                 <span className="text-[10px] text-muted-foreground">Download do .docx</span>
-              </button>
+              </button></span></TooltipTrigger>{!debitosRespondidos && <TooltipContent>Responda a pergunta sobre débitos municipais/estaduais</TooltipContent>}</Tooltip>
 
               {/* WhatsApp */}
-              <button
+              <Tooltip><TooltipTrigger asChild><span className="block"><button
                 onClick={() => runCheckThen(() => handleAction("whatsapp"))}
-                disabled={actionLoading !== null}
-                className="flex flex-col items-center gap-1.5 px-4 py-4 rounded-xl text-white hover:opacity-90 transition-all disabled:opacity-40 border border-emerald-600/30"
+                disabled={actionLoading !== null || !debitosRespondidos}
+                className="flex w-full flex-col items-center gap-1.5 px-4 py-4 rounded-xl text-white hover:opacity-90 transition-all disabled:opacity-40 border border-emerald-600/30"
                 style={{ backgroundColor: "#25D366" }}
               >
                 {actionLoading === "whatsapp" ? <Loader2 size={20} className="animate-spin" /> : <MessageCircle size={20} />}
                 <span className="text-sm font-medium">{actionLoading === "whatsapp" ? "Gerando..." : "Enviar via WhatsApp"}</span>
                 <span className="text-[10px] opacity-80">Abre WhatsApp Web</span>
-              </button>
+              </button></span></TooltipTrigger>{!debitosRespondidos && <TooltipContent>Responda a pergunta sobre débitos municipais/estaduais</TooltipContent>}</Tooltip>
             </div>
+            </TooltipProvider>
 
             {/* Copiar mensagem */}
             <button

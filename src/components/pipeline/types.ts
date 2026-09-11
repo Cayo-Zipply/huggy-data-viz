@@ -78,6 +78,11 @@ export interface PipelineCard {
   responsavel_juridico: string | null;
   mensagem_recuperacao_enviada_em: string | null;
   mensagem_recuperacao_enviada_por: string | null;
+  debito_municipal: boolean;
+  debito_estadual: boolean;
+  debitos_nao_mencionou: boolean;
+  debitos_respondido_em: string | null;
+  debitos_respondido_por: string | null;
 }
 
 export interface PipelineTask {
