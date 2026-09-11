@@ -482,6 +482,11 @@ export function usePipelineData(actorName: string) {
       responsavel_juridico: null,
       mensagem_recuperacao_enviada_em: null,
       mensagem_recuperacao_enviada_por: null,
+      debito_municipal: false,
+      debito_estadual: false,
+      debitos_nao_mencionou: false,
+      debitos_respondido_em: null,
+      debitos_respondido_por: null,
     };
 
     const firstTask = {

@@ -338,12 +338,20 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
     if (reloadError) {
       toast.error("Resposta salva, mas não foi possível atualizar os detalhes");
     } else if (data) {
-      setDebitos({
+      const refreshed = {
         municipal: data.debito_municipal === true,
         estadual: data.debito_estadual === true,
         naoMencionou: data.debitos_nao_mencionou === true,
         respondidoEm: data.debitos_respondido_em || null,
         respondidoPor: data.debitos_respondido_por || null,
+      };
+      setDebitos(refreshed);
+      onUpdate(card.id, {
+        debito_municipal: refreshed.municipal,
+        debito_estadual: refreshed.estadual,
+        debitos_nao_mencionou: refreshed.naoMencionou,
+        debitos_respondido_em: refreshed.respondidoEm,
+        debitos_respondido_por: refreshed.respondidoPor,
       });
     }
     setSalvandoDebitos(false);
@@ -397,13 +405,27 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
     try {
       const data = await invokeContractFunction({ lead_id: card.id, action: "check" });
       if (data?.pronto === false) {
-        openMissingModal(data.faltando || [], data.recomendado || []);
+        const faltando = data.faltando || [];
+        const recomendado = data.recomendado || [];
+        const hasDebitos = [...faltando, ...recomendado].some((item: MissingItem | string) => (typeof item === "string" ? item : item.campo) === "debitos_entes");
+        if (hasDebitos) {
+          toast.error("Responda se o cliente mencionou débitos municipais/estaduais antes de enviar o contrato");
+          scrollToDebitos();
+        } else {
+          openMissingModal(faltando, recomendado);
+        }
         return;
       }
       await fn();
     } catch (e: any) {
       if (e?.missing) {
-        openMissingModal(e.missing.faltando, e.missing.recomendado);
+        const hasDebitos = [...e.missing.faltando, ...e.missing.recomendado].some((item: MissingItem) => item.campo === "debitos_entes");
+        if (hasDebitos) {
+          toast.error("Responda se o cliente mencionou débitos municipais/estaduais antes de enviar o contrato");
+          scrollToDebitos();
+        } else {
+          openMissingModal(e.missing.faltando, e.missing.recomendado);
+        }
         return;
       }
       toast.error(e?.message || "Erro ao verificar contrato");
