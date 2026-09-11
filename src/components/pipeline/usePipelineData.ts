@@ -126,6 +126,11 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     origem_divida: row.origem_divida || null,
     mensagem_recuperacao_enviada_em: row.mensagem_recuperacao_enviada_em || null,
     mensagem_recuperacao_enviada_por: row.mensagem_recuperacao_enviada_por || null,
+    debito_municipal: row.debito_municipal === true,
+    debito_estadual: row.debito_estadual === true,
+    debitos_nao_mencionou: row.debitos_nao_mencionou === true,
+    debitos_respondido_em: row.debitos_respondido_em || null,
+    debitos_respondido_por: row.debitos_respondido_por || null,
   } as any;
 }
 
@@ -221,6 +226,7 @@ export function usePipelineData(actorName: string) {
       "tipo_documento","data_venda","assistente_juridico","responsavel_juridico",
       "cnpjs_adicionais","socios_adicionais","origem_divida",
       "mensagem_recuperacao_enviada_em","mensagem_recuperacao_enviada_por",
+      "debito_municipal","debito_estadual","debitos_nao_mencionou","debitos_respondido_em","debitos_respondido_por",
     ].join(",");
     const HIST_COLS = "lead_id,etapa_de,etapa_para,created_at,closer";
 
@@ -561,6 +567,9 @@ export function usePipelineData(actorName: string) {
     if ((updates as any).cnpjs_adicionais !== undefined) dbUpdates.cnpjs_adicionais = (updates as any).cnpjs_adicionais;
     if ((updates as any).socios_adicionais !== undefined) dbUpdates.socios_adicionais = (updates as any).socios_adicionais;
     if ((updates as any).origem_divida !== undefined) dbUpdates.origem_divida = (updates as any).origem_divida;
+    if (updates.debito_municipal !== undefined) dbUpdates.debito_municipal = updates.debito_municipal;
+    if (updates.debito_estadual !== undefined) dbUpdates.debito_estadual = updates.debito_estadual;
+    if (updates.debitos_nao_mencionou !== undefined) dbUpdates.debitos_nao_mencionou = updates.debitos_nao_mencionou;
 
 
     if (Object.keys(dbUpdates).length) {
