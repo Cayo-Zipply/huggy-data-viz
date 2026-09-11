@@ -56,7 +56,7 @@ const SEM_ATRIBUICAO = "(sem atribuição de anúncio)";
 const pct = (n: number, d: number) => (d > 0 ? (n / d) * 100 : 0);
 const fmtPct = (v: number) => `${v.toFixed(1).replace(".", ",")}%`;
 
-type SortKey = "grupo" | "leads" | "sql" | "reuniao_realizada" | "contrato_assinado" | "conv" | "faturamento" | "gasto" | "cpl" | "cac";
+type SortKey = "grupo" | "leads" | "fez_contato" | "conectado" | "sql" | "reuniao_agendada" | "reuniao_realizada" | "link_enviado" | "contrato_assinado" | "conv" | "faturamento" | "gasto" | "cpl" | "cac";
 
 const readArrayParam = (value: string | null) => {
   if (!value) return [];
@@ -267,7 +267,7 @@ export const FunilCriativo = () => {
     if (sortKey === key) setSortAsc(!sortAsc);
     else {
       setSortKey(key);
-      setSortAsc(key === "criativo");
+      setSortAsc(key === "grupo");
     }
   };
 
@@ -303,6 +303,7 @@ export const FunilCriativo = () => {
   };
 
   const metricCell = (value: number, currency = false) => currency ? formatCurrency(value) : formatNumber(value);
+  const optionalCurrency = (value: number | null) => value == null ? "—" : formatCurrency(value);
 
   const loading = rowsQuery.isLoading || rowsQuery.isFetching;
 
@@ -357,13 +358,17 @@ export const FunilCriativo = () => {
             {loading ? (
               <div className="space-y-2 p-3">{Array.from({ length: 10 }, (_, index) => <Skeleton key={index} className="h-8 w-full" />)}</div>
             ) : (
-            <table className="w-full min-w-[820px] text-sm">
+            <table className="w-full min-w-[1160px] text-sm">
               <thead className="sticky top-0 z-10 bg-muted text-muted-foreground text-xs">
                 <tr>
                   <Th k="grupo" label={agrupamento === "campanha" ? "Campanha" : agrupamento === "conjunto" ? "Conjunto" : "Criativo"} align="left" />
                   <Th k="leads" label="Leads" />
+                  <Th k="fez_contato" label="Contatados" />
+                  <Th k="conectado" label="Conectados" />
                   <Th k="sql" label="SQL" />
+                  <Th k="reuniao_agendada" label="Reuniões agendadas" />
                   <Th k="reuniao_realizada" label="Reuniões realizadas" />
+                  <Th k="link_enviado" label="Links enviados" />
                   <Th k="contrato_assinado" label="Contratos" />
                   <Th k="conv" label="Conv." />
                   <Th k="faturamento" label="Faturamento" />
@@ -384,12 +389,16 @@ export const FunilCriativo = () => {
                         {r.grupo}
                       </td>
                       <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.leads)}</td>
+                      <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.fez_contato)}</td>
+                      <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.conectado)}</td>
                       <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.sql)}</td>
+                      <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.reuniao_agendada)}</td>
                       <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.reuniao_realizada)}</td>
+                      <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.link_enviado)}</td>
                       <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.contrato_assinado)}</td>
                       <td className="px-2 py-2 text-right tabular-nums font-semibold">{fmtPct(pct(r.contrato_assinado, r.leads))}</td>
                       <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.faturamento, true)}</td>
-                      {agrupamento === "campanha" && <><td className="px-2 py-2 text-right tabular-nums">{metricCell(Number(r.gasto ?? 0), true)}</td><td className="px-2 py-2 text-right tabular-nums">{metricCell(Number(r.cpl ?? 0), true)}</td><td className="px-2 py-2 text-right tabular-nums">{metricCell(Number(r.cac ?? 0), true)}</td></>}
+                      {agrupamento === "campanha" && <><td className="px-2 py-2 text-right tabular-nums">{optionalCurrency(r.gasto)}</td><td className="px-2 py-2 text-right tabular-nums">{optionalCurrency(r.cpl)}</td><td className="px-2 py-2 text-right tabular-nums">{optionalCurrency(r.cac)}</td></>}
                     </tr>
                   );
                 })}
@@ -398,8 +407,12 @@ export const FunilCriativo = () => {
                 <tr>
                   <td className="px-2 py-2">Total</td>
                   <td className="px-2 py-2 text-right tabular-nums">{metricCell(totals.leads)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums">{metricCell(totals.fez_contato)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums">{metricCell(totals.conectado)}</td>
                   <td className="px-2 py-2 text-right tabular-nums">{metricCell(totals.sql)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums">{metricCell(totals.reuniao_agendada)}</td>
                   <td className="px-2 py-2 text-right tabular-nums">{metricCell(totals.reuniao_realizada)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums">{metricCell(totals.link_enviado)}</td>
                   <td className="px-2 py-2 text-right tabular-nums">{metricCell(totals.contrato_assinado)}</td>
                   <td className="px-2 py-2 text-right tabular-nums">{fmtPct(pct(totals.contrato_assinado, totals.leads))}</td>
                   <td className="px-2 py-2 text-right tabular-nums">{metricCell(totals.faturamento, true)}</td>
