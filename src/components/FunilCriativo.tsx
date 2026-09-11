@@ -56,7 +56,7 @@ const SEM_ATRIBUICAO = "(sem atribuição de anúncio)";
 const pct = (n: number, d: number) => (d > 0 ? (n / d) * 100 : 0);
 const fmtPct = (v: number) => `${v.toFixed(1).replace(".", ",")}%`;
 
-type SortKey = "grupo" | "leads" | "fez_contato" | "conectado" | "sql" | "reuniao_agendada" | "reuniao_realizada" | "link_enviado" | "contrato_assinado" | "conv" | "faturamento" | "gasto" | "cpl" | "cac";
+type SortKey = "grupo" | "leads" | "fez_contato" | "conectado" | "sql" | "reuniao_agendada" | "reuniao_realizada" | "link_enviado" | "contrato_assinado" | "conv" | "faturamento" | "gasto" | "cpl" | "cac" | "campanhas_distintas";
 
 const readArrayParam = (value: string | null) => {
   if (!value) return [];
@@ -209,6 +209,7 @@ export const FunilCriativo = () => {
     list.sort((a, b) => {
       let av: number | string;
       let bv: number | string;
+      if (a.grupo === SEM_ATRIBUICAO && b.grupo === SEM_ATRIBUICAO) return 0;
       if (a.grupo === SEM_ATRIBUICAO) return 1;
       if (b.grupo === SEM_ATRIBUICAO) return -1;
       if (sortKey === "grupo") {
@@ -295,6 +296,8 @@ export const FunilCriativo = () => {
     return (today.getTime() - end.getTime()) / 86_400_000 < 15;
   }, [periodo.ate]);
 
+  const hasSpendData = rows.some((row) => row.gasto != null);
+
   const clearFilters = () => {
     setCampanhas([]);
     setConjuntos([]);
@@ -339,6 +342,7 @@ export const FunilCriativo = () => {
           )}
           {recent && <p className="text-warning font-medium"><AlertTriangle className="mr-1 inline h-3 w-3" />Período recente: cerca de 1 em cada 5 vendas acontece mais de 7 dias depois da entrada do lead. A conversão deste recorte ainda vai subir.</p>}
           {agrupamento !== "campanha" && <p>Gasto disponível apenas por campanha.</p>}
+          {agrupamento === "campanha" && !loading && !hasSpendData && <p className="text-warning font-medium">Não há dados de gasto disponíveis para este período.</p>}
         </div>
       </div>
 
@@ -372,6 +376,7 @@ export const FunilCriativo = () => {
                   <Th k="contrato_assinado" label="Contratos" />
                   <Th k="conv" label="Conv." />
                   <Th k="faturamento" label="Faturamento" />
+                  {agrupamento !== "campanha" && <Th k="campanhas_distintas" label="Campanhas" />}
                   {agrupamento === "campanha" && <><Th k="gasto" label="Gasto" /><Th k="cpl" label="CPL" /><Th k="cac" label="CAC" /></>}
                 </tr>
               </thead>
@@ -398,6 +403,7 @@ export const FunilCriativo = () => {
                       <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.contrato_assinado)}</td>
                       <td className="px-2 py-2 text-right tabular-nums font-semibold">{fmtPct(pct(r.contrato_assinado, r.leads))}</td>
                       <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.faturamento, true)}</td>
+                      {agrupamento !== "campanha" && <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.campanhas_distintas)}</td>}
                       {agrupamento === "campanha" && <><td className="px-2 py-2 text-right tabular-nums">{optionalCurrency(r.gasto)}</td><td className="px-2 py-2 text-right tabular-nums">{optionalCurrency(r.cpl)}</td><td className="px-2 py-2 text-right tabular-nums">{optionalCurrency(r.cac)}</td></>}
                     </tr>
                   );
@@ -416,6 +422,7 @@ export const FunilCriativo = () => {
                   <td className="px-2 py-2 text-right tabular-nums">{metricCell(totals.contrato_assinado)}</td>
                   <td className="px-2 py-2 text-right tabular-nums">{fmtPct(pct(totals.contrato_assinado, totals.leads))}</td>
                   <td className="px-2 py-2 text-right tabular-nums">{metricCell(totals.faturamento, true)}</td>
+                  {agrupamento !== "campanha" && <td className="px-2 py-2 text-right text-muted-foreground">—</td>}
                   {agrupamento === "campanha" && <><td className="px-2 py-2 text-right tabular-nums">{metricCell(Number(totals.gasto), true)}</td><td className="px-2 py-2 text-right tabular-nums">{metricCell(Number(totals.cpl), true)}</td><td className="px-2 py-2 text-right tabular-nums">{metricCell(Number(totals.cac), true)}</td></>}
                 </tr>
               </tfoot>
