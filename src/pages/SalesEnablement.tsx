@@ -42,6 +42,7 @@ import {
   type ReuniaoDesfechoRow,
 } from "@/components/se/AssertividadeTab";
 import { PlacarTab } from "@/components/se/PlacarTab";
+import { PontualidadeTab } from "@/components/se/PontualidadeTab";
 import { useAuth } from "@/contexts/AuthContext";
 
 
@@ -574,6 +575,7 @@ export default function SalesEnablement() {
           <TabsTrigger value="desempenho">Desempenho vs Meta</TabsTrigger>
           <TabsTrigger value="assertividade">Assertividade</TabsTrigger>
           {isAdmin && <TabsTrigger value="placar">Placar</TabsTrigger>}
+          <TabsTrigger value="pontualidade">Pontualidade</TabsTrigger>
           <TabsTrigger value="reunioes">Reuniões</TabsTrigger>
           <TabsTrigger value="evolucao">Evolução</TabsTrigger>
           <TabsTrigger value="rubrica">Rubrica</TabsTrigger>
@@ -600,6 +602,10 @@ export default function SalesEnablement() {
             <PlacarTab meses={meses} />
           </TabsContent>
         )}
+
+        <TabsContent value="pontualidade" className="mt-4">
+          <PontualidadeTab />
+        </TabsContent>
 
         <TabsContent value="reunioes" className="mt-4">
           <ReunioesTab
