@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import { Document as DocxDocument, Packer, Paragraph as DocxParagraph, TextRun as DocxTextRun } from "docx";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AgendarReuniaoDialog } from "./AgendarReuniaoDialog";
 import { EditarReuniaoDialog } from "./EditarReuniaoDialog";
 import { ReunioesAgendadasList } from "./ReunioesAgendadasList";
@@ -834,31 +833,15 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                   </div>
                 )}
 
-                {/* Assistente Jurídico — usado no e-mail financeiro automático */}
-                {/* Assistente Jurídico — gravado em leads.responsavel_juridico (carteira no sistema do Fabricio) */}
-                {card.lead_status === "ganho" && (
+                {/* Campo legado: exibido somente quando já existe valor no lead. */}
+                {card.responsavel_juridico && (
                   <div className="flex items-center gap-3 py-2">
                     <Scale size={16} className="text-muted-foreground flex-shrink-0" />
                     <div className="flex-1">
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">
-                        Assistente Jurídico Responsável <span className="text-red-500">*</span>
+                        Responsável jurídico / Carteira
                       </p>
-                      <Select
-                        value={card.responsavel_juridico || ""}
-                        onValueChange={(v) => onUpdate(card.id, { responsavel_juridico: v } as any)}
-                      >
-                        <SelectTrigger className="w-full h-8 text-sm">
-                          <SelectValue placeholder="Selecione o assistente" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Clara Nolasco">Clara Nolasco</SelectItem>
-                          <SelectItem value="Maria Eduarda">Maria Eduarda</SelectItem>
-                          <SelectItem value="Lorelayne Morais">Lorelayne Morais</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {!card.responsavel_juridico && (
-                        <p className="text-[10px] text-red-500 mt-1">Obrigatório — selecione o assistente responsável.</p>
-                      )}
+                      <p className="text-sm text-foreground">{card.responsavel_juridico}</p>
                     </div>
                   </div>
                 )}
