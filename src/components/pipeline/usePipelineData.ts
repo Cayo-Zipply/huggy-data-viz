@@ -489,6 +489,7 @@ export function usePipelineData(actorName: string) {
       debitos_nao_mencionou: false,
       debitos_respondido_em: null,
       debitos_respondido_por: null,
+      tags: [],
     };
 
     const firstTask = {
