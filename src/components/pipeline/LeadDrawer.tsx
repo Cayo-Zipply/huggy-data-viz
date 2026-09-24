@@ -348,6 +348,9 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const staleDays = daysDiff(card.stage_changed_at);
   const stageConf = STAGE_CONFIG[card.stage];
   const ownerOptions = ownerOptionsProp || Array.from(new Set([card.owner, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
+  const normalizeLabelName = (value: string) => value.trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const tagLabels = labels.filter(label => card.tags.some(tag => normalizeLabelName(tag) === normalizeLabelName(label.name)));
+  const visibleHeaderLabels = [...cardLabels, ...tagLabels.filter(label => !cardLabels.some(cardLabel => cardLabel.id === label.id))];
 
   const copyPhone = () => {
     if (card.telefone) {
@@ -493,7 +496,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                 <AlertTriangle size={12} />Atribuir responsável
               </span>
             )}
-            {cardLabels.map(cl => (
+            {visibleHeaderLabels.map(cl => (
               <span key={cl.id} className="text-xs px-2 py-1 rounded-full font-medium" style={{ backgroundColor: cl.color + "20", color: cl.color }}>{cl.name}</span>
             ))}
             {proximaReuniao && (() => {

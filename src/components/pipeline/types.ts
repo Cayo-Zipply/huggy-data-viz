@@ -83,6 +83,7 @@ export interface PipelineCard {
   debitos_nao_mencionou: boolean;
   debitos_respondido_em: string | null;
   debitos_respondido_por: string | null;
+  tags: string[];
 }
 
 export interface PipelineTask {

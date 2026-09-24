@@ -6,6 +6,7 @@ import {
   AlertTriangle, Calendar, User, Trash2, Copy as CopyIcon
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PipelineCard as CardType, PipelineTask, PipeType, LossCategory } from "./types";
 import { LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
 import type { PipelineLabel } from "@/hooks/useLabels";
@@ -57,6 +58,10 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
   const hasPendingTask = pendingCount > 0;
   const staleDays = daysDiff(card.stage_changed_at);
   const ownerOptions = ownerOptionsProp || Array.from(new Set([card.owner, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
+  const isReferral = card.origem === "Indicação" || card.tags.some(tag => {
+    const normalized = tag.trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return normalized === "indicacao";
+  });
 
   // Tarefa pendente indica ação → suprime indicadores de "lead parado" e SLA
   const stale = !hasPendingTask && isStale(card);
@@ -134,7 +139,17 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
         {/* Header — name + chevron */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onCardClick?.(card)}>
-            <p className="font-medium text-foreground text-sm truncate">{card.nome}</p>
+            <div className="flex items-center gap-1.5 min-w-0">
+              {isReferral && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span aria-label="Indicação" className="h-2 w-2 shrink-0 rounded-full bg-[#8B5CF6]" />
+                  </TooltipTrigger>
+                  <TooltipContent>Indicação</TooltipContent>
+                </Tooltip>
+              )}
+              <p className="font-medium text-foreground text-sm truncate">{card.nome}</p>
+            </div>
             {card.empresa && (
               <p className="text-xs text-muted-foreground truncate mt-0.5">{card.empresa}</p>
             )}
