@@ -131,6 +131,7 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     debitos_nao_mencionou: row.debitos_nao_mencionou === true,
     debitos_respondido_em: row.debitos_respondido_em || null,
     debitos_respondido_por: row.debitos_respondido_por || null,
+    tags: Array.isArray(row.tags) ? row.tags.filter((tag: unknown): tag is string => typeof tag === "string") : [],
   } as any;
 }
 
@@ -227,6 +228,7 @@ export function usePipelineData(actorName: string) {
       "cnpjs_adicionais","socios_adicionais","origem_divida",
       "mensagem_recuperacao_enviada_em","mensagem_recuperacao_enviada_por",
       "debito_municipal","debito_estadual","debitos_nao_mencionou","debitos_respondido_em","debitos_respondido_por",
+      "tags",
     ].join(",");
     const HIST_COLS = "lead_id,etapa_de,etapa_para,created_at,closer";
 
@@ -487,6 +489,7 @@ export function usePipelineData(actorName: string) {
       debitos_nao_mencionou: false,
       debitos_respondido_em: null,
       debitos_respondido_por: null,
+      tags: [],
     };
 
     const firstTask = {
