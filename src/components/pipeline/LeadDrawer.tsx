@@ -349,7 +349,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const stageConf = STAGE_CONFIG[card.stage];
   const ownerOptions = ownerOptionsProp || Array.from(new Set([card.owner, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
   const normalizeLabelName = (value: string) => value.trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  const tagLabels = labels.filter(label => card.tags.some(tag => normalizeLabelName(tag) === normalizeLabelName(label.name)));
+  const tagLabels = labels.filter(label => (card.tags ?? []).some(tag => normalizeLabelName(tag) === normalizeLabelName(label.name)));
   const visibleHeaderLabels = [...cardLabels, ...tagLabels.filter(label => !cardLabels.some(cardLabel => cardLabel.id === label.id))];
 
   const copyPhone = () => {

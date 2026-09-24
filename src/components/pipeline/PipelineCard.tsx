@@ -58,7 +58,7 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
   const hasPendingTask = pendingCount > 0;
   const staleDays = daysDiff(card.stage_changed_at);
   const ownerOptions = ownerOptionsProp || Array.from(new Set([card.owner, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
-  const isReferral = card.origem === "Indicação" || card.tags.some(tag => {
+  const isReferral = card.origem === "Indicação" || (card.tags ?? []).some(tag => {
     const normalized = tag.trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     return normalized === "indicacao";
   });
