@@ -348,6 +348,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const staleDays = daysDiff(card.stage_changed_at);
   const stageConf = STAGE_CONFIG[card.stage];
   const ownerOptions = ownerOptionsProp || Array.from(new Set([card.owner, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
+  const hasInactiveOwner = Boolean(card.owner && !ownerOptions.includes(card.owner));
   const normalizeLabelName = (value: string) => value.trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const tagLabels = labels.filter(label => (card.tags ?? []).some(tag => normalizeLabelName(tag) === normalizeLabelName(label.name)));
   const visibleHeaderLabels = [...cardLabels, ...tagLabels.filter(label => !cardLabels.some(cardLabel => cardLabel.id === label.id))];
@@ -728,8 +729,9 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                   <div className="flex-1">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Closer Responsável</p>
                     <select value={card.owner || ""} onChange={e => onUpdate(card.id, { owner: e.target.value || null })}
-                      className="w-full text-sm bg-muted/50 border border-border rounded-md px-2.5 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
+                      className={cn("w-full text-sm bg-muted/50 border border-border rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary", hasInactiveOwner ? "text-muted-foreground" : "text-foreground")}>
                       <option value="">Sem dono</option>
+                      {hasInactiveOwner && <option value={card.owner ?? ""} hidden disabled>{card.owner} (inativo)</option>}
                       {ownerOptions.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>

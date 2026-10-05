@@ -57,7 +57,7 @@ export function PipelinePanel() {
   const { profile, isAdmin, isSdr, isCloser, isDual } = useAuth();
   const { labels, getCardLabels, addLabelToCard, removeLabelFromCard } = useLabels();
   const { rules: slaRules, getRuleForStage } = useSlaRules();
-  const { allNames: teamNames, ownerNames } = useTeamMembers();
+  const { allNames: teamNames, ownerNames, visibleCloserNames } = useTeamMembers();
   const { activeMotivos } = useMotivosPerda();
   const { addEntry: addHistoryEntry } = useLeadHistory();
   const currentUserName = useMemo(() => {
@@ -155,7 +155,7 @@ export function PipelinePanel() {
     return () => window.removeEventListener("open-lead-card", handler);
   }, []);
 
-  const ownerOptions = useMemo(() => {
+  const reportOwnerOptions = useMemo(() => {
     const raw: string[] = [
       currentUserName,
       ...(ownerNames.length > 0 ? ownerNames : teamNames),
@@ -165,6 +165,11 @@ export function PipelinePanel() {
     ];
     return dedupeOwnerNames(raw);
   }, [cards, currentUserName, goals, tasks, teamNames, ownerNames]);
+
+  const assignableOwnerOptions = useMemo(
+    () => dedupeOwnerNames(visibleCloserNames),
+    [visibleCloserNames],
+  );
 
   // Detecção de leads duplicados (telefone, e-mail ou CNPJ).
   const duplicatesMap = useDuplicateLeads(cards);
@@ -561,7 +566,7 @@ export function PipelinePanel() {
                     className="bg-transparent text-foreground outline-none"
                   >
                     <option value="all">Todos</option>
-                    {ownerOptions.map((owner) => (
+                    {reportOwnerOptions.map((owner) => (
                       <option key={owner} value={owner}>{owner}</option>
                     ))}
                   </select>
@@ -644,7 +649,7 @@ export function PipelinePanel() {
               <select value={bulkOwner} onChange={e => setBulkOwner(e.target.value)}
                 className="text-xs border border-border rounded-lg px-2 py-1.5 bg-background text-foreground">
                 <option value="">Selecione...</option>
-                {ownerOptions.map(o => <option key={o} value={o}>{o}</option>)}
+                {assignableOwnerOptions.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
               <button onClick={executeBulkOwner} disabled={!bulkOwner}
                 className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-lg disabled:opacity-40">Aplicar</button>
@@ -790,7 +795,7 @@ export function PipelinePanel() {
 
       {subTab === "kanban" && (
         <>
-          <PipelineFiltersBar filters={filters} onChange={setFilters} onExport={() => exportCSV(visibleCards, tasks)} closerOptions={ownerOptions} />
+          <PipelineFiltersBar filters={filters} onChange={setFilters} onExport={() => exportCSV(visibleCards, tasks)} closerOptions={reportOwnerOptions} />
           <div className="flex gap-2 overflow-x-auto rounded-xl border border-border bg-muted/20 p-2 pb-2">
             {getStages().map(s => (
               <StageColumn key={s} stageKey={s} cards={getCardsForStage(s)} tasks={tasks}
@@ -799,7 +804,7 @@ export function PipelinePanel() {
                 selectedIds={selectedIds}
                 onToggleSelect={toggleSelect}
                 slaRule={getRuleForStage(s)}
-                ownerOptions={ownerOptions}
+                ownerOptions={assignableOwnerOptions}
                 duplicatesMap={duplicatesMap}
                 obsNaoLidas={obsNaoLidas}
                 onUpdate={updateCard} onDrop={handleDrop} onMarkWon={markWon} onMarkLost={handleLossRequest}
@@ -811,8 +816,8 @@ export function PipelinePanel() {
       )}
 
       {subTab === "hoje" && <TasksPanel tasks={tasks} cards={cards} activeUser={activeUser} canViewAll={isAdmin} isAdmin={isAdmin} onToggle={toggleTask} onReschedule={rescheduleTask} onDeleteTask={deleteTask} onDeleteTasks={deleteTasks} onOpenCard={(id) => { setSelectedCardId(id); setDrawerOpen(true); if (obsNaoLidas.has(id)) { setObsDestaqueId(id); marcarObsLida(id); } }} />}
-      {subTab === "dashboard" && <CRMDashboard cards={cards} activeUser={activeUser} canViewAll={isAdmin} owners={ownerOptions} />}
-      {subTab === "metas" && <GoalsPanel cards={cards} goals={goals} activeUser={activeUser} canViewAll={isAdmin} owners={ownerOptions} onSave={upsertGoal} />}
+      {subTab === "dashboard" && <CRMDashboard cards={cards} activeUser={activeUser} canViewAll={isAdmin} owners={reportOwnerOptions} />}
+      {subTab === "metas" && <GoalsPanel cards={cards} goals={goals} activeUser={activeUser} canViewAll={isAdmin} owners={reportOwnerOptions} onSave={upsertGoal} />}
 
       <LeadDrawer
         key={selectedCard?.id || "none"}
@@ -840,7 +845,7 @@ export function PipelinePanel() {
         cardLabels={selectedCard ? getCardLabels(selectedCard.id) : []}
         onAddLabel={addLabelToCard}
         onRemoveLabel={removeLabelFromCard}
-        ownerOptions={ownerOptions}
+        ownerOptions={assignableOwnerOptions}
         duplicates={selectedCard ? duplicatesMap.get(selectedCard.id) || [] : []}
         highlightObs={obsDestaqueId !== null && obsDestaqueId === selectedCard?.id}
         onDelete={async (id) => {

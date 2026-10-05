@@ -7,26 +7,32 @@ export interface TeamMember {
   role: string | null;
   secondary_role: string | null;
   pode_ser_responsavel: boolean;
+  visivel_dropdown_closer: boolean;
 }
 
 export function useTeamMembers() {
   const [members, setMembers] = useState<TeamMember[]>([]);
+  const [visibleCloserNames, setVisibleCloserNames] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchMembers = useCallback(async () => {
-    // cayo's user_profiles has only: id, nome, role, email, user_id, avatar_url
-    // (no secondary_role / pode_ser_responsavel). Query a safe column set and
-    // backfill the missing fields locally so the rest of the app keeps working.
-    const { data, error } = await supabase
-      .from("user_profiles")
-      .select("id, nome, role")
-      .in("role", ["admin", "closer", "sdr"]);
+    const [membersResult, visibleClosersResult] = await Promise.all([
+      supabase
+        .from("user_profiles")
+        .select("id, nome, role")
+        .in("role", ["admin", "closer", "sdr"]),
+      supabase
+        .from("user_profiles")
+        .select("nome")
+        .eq("visivel_dropdown_closer", true)
+        .order("nome", { ascending: true }),
+    ]);
+
+    const { data, error } = membersResult;
 
     if (error) {
       console.warn("useTeamMembers:", error.message);
       setMembers([]);
-      setLoading(false);
-      return;
     }
 
     const normalized: TeamMember[] = (data ?? []).map((m: any) => ({
@@ -35,8 +41,16 @@ export function useTeamMembers() {
       role: m.role ?? null,
       secondary_role: null,
       pode_ser_responsavel: m.role === "closer" || m.role === "sdr" || m.role === "admin",
+      visivel_dropdown_closer: false,
     }));
     setMembers(normalized);
+
+    if (visibleClosersResult.error) {
+      console.warn("useTeamMembers visible closers:", visibleClosersResult.error.message);
+      setVisibleCloserNames([]);
+    } else {
+      setVisibleCloserNames((visibleClosersResult.data ?? []).map((profile: any) => profile.nome));
+    }
     setLoading(false);
   }, []);
 
@@ -57,5 +71,5 @@ export function useTeamMembers() {
   const ownerEligible = members.filter(m => m.pode_ser_responsavel);
   const ownerNames = ownerEligible.map(m => m.nome);
 
-  return { members, loading, allNames, closerNames, sdrNames, ownerNames, refetch: fetchMembers };
+  return { members, loading, allNames, closerNames, sdrNames, ownerNames, visibleCloserNames, refetch: fetchMembers };
 }
