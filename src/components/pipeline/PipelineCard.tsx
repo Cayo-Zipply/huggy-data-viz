@@ -58,6 +58,7 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
   const hasPendingTask = pendingCount > 0;
   const staleDays = daysDiff(card.stage_changed_at);
   const ownerOptions = ownerOptionsProp || Array.from(new Set([card.owner, ...cardTasks.map((task) => task.responsible)].filter(Boolean) as string[]));
+  const hasInactiveOwner = Boolean(card.owner && !ownerOptions.includes(card.owner));
   const isReferral = card.origem === "Indicação" || (card.tags ?? []).some(tag => {
     const normalized = tag.trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     return normalized === "indicacao";
@@ -264,8 +265,9 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
                 <div className="flex items-center gap-2">
                   <UserCircle size={12} className="text-muted-foreground flex-shrink-0" />
                     <select value={card.owner || ""} onChange={e => onUpdate(card.id, { owner: e.target.value || null })}
-                    className="flex-1 text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground">
+                    className={cn("flex-1 text-xs bg-muted/50 border border-border rounded px-2 py-1", hasInactiveOwner ? "text-muted-foreground" : "text-foreground")}>
                     <option value="">Sem dono</option>
+                      {hasInactiveOwner && <option value={card.owner ?? ""} hidden disabled>{card.owner} (inativo)</option>}
                       {ownerOptions.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
