@@ -30,6 +30,7 @@ import { useMarketingLive } from "@/hooks/useMarketingLive";
 import { CampaignSelector } from "@/components/CampaignSelector";
 import { FarolCloserCards } from "@/components/FarolCloserCards";
 import { FunilCriativo } from "@/components/FunilCriativo";
+import { MarketingOverview } from "@/components/MarketingOverview";
 import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
@@ -345,39 +346,7 @@ const Index = () => {
           {/* Dashboard Tab (Marketing + Comercial unificados) — kept mounted */}
           <div className={activeTab === "marketing" || activeTab === "comercial" ? "" : "hidden"}>
             <SinalCampanhasHoje />
-            <h2 className="text-base sm:text-lg font-semibold text-foreground mb-4">Marketing</h2>
-            {/* Metricas principais */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 mb-4 sm:mb-6">
-              <MetricCard title="Investimento" value={formatCurrency(investimentoView)} variation={getVariation(investimentoView, prevInvestimentoView)} invertColors delay={0} />
-              <MetricCard title="Impressões" value={formatNumber(impressoesView)} variation={getVariation(impressoesView, prevImpressoesView)} delay={50} />
-              <MetricCard title={metricTooltips.ctr.label} value={formatPercent(ctrView)} variation={getVariation(ctrView, prevCtrView)} tooltip={metricTooltips.ctr.tooltip} delay={100} />
-              <MetricCard title={metricTooltips.cpc.label} value={formatCurrency(cpcView)} variation={getVariation(cpcView, prevCpcView)} invertColors tooltip={metricTooltips.cpc.tooltip} delay={150} />
-              <MetricCard title="Mensagens" value={formatNumber(effectiveMensagens)} variation={getVariation(effectiveMensagens, prevEffectiveMensagens)} delay={200} />
-              <MetricCard title="Custo por conversa" value={mktResumo?.custo_conversa != null && Number(mktResumo.custo_conversa) > 0 ? formatCurrency(Number(mktResumo.custo_conversa)) : "—"} delay={225} />
-            </div>
-
-            {/* Segunda linha de metricas */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-4 mb-4 sm:mb-6">
-              <MetricCard title={metricTooltips.cpa.label} value={formatCurrency(cpaView)} variation={getVariation(cpaView, prevCpaView)} invertColors tooltip={metricTooltips.cpa.tooltip} delay={250} />
-              <MetricCard title={metricTooltips.cpm.label} value={formatCurrency(cpmView)} variation={getVariation(cpmView, prevCpmView)} invertColors tooltip={metricTooltips.cpm.tooltip} delay={300} />
-              <MetricCard title={metricTooltips.frequencia.label} value={freqView} tooltip={metricTooltips.frequencia.tooltip} delay={350} />
-              <MetricCard title="Cliques" value={formatNumber(cliquesView)} delay={400} />
-              <MetricCard title="Conversão Geral" value={formatPercent(conversaoGeral)} variation={getVariation(conversaoGeral, previousConversaoGeral)} delay={450} />
-              <MetricCard title="Custo por Reunião" value={custoPorReuniao > 0 ? formatCurrency(custoPorReuniao) : "N/A"} variation={getVariation(custoPorReuniao, prevCustoPorReuniao)} invertColors delay={500} />
-              <MetricCard title="Conv. Reuniões" value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "N/A"} variation={getVariation(conversaoReunioes, prevConversaoReunioes)} delay={550} />
-            </div>
-
-            {/* Funil de trafego */}
-            <TrafficFunnel
-              impressoes={impressoesView}
-              cliques={cliquesView}
-              mensagens={effectiveMensagens}
-              reunioesMarcadas={reunioesMarcadas}
-              reunioes={reunioesRealizadas}
-              vendas={effectiveVendas}
-              investimento={investimentoView}
-              faturamento={effectiveFaturamento}
-            />
+            <MarketingOverview />
 
             {/* ===== Bloco Comercial ===== */}
             <div className="mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-border">
@@ -419,11 +388,6 @@ const Index = () => {
                   investimento={investimentoView}
                 />
 
-                {/* Performance chart genérico */}
-                <PerformanceChart
-                  investimento={investimentoView}
-                  faturamento={effectiveFaturamento}
-                />
               </div>
             )}
             </div>

@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { MetricBar } from "@/components/MetricBar";
 
 type Criativo = Record<string, any> & { nome: string; ad_id: string };
 
@@ -214,17 +215,6 @@ export default function Criativos() {
   );
 }
 
-function Barra({ label, valor, texto, media, menorMelhor }: { label: string; valor: number | null; texto: string; media: number; menorMelhor: boolean }) {
-  const w = valor == null || !media ? 0 : Math.min(100, (valor / (media * 2)) * 100);
-  return (
-    <div className="flex items-center gap-2 text-[11px]">
-      <span className="w-20 text-muted-foreground">{label}</span>
-      <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden"><div className={cn("h-full rounded-full", sinal(valor, media, menorMelhor))} style={{ width: `${w}%` }} /></div>
-      <span className="w-16 text-right tabular-nums text-foreground">{texto}</span>
-    </div>
-  );
-}
-
 function CriativoCard({ c, medias, onClick }: { c: Criativo; medias: any; onClick: () => void }) {
   const ativo = c.status === "ACTIVE";
   const nz = (v: any) => (v == null ? null : Number(v));
@@ -256,10 +246,10 @@ function CriativoCard({ c, medias, onClick }: { c: Criativo; medias: any; onClic
           <div><p className="text-[10px] uppercase tracking-wider text-muted-foreground">Reuniões</p><p className="text-sm font-semibold tabular-nums">{num(c.reunioes_realizadas ?? 0)}</p></div>
         </div>
         <div className="space-y-1.5">
-          <Barra label="CPM" valor={nz(c.cpm)} texto={brl(c.cpm)} media={medias.cpm} menorMelhor />
-          <Barra label="CTR" valor={nz(c.ctr_pct)} texto={pctf(c.ctr_pct)} media={medias.ctr} menorMelhor={false} />
-          {c.formato === "video" && <Barra label="Hook rate" valor={nz(c.hook_rate_pct)} texto={pctf(c.hook_rate_pct)} media={medias.hook} menorMelhor={false} />}
-          <Barra label="Custo/conv." valor={nz(c.custo_conversa)} texto={brl(c.custo_conversa)} media={medias.cc} menorMelhor />
+          <MetricBar label="CPM" valor={nz(c.cpm)} texto={brl(c.cpm)} media={medias.cpm} menorMelhor />
+          <MetricBar label="CTR" valor={nz(c.ctr_pct)} texto={pctf(c.ctr_pct)} media={medias.ctr} menorMelhor={false} />
+          {c.formato === "video" && <MetricBar label="Hook rate" valor={nz(c.hook_rate_pct)} texto={pctf(c.hook_rate_pct)} media={medias.hook} menorMelhor={false} />}
+          <MetricBar label="Custo/conv." valor={nz(c.custo_conversa)} texto={brl(c.custo_conversa)} media={medias.cc} menorMelhor />
         </div>
         <div className="flex items-center justify-between border-t border-border pt-2 text-[11px] text-muted-foreground">
           <span>{num(c.leads ?? 0)} leads · {c.custo_lead ? brl(c.custo_lead) : "—"}/lead</span>
