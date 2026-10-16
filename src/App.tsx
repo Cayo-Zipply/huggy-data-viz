@@ -17,6 +17,7 @@ import SalesEnablement from "@/pages/SalesEnablement";
 import Pool from "@/pages/Pool";
 import PendenciasPosVenda from "@/pages/PendenciasPosVenda";
 import Esquadrao from "@/pages/Esquadrao";
+import Criativos from "@/pages/Criativos";
 import { AgentesProvider } from "@/components/agentes/AgentesContext";
 import { AgentFab } from "@/components/agentes/AgentFab";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -194,6 +195,7 @@ const App = () => (
               <Route path="/feedbacks" element={<RoleGuard roles={["admin"]}><Feedbacks /></RoleGuard>} />
               <Route path="/material-apoio" element={<MaterialApoio />} />
               <Route path="/sales-enablement" element={<SalesEnablement />} />
+              <Route path="/criativos" element={<RoleGuard roles={["admin"]}><Criativos /></RoleGuard>} />
               <Route path="/esquadrao" element={<Esquadrao />} />
               <Route path="/pool" element={<Pool />} />
               <Route path="/pendencias-pos-venda" element={<PendenciasPosVenda />} />
