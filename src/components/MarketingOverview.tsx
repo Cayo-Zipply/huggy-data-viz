@@ -14,6 +14,7 @@ const TEXT = "hsl(var(--mkt-text))";
 const MUTED = "hsl(var(--mkt-muted))";
 const TRACK = "hsl(var(--mkt-track))";
 
+import { brlKpi, numKpi, brlFull, numFull, KPI_VALUE_STYLE, KPI_VALUE_CLASS } from "@/lib/kpiFormat";
 const n = (v: any) => Number(v ?? 0) || 0;
 const brl = (v: any) => (v == null || !isFinite(Number(v)) ? "—" : Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }));
 const dec = (v: number, d = 2) => v.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d });
@@ -51,7 +52,7 @@ const useResumo = (p: PeriodoFunil, camp: string | null) => useQuery({
   },
 });
 
-type Tile = { l: string; v: string; cur: number; prev: number; inverso?: boolean; real?: boolean };
+type Tile = { l: string; v: string; cur: number; prev: number; inverso?: boolean; real?: boolean; full?: string; sub?: string };
 
 function Chip({ cur, prev, inverso }: { cur: number; prev: number; inverso?: boolean }) {
   if (!prev || !cur) return <span className="text-[11px] text-mkt-muted">—</span>;
@@ -87,19 +88,20 @@ export function MarketingOverview() {
   const loading = cur.isLoading;
   const semDados = !loading && n(t.gasto) === 0;
 
+  const roasSub = t.roas_atribuido != null ? `Atribuído a anúncio: ${dec(n(t.roas_atribuido))}x · ${n(t.contratos_de_anuncio).toLocaleString("pt-BR")} contratos · ${brlKpi(t.faturamento_de_anuncio)}` : undefined;
   const tiles: Tile[] = [
-    { l: "Gasto", v: brl(t.gasto), cur: n(t.gasto), prev: n(pt.gasto), inverso: true },
-    { l: "CPM", v: brl(t.cpm), cur: n(t.cpm), prev: n(pt.cpm), inverso: true },
+    { l: "Gasto", v: brlKpi(t.gasto), full: brlFull(t.gasto), cur: n(t.gasto), prev: n(pt.gasto), inverso: true },
+    { l: "CPM", v: brlKpi(t.cpm), full: brlFull(t.cpm), cur: n(t.cpm), prev: n(pt.cpm), inverso: true },
     { l: "CTR", v: t.ctr_pct != null ? `${dec(n(t.ctr_pct))}%` : "—", cur: n(t.ctr_pct), prev: n(pt.ctr_pct) },
-    { l: "Conversas", v: n(t.conversas).toLocaleString("pt-BR"), cur: n(t.conversas), prev: n(pt.conversas) },
-    { l: "Custo/conversa", v: brl(t.custo_conversa), cur: n(t.custo_conversa), prev: n(pt.custo_conversa), inverso: true },
-    { l: "Custo/lead", v: brl(t.custo_lead), cur: n(t.custo_lead), prev: n(pt.custo_lead), inverso: true },
-    { l: "Custo/reunião", v: brl(t.custo_reuniao), cur: n(t.custo_reuniao), prev: n(pt.custo_reuniao), inverso: true },
-    { l: "Leads", v: n(t.leads).toLocaleString("pt-BR"), cur: n(t.leads), prev: n(pt.leads) },
-    { l: "Contratos", v: n(t.contratos).toLocaleString("pt-BR"), cur: n(t.contratos), prev: n(pt.contratos), real: true },
-    { l: "CAC", v: n(t.cac) ? brl(t.cac) : "—", cur: n(t.cac), prev: n(pt.cac), inverso: true, real: true },
-    { l: "Faturamento", v: brl(t.faturamento), cur: n(t.faturamento), prev: n(pt.faturamento), real: true },
-    { l: "ROAS", v: n(t.roas) ? `${dec(n(t.roas))}x` : "—", cur: n(t.roas), prev: n(pt.roas), real: true },
+    { l: "Conversas", v: numKpi(t.conversas), full: numFull(t.conversas), cur: n(t.conversas), prev: n(pt.conversas) },
+    { l: "Custo/conversa", v: brlKpi(t.custo_conversa), full: brlFull(t.custo_conversa), cur: n(t.custo_conversa), prev: n(pt.custo_conversa), inverso: true },
+    { l: "Custo/lead", v: brlKpi(t.custo_lead), full: brlFull(t.custo_lead), cur: n(t.custo_lead), prev: n(pt.custo_lead), inverso: true },
+    { l: "Custo/reunião", v: brlKpi(t.custo_reuniao), full: brlFull(t.custo_reuniao), cur: n(t.custo_reuniao), prev: n(pt.custo_reuniao), inverso: true },
+    { l: "Leads", v: numKpi(t.leads), full: numFull(t.leads), cur: n(t.leads), prev: n(pt.leads) },
+    { l: "Contratos", v: numKpi(t.contratos), full: numFull(t.contratos), cur: n(t.contratos), prev: n(pt.contratos), real: true },
+    { l: "CAC", v: n(t.cac) ? brlKpi(t.cac) : "—", full: brlFull(t.cac), cur: n(t.cac), prev: n(pt.cac), inverso: true, real: true },
+    { l: "Faturamento", v: brlKpi(t.faturamento), full: brlFull(t.faturamento), cur: n(t.faturamento), prev: n(pt.faturamento), real: true },
+    { l: "ROAS", v: n(t.roas) ? `${dec(n(t.roas))}x` : "—", cur: n(t.roas), prev: n(pt.roas), real: true, sub: roasSub },
   ];
 
   // Funil
@@ -157,11 +159,12 @@ export function MarketingOverview() {
       </div>
 
       {/* B. KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
         {tiles.map((k) => (
           <div key={k.l} className={cn(k.real ? "mkt-card-gold" : "mkt-card", "!p-4")}>
             <p className="mkt-label">{k.l}</p>
-            {loading ? <Skeleton className="h-8 w-24 mt-2" /> : <p className={cn("mkt-value text-2xl lg:text-[28px] mt-1 truncate", k.real && "text-mkt-gold")}>{k.v}</p>}
+            {loading ? <Skeleton className="h-8 w-24 mt-2" /> : <p title={k.full ?? k.v} style={KPI_VALUE_STYLE} className={cn("mkt-value mt-1", KPI_VALUE_CLASS, k.real && "text-mkt-gold")}>{k.v}</p>}
+            {k.sub && !loading && <p className="text-[10px] text-mkt-muted mt-0.5 leading-snug">{k.sub}</p>}
             <div className="mt-1.5 h-5">{!loading && !prev.isLoading && <Chip cur={k.cur} prev={k.prev} inverso={k.inverso} />}</div>
           </div>
         ))}
@@ -244,7 +247,8 @@ export function MarketingOverview() {
           <div>
             <p className="mkt-label">Retorno</p>
             {loading ? <Skeleton className="h-12 w-32 mt-2" /> : <p className="mkt-value text-[48px] leading-none mt-2 text-mkt-gold">{n(t.roas) ? `${dec(n(t.roas))}x` : "—"}</p>}
-            <p className="text-[11px] text-mkt-muted mt-1">ROAS</p>
+            <p className="text-[11px] text-mkt-muted mt-1">ROAS geral</p>
+            {roasSub && <p className="text-[11px] text-mkt-muted mt-1">{roasSub}</p>}
           </div>
           <div className="space-y-2">
             <p className="mkt-label">Investimento x Faturamento</p>
