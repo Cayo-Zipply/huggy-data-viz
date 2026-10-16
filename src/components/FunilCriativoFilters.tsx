@@ -144,7 +144,7 @@ interface PeriodPickerProps {
   onChange: (value: PeriodoFunil) => void;
 }
 
-const PeriodPicker = ({ value, onChange }: PeriodPickerProps) => {
+export const PeriodPicker = ({ value, onChange }: PeriodPickerProps) => {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<DateRange | undefined>({ from: parseDate(value.desde), to: parseDate(value.ate) });
   const today = useMemo(todaySaoPaulo, []);
