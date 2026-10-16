@@ -39,7 +39,7 @@ export function AgentFab() {
         <AgentAvatar key={a.id} agente={a} className="absolute top-1/2 -translate-y-1/2 h-10 w-10 md:h-11 md:w-11 rounded-full border-2 shadow-md" imgClassName="object-[center_25%]" style={{ left: i * 18, borderColor: agentColor(a) }} />
       ))}
       <AgentAvatar agente={lista[0]} className="absolute right-0 top-0 h-[52px] w-[52px] md:h-14 md:w-14 rounded-full border-2 shadow-lg" imgClassName="object-[center_25%]" style={{ borderColor: agentColor(lista[0]) }} />
-      {badge && <span className="absolute right-0 top-0 h-3 w-3 rounded-full bg-destructive ring-2 ring-background" />
+      {badge && <span className="absolute right-0 top-0 h-3 w-3 rounded-full bg-destructive ring-2 ring-background" />}
     </button>
   );
 }
