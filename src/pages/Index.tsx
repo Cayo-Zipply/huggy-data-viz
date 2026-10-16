@@ -229,13 +229,16 @@ const Index = () => {
   const [mktResumo, setMktResumo] = useState<Record<string, any> | null>(null);
   useEffect(() => {
     setMktResumo(null);
-    const d = monthRange(selectedMonth);
-    if (!d) return;
+    if (!selectedMonthYYYYMM) return;
+    const [yy, mm] = selectedMonthYYYYMM.split("-").map(Number);
+    const ini = `${selectedMonthYYYYMM.slice(0, 7)}-01`;
+    const last = new Date(yy, mm, 0).getDate();
+    const d = [ini, `${selectedMonthYYYYMM.slice(0, 7)}-${String(last).padStart(2, "0")}`];
     let cancel = false;
     (supabase as any).rpc("mkt_criativos_resumo", { p_inicio: d[0], p_fim: d[1], p_campanha: null })
       .then(({ data }: any) => { if (!cancel) setMktResumo(data?.totais ?? null); });
     return () => { cancel = true; };
-  }, [selectedMonth]);
+  }, [selectedMonthYYYYMM]);
 
   const [sdrReunioes, setSdrReunioes] = useState<{ marcadas: number; realizadas: number } | null>(null);
   useEffect(() => {
