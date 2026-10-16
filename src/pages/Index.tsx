@@ -226,6 +226,20 @@ const Index = () => {
   // RPC `farol_metricas_sdr` (mesma usada na aba SDR). Evita duplicação de
   // cards espelho SDR/Closer e usa data_reuniao em fuso America/Sao_Paulo.
   // Snapshot de meses encerrados tem precedência.
+  const [mktResumo, setMktResumo] = useState<Record<string, any> | null>(null);
+  useEffect(() => {
+    setMktResumo(null);
+    if (!selectedMonthYYYYMM) return;
+    const [yy, mm] = selectedMonthYYYYMM.split("-").map(Number);
+    const ini = `${selectedMonthYYYYMM.slice(0, 7)}-01`;
+    const last = new Date(yy, mm, 0).getDate();
+    const d = [ini, `${selectedMonthYYYYMM.slice(0, 7)}-${String(last).padStart(2, "0")}`];
+    let cancel = false;
+    (supabase as any).rpc("mkt_criativos_resumo", { p_inicio: d[0], p_fim: d[1], p_campanha: null })
+      .then(({ data }: any) => { if (!cancel) setMktResumo(data?.totais ?? null); });
+    return () => { cancel = true; };
+  }, [selectedMonthYYYYMM]);
+
   const [sdrReunioes, setSdrReunioes] = useState<{ marcadas: number; realizadas: number } | null>(null);
   useEffect(() => {
     setSdrReunioes(null);
@@ -293,6 +307,13 @@ const Index = () => {
     ? (prevEffectiveVendas / prevReunioes) * 100
     : undefined;
 
+  const freqView = (() => {
+    const imp = Number(mktResumo?.impressoes ?? 0);
+    const alc = Number(mktResumo?.alcance ?? 0);
+    const f = mktResumo?.frequencia != null ? Number(mktResumo.frequencia) : alc > 0 ? imp / alc : 0;
+    return f > 0 ? `${f.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}x` : "—";
+  })();
+
   if (!selectedMonth) return null;
 
   return (
@@ -328,22 +349,22 @@ const Index = () => {
             {/* Metricas principais */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 mb-4 sm:mb-6">
               <MetricCard title="Investimento" value={formatCurrency(investimentoView)} variation={getVariation(investimentoView, prevInvestimentoView)} invertColors delay={0} />
-              <MetricCard title="Impressoes" value={formatNumber(impressoesView)} variation={getVariation(impressoesView, prevImpressoesView)} delay={50} />
+              <MetricCard title="Impressões" value={formatNumber(impressoesView)} variation={getVariation(impressoesView, prevImpressoesView)} delay={50} />
               <MetricCard title={metricTooltips.ctr.label} value={formatPercent(ctrView)} variation={getVariation(ctrView, prevCtrView)} tooltip={metricTooltips.ctr.tooltip} delay={100} />
               <MetricCard title={metricTooltips.cpc.label} value={formatCurrency(cpcView)} variation={getVariation(cpcView, prevCpcView)} invertColors tooltip={metricTooltips.cpc.tooltip} delay={150} />
               <MetricCard title="Mensagens" value={formatNumber(effectiveMensagens)} variation={getVariation(effectiveMensagens, prevEffectiveMensagens)} delay={200} />
-              <MetricCard title="Mensagens Efetivas" value={formatNumber(effectiveMensagensEfetivas)} variation={getVariation(effectiveMensagensEfetivas, prevEffectiveMensagensEfetivas)} delay={225} />
+              <MetricCard title="Custo por conversa" value={mktResumo?.custo_conversa != null && Number(mktResumo.custo_conversa) > 0 ? formatCurrency(Number(mktResumo.custo_conversa)) : "—"} delay={225} />
             </div>
 
             {/* Segunda linha de metricas */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-4 mb-4 sm:mb-6">
               <MetricCard title={metricTooltips.cpa.label} value={formatCurrency(cpaView)} variation={getVariation(cpaView, prevCpaView)} invertColors tooltip={metricTooltips.cpa.tooltip} delay={250} />
               <MetricCard title={metricTooltips.cpm.label} value={formatCurrency(cpmView)} variation={getVariation(cpmView, prevCpmView)} invertColors tooltip={metricTooltips.cpm.tooltip} delay={300} />
-              <MetricCard title={metricTooltips.frequencia.label} value={formatPercent(currentData?.frequencia ?? 0)} variation={getVariation(currentData?.frequencia ?? 0, previousData?.frequencia)} tooltip={metricTooltips.frequencia.tooltip} delay={350} />
+              <MetricCard title={metricTooltips.frequencia.label} value={freqView} tooltip={metricTooltips.frequencia.tooltip} delay={350} />
               <MetricCard title="Cliques" value={formatNumber(cliquesView)} delay={400} />
-              <MetricCard title="Conversao Geral" value={formatPercent(conversaoGeral)} variation={getVariation(conversaoGeral, previousConversaoGeral)} delay={450} />
-              <MetricCard title="Custo por Reuniao" value={custoPorReuniao > 0 ? formatCurrency(custoPorReuniao) : "N/A"} variation={getVariation(custoPorReuniao, prevCustoPorReuniao)} invertColors delay={500} />
-              <MetricCard title="Conv. Reunioes" value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "N/A"} variation={getVariation(conversaoReunioes, prevConversaoReunioes)} delay={550} />
+              <MetricCard title="Conversão Geral" value={formatPercent(conversaoGeral)} variation={getVariation(conversaoGeral, previousConversaoGeral)} delay={450} />
+              <MetricCard title="Custo por Reunião" value={custoPorReuniao > 0 ? formatCurrency(custoPorReuniao) : "N/A"} variation={getVariation(custoPorReuniao, prevCustoPorReuniao)} invertColors delay={500} />
+              <MetricCard title="Conv. Reuniões" value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "N/A"} variation={getVariation(conversaoReunioes, prevConversaoReunioes)} delay={550} />
             </div>
 
             {/* Funil de trafego */}

@@ -30,8 +30,8 @@ export const metricTooltips: Record<string, { label: string; tooltip: string }> 
     tooltip: "O custo médio de cada clique no link do anúncio.",
   },
   cpa: {
-    label: "CPA (Custo por Lead)",
-    tooltip: "Valor do investimento dividido pelo número de leads gerados.",
+    label: "CAC (custo por contrato)",
+    tooltip: "Valor do investimento dividido pelo número de contratos fechados.",
   },
   cpm: {
     label: "CPM (Custo por 1.000 Impressões)",

@@ -202,7 +202,32 @@ export const FunilCriativo = () => {
 
   useEffect(() => setFocused(null), [agrupamento, debouncedFilters, periodo]);
 
-  const rows = rowsQuery.data ?? [];
+  const spendQuery = useQuery({
+    queryKey: ["mkt-criativos-gasto", periodo.desde, periodo.ate],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("mkt_criativos", { p_inicio: periodo.desde, p_fim: periodo.ate, p_campanha: null });
+      if (error) throw error;
+      return (Array.isArray(data) ? data : []) as { nome: string | null; campanha: string | null; conjunto: string | null; gasto: number | null }[];
+    },
+    staleTime: 60_000,
+  });
+
+  const rows = useMemo(() => {
+    const base = rowsQuery.data ?? [];
+    const spend = spendQuery.data;
+    if (!spend) return base;
+    const key = agrupamento === "criativo" ? "nome" : agrupamento;
+    const map = new Map<string, number>();
+    for (const item of spend) {
+      const name = item[key as "nome" | "campanha" | "conjunto"];
+      if (name) map.set(name, (map.get(name) ?? 0) + Number(item.gasto ?? 0));
+    }
+    return base.map((row) => {
+      const gasto = row.gasto ?? (row.grupo && map.has(row.grupo) ? map.get(row.grupo)! : null);
+      if (gasto == null) return row;
+      return { ...row, gasto, cpl: row.leads > 0 ? gasto / row.leads : null, cac: row.contrato_assinado > 0 ? gasto / row.contrato_assinado : null };
+    });
+  }, [rowsQuery.data, spendQuery.data, agrupamento]);
 
   const sorted = useMemo(() => {
     const list = [...rows];
@@ -341,8 +366,7 @@ export const FunilCriativo = () => {
             </p>
           )}
           {recent && <p className="text-warning font-medium"><AlertTriangle className="mr-1 inline h-3 w-3" />Período recente: cerca de 1 em cada 5 vendas acontece mais de 7 dias depois da entrada do lead. A conversão deste recorte ainda vai subir.</p>}
-          {agrupamento !== "campanha" && <p>Gasto disponível apenas por campanha.</p>}
-          {agrupamento === "campanha" && !loading && !hasSpendData && <p className="text-warning font-medium">Não há dados de gasto disponíveis para este período.</p>}
+          {!loading && !hasSpendData && <p className="text-warning font-medium">Não há dados de gasto disponíveis para este período.</p>}
         </div>
       </div>
 
@@ -377,7 +401,7 @@ export const FunilCriativo = () => {
                   <Th k="conv" label="Conv." />
                   <Th k="faturamento" label="Faturamento" />
                   {agrupamento !== "campanha" && <Th k="campanhas_distintas" label="Campanhas" />}
-                  {agrupamento === "campanha" && <><Th k="gasto" label="Gasto" /><Th k="cpl" label="CPL" /><Th k="cac" label="CAC" /></>}
+                  {<><Th k="gasto" label="Gasto" /><Th k="cpl" label="Custo/lead" /><Th k="cac" label="CAC" /></>}
                 </tr>
               </thead>
               <tbody>
@@ -404,7 +428,7 @@ export const FunilCriativo = () => {
                       <td className="px-2 py-2 text-right tabular-nums font-semibold">{fmtPct(pct(r.contrato_assinado, r.leads))}</td>
                       <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.faturamento, true)}</td>
                       {agrupamento !== "campanha" && <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.campanhas_distintas)}</td>}
-                      {agrupamento === "campanha" && <><td className="px-2 py-2 text-right tabular-nums">{optionalCurrency(r.gasto)}</td><td className="px-2 py-2 text-right tabular-nums">{optionalCurrency(r.cpl)}</td><td className="px-2 py-2 text-right tabular-nums">{optionalCurrency(r.cac)}</td></>}
+                      {<><td className="px-2 py-2 text-right tabular-nums">{optionalCurrency(r.gasto)}</td><td className="px-2 py-2 text-right tabular-nums">{optionalCurrency(r.cpl)}</td><td className="px-2 py-2 text-right tabular-nums">{optionalCurrency(r.cac)}</td></>}
                     </tr>
                   );
                 })}
@@ -423,7 +447,7 @@ export const FunilCriativo = () => {
                   <td className="px-2 py-2 text-right tabular-nums">{fmtPct(pct(totals.contrato_assinado, totals.leads))}</td>
                   <td className="px-2 py-2 text-right tabular-nums">{metricCell(totals.faturamento, true)}</td>
                   {agrupamento !== "campanha" && <td className="px-2 py-2 text-right text-muted-foreground">—</td>}
-                  {agrupamento === "campanha" && <><td className="px-2 py-2 text-right tabular-nums">{metricCell(Number(totals.gasto), true)}</td><td className="px-2 py-2 text-right tabular-nums">{metricCell(Number(totals.cpl), true)}</td><td className="px-2 py-2 text-right tabular-nums">{metricCell(Number(totals.cac), true)}</td></>}
+                  {<><td className="px-2 py-2 text-right tabular-nums">{metricCell(Number(totals.gasto), true)}</td><td className="px-2 py-2 text-right tabular-nums">{metricCell(Number(totals.cpl), true)}</td><td className="px-2 py-2 text-right tabular-nums">{metricCell(Number(totals.cac), true)}</td></>}
                 </tr>
               </tfoot>
             </table>
@@ -467,7 +491,7 @@ export const FunilCriativo = () => {
                 ({fmtPct(funnel[gargaloIdx].pctStep)} da etapa anterior). Coluna à direita = conversão etapa a etapa.
               </p>
             )}
-            {agrupamento === "campanha" && (
+            {(
               <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 border-t pt-3 text-xs text-muted-foreground">
                 <span>Gasto <strong className="text-foreground">{formatCurrency(Number(active.gasto ?? 0))}</strong></span>
                 <span>CPL <strong className="text-foreground">{formatCurrency(Number(active.cpl ?? 0))}</strong></span>

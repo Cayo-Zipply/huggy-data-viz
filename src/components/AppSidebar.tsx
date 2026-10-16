@@ -21,6 +21,7 @@ import {
   Flame,
   MailWarning,
   Crosshair,
+  Images,
 } from "lucide-react";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { cn } from "@/lib/utils";
@@ -50,6 +51,7 @@ const MENU_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "ANÁLISE",
     items: [
       { key: "/marketing", label: "Dashboard", icon: BarChart3, roles: ["admin"] },
+      { key: "/criativos", label: "Criativos", icon: Images, roles: ["admin"] },
       { key: "/comparativo", label: "Comparativo", icon: GitCompare, roles: ["admin"] },
       { key: "/rentabilidade", label: "Rentabilidade", icon: DollarSign, roles: ["admin"] },
       { key: "/consolidado", label: "Consolidado", icon: PieChart, roles: ["admin"] },

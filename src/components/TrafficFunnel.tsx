@@ -1,5 +1,6 @@
 import { formatNumber, formatCurrency, formatPercent } from "@/data/marketingData";
 import { MetricTooltip } from "./MetricTooltip";
+import { TrendingUp, Wallet, Repeat, Percent, Ticket, Target, CalendarCheck, Receipt, LineChart, Handshake, type LucideIcon } from "lucide-react";
 
 interface TrafficFunnelProps {
   impressoes: number;
@@ -23,12 +24,12 @@ const formatValue = (value: number): string => {
 interface SideCardProps {
   label: string;
   value: string;
-  icon: string;
+  icon: LucideIcon;
 }
 
-const SideCard = ({ label, value, icon }: SideCardProps) => (
+const SideCard = ({ label, value, icon: Icon }: SideCardProps) => (
   <div className="flex items-center gap-2 bg-muted/50 border border-border rounded-lg px-3 py-2 min-w-0">
-    <span className="text-base shrink-0">{icon}</span>
+    <Icon className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.5} />
     <div className="min-w-0">
       <p className="text-[10px] text-muted-foreground leading-tight truncate">{label}</p>
       <p className="text-sm font-bold text-foreground leading-tight">{value}</p>
@@ -86,12 +87,12 @@ export const TrafficFunnel = ({
   const cpa = vendas > 0 ? investimento / vendas : 0;
 
   const showMarcadas = typeof reunioesMarcadas === "number";
-  const pctCliques = impressoes > 0 ? ((cliques / impressoes) * 100).toFixed(2) : "0";
-  const pctMensagens = cliques > 0 ? ((mensagens / cliques) * 100).toFixed(2) : "0";
-  const pctMsgMarcadas = mensagens > 0 && showMarcadas ? ((reunioesMarcadas! / mensagens) * 100).toFixed(2) : "0";
-  const pctMarcadasRealizadas = showMarcadas && (reunioesMarcadas! > 0) ? ((reunioes / reunioesMarcadas!) * 100).toFixed(2) : "0";
-  const pctReunioes = mensagens > 0 ? ((reunioes / mensagens) * 100).toFixed(2) : "0";
-  const pctVendas = reunioes > 0 ? ((vendas / reunioes) * 100).toFixed(2) : "0";
+  const pctCliques = impressoes > 0 ? ((cliques / impressoes) * 100).toFixed(2).replace(".", ",") : "0";
+  const pctMensagens = cliques > 0 ? ((mensagens / cliques) * 100).toFixed(2).replace(".", ",") : "0";
+  const pctMsgMarcadas = mensagens > 0 && showMarcadas ? ((reunioesMarcadas! / mensagens) * 100).toFixed(2).replace(".", ",") : "0";
+  const pctMarcadasRealizadas = showMarcadas && (reunioesMarcadas! > 0) ? ((reunioes / reunioesMarcadas!) * 100).toFixed(2).replace(".", ",") : "0";
+  const pctReunioes = mensagens > 0 ? ((reunioes / mensagens) * 100).toFixed(2).replace(".", ",") : "0";
+  const pctVendas = reunioes > 0 ? ((vendas / reunioes) * 100).toFixed(2).replace(".", ",") : "0";
 
   const tooltipRealizadas = "Conta leads em Reunião Realizada, Link Enviado ou Contrato Assinado, pela data da última mudança de etapa. Fonte única usada em Marketing, Farol e Pipeline.";
   const tooltipMarcadas = "Conta leads com data_reuniao dentro do mês (remarcação sobrescreve a data anterior).";
@@ -103,11 +104,11 @@ export const TrafficFunnel = ({
         {/* Left — Marketing */}
         <div className="space-y-2">
           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Marketing</h4>
-          <SideCard icon="📈" label="Investimento" value={formatCurrency(investimento)} />
-          <SideCard icon="💰" label="Faturamento" value={formatCurrency(faturamento)} />
-          <SideCard icon="🔄" label="ROAS" value={roas.toFixed(2)} />
-          <SideCard icon="📊" label="Taxa de Conversão" value={formatPercent(taxaConversao)} />
-          <SideCard icon="🎫" label="Ticket Médio" value={formatCurrency(ticketMedio)} />
+          <SideCard icon={TrendingUp} label="Investimento" value={formatCurrency(investimento)} />
+          <SideCard icon={Wallet} label="Faturamento" value={formatCurrency(faturamento)} />
+          <SideCard icon={Repeat} label="ROAS" value={roas.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})} />
+          <SideCard icon={Percent} label="Taxa de Conversão" value={formatPercent(taxaConversao)} />
+          <SideCard icon={Ticket} label="Ticket Médio" value={formatCurrency(ticketMedio)} />
         </div>
 
         {/* Center — Funnel */}
@@ -144,11 +145,11 @@ export const TrafficFunnel = ({
         {/* Right — Comercial */}
         <div className="space-y-2">
           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Comercial</h4>
-          <SideCard icon="🎯" label="Custo por Lead" value={formatCurrency(custoLead)} />
-          <SideCard icon="📅" label="Custo por Reunião" value={reunioes > 0 ? formatCurrency(custoReuniao) : "N/A"} />
-          <SideCard icon="💵" label="CPA" value={vendas > 0 ? formatCurrency(cpa) : "N/A"} />
-          <SideCard icon="📈" label="ROI" value={investimento > 0 ? `${(roi * 100).toFixed(1)}%` : "N/A"} />
-          <SideCard icon="🏷️" label="Conv. Reuniões" value={reunioes > 0 ? formatPercent((vendas / reunioes) * 100) : "N/A"} />
+          <SideCard icon={Target} label="Custo por Lead" value={formatCurrency(custoLead)} />
+          <SideCard icon={CalendarCheck} label="Custo por Reunião" value={reunioes > 0 ? formatCurrency(custoReuniao) : "N/A"} />
+          <SideCard icon={Receipt} label="CAC" value={vendas > 0 ? formatCurrency(cpa) : "N/A"} />
+          <SideCard icon={LineChart} label="ROI" value={investimento > 0 ? `${(roi * 100).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1})}%` : "N/A"} />
+          <SideCard icon={Handshake} label="Conv. Reuniões" value={reunioes > 0 ? formatPercent((vendas / reunioes) * 100) : "N/A"} />
         </div>
       </div>
     </div>
