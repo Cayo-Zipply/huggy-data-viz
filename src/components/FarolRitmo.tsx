@@ -111,7 +111,7 @@ export function TeamCard({ title, subtitle, info, showLabel }: { title: string; 
     }
   }
   return (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+    <div className="h-full flex flex-col justify-between rounded-xl border border-border bg-card p-5 space-y-3">
       <div className="flex items-baseline justify-between gap-2">
         <h3 className="text-base font-semibold text-foreground">{title}</h3>
         <span className="text-xs text-muted-foreground">{subtitle}</span>
@@ -124,8 +124,9 @@ export function TeamCard({ title, subtitle, info, showLabel }: { title: string; 
         <RitmoBar realizado={info.realizado} meta={info.meta} fatorPace={info.fatorPace} mode={info.mode} tooltip={tooltipFor(info)} />
         {info.meta > 0 && info.mode !== "week" && (
           <div className="flex justify-center gap-3 mt-1 text-xs tabular-nums">
-            <span className="text-muted-foreground">{Math.round(pctReal)}%</span>
-            <span style={{ color: FAROL_COLORS.gold }}>{info.mode === "past" ? 100 : Math.round(info.fatorPace * 100)}%</span>
+            <span className="text-muted-foreground">{Math.round(pctReal)}% feito</span>
+            <span className="text-muted-foreground">·</span>
+            <span style={{ color: FAROL_COLORS.gold }}>ritmo {info.mode === "past" ? 100 : Math.round(info.fatorPace * 100)}%</span>
           </div>
         )}
       </div>
@@ -182,8 +183,8 @@ export function EficienciaCard({ conv, metaConv, ticket, metaTicket }: { conv: n
   const dTk = ticket - metaTicket;
   const tone = (v: number) => ({ color: v >= 0 ? FAROL_COLORS.green : FAROL_COLORS.red });
   return (
-    <div className="rounded-xl border border-border bg-card divide-y divide-border">
-      <div className="p-5 space-y-1">
+    <div className="h-full flex flex-col rounded-xl border border-border bg-card divide-y divide-border">
+      <div className="p-5 space-y-1 flex-1">
         <h3 className="text-base font-semibold text-foreground mb-2">Eficiência</h3>
         <div className="text-xs text-muted-foreground">Conversão</div>
         <div className="text-3xl font-bold tabular-nums text-foreground">{Math.round(conv)}%</div>
@@ -194,7 +195,7 @@ export function EficienciaCard({ conv, metaConv, ticket, metaTicket }: { conv: n
           </div>
         )}
       </div>
-      <div className="p-5 space-y-1">
+      <div className="p-5 space-y-1 flex-1">
         <div className="text-xs text-muted-foreground">Ticket médio</div>
         <div className="text-2xl font-bold tabular-nums text-foreground">{fmtBRL0(ticket)}</div>
         {metaTicket > 0 && (
