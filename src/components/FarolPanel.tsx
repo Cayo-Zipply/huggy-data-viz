@@ -747,10 +747,10 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
             </>
           )}
           {unassignedCards.length > 0 && (
-            <Button size="sm" variant="destructive" onClick={() => setUnassignedOpen(true)}>
-              <AlertTriangle className="w-3.5 h-3.5 mr-1" />
-              {unassignedCards.length} sem responsável
-            </Button>
+            <button onClick={() => setUnassignedOpen(true)} className="inline-flex items-center gap-1 rounded-full border border-destructive px-2.5 py-1 text-xs text-destructive hover:bg-destructive/10">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              {unassignedCards.length} leads sem responsável
+            </button>
           )}
           <div className="flex items-center gap-1.5 text-xs">
             <CalendarDays className="w-3.5 h-3.5 text-primary" />
@@ -793,61 +793,6 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
         </div>
       )}
 
-      {/* SEÇÃO: Visão Geral */}
-      <section className="space-y-3">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-          Visão Geral
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <HeroCard
-          icon={<DollarSign className="w-4 h-4" />}
-            title="Faturamento"
-            valueAccent
-            value={formatBRL(globais.faturamento.realizado)}
-          metaLabel={globais.faturamento.meta > 0 ? `/ ${formatBRL(globais.faturamento.meta)}` : "meta não cadastrada"}
-          subLabel={`meta até ${dataAlvoLabel}: ${formatBRL(globais.faturamento.metaAteAlvo)}`}
-          progress={globais.faturamento.pacePct}
-          progressLabel={`Pace ${Math.round(globais.faturamento.pacePct)}%`}
-          footerLeft={paceFooterProps(globais.faturamento.realizado, globais.faturamento.metaAteAlvo, formatBRL)}
-          footerRight={{ label: "Por closer", value: <RankList items={globais.rankings.topByFat} format={(v) => formatBRL(v)} /> }}
-        />
-        <HeroCard
-          icon={<Users className="w-4 h-4" />}
-          title="Reuniões realizadas"
-          value={String(globais.reunioes.realizadas)}
-          metaLabel={globais.reunioes.meta > 0 ? `/ ${globais.reunioes.meta}` : "meta não cadastrada"}
-          subLabel={`meta até ${dataAlvoLabel}: ${Math.round(globais.reunioes.metaAteAlvo)}`}
-          progress={globais.reunioes.meta > 0 ? (globais.reunioes.realizadas / globais.reunioes.meta) * 100 : 0}
-          progressLabel={`Pace diário · ${globais.reunioes.paceDiarioRR} RR`}
-          footerLeft={{ label: "Taxa show geral", value: `${globais.reunioes.taxaShow}%` }}
-          footerRight={{ label: "Por closer", value: <RankList items={globais.rankings.topByRR} format={(v) => String(v)} /> }}
-        />
-        <HeroCard
-          icon={<Percent className="w-4 h-4" />}
-          title="Taxa de conversão"
-          value={`${globais.conversao.atual.toFixed(1)}%`}
-          metaLabel={globais.conversao.esperada > 0 ? `/ ${globais.conversao.esperada.toFixed(0)}%` : "meta não cadastrada"}
-          subLabel={globais.conversao.esperada > 0 ? `${Math.round(globais.conversao.pctDoAlvo)}% do alvo` : ""}
-          progress={globais.conversao.pctDoAlvo}
-          progressLabel={`Vendas · ${globais.conversao.vendas}`}
-          footerLeft={{ label: "Ticket médio geral", value: globais.conversao.ticketMedio > 0 ? formatBRL(globais.conversao.ticketMedio) : "—" }}
-          footerRight={{ label: "Conv. por closer", value: <RankList items={globais.conversao.topClosers.map(t => ({ closer: t.closer, value: t.conv }))} format={(v) => `${v}%`} /> }}
-        />
-        <HeroCard
-          icon={<FileSignature className="w-4 h-4" />}
-          title="Contratos"
-          value={String(globais.contratos.fechados)}
-          metaLabel={globais.contratos.meta > 0 ? `/ ${globais.contratos.meta}` : "meta não cadastrada"}
-          subLabel={`meta até ${dataAlvoLabel}: ${Math.round(globais.contratos.metaAteAlvo)}`}
-          progress={globais.contratos.meta > 0 ? (globais.contratos.fechados / globais.contratos.meta) * 100 : 0}
-          progressLabel={`Pace até ${dataAlvoLabel} · ${globais.contratos.assinados} assinados`}
-          footerLeft={paceFooterProps(globais.contratos.fechados, globais.contratos.metaAteAlvo, (v) => String(Math.round(v)))}
-          footerRight={{ label: "Por closer", value: <RankList items={globais.contratos.topByContratos} format={(v) => String(v)} /> }}
-        />
-        </div>
-      </section>
-
-
       {/* NOVO VISUAL: FAIXA DO TIME + CLOSERS + SDR */}
       {(() => {
         const mode: FarolMode = weekFilter !== "all" ? "week" : (selectedMonth < currentMonthStart ? "past" : "current");
@@ -879,7 +824,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
               const texto = `Faltam ${g.brl ? fmtBRL0(falta) : `${Math.round(falta)} ${g.unidade}`} em ${restantes} dias úteis — precisa de ${f(porDia)}/dia. Ritmo atual: ${f(ritmo)}/dia.`;
               return <GargaloBanner titulo={g.titulo} texto={texto} pctProj={g.pct} />;
             })()}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_0.75fr] gap-4">
               <TeamCard title="Faturamento" subtitle={subtitle} showLabel info={{ ...base, realizado: inboundTotal.realizado, meta: inboundTotal.meta, projecao: inboundTotal.projecao, fmt: fmtBRL0 }} />
               <TeamCard title="Contratos" subtitle={subtitle} info={{ ...base, realizado: inboundTotal.contratos, meta: metaContratosTime, projecao: projOf(inboundTotal.contratos), fmt: (v) => String(Math.round(v)) }} />
               <TeamCard title="Reuniões realizadas" subtitle={subtitle} info={{ ...base, realizado: preVendasTotal.rr, meta: preVendasTotal.metaRR, projecao: projOf(preVendasTotal.rr), fmt: (v) => String(Math.round(v)) }} />
