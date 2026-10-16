@@ -1,4 +1,3 @@
-import brasao from "@/assets/farol-brasao.png.asset.json";
 import { useState } from "react";
 import {
   BarChart3, TrendingUp, Target, XOctagon, Mic, Radar, FileSignature, CalendarX, CalendarDays, FileSearch, Search, Zap,
@@ -29,14 +28,8 @@ export default function Esquadrao() {
   return (
     <div className="hud-bg min-h-screen px-4 py-8 md:px-10">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-5">
-          <img src={brasao.url} alt="Brasão O Farol" className="w-24 h-24 object-contain shrink-0" />
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.4em] text-muted-foreground">Black Ops · Seleção de agente</p>
-            <h1 className="font-hud text-4xl md:text-5xl uppercase tracking-wider text-foreground mt-1">Esquadrão</h1>
-            <p className="text-sm text-muted-foreground mt-1">Unidade O Farol · Pena Quadros</p>
-          </div>
-        </div>
+        <p className="text-[10px] uppercase tracking-[0.4em] text-muted-foreground">Black Ops · Seleção de agente</p>
+        <h1 className="font-hud text-4xl md:text-5xl uppercase tracking-wider text-foreground mt-1">Esquadrão</h1>
         <div className="h-px w-full bg-gradient-to-r from-border via-border/40 to-transparent my-6" />
 
         {isLoading && <p className="text-sm text-muted-foreground">Carregando agentes…</p>}

@@ -1,4 +1,3 @@
-import brasao from "@/assets/farol-brasao.png.asset.json";
 import { useState } from "react";
 import { supabase } from "@/lib/supabaseExternal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -70,10 +69,17 @@ export default function Login() {
       </div>
 
       <div className="bg-card border border-primary/30 rounded-lg p-10 max-w-[420px] w-full mx-4 shadow-2xl relative">
-        <div className="relative mx-auto mb-6 w-[160px] h-[160px] brasao-fade">
-          <div className="absolute -inset-8 rounded-full" style={{ background: "radial-gradient(circle, rgba(184,149,106,0.18) 0%, transparent 70%)" }} />
-          <img src={brasao.url} alt="O Farol" className="relative w-[160px] h-[160px] object-contain" />
-        </div>
+        {/* Brand */}
+        <img
+          src="/brand/farol-icon.svg"
+          alt="O Farol"
+          className="w-16 h-16 mx-auto mb-6 dark:block hidden"
+        />
+        <img
+          src="/brand/farol-icon-mono.svg"
+          alt="O Farol"
+          className="w-16 h-16 mx-auto mb-6 dark:hidden block"
+        />
 
         <h1 className="font-serif-display text-3xl text-foreground text-center mb-2">
           O FAROL
