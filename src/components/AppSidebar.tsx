@@ -176,6 +176,13 @@ export function AppSidebar() {
               {secondaryRole ? `${role} + ${secondaryRole}` : role}
             </p>
           </div>
+          <button
+            onClick={() => window.dispatchEvent(new Event("abrir-feedback"))}
+            className="text-muted-foreground hover:text-primary transition-colors"
+            title="Feedback e sugestões"
+          >
+            <MessageSquarePlus className="h-4 w-4" />
+          </button>
           <ChangePasswordDialog>
             <button
               className="text-muted-foreground hover:text-primary transition-colors"

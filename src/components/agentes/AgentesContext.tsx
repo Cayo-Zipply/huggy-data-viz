@@ -100,37 +100,52 @@ export interface ChatState {
   conversaId: string | null;
   msgs: any[];
   loaded: boolean;
+  loading?: boolean;
 }
 const EMPTY_CHAT: ChatState = { conversaId: null, msgs: [], loaded: false };
 
 interface Ctx {
   openChat: (agenteId: string, initialMessage?: string) => void;
+  isOpen: boolean;
 }
-const AgentesCtx = createContext<Ctx>({ openChat: () => {} });
+const AgentesCtx = createContext<Ctx>({ openChat: () => {}, isOpen: false });
+const LAST_KEY = "agentes:ultimo";
+export function ultimoAgente(): string {
+  try { return localStorage.getItem(LAST_KEY) || "black_ops"; } catch { return "black_ops"; }
+}
 export const useAgentChat = () => useContext(AgentesCtx);
 
 export function AgentesProvider({ children }: { children: ReactNode }) {
   const { data: agentes = [] } = useAgentes();
   const [state, setState] = useState<{ id: string; msg?: string; nonce: number } | null>(null);
+  const [open, setOpen] = useState(false);
   const [chats, setChats] = useState<Record<string, ChatState>>({});
-  const openChat = useCallback((id: string, msg?: string) => setState({ id, msg, nonce: Date.now() }), []);
-  const agente = agentes.find((a) => a.id === state?.id) ?? (state ? { id: state.id, nome: state.id === "pipeline" ? "Ghost" : "Atlas" } : null);
+  const openChat = useCallback((id: string, msg?: string) => {
+    try { localStorage.setItem(LAST_KEY, id); } catch { /* ignore */ }
+    setState({ id, msg, nonce: Date.now() });
+    setOpen(true);
+  }, []);
+  const fallback = (id: string): Agente => ({ id, nome: id === "pipeline" ? "Ghost" : "Atlas" });
+  const lista = (["black_ops", "pipeline"] as const).map((id) => agentes.find((a) => a.id === id) ?? fallback(id));
+  const agente = state ? agentes.find((a) => a.id === state.id) ?? fallback(state.id) : null;
   const setChat = useCallback((id: string, fn: (c: ChatState) => ChatState) =>
     setChats((all) => ({ ...all, [id]: fn(all[id] ?? EMPTY_CHAT) })), []);
 
   return (
-    <AgentesCtx.Provider value={{ openChat }}>
+    <AgentesCtx.Provider value={{ openChat, isOpen: open }}>
       {children}
       {agente && state && (
         <AgentChatDrawer
           key={state.id}
           agente={agente}
-          open
+          agentes={lista}
+          onSwitch={(id) => { if (id !== state.id) { try { localStorage.setItem(LAST_KEY, id); } catch { /* ignore */ } setState({ id, nonce: Date.now() }); } }}
+          open={open}
           initialMessage={state.msg}
           nonce={state.nonce}
           chat={chats[state.id] ?? EMPTY_CHAT}
           setChat={(fn) => setChat(state.id, fn)}
-          onClose={() => setState(null)}
+          onClose={() => { setOpen(false); setState((s) => (s ? { ...s, msg: undefined } : s)); }}
         />
       )}
     </AgentesCtx.Provider>

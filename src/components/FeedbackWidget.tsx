@@ -36,6 +36,11 @@ export function FeedbackWidget() {
   const [myFeedbacks, setMyFeedbacks] = useState<Feedback[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const h = () => setOpen(true);
+    window.addEventListener("abrir-feedback", h);
+    return () => window.removeEventListener("abrir-feedback", h);
+  }, []);
 
   const fetchMyFeedbacks = async () => {
     if (!user) return;
@@ -122,14 +127,6 @@ export function FeedbackWidget() {
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-50 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-110 transition-transform flex items-center justify-center"
-        title="Feedback e sugestões"
-      >
-        <MessageSquarePlus size={22} />
-      </button>
-
       {open && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/40" onClick={() => setOpen(false)} />
