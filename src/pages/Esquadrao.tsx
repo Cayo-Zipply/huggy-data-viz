@@ -2,7 +2,12 @@ import {
   BarChart3, TrendingUp, Target, XOctagon, Mic, Radar, FileSignature, CalendarX, CalendarDays, FileSearch, Search, Zap,
 } from "lucide-react";
 import { AgentAvatar } from "@/components/agentes/AgentAvatar";
-import { agentColor, FERRAMENTA_LABELS, useAgentChat, useAgentes, useBriefingsHoje } from "@/components/agentes/AgentesContext";
+import { agentColor, FERRAMENTA_LABELS, HABILIDADES, useAgentChat, useAgentes, useBriefingsHoje } from "@/components/agentes/AgentesContext";
+
+const TITULO: Record<string, string> = { marketing: "Inteligência de sinais · Marketing" };
+const DESCRICAO: Record<string, string> = {
+  marketing: "Vigia o sinal das campanhas: saúde da CAPI, eventos de conversão, fadiga de criativo e o ritmo do mês. Avisa antes de o faturamento sentir.",
+};
 import { BriefingSheet, useBriefingPanel } from "@/components/agentes/MissoesHoje";
 
 const ICONS: Record<string, any> = {
@@ -46,14 +51,26 @@ export default function Esquadrao() {
                     <div className="absolute inset-0 bg-gradient-to-t from-[hsl(240_6%_4%)] via-[hsl(240_6%_4%/0.4)] to-transparent" />
                     <div className="absolute bottom-0 left-0 right-0 p-5">
                       <h2 className="font-hud text-6xl md:text-7xl font-bold uppercase leading-none text-foreground drop-shadow-lg">{a.nome}</h2>
-                      {a.titulo && <p className="mt-2 text-xs uppercase tracking-[0.35em]" style={{ color: cor }}>{a.titulo}</p>}
+                      {(TITULO[a.id] ?? a.titulo) && <p className="mt-2 text-xs uppercase tracking-[0.35em]" style={{ color: cor }}>{TITULO[a.id] ?? a.titulo}</p>}
                     </div>
                   </div>
 
                   <div className="p-5 pt-3 flex-1 flex flex-col gap-4">
+                    {DESCRICAO[a.id] && <p className="text-sm text-foreground/85">{DESCRICAO[a.id]}</p>}
                     {a.saudacao && <p className="text-sm italic text-muted-foreground">“{a.saudacao}”</p>}
 
-                    {!!a.ferramentas?.length && (
+                    {HABILIDADES[a.id] ? (
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-2">Habilidades</p>
+                        <ul className="grid grid-cols-1 gap-y-1.5">
+                          {HABILIDADES[a.id].map((h) => (
+                            <li key={h} className="flex items-start gap-2 text-xs text-foreground/85">
+                              <Zap className="h-3.5 w-3.5 shrink-0 mt-px" style={{ color: cor }} strokeWidth={1.5} />{h}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : !!a.ferramentas?.length && (
                       <div>
                         <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mb-2">Habilidades</p>
                         <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">

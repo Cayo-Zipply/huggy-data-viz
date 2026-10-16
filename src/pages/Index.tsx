@@ -20,7 +20,7 @@ import { ConsolidatedPanel } from "@/components/ConsolidatedPanel";
 import { PipelinePanel } from "@/components/PipelinePanel";
 import { HelpPanel } from "@/components/HelpPanel";
 import { FarolPanel } from "@/components/FarolPanel";
-import { MissoesHoje } from "@/components/agentes/MissoesHoje";
+import { MissoesHoje, SinalCampanhasHoje } from "@/components/agentes/MissoesHoje";
 import { SalesPieChart } from "@/components/SalesPieChart";
 import { usePipelineData } from "@/components/pipeline/usePipelineData";
 import { useAuth } from "@/contexts/AuthContext";
@@ -323,6 +323,7 @@ const Index = () => {
 
           {/* Dashboard Tab (Marketing + Comercial unificados) — kept mounted */}
           <div className={activeTab === "marketing" || activeTab === "comercial" ? "" : "hidden"}>
+            <SinalCampanhasHoje />
             <h2 className="text-base sm:text-lg font-semibold text-foreground mb-4">Marketing</h2>
             {/* Metricas principais */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 mb-4 sm:mb-6">

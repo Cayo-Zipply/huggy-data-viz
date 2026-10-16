@@ -79,6 +79,38 @@ export function BriefingSheet({ agente, briefing, onClose }: { agente: Agente; b
   );
 }
 
+/** Card do Echo na área de Marketing (só aparece se o agente vier da consulta — RLS admin). */
+export function SinalCampanhasHoje() {
+  const { data: agentes = [] } = useAgentes();
+  const { data: briefings = [] } = useBriefingsHoje();
+  const echo = agentes.find((a) => a.id === "marketing");
+  if (!echo) return null;
+  const b = briefings.find((x) => x.agente_id === "marketing");
+  const itens = b?.itens ?? [];
+  return (
+    <div className="mb-4 rounded-lg border border-border bg-card/50 p-4" style={{ borderLeft: "3px solid #F59E0B" }}>
+      <div className="flex items-center gap-3 mb-2">
+        <AgentAvatar agente={echo} className="h-8 w-8 rounded-full" imgClassName="object-[center_25%]" />
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Echo · Sinal das campanhas hoje</p>
+          <p className="text-sm font-semibold">{b ? b.titulo : "Sem briefing hoje"}</p>
+        </div>
+      </div>
+      {b?.resumo && <p className="text-sm text-foreground/90 whitespace-pre-wrap mb-3">{b.resumo}</p>}
+      {!!itens.length && (
+        <div className="space-y-2">
+          {PRIO.flatMap((p) => itens.filter((i) => i.prioridade === p.key).map((it, i) => (
+            <div key={`${p.key}-${i}`} className={cn("rounded-md border-l-2 border px-3 py-2", p.cls)}>
+              <p className="flex items-start gap-2 text-sm"><span className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", p.dot)} />{it.texto}</p>
+              {it.tratativa && <p className="mt-1 pl-4 text-xs text-foreground/80 whitespace-pre-wrap">{it.tratativa}</p>}
+            </div>
+          )))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function MissoesHoje() {
   const { data: agentes = [] } = useAgentes();
   const { data: briefings = [] } = useBriefingsHoje();

@@ -60,6 +60,28 @@ export const SUGESTOES: Record<string, string[]> = {
     "Tenho no-show para remarcar?",
     "Estou melhor ou pior que mês passado?",
   ],
+  marketing: [
+    "Como está o marketing hoje?",
+    "A CAPI está ok agora?",
+    "Qual criativo está trazendo venda de verdade este mês?",
+    "Tem fadiga de criativo? O que eu faço?",
+  ],
+};
+
+/** Habilidades exibidas no card quando definidas aqui (sobrepõem agentes.ferramentas). */
+export const HABILIDADES: Record<string, string[]> = {
+  marketing: [
+    "Radar da CAPI: webhook e eventos 3x por dia",
+    "Detector de fadiga: custo/conversa, conversas/dia, CPM e frequência",
+    "Funil por criativo: qual anúncio vira contrato de verdade",
+    "Pace do mês: faturamento e reuniões vs meta",
+  ],
+};
+
+export const SUBTITULO: Record<string, string> = {
+  black_ops: "Analista de dados e vendas",
+  pipeline: "Operador de pipeline",
+  marketing: "Inteligência de marketing",
 };
 
 export function hojeEmSaoPaulo() {
@@ -125,8 +147,8 @@ export function AgentesProvider({ children }: { children: ReactNode }) {
     setState({ id, msg, nonce: Date.now() });
     setOpen(true);
   }, []);
-  const fallback = (id: string): Agente => ({ id, nome: id === "pipeline" ? "Ghost" : "Atlas" });
-  const lista = (["black_ops", "pipeline"] as const).map((id) => agentes.find((a) => a.id === id) ?? fallback(id));
+  const fallback = (id: string): Agente => ({ id, nome: id === "pipeline" ? "Ghost" : id === "marketing" ? "Echo" : "Atlas" });
+  const lista = agentes.length ? agentes : (["black_ops", "pipeline"] as const).map(fallback);
   const agente = state ? agentes.find((a) => a.id === state.id) ?? fallback(state.id) : null;
   const setChat = useCallback((id: string, fn: (c: ChatState) => ChatState) =>
     setChats((all) => ({ ...all, [id]: fn(all[id] ?? EMPTY_CHAT) })), []);

@@ -7,12 +7,12 @@ function iniciais(nome: string) {
 }
 
 /** Retrato do agente: avatar_url → /avatars/{id}.png → iniciais sobre a cor. */
-export function AgentAvatar({ agente, className, imgClassName }: { agente: Agente; className?: string; imgClassName?: string }) {
+export function AgentAvatar({ agente, className, imgClassName, style }: { agente: Agente; className?: string; imgClassName?: string; style?: React.CSSProperties }) {
   const sources = [agente.avatar_url, `/avatars/${agente.id}.png`].filter(Boolean) as string[];
   const [idx, setIdx] = useState(0);
   const src = sources[idx];
   return (
-    <div className={cn("relative overflow-hidden", className)} style={{ backgroundColor: agentColor(agente) }}>
+    <div className={cn("relative overflow-hidden", className)} style={{ backgroundColor: agentColor(agente), ...style }}>
       {src ? (
         <img src={src} alt={agente.nome} className={cn("h-full w-full object-cover", imgClassName)} onError={() => setIdx((i) => i + 1)} />
       ) : (
