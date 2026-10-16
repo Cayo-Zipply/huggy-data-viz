@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabaseExt as supabase } from "@/lib/supabaseExternal";
 import { useToast } from "@/hooks/use-toast";
 import { buildCanonicalizer } from "@/lib/ownerNormalization";
+import { MesSelect } from "@/components/MesSelect";
 
 // Status de contrato considerados como "fechado" para meta de contratos
 const CONTRATO_FECHADO_STATUS = new Set(["assinado"]);
@@ -760,17 +761,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
               </button>
             )}
           </div>
-          <select
-            value={selectedMonth.toISOString()}
-            onChange={e => setSelectedMonth(new Date(e.target.value))}
-            className="text-xs border border-border rounded-lg px-2 py-1.5 bg-background text-foreground"
-          >
-            {months.map(m => (
-              <option key={m.toISOString()} value={m.toISOString()}>
-                {m.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}
-              </option>
-            ))}
-          </select>
+          <MesSelect value={selectedMonth} months={months} onChange={setSelectedMonth} />
           <select
             value={weekFilter}
             onChange={e => setWeekFilter(e.target.value)}
