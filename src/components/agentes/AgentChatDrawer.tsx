@@ -21,14 +21,44 @@ interface Msg {
 }
 
 const MAX = 2000;
+const DOZE_HORAS = 12 * 60 * 60 * 1000;
 
-export function AgentChatDrawer({ agente, open, onClose, initialMessage, nonce }: { agente: Agente; open: boolean; onClose: () => void; initialMessage?: string; nonce: number }) {
+const nomeFerramenta = (f: any) => (typeof f === "string" ? f : f?.nome ?? "");
+
+async function carregarConversa(db: any, id: string): Promise<Msg[]> {
+  const [{ data }, { data: acoes }] = await Promise.all([
+    db.from("agente_mensagens").select("id, role, conteudo, ferramentas_usadas, created_at").eq("conversa_id", id).order("created_at", { ascending: true }),
+    db.from("agente_acoes").select("id, lead_id, texto, motivo, status, enviado_em").eq("conversa_id", id).order("created_at"),
+  ]);
+  let rasc = (acoes ?? []) as Rascunho[];
+  const ids = [...new Set(rasc.map((a) => a.lead_id).filter(Boolean))];
+  if (ids.length) {
+    const { data: ls } = await db.from("leads").select("id, nome").in("id", ids);
+    const map = new Map(((ls ?? []) as any[]).map((l) => [l.id, l.nome]));
+    rasc = rasc.map((a) => ({ ...a, empresa: map.get(a.lead_id) ?? null }));
+  }
+  const lista = ((data ?? []) as any[])
+    .filter((m) => m.role === "user" || m.role === "assistant")
+    .map((m) => ({ role: m.role, conteudo: m.conteudo ?? "", ferramentas_usadas: (m.ferramentas_usadas ?? []).map(nomeFerramenta).filter(Boolean) })) as Msg[];
+  if (rasc.length) {
+    let last = -1;
+    lista.forEach((m, i) => { if (m.role === "assistant") last = i; });
+    if (last >= 0) lista[last] = { ...lista[last], rascunhos: rasc };
+    else lista.push({ role: "assistant", conteudo: "", rascunhos: rasc });
+  }
+  return lista;
+}
+
+export function AgentChatDrawer({ agente, open, onClose, initialMessage, nonce, chat, setChat }: { agente: Agente; open: boolean; onClose: () => void; initialMessage?: string; nonce: number; chat: ChatState; setChat: (fn: (c: ChatState) => ChatState) => void }) {
   const db = supabase as any;
   const qc = useQueryClient();
-  const [conversaId, setConversaId] = useState<string | null>(null);
-  const [msgs, setMsgs] = useState<Msg[]>([]);
+  const conversaId = chat.conversaId;
+  const msgs = chat.msgs as Msg[];
+  const setConversaId = (id: string | null) => setChat((c) => ({ ...c, conversaId: id }));
+  const setMsgs = (v: Msg[] | ((m: Msg[]) => Msg[])) => setChat((c) => ({ ...c, msgs: typeof v === "function" ? v(c.msgs as Msg[]) : v }));
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [carregando, setCarregando] = useState(false);
   const [showHist, setShowHist] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
@@ -49,6 +79,25 @@ export function AgentChatDrawer({ agente, open, onClose, initialMessage, nonce }
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, loading]);
   useEffect(() => { if (!loading) taRef.current?.focus(); }, [loading, open]);
 
+  // Carrega a conversa mais recente na primeira abertura (sem mensagem inicial)
+  useEffect(() => {
+    if (chat.loaded || initialMessage) return;
+    setChat((c) => ({ ...c, loaded: true }));
+    (async () => {
+      setCarregando(true);
+      try {
+        const { data: conv } = await db.from("agente_conversas").select("id, titulo, updated_at").eq("agente_id", agente.id).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+        if (conv && Date.now() - new Date(conv.updated_at).getTime() <= DOZE_HORAS) {
+          const lista = await carregarConversa(db, conv.id);
+          setChat((c) => (c.conversaId || c.msgs.length ? c : { ...c, conversaId: conv.id, msgs: lista }));
+        }
+      } finally {
+        setCarregando(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const send = async (text: string) => {
     const mensagem = text.trim().slice(0, MAX);
     if (!mensagem || loading) return;
@@ -68,15 +117,14 @@ export function AgentChatDrawer({ agente, open, onClose, initialMessage, nonce }
       return;
     }
     if (data?.conversa_id) setConversaId(data.conversa_id);
-    setMsgs((m) => [...m, { role: "assistant", conteudo: data?.resposta ?? "", ferramentas_usadas: data?.ferramentas_usadas ?? [], rascunhos: Array.isArray(data?.rascunhos) ? data.rascunhos : [] }]);
+    setMsgs((m) => [...m, { role: "assistant", conteudo: data?.resposta ?? "", ferramentas_usadas: (data?.ferramentas_usadas ?? []).map(nomeFerramenta).filter(Boolean), rascunhos: Array.isArray(data?.rascunhos) ? data.rascunhos : [] }]);
     qc.invalidateQueries({ queryKey: ["agente-conversas", agente.id] });
   };
 
   useEffect(() => {
     if (initialMessage && sentNonce.current !== nonce) {
       sentNonce.current = nonce;
-      setConversaId(null);
-      setMsgs([]);
+      setChat((c) => ({ ...c, conversaId: null, msgs: [], loaded: true }));
       void send(initialMessage);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -84,29 +132,13 @@ export function AgentChatDrawer({ agente, open, onClose, initialMessage, nonce }
 
   const abrirConversa = async (id: string) => {
     setShowHist(false);
-    setLoading(true);
-    const { data } = await db.from("agente_mensagens").select("role, conteudo, ferramentas_usadas, created_at").eq("conversa_id", id).order("created_at");
-    const { data: acoes } = await db.from("agente_acoes").select("id, lead_id, texto, motivo, status, enviado_em").eq("conversa_id", id).order("created_at");
-    let rasc = (acoes ?? []) as Rascunho[];
-    const ids = [...new Set(rasc.map((a) => a.lead_id).filter(Boolean))];
-    if (ids.length) {
-      const { data: ls } = await db.from("leads").select("id, nome").in("id", ids);
-      const map = new Map(((ls ?? []) as any[]).map((l) => [l.id, l.nome]));
-      rasc = rasc.map((a) => ({ ...a, empresa: map.get(a.lead_id) ?? null }));
-    }
-    setLoading(false);
-    setConversaId(id);
-    const lista = ((data ?? []) as Msg[]).filter((m) => m.role === "user" || m.role === "assistant");
-    if (rasc.length) {
-      let last = -1;
-      lista.forEach((m, i) => { if (m.role === "assistant") last = i; });
-      if (last >= 0) lista[last] = { ...lista[last], rascunhos: rasc };
-      else lista.push({ role: "assistant", conteudo: "", rascunhos: rasc });
-    }
-    setMsgs(lista);
+    setCarregando(true);
+    const lista = await carregarConversa(db, id);
+    setCarregando(false);
+    setChat((c) => ({ ...c, conversaId: id, msgs: lista }));
   };
 
-  const nova = () => { setConversaId(null); setMsgs([]); setShowHist(false); };
+  const nova = () => { setChat((c) => ({ ...c, conversaId: null, msgs: [] })); setShowHist(false); };
 
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
