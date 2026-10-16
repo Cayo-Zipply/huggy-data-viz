@@ -16,7 +16,7 @@ import { supabaseExt as supabase } from "@/lib/supabaseExternal";
 import { useToast } from "@/hooks/use-toast";
 import { buildCanonicalizer } from "@/lib/ownerNormalization";
 import { MesSelect } from "@/components/MesSelect";
-import { TeamCard, RitmoRow, FarolLegend, fmtBRL0, type FarolMode } from "@/components/FarolRitmo";
+import { TeamCard, RitmoRow, ReguaMes, GargaloBanner, EficienciaCard, FarolLegend, fmtBRL0, type FarolMode } from "@/components/FarolRitmo";
 
 // Status de contrato considerados como "fechado" para meta de contratos
 const CONTRATO_FECHADO_STATUS = new Set(["assinado"]);
@@ -860,10 +860,35 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
         const pct1 = (v: number) => `${v.toFixed(1).replace(".", ",")}%`;
         return (
           <section className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {mode !== "week" && <ReguaMes passedBD={passedBD} totalBD={totalBD} fatorPace={mode === "past" ? 1 : fatorPace} />}
+            {mode === "current" && (() => {
+              const restantes = Math.max(0, totalBD - passedBD);
+              const fmtD = (v: number) => v.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+              const cands = [
+                { titulo: "faturamento", unidade: "", real: inboundTotal.realizado, meta: inboundTotal.meta, proj: inboundTotal.projecao, brl: true },
+                { titulo: "contratos", unidade: "contratos", real: inboundTotal.contratos, meta: metaContratosTime, proj: projOf(inboundTotal.contratos), brl: false },
+                { titulo: "reuniões realizadas", unidade: "reuniões", real: preVendasTotal.rr, meta: preVendasTotal.metaRR, proj: projOf(preVendasTotal.rr), brl: false },
+              ].filter(c => c.meta > 0).map(c => ({ ...c, pct: (c.proj / c.meta) * 100 }));
+              if (!cands.length) return null;
+              const g = cands.reduce((a, b) => (b.pct < a.pct ? b : a));
+              if (g.pct >= 100) return null;
+              const falta = Math.max(0, g.meta - g.real);
+              const f = (v: number) => (g.brl ? fmtBRL0(v) : fmtD(v));
+              const porDia = restantes > 0 ? falta / restantes : falta;
+              const ritmo = passedBD > 0 ? g.real / passedBD : 0;
+              const texto = `Faltam ${g.brl ? fmtBRL0(falta) : `${Math.round(falta)} ${g.unidade}`} em ${restantes} dias úteis — precisa de ${f(porDia)}/dia. Ritmo atual: ${f(ritmo)}/dia.`;
+              return <GargaloBanner titulo={g.titulo} texto={texto} pctProj={g.pct} />;
+            })()}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
               <TeamCard title="Faturamento" subtitle={subtitle} showLabel info={{ ...base, realizado: inboundTotal.realizado, meta: inboundTotal.meta, projecao: inboundTotal.projecao, fmt: fmtBRL0 }} />
               <TeamCard title="Contratos" subtitle={subtitle} info={{ ...base, realizado: inboundTotal.contratos, meta: metaContratosTime, projecao: projOf(inboundTotal.contratos), fmt: (v) => String(Math.round(v)) }} />
               <TeamCard title="Reuniões realizadas" subtitle={subtitle} info={{ ...base, realizado: preVendasTotal.rr, meta: preVendasTotal.metaRR, projecao: projOf(preVendasTotal.rr), fmt: (v) => String(Math.round(v)) }} />
+              <EficienciaCard
+                conv={inboundTotal.contratos && inboundData.reduce((s, d) => s + d.rr, 0) > 0 ? (inboundTotal.contratos / inboundData.reduce((s, d) => s + d.rr, 0)) * 100 : 0}
+                metaConv={globais.conversao.esperada}
+                ticket={inboundTotal.ticket}
+                metaTicket={metaContratosTime > 0 ? inboundTotal.meta / metaContratosTime : 0}
+              />
             </div>
 
             <div className="space-y-3">
