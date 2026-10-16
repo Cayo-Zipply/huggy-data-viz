@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabaseExternal";
 import { cn } from "@/lib/utils";
 import { AgentAvatar } from "./AgentAvatar";
 import { RascunhoCard, type Rascunho } from "./RascunhoCard";
-import { agentColor, FERRAMENTA_LABELS, SUBTITULO, SUGESTOES, type Agente, type ChatState } from "./AgentesContext";
+import { agentColor, FERRAMENTA_LABELS, ferramentaLabel, SUBTITULO, SUGESTOES, type Agente, type ChatState } from "./AgentesContext";
 
 interface Msg {
   role: "user" | "assistant";
@@ -196,7 +196,7 @@ export function AgentChatDrawer({ agente, agentes, onSwitch, open, onClose, init
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.conteudo}</ReactMarkdown>
                 </div>
                 {!!m.ferramentas_usadas?.length && (
-                  <p className="text-[11px] text-muted-foreground">Consultou: {m.ferramentas_usadas.map((f) => FERRAMENTA_LABELS[f] ?? f).join(", ")}</p>
+                  <p className="text-[11px] text-muted-foreground">Consultou: {m.ferramentas_usadas.map((f) => ferramentaLabel(f)).join(", ")}</p>
                 )}
                 {m.rascunhos?.map((r) => <RascunhoCard key={r.id} r={r} />)}
               </div>
