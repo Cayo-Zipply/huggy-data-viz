@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabaseExternal";
 import { cn } from "@/lib/utils";
 import { AgentAvatar } from "./AgentAvatar";
+import { RascunhoCard, type Rascunho } from "./RascunhoCard";
 import { agentColor, FERRAMENTA_LABELS, SUGESTOES, type Agente } from "./AgentesContext";
 
 interface Msg {
@@ -16,6 +17,7 @@ interface Msg {
   conteudo: string;
   ferramentas_usadas?: string[] | null;
   erro?: boolean;
+  rascunhos?: Rascunho[];
 }
 
 const MAX = 2000;
@@ -66,7 +68,7 @@ export function AgentChatDrawer({ agente, open, onClose, initialMessage, nonce }
       return;
     }
     if (data?.conversa_id) setConversaId(data.conversa_id);
-    setMsgs((m) => [...m, { role: "assistant", conteudo: data?.resposta ?? "", ferramentas_usadas: data?.ferramentas_usadas ?? [] }]);
+    setMsgs((m) => [...m, { role: "assistant", conteudo: data?.resposta ?? "", ferramentas_usadas: data?.ferramentas_usadas ?? [], rascunhos: Array.isArray(data?.rascunhos) ? data.rascunhos : [] }]);
     qc.invalidateQueries({ queryKey: ["agente-conversas", agente.id] });
   };
 
@@ -84,9 +86,24 @@ export function AgentChatDrawer({ agente, open, onClose, initialMessage, nonce }
     setShowHist(false);
     setLoading(true);
     const { data } = await db.from("agente_mensagens").select("role, conteudo, ferramentas_usadas, created_at").eq("conversa_id", id).order("created_at");
+    const { data: acoes } = await db.from("agente_acoes").select("id, lead_id, texto, motivo, status, enviado_em").eq("conversa_id", id).order("created_at");
+    let rasc = (acoes ?? []) as Rascunho[];
+    const ids = [...new Set(rasc.map((a) => a.lead_id).filter(Boolean))];
+    if (ids.length) {
+      const { data: ls } = await db.from("leads").select("id, nome").in("id", ids);
+      const map = new Map(((ls ?? []) as any[]).map((l) => [l.id, l.nome]));
+      rasc = rasc.map((a) => ({ ...a, empresa: map.get(a.lead_id) ?? null }));
+    }
     setLoading(false);
     setConversaId(id);
-    setMsgs(((data ?? []) as Msg[]).filter((m) => m.role === "user" || m.role === "assistant"));
+    const lista = ((data ?? []) as Msg[]).filter((m) => m.role === "user" || m.role === "assistant");
+    if (rasc.length) {
+      let last = -1;
+      lista.forEach((m, i) => { if (m.role === "assistant") last = i; });
+      if (last >= 0) lista[last] = { ...lista[last], rascunhos: rasc };
+      else lista.push({ role: "assistant", conteudo: "", rascunhos: rasc });
+    }
+    setMsgs(lista);
   };
 
   const nova = () => { setConversaId(null); setMsgs([]); setShowHist(false); };
@@ -140,6 +157,7 @@ export function AgentChatDrawer({ agente, open, onClose, initialMessage, nonce }
                 {!!m.ferramentas_usadas?.length && (
                   <p className="text-[11px] text-muted-foreground">Consultou: {m.ferramentas_usadas.map((f) => FERRAMENTA_LABELS[f] ?? f).join(", ")}</p>
                 )}
+                {m.rascunhos?.map((r) => <RascunhoCard key={r.id} r={r} />)}
               </div>
             ))}
             {loading && (
