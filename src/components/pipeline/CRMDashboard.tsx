@@ -1,4 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { supabaseExt as supabase } from "@/lib/supabaseExternal";
+import { buildCanonicalizer } from "@/lib/ownerNormalization";
+import { MesSelect, currentMonthSP } from "@/components/MesSelect";
 import { cn } from "@/lib/utils";
 import { Users, Trophy, XCircle, TrendingUp, DollarSign, Clock, Target, ChevronDown, Tag, Calendar, Briefcase } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend, LabelList } from "recharts";
@@ -80,11 +83,14 @@ function filterGanhosByMonth(cards: PipelineCard[], date: Date): PipelineCard[] 
   const { start, end } = getMonthRange(date);
   return cards.filter(c => {
     if (c.lead_status !== "ganho") return false;
-    const ref = c.data_venda || c.stage_changed_at;
-    const d = new Date(ref);
+    if (!c.data_venda) return false;
+    const d = new Date(c.data_venda.length === 10 ? `${c.data_venda}T12:00:00` : c.data_venda);
     return d >= start && d <= end;
   });
 }
+
+const SYSTEM_USERS = new Set(["ia kommo", "contato pqa", "sdr", "sem responsavel", "sem dono"]);
+const normName = (s: string) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 
 function TagConversion({ cards, labels, getCardLabels }: { cards: PipelineCard[]; labels: any[]; getCardLabels: (id: string) => any[] }) {
   const data = useMemo(() => {
@@ -171,12 +177,50 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
   const vis = showAll ? cards : cards.filter(c => c.owner === activeUser);
   const { labels, getCardLabels } = useLabels();
 
-  const now = new Date();
-  const [currentMonth, setCurrentMonth] = useState<Date>(() => new Date(now.getFullYear(), now.getMonth(), 1));
-  const [compareMonth, setCompareMonth] = useState(() => {
-    const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    return d;
-  });
+  const nowMonth = useMemo(() => currentMonthSP(), []);
+  const [currentMonth, setCurrentMonth] = useState<Date>(nowMonth);
+  const [compareMonth, setCompareMonth] = useState(() => new Date(nowMonth.getFullYear(), nowMonth.getMonth() - 1, 1));
+  useEffect(() => {
+    setCompareMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  }, [currentMonth]);
+  const mesKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}`;
+
+  // Fonte oficial (mesma do Farol): RPC farol_metricas_time
+  const [rpcRows, setRpcRows] = useState<any[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await (supabase as any).rpc("farol_metricas_time", { p_mes: mesKey });
+      if (cancelled) return;
+      if (error) { console.error("[Dashboard] farol_metricas_time:", error); setRpcRows([]); return; }
+      setRpcRows(Array.isArray(data) ? data : []);
+    })();
+    return () => { cancelled = true; };
+  }, [mesKey]);
+
+  const canonical = useMemo(() => {
+    const all: string[] = [];
+    rpcRows.forEach(r => r.closer && all.push(String(r.closer)));
+    cards.forEach(c => c.owner && all.push(c.owner));
+    return buildCanonicalizer(all);
+  }, [rpcRows, cards]);
+
+  const closerStats = useMemo(() => {
+    const map = new Map<string, { reunioes: number; contratos: number; faturamento: number; meta: number }>();
+    rpcRows.forEach(r => {
+      const name = canonical(String(r.closer || ""));
+      if (!name || SYSTEM_USERS.has(normName(name))) return;
+      const cur = map.get(name) || { reunioes: 0, contratos: 0, faturamento: 0, meta: 0 };
+      cur.reunioes += Number(r.reunioes_realizadas || 0);
+      cur.contratos += Number(r.contratos || 0);
+      cur.faturamento += Number(r.faturamento || 0);
+      cur.meta += Number(r.meta_faturamento || 0) + Number(r.meta_contratos || 0) + Number(r.meta_reunioes || 0);
+      map.set(name, cur);
+    });
+    for (const [k, v] of map) if (!v.reunioes && !v.contratos && !v.faturamento && !v.meta) map.delete(k);
+    return map;
+  }, [rpcRows, canonical]);
+  const sellersMes = useMemo(() => Array.from(closerStats.keys()).sort((a, b) => a.localeCompare(b, "pt-BR")), [closerStats]);
 
   const currentCards = useMemo(() => filterByMonth(vis, currentMonth), [vis, currentMonth]);
   const prevCards = useMemo(() => filterByMonth(vis, compareMonth), [vis, compareMonth]);
@@ -187,11 +231,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
     return vis.filter(c => {
       const created = new Date(c.created_at);
       if (created >= start && created <= end) return true;
-      if (c.lead_status === "ganho") {
-        const ref = c.data_venda || c.stage_changed_at;
-        const d = new Date(ref);
-        if (d >= start && d <= end) return true;
-      }
+      if (c.lead_status === "ganho" && filterGanhosByMonth([c], currentMonth).length) return true;
       if (c.lead_status === "perdido") {
         const ref = (c as any).data_perda || c.stage_changed_at;
         const d = new Date(ref);
@@ -231,20 +271,11 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
     return Math.round(avg * 10) / 10;
   }, [ganhos]);
 
-  // Reuniões REALIZADAS no mês — FONTE ÚNICA (alinhada com Farol e Marketing):
-  // card com etapa atual em reuniao_realizada / link_enviado / contrato_assinado
-  // E data_ultima_mudanca_etapa (stage_changed_at) dentro do mês.
-  const REUNIAO_REALIZADA_STAGES = new Set(["reuniao_realizada", "link_enviado", "contrato_assinado"]);
+  // Reuniões REALIZADAS no mês — regra oficial do Farol (RPC farol_metricas_time)
   const reunioesRealizadasMes = useMemo(() => {
-    const { start, end } = getMonthRange(currentMonth);
-    return vis.filter(c => {
-      if (!REUNIAO_REALIZADA_STAGES.has(c.stage as string)) return false;
-      const ref = c.stage_changed_at;
-      if (!ref) return false;
-      const d = new Date(ref);
-      return d >= start && d <= end;
-    }).length;
-  }, [vis, currentMonth]);
+    if (showAll) return Array.from(closerStats.values()).reduce((s, v) => s + v.reunioes, 0);
+    return closerStats.get(canonical(activeUser))?.reunioes ?? 0;
+  }, [closerStats, showAll, activeUser, canonical]);
 
   const lossData = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -300,37 +331,36 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
 
   // Seller comparison (HubSpot-style)
   const sellerData = useMemo(() => {
-    const sellers = owners.filter(o => o && o !== "SDR");
+    const sellers = sellersMes;
     if (sellers.length === 0) return { leads: [], ganhos: [], faturamento: [], conversao: [], sellers };
 
     const leads = sellers.map(s => ({
       name: s,
-      value: visMes.filter(c => c.owner === s).length,
+      value: visMes.filter(c => canonical(c.owner) === s).length,
     }));
     const ganhosArr = sellers.map(s => ({
       name: s,
-      value: ganhos.filter(c => c.owner === s).length,
+      value: ganhos.filter(c => canonical(c.owner) === s).length,
     }));
     const fatArr = sellers.map(s => ({
       name: s,
-      value: ganhos.filter(c => c.owner === s).reduce((sum, c) => sum + (c.deal_value || 0), 0),
+      value: ganhos.filter(c => canonical(c.owner) === s).reduce((sum, c) => sum + (c.deal_value || 0), 0),
     }));
     const convArr = sellers.map(s => {
-      const g = ganhos.filter(c => c.owner === s).length;
-      const p = perdidos.filter(c => c.owner === s).length;
+      const g = ganhos.filter(c => canonical(c.owner) === s).length;
+      const p = perdidos.filter(c => canonical(c.owner) === s).length;
       const base = g + p;
       return { name: s, value: base > 0 ? Math.round((g / base) * 100) : 0 };
     });
 
     return { leads, ganhos: ganhosArr, faturamento: fatArr, conversao: convArr, sellers };
-  }, [visMes, ganhos, perdidos, owners]);
+  }, [visMes, ganhos, perdidos, sellersMes, canonical]);
 
   // Available months selector: mês atual + 23 meses anteriores
   const availableMonths = useMemo(() => {
     const months: Date[] = [];
     for (let i = 0; i <= 23; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push(d);
+      months.push(new Date(nowMonth.getFullYear(), nowMonth.getMonth() - i, 1));
     }
     return months;
   }, []);
@@ -348,15 +378,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
         <label className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground self-start sm:self-auto">
           <Calendar size={14} className="text-primary" />
           <span>Mês:</span>
-          <select
-            value={currentMonthKey}
-            onChange={e => setCurrentMonth(new Date(e.target.value))}
-            className="bg-transparent text-foreground outline-none capitalize"
-          >
-            {availableMonths.map(m => (
-              <option key={m.toISOString()} value={m.toISOString()}>{getMonthLabel(m)}</option>
-            ))}
-          </select>
+          <MesSelect value={currentMonth} months={availableMonths} onChange={setCurrentMonth} className="bg-transparent text-foreground outline-none capitalize" />
         </label>
       </div>
 
@@ -369,14 +391,14 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
         <MetricBox label="Perdidos" value={perdidos.length.toString()} sub={`${taxaPerda}% de perda`} />
         <MetricBox label="Conversão" value={`${taxaConv}%`} />
         <MetricBox label="Ciclo de Venda" value={cicloVenda != null ? `${cicloVenda} dias` : "—"} sub="criação → fechamento" />
-        <MetricBox label="Reuniões Realizadas" value={reunioesRealizadasMes.toString()} sub="etapa ≥ Reunião Realizada no mês" />
+        <MetricBox label="Reuniões Realizadas" value={reunioesRealizadasMes.toString()} sub="regra oficial do Farol" />
       </div>
 
 
       {/* Month comparison */}
       <div className="bg-card border border-border rounded-xl p-4">
         <div className="flex items-center justify-between mb-4">
-          <h4 className="text-sm font-semibold text-foreground">Comparação Mensal</h4>
+          <div><h4 className="text-sm font-semibold text-foreground">Comparação Mensal</h4><p className="text-xs text-muted-foreground mt-0.5 capitalize">{curLabel}</p></div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Comparar com:</span>
             <select
@@ -436,7 +458,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
       {/* Seller comparison - HubSpot style */}
       {showAll && sellerData.sellers.length > 0 && (
         <div className="bg-card border border-border rounded-xl p-4">
-          <h4 className="text-sm font-semibold text-foreground mb-4">Comparação por Vendedor</h4>
+          <h4 className="text-sm font-semibold text-foreground mb-4">Comparação por Vendedor <span className="text-xs font-normal text-muted-foreground capitalize">· {curLabel}</span></h4>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Leads by seller - horizontal bars */}
             <div>
@@ -507,15 +529,15 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
 
       {/* Weekend conversion card */}
       <div className="bg-card border border-border rounded-xl p-4">
-        <h4 className="text-sm font-semibold text-foreground mb-3">Conversão: Dia útil vs. Fim de semana</h4>
+        <h4 className="text-sm font-semibold text-foreground mb-3">Conversão: Dia útil vs. Fim de semana <span className="text-xs font-normal text-muted-foreground capitalize">· {curLabel}</span></h4>
         <WeekendConversionCard cards={visMes} />
       </div>
 
       {/* CPF vs CNPJ metrics */}
-      <MetricasTipoDocumentoCard />
+      <MetricasTipoDocumentoCard mes={mesKey} mesLabel={curLabel} />
 
       {/* Fechamentos por faixa de dívida */}
-      <FechamentosPorFaixaDivida />
+      <FechamentosPorFaixaDivida mes={mesKey} mesLabel={curLabel} />
 
       {/* Ligações por vendedor */}
       <CallStatsChart
@@ -527,7 +549,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {lossData.length > 0 && (
           <div className="bg-card border border-border rounded-xl p-4">
-            <h4 className="text-sm font-semibold text-foreground mb-3">Motivos de Perda</h4>
+            <h4 className="text-sm font-semibold text-foreground mb-3">Motivos de Perda <span className="text-xs font-normal text-muted-foreground capitalize">· {curLabel}</span></h4>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={lossData} layout="vertical" margin={{ left: 80, right: 40 }}>
                 <XAxis type="number" tick={{ fill: "hsl(215,20%,55%)", fontSize: 10 }} />
@@ -543,7 +565,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
         )}
 
         <div className="bg-card border border-border rounded-xl p-4">
-          <h4 className="text-sm font-semibold text-foreground mb-3">Tempo Médio por Etapa (dias)</h4>
+          <h4 className="text-sm font-semibold text-foreground mb-3">Tempo Médio por Etapa (dias) <span className="text-xs font-normal text-muted-foreground capitalize">· {curLabel}</span></h4>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={timeData} margin={{ left: 10, right: 10, top: 20 }}>
               <XAxis dataKey="name" tick={{ fill: "hsl(215,20%,55%)", fontSize: 9 }} angle={-20} textAnchor="end" height={50} />
@@ -560,7 +582,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
 
       {/* Funnel */}
       <div className="bg-card border border-border rounded-xl p-4">
-        <h4 className="text-sm font-semibold text-foreground mb-4">Funil de Conversão por Etapa</h4>
+        <h4 className="text-sm font-semibold text-foreground mb-4">Funil de Conversão por Etapa <span className="text-xs font-normal text-muted-foreground capitalize">· {curLabel}</span></h4>
         <div className="space-y-2">
         {funnelData.map((d, i) => {
             const pct = maxFunnel > 0 ? (d.count / maxFunnel) * 100 : 0;
@@ -590,20 +612,23 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
 
       {showAll && (
         <div className="space-y-3">
-          <h4 className="text-sm font-medium text-foreground">Por Closer</h4>
-          {owners.map(closer => {
-            const cc = cards.filter(c => c.owner === closer);
+          <h4 className="text-sm font-medium text-foreground">Por Closer <span className="text-xs font-normal text-muted-foreground capitalize">· {curLabel}</span></h4>
+          {sellersMes.map(closer => {
+            const cc = visMes.filter(c => canonical(c.owner) === closer);
             const a = cc.filter(c => c.lead_status === "aberto").length;
-            const g = cc.filter(c => c.lead_status === "ganho");
+            const g = ganhos.filter(c => canonical(c.owner) === closer);
+            const pd = perdidos.filter(c => canonical(c.owner) === closer).length;
             const vf = g.reduce((s, c) => s + (c.deal_value || 0), 0);
+            const rr = closerStats.get(closer)?.reunioes ?? 0;
             return (
               <div key={closer} className="bg-card/50 border border-border rounded-xl p-4">
                 <h5 className="text-sm font-semibold text-foreground mb-2">{closer}</h5>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  <div><p className="text-[10px] text-muted-foreground">Reuniões Realizadas</p><p className="text-lg font-bold">{rr}</p></div>
                   <div><p className="text-[10px] text-muted-foreground">Ativos</p><p className="text-lg font-bold">{a}</p></div>
                   <div><p className="text-[10px] text-muted-foreground">Ganhos</p><p className="text-lg font-bold text-green-400">{g.length}</p></div>
                   <div><p className="text-[10px] text-muted-foreground">Valor Fechado</p><p className="text-lg font-bold text-emerald-400">{formatBRL(vf)}</p></div>
-                  <div><p className="text-[10px] text-muted-foreground">Conversão</p><p className="text-lg font-bold">{cc.length ? ((g.length / cc.length) * 100).toFixed(1) : 0}%</p></div>
+                  <div><p className="text-[10px] text-muted-foreground">Conversão</p><p className="text-lg font-bold">{(g.length + pd) ? ((g.length / (g.length + pd)) * 100).toFixed(1) : 0}%</p></div>
                 </div>
               </div>
             );

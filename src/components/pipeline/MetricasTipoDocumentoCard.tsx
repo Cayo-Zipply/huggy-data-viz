@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { sbExt } from "@/lib/supabaseExternal";
 import { formatBRL } from "./types";
 
@@ -14,18 +14,6 @@ interface MetricaDoc {
 }
 
 const db = sbExt as any;
-
-function getMonthOptions(): { value: string; label: string }[] {
-  const opts = [{ value: "all", label: "Panorama geral" }];
-  const now = new Date();
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const label = d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
-    opts.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
-  }
-  return opts;
-}
 
 function aggregate(rows: any[]): MetricaDoc[] {
   const buckets: Record<string, MetricaDoc> = {
@@ -63,22 +51,15 @@ function aggregate(rows: any[]): MetricaDoc[] {
   return Object.values(buckets);
 }
 
-export function MetricasTipoDocumentoCard() {
-  const [mes, setMes] = useState<string>("all");
+export function MetricasTipoDocumentoCard({ mes, mesLabel }: { mes: string; mesLabel: string }) {
   const [metricas, setMetricas] = useState<MetricaDoc[]>([]);
   const [loading, setLoading] = useState(true);
-  const monthOptions = useMemo(() => getMonthOptions(), []);
 
   useEffect(() => {
     let mounted = true;
     setLoading(true);
     (async () => {
-      if (mes === "all") {
-        const { data, error } = await db.from("vw_metricas_tipo_documento").select("*");
-        if (!mounted) return;
-        if (error) console.error("Erro métricas tipo_documento:", error);
-        else setMetricas(data || []);
-      } else {
+      {
         const [y, m] = mes.split("-").map(Number);
         const start = new Date(Date.UTC(y, m - 1, 1)).toISOString();
         const end = new Date(Date.UTC(y, m, 1)).toISOString();
@@ -133,16 +114,9 @@ export function MetricasTipoDocumentoCard() {
         <div>
           <h4 className="text-sm font-semibold text-foreground">Leads por Tipo de Documento</h4>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {mes === "all" ? "Panorama geral (todos os períodos)" : "Filtrado pelo mês selecionado"}
+            <span className="capitalize">{mesLabel}</span>
           </p>
         </div>
-        <select
-          value={mes}
-          onChange={(e) => setMes(e.target.value)}
-          className="text-xs bg-background border border-border rounded px-2 py-1 text-foreground"
-        >
-          {monthOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
       </div>
 
       {loading ? (
