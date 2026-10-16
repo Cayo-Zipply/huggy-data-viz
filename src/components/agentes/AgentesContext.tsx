@@ -43,20 +43,22 @@ export const FERRAMENTA_LABELS: Record<string, string> = {
   agenda: "Agenda do dia",
   contexto_lead: "Leitura da reunião",
   buscar_lead: "Localizar lead",
+  comparativo: "Melhorou ou piorou?",
+  preparar_mensagem_whatsapp: "Mensagem pronta no WhatsApp",
 };
 
 export const SUGESTOES: Record<string, string[]> = {
   black_ops: [
-    "Qual meu ticket médio dos últimos 3 meses?",
-    "Como estou contra a meta este mês?",
+    "Meu fechamento melhorou ou piorou?",
+    "Quanto falta para bater a meta e quanto preciso por dia?",
+    "Onde está o maior ganho de receita do time este mês?",
     "Por que estamos perdendo negócios?",
-    "Quem está com a melhor nota de reunião?",
   ],
   pipeline: [
     "Quem eu ataco hoje?",
-    "Quais links estão sem assinatura?",
+    "Prepara a mensagem para os links sem assinatura",
     "Tenho no-show para remarcar?",
-    "Me dá a tratativa do lead [empresa]",
+    "Estou melhor ou pior que mês passado?",
   ],
 };
 
