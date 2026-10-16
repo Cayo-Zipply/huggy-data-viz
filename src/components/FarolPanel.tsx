@@ -824,7 +824,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
               const texto = `Faltam ${g.brl ? fmtBRL0(falta) : `${Math.round(falta)} ${g.unidade}`} em ${restantes} dias úteis — precisa de ${f(porDia)}/dia. Ritmo atual: ${f(ritmo)}/dia.`;
               return <GargaloBanner titulo={g.titulo} texto={texto} pctProj={g.pct} />;
             })()}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_0.75fr] gap-4">
               <TeamCard title="Faturamento" subtitle={subtitle} showLabel info={{ ...base, realizado: inboundTotal.realizado, meta: inboundTotal.meta, projecao: inboundTotal.projecao, fmt: fmtBRL0 }} />
               <TeamCard title="Contratos" subtitle={subtitle} info={{ ...base, realizado: inboundTotal.contratos, meta: metaContratosTime, projecao: projOf(inboundTotal.contratos), fmt: (v) => String(Math.round(v)) }} />
               <TeamCard title="Reuniões realizadas" subtitle={subtitle} info={{ ...base, realizado: preVendasTotal.rr, meta: preVendasTotal.metaRR, projecao: projOf(preVendasTotal.rr), fmt: (v) => String(Math.round(v)) }} />
