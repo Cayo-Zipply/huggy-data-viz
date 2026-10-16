@@ -25,9 +25,9 @@ function Pill({ color, children }: { color?: string; children: ReactNode }) {
   return (
     <span
       className="inline-flex items-center whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium tabular-nums"
-      style={color ? { backgroundColor: color, color: "#0B0B0B" } : undefined}
+      style={color ? { backgroundColor: color, color: "#0B0B0B" } : { backgroundColor: "hsl(var(--muted))", color: "hsl(var(--muted-foreground))" }}
     >
-      {!color ? <span className="rounded-full bg-muted px-3 py-1 -mx-3 -my-1 text-muted-foreground">{children}</span> : children}
+      {children}
     </span>
   );
 }
@@ -98,11 +98,7 @@ function projText(i: RitmoInfo) {
   return i.meta > 0 ? `${i.fmt(i.projecao)} (${Math.round((i.projecao / i.meta) * 100)}%)` : i.fmt(i.projecao);
 }
 
-export function TeamCard({ title, subtitle, info }: { title: string; subtitle: string; info: RitmoInfo; showLabel?: boolean }) {
-  return <TeamCardInner title={title} subtitle={subtitle} info={info} />;
-}
-
-export function TeamCardInner({ title, subtitle, info, showLabel }: { title: string; subtitle: string; info: RitmoInfo; showLabel?: boolean }) {
+export function TeamCard({ title, subtitle, info, showLabel }: { title: string; subtitle: string; info: RitmoInfo; showLabel?: boolean }) {
   const pctProj = info.meta > 0 ? (info.projecao / info.meta) * 100 : 0;
   const pctReal = info.meta > 0 ? (info.realizado / info.meta) * 100 : 0;
   let pill: ReactNode = null;
