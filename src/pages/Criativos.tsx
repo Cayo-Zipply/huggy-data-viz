@@ -16,6 +16,7 @@ import { MetricBar } from "@/components/MetricBar";
 
 type Criativo = Record<string, any> & { nome: string; ad_id: string };
 
+import { brlKpi, numKpi, brlFull, numFull, KPI_VALUE_STYLE, KPI_VALUE_CLASS } from "@/lib/kpiFormat";
 const brl = (v: any) => (v == null || isNaN(Number(v)) ? "—" : Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }));
 const num = (v: any) => (v == null ? "—" : Number(v).toLocaleString("pt-BR"));
 const dec = (v: any, d = 2) => (v == null ? "—" : Number(v).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }));
@@ -118,17 +119,17 @@ export default function Criativos() {
     };
   }, [listQ.data]);
 
-  const kpis: { l: string; v: string; real?: boolean }[] = [
-    { l: "Gasto", v: brl(t.gasto) },
-    { l: "Conversas", v: num(t.conversas) },
-    { l: "Custo/conversa", v: brl(t.custo_conversa) },
-    { l: "Leads (Farol)", v: num(t.leads) },
-    { l: "Reuniões realizadas", v: num(t.reunioes_realizadas) },
-    { l: "Custo/reunião", v: brl(t.custo_reuniao) },
-    { l: "Contratos", v: num(t.contratos), real: true },
-    { l: "CAC", v: brl(t.cac), real: true },
-    { l: "Faturamento", v: brl(t.faturamento), real: true },
-    { l: "ROAS", v: t.roas ? `${dec(t.roas)}x` : "—", real: true },
+  const kpis: { l: string; v: string; full?: string; sub?: string; real?: boolean }[] = [
+    { l: "Gasto", v: brlKpi(t.gasto), full: brlFull(t.gasto) },
+    { l: "Conversas", v: numKpi(t.conversas), full: numFull(t.conversas) },
+    { l: "Custo/conversa", v: brlKpi(t.custo_conversa), full: brlFull(t.custo_conversa) },
+    { l: "Leads (Farol)", v: numKpi(t.leads), full: numFull(t.leads) },
+    { l: "Reuniões realizadas", v: numKpi(t.reunioes_realizadas), full: numFull(t.reunioes_realizadas) },
+    { l: "Custo/reunião", v: brlKpi(t.custo_reuniao), full: brlFull(t.custo_reuniao) },
+    { l: "Contratos", v: numKpi(t.contratos), full: numFull(t.contratos), real: true },
+    { l: "CAC", v: brlKpi(t.cac), full: brlFull(t.cac), real: true },
+    { l: "Faturamento", v: brlKpi(t.faturamento), full: brlFull(t.faturamento), real: true },
+    { l: "ROAS", v: t.roas ? `${dec(t.roas)}x` : "—", real: true, sub: t.roas_atribuido != null ? `Atribuído a anúncio: ${dec(t.roas_atribuido)}x · ${num(t.contratos_de_anuncio ?? 0)} contratos · ${brlKpi(t.faturamento_de_anuncio)}` : undefined },
   ];
 
   return (
@@ -161,7 +162,8 @@ export default function Criativos() {
             {kpis.map((k) => (
               <div key={k.l} className={cn("rounded-lg border p-3", k.real ? "bg-primary/10 border-primary/30" : "bg-card border-border")}>
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{k.l}</p>
-                {resumoQ.isLoading ? <Skeleton className="h-6 w-20 mt-1" /> : <p className={cn("text-lg font-semibold tabular-nums", k.real ? "text-primary" : "text-foreground")}>{k.v}</p>}
+                {resumoQ.isLoading ? <Skeleton className="h-6 w-20 mt-1" /> : <p title={k.full ?? k.v} style={KPI_VALUE_STYLE} className={cn("font-semibold", KPI_VALUE_CLASS, k.real ? "text-primary" : "text-foreground")}>{k.v}</p>}
+                {k.sub && !resumoQ.isLoading && <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">{k.sub}</p>}
               </div>
             ))}
           </div>
