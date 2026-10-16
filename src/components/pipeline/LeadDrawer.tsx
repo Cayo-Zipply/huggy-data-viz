@@ -25,6 +25,7 @@ import type { PipelineCard as CardType, PipelineTask, LossCategory } from "./typ
 import { LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
 import { ContractTab } from "./ContractTab";
 import { GrupoWhatsappSection } from "./GrupoWhatsappSection";
+import { AbrirConversaButton, MensagensLeadSection } from "./WhatsappLeadSection";
 import { BotaoReengajarWhatsApp } from "./BotaoReengajarWhatsApp";
 import { AbaAnexos } from "@/components/lead/aba-anexos";
 import type { PipelineLabel } from "@/hooks/useLabels";
@@ -546,6 +547,8 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
           )}
 
 
+          <MensagensLeadSection leadId={card.id} />
+
           {/* Quick actions */}
           <div className="flex gap-2 flex-wrap">
             {card.telefone && (
@@ -562,6 +565,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                 <CallButton leadId={card.id} />
               </>
             )}
+            <AbrirConversaButton leadId={card.id} />
             <button
               onClick={() => setMeetDialogOpen(true)}
               className="text-xs px-3 py-1.5 rounded-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 flex items-center gap-1.5 transition-colors"
