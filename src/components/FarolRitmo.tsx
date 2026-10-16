@@ -120,14 +120,89 @@ export function TeamCard({ title, subtitle, info, showLabel }: { title: string; 
         <span className="text-3xl font-bold tabular-nums text-foreground">{info.fmt(info.realizado)}</span>
         {info.meta > 0 && <span className="text-sm text-muted-foreground tabular-nums">de {info.fmt(info.meta)}</span>}
       </div>
-      <div className={showLabel ? "pb-4" : ""}>
-        <RitmoBar realizado={info.realizado} meta={info.meta} fatorPace={info.fatorPace} mode={info.mode} showLabel={showLabel} tooltip={tooltipFor(info)} />
+      <div>
+        <RitmoBar realizado={info.realizado} meta={info.meta} fatorPace={info.fatorPace} mode={info.mode} tooltip={tooltipFor(info)} />
+        {info.meta > 0 && info.mode !== "week" && (
+          <div className="flex justify-center gap-3 mt-1 text-xs tabular-nums">
+            <span className="text-muted-foreground">{Math.round(pctReal)}%</span>
+            <span style={{ color: FAROL_COLORS.gold }}>{info.mode === "past" ? 100 : Math.round(info.fatorPace * 100)}%</span>
+          </div>
+        )}
       </div>
       <div className="flex items-center justify-between gap-2 min-h-[28px]">
         {info.mode !== "week" ? (
           <span className="text-sm text-foreground tabular-nums">Projeção: {projText(info)}</span>
         ) : <span />}
         {pill}
+      </div>
+      {info.mode === "current" && info.meta > 0 && (() => {
+        const d = info.realizado - info.meta * info.fatorPace;
+        return (
+          <div className="text-right text-xs text-muted-foreground tabular-nums">
+            {d >= 0 ? "+" : "−"}{info.fmt(Math.abs(d))} {d >= 0 ? "acima" : "abaixo"} do ritmo
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
+export function ReguaMes({ passedBD, totalBD, fatorPace }: { passedBD: number; totalBD: number; fatorPace: number }) {
+  const pct = Math.min(100, fatorPace * 100);
+  return (
+    <div className="space-y-1.5">
+      <div className="relative h-2 rounded-full bg-muted">
+        <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${pct}%`, backgroundColor: FAROL_COLORS.gold }} />
+        <div className="absolute -top-1 h-4 w-[3px] -translate-x-1/2 rounded" style={{ left: `${pct}%`, backgroundColor: FAROL_COLORS.gold }} />
+      </div>
+      <div className="relative flex justify-between text-xs text-muted-foreground tabular-nums">
+        <span>Dia útil {passedBD} de {totalBD}</span>
+        <span className="absolute -translate-x-1/2" style={{ left: `${pct}%`, color: FAROL_COLORS.gold }}>{Math.round(pct)}%</span>
+        <span>{Math.max(0, totalBD - passedBD)} dias úteis restantes</span>
+      </div>
+    </div>
+  );
+}
+
+export function GargaloBanner({ titulo, texto, pctProj }: { titulo: string; texto: string; pctProj: number }) {
+  const c = statusColor(pctProj);
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border bg-card p-5" style={{ borderLeft: `4px solid ${c}` }}>
+      <div>
+        <h3 className="text-base font-semibold text-foreground">Gargalo do mês: {titulo}</h3>
+        <p className="text-sm text-muted-foreground">{texto}</p>
+      </div>
+      <Pill color={c}>Projeção {Math.round(pctProj)}% da meta</Pill>
+    </div>
+  );
+}
+
+export function EficienciaCard({ conv, metaConv, ticket, metaTicket }: { conv: number; metaConv: number; ticket: number; metaTicket: number }) {
+  const dConv = conv - metaConv;
+  const dTk = ticket - metaTicket;
+  const tone = (v: number) => ({ color: v >= 0 ? FAROL_COLORS.green : FAROL_COLORS.red });
+  return (
+    <div className="rounded-xl border border-border bg-card divide-y divide-border">
+      <div className="p-5 space-y-1">
+        <h3 className="text-base font-semibold text-foreground mb-2">Eficiência</h3>
+        <div className="text-xs text-muted-foreground">Conversão</div>
+        <div className="text-3xl font-bold tabular-nums text-foreground">{Math.round(conv)}%</div>
+        {metaConv > 0 && (
+          <div className="flex justify-between text-xs tabular-nums">
+            <span className="text-muted-foreground">meta {Math.round(metaConv)}%</span>
+            <span style={tone(dConv)}>{dConv >= 0 ? "+" : "−"}{Math.abs(Math.round(dConv))} p.p.</span>
+          </div>
+        )}
+      </div>
+      <div className="p-5 space-y-1">
+        <div className="text-xs text-muted-foreground">Ticket médio</div>
+        <div className="text-2xl font-bold tabular-nums text-foreground">{fmtBRL0(ticket)}</div>
+        {metaTicket > 0 && (
+          <>
+            <div className="text-xs text-muted-foreground tabular-nums">meta {fmtBRL0(metaTicket)}</div>
+            <div className="text-xs tabular-nums" style={tone(dTk)}>{dTk >= 0 ? "+" : "−"}{fmtBRL0(Math.abs(dTk))}</div>
+          </>
+        )}
       </div>
     </div>
   );
