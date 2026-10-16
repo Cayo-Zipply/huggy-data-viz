@@ -16,6 +16,7 @@ import { supabaseExt as supabase } from "@/lib/supabaseExternal";
 import { useToast } from "@/hooks/use-toast";
 import { buildCanonicalizer } from "@/lib/ownerNormalization";
 import { MesSelect } from "@/components/MesSelect";
+import { TeamCard, RitmoRow, FarolLegend, fmtBRL0, type FarolMode } from "@/components/FarolRitmo";
 
 // Status de contrato considerados como "fechado" para meta de contratos
 const CONTRATO_FECHADO_STATUS = new Set(["assinado"]);
@@ -142,6 +143,8 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
   const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
   const [rpcRows, setRpcRows] = useState<any[] | null>(null);
   const [rpcSdrRows, setRpcSdrRows] = useState<any[] | null>(null);
+  const [showDetalhada, setShowDetalhada] = useState(false);
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const monthKey = getMonthKey(selectedMonth);
   const excludedKey = `farol_excluded_rr_${monthKey}`;
@@ -415,7 +418,12 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
         const atingTotal = pctMeta;
         const conv = Number(r.conversao || 0);
         const contratos = vendas;
-        return { closer, vendas, realizado, meta, metaAteAlvo, projecao, falta, diferenca, pctMeta, atingTotal, conv, ticket, tktProjetado, contratos, unassigned: 0 };
+        const rr = Number(r.reunioes_realizadas || 0);
+        const convExata = rr > 0 ? (vendas / rr) * 100 : 0;
+        const metaContratos = Number(r.meta_contratos || 0);
+        const metaConv = Number(r.meta_conversao || 0);
+        const metaTicket = Number(r.meta_ticket_medio || 0);
+        return { closer, vendas, realizado, meta, metaAteAlvo, projecao, falta, diferenca, pctMeta, atingTotal, conv, ticket, tktProjetado, contratos, rr, convExata, metaContratos, metaConv, metaTicket, unassigned: 0 };
       });
       return rows.filter(r => r.meta > 0 || r.realizado > 0 || r.vendas > 0 || r.contratos > 0);
     }
@@ -443,7 +451,8 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
         const rrCloser = reunioesRealizadas.filter(c => canonical(c.owner) === closer).length;
         const conv = rrCloser > 0 ? Math.round((vendas / rrCloser) * 100) : 0;
         const contratos = vendas; // mesma métrica
-        return { closer, vendas, realizado, meta, metaAteAlvo, projecao, falta, diferenca, pctMeta, atingTotal, conv, ticket, tktProjetado, contratos, unassigned: 0 };
+        const convExata = rrCloser > 0 ? (vendas / rrCloser) * 100 : 0;
+        return { closer, vendas, realizado, meta, metaAteAlvo, projecao, falta, diferenca, pctMeta, atingTotal, conv, ticket, tktProjetado, contratos, rr: rrCloser, convExata, metaContratos: goal?.contratos_meta || 0, metaConv: goal?.conversao_meta || 0, metaTicket: goal?.ticket_medio_meta || 0, unassigned: 0 };
       })
       // Item 14: exibir só quem tem meta OU venda/realizado/contrato no mês
       .filter(r => r.meta > 0 || r.realizado > 0 || r.vendas > 0 || r.contratos > 0);
@@ -459,6 +468,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
         vendas: semOwnerGanhos.length,
         realizado: realizadoSem, meta: 0, metaAteAlvo: 0, projecao: 0, falta: 0, diferenca: 0, pctMeta: 0, atingTotal: 0,
         conv: 0, ticket: 0, tktProjetado: 0, contratos: semOwnerGanhos.length,
+        rr: semOwnerReuniao.length, convExata: 0, metaContratos: 0, metaConv: 0, metaTicket: 0,
         unassigned: semOwnerGanhos.length + semOwnerReuniao.length,
       });
     }
@@ -475,7 +485,8 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
     const diferenca = projecao - meta;
     const pctMeta = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
     const atingTotal = meta > 0 ? Math.round((projecao / meta) * 100) : 0;
-    const rrTotal = reunioesRealizadas.length;
+    // Conversão do total = soma de contratos ÷ soma de reuniões realizadas das linhas (RPC).
+    const rrTotal = inboundData.reduce((s, d) => s + d.rr, 0);
     const conv = rrTotal > 0 ? Math.round((vendas / rrTotal) * 100) : 0;
     const ticket = vendas > 0 ? realizado / vendas : 0;
     const contratos = inboundData.reduce((s, d) => s + d.contratos, 0);
@@ -837,6 +848,78 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
       </section>
 
 
+      {/* NOVO VISUAL: FAIXA DO TIME + CLOSERS + SDR */}
+      {(() => {
+        const mode: FarolMode = weekFilter !== "all" ? "week" : (selectedMonth < currentMonthStart ? "past" : "current");
+        const base = { fatorPace, mode, passedBD, totalBD };
+        const metaContratosTime = inboundData.reduce((s, d) => s + d.metaContratos, 0);
+        const projOf = (v: number) => (passedBD > 0 ? Math.round(v * ratio) : 0);
+        const subtitle = `Time · ${monthLabel}`;
+        const closersVis = inboundData.filter(d => d.closer !== "Sem responsável");
+        const sdrsVis = preVendasData.filter(d => d.sdr !== "Sem responsável");
+        const pct1 = (v: number) => `${v.toFixed(1).replace(".", ",")}%`;
+        return (
+          <section className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <TeamCard title="Faturamento" subtitle={subtitle} showLabel info={{ ...base, realizado: inboundTotal.realizado, meta: inboundTotal.meta, projecao: inboundTotal.projecao, fmt: fmtBRL0 }} />
+              <TeamCard title="Contratos" subtitle={subtitle} info={{ ...base, realizado: inboundTotal.contratos, meta: metaContratosTime, projecao: projOf(inboundTotal.contratos), fmt: (v) => String(Math.round(v)) }} />
+              <TeamCard title="Reuniões realizadas" subtitle={subtitle} info={{ ...base, realizado: preVendasTotal.rr, meta: preVendasTotal.metaRR, projecao: projOf(preVendasTotal.rr), fmt: (v) => String(Math.round(v)) }} />
+            </div>
+
+            <div className="space-y-3">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">Closers</h2>
+              <div className="rounded-xl border border-border bg-card divide-y divide-border">
+                {closersVis.length === 0 && <p className="p-6 text-sm text-center text-muted-foreground">Sem dados no período.</p>}
+                {closersVis.map(d => (
+                  <RitmoRow
+                    key={d.closer}
+                    name={d.closer}
+                    unit="brl"
+                    onClickRealizado={d.realizado > 0 ? () => setRealizadoDrill({ closer: d.closer, label: d.closer }) : undefined}
+                    header={<><span className="text-foreground">{fmtBRL0(d.realizado)}</span>{d.meta > 0 && <span className="text-muted-foreground"> / {fmtBRL0(d.meta)}</span>}</>}
+                    info={{ ...base, realizado: d.realizado, meta: d.meta, projecao: d.projecao, fmt: fmtBRL0 }}
+                    stats={[
+                      { label: "Contratos", value: <>{d.contratos}<span className="text-muted-foreground"> / {d.metaContratos || "—"}</span></> },
+                      { label: "Conversão", value: <>{pct1(d.convExata)}<span className="text-muted-foreground"> / {d.metaConv ? pct1(d.metaConv) : "—"}</span></> },
+                      { label: "Ticket", value: <>{fmtBRL0(d.ticket)}<span className="text-muted-foreground"> / {d.metaTicket ? fmtBRL0(d.metaTicket) : "—"}</span></> },
+                    ]}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">Pré-vendas · SDR</h2>
+              <div className="rounded-xl border border-border bg-card divide-y divide-border">
+                {sdrsVis.length === 0 && <p className="p-6 text-sm text-center text-muted-foreground">Sem dados no período.</p>}
+                {sdrsVis.map(d => {
+                  const metaRR = d.metaRR || d.meta;
+                  return (
+                    <RitmoRow
+                      key={d.sdr}
+                      name={d.sdr}
+                      unit="int"
+                      header={<><span className="text-foreground">{d.reunioesRealizadas}</span>{metaRR > 0 && <span className="text-muted-foreground"> / {metaRR}</span>}<span className="text-muted-foreground"> reuniões realizadas</span></>}
+                      info={{ ...base, realizado: d.reunioesRealizadas, meta: metaRR, projecao: d.projetado, fmt: (v) => String(Math.round(v)) }}
+                      stats={[
+                        { label: "Show", value: `${d.conv}%` },
+                        { label: "No-shows", value: d.noShows },
+                      ]}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+
+            <FarolLegend />
+            <button onClick={() => setShowDetalhada(v => !v)} className="text-xs text-muted-foreground hover:text-foreground underline">
+              {showDetalhada ? "Ocultar tabela detalhada" : "Ver tabela detalhada"}
+            </button>
+          </section>
+        );
+      })()}
+
+      {showDetalhada && (<>
       {/* SEÇÃO: INBOUND */}
       <section className="space-y-3">
         <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -1016,6 +1099,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
         </div>
         </div>
       </section>
+      </>)}
 
       {/* Edit Goals Dialog */}
       {isAdmin && onSaveGoal && (
