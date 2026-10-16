@@ -412,7 +412,7 @@ export const FunilCriativo = () => {
                     <tr
                       key={r.grupo}
                       onClick={() => setFocused(isSel ? null : r.grupo)}
-                      className={cn("border-t border-border cursor-pointer hover:bg-muted/40", isSel && "bg-muted/70")}
+                      className={cn("border-t border-border/40 cursor-pointer odd:bg-foreground/[0.02] hover:bg-muted/40", isSel && "bg-muted/70")}
                     >
                       <td className={cn("px-2 py-2 max-w-[260px] truncate", neutro ? "text-muted-foreground italic" : "text-foreground")} title={r.grupo}>
                         {r.grupo}
@@ -424,7 +424,7 @@ export const FunilCriativo = () => {
                       <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.reuniao_agendada)}</td>
                       <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.reuniao_realizada)}</td>
                       <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.link_enviado)}</td>
-                      <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.contrato_assinado)}</td>
+                      <td className={cn("px-2 py-2 text-right tabular-nums", r.contrato_assinado > 0 && "text-primary font-semibold")}>{metricCell(r.contrato_assinado)}</td>
                       <td className="px-2 py-2 text-right tabular-nums font-semibold">{fmtPct(pct(r.contrato_assinado, r.leads))}</td>
                       <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.faturamento, true)}</td>
                       {agrupamento !== "campanha" && <td className="px-2 py-2 text-right tabular-nums">{metricCell(r.campanhas_distintas)}</td>}
@@ -468,12 +468,12 @@ export const FunilCriativo = () => {
                   <div key={f.label} className="flex items-center gap-2">
                     <span className="w-[132px] shrink-0 text-[11px] text-muted-foreground text-right">{f.label}</span>
                     <div className="flex-1 min-w-0">
-                      <div
-                        className={cn("h-8 min-w-[74px] rounded-sm flex items-center justify-between px-2", isGargalo ? "bg-destructive" : "bg-success")}
-                        style={{ width: `${width}%` }}
-                      >
-                        <span className={cn("text-xs font-bold tabular-nums", isGargalo ? "text-destructive-foreground" : "text-success-foreground")}>{formatNumber(f.value)}</span>
-                        <span className={cn("text-[10px] tabular-nums opacity-80", isGargalo ? "text-destructive-foreground" : "text-success-foreground")}>{fmtPct(f.pctTopo)}</span>
+                      <div className="flex items-center justify-between text-[11px] tabular-nums mb-0.5">
+                        <span className="font-semibold text-foreground">{formatNumber(f.value)}</span>
+                        <span className="text-muted-foreground">{fmtPct(f.pctTopo)}</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-mkt-track overflow-hidden">
+                        <div className={cn("h-full rounded-full", isGargalo ? "bg-mkt-bad" : "bg-primary")} style={{ width: `${width}%` }} />
                       </div>
                     </div>
                     <span

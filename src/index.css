@@ -150,3 +150,25 @@ html {
     radial-gradient(ellipse at 90% 100%, hsl(240 10% 10% / 0.5), transparent 55%),
     url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.05'/></svg>");
 }
+
+/* Marketing premium (padrão Criativos) */
+:root {
+  --mkt-bg: 0 0% 4%;
+  --mkt-card-from: 0 0% 8%;
+  --mkt-card-to: 0 0% 6%;
+  --mkt-gold: 33 34% 57%;
+  --mkt-text: 37 33% 94%;
+  --mkt-muted: 0 0% 54%;
+  --mkt-track: 0 0% 16%;
+  --mkt-good: 142 69% 58%;
+  --mkt-warn: 38 90% 61%;
+  --mkt-bad: 0 91% 71%;
+}
+.mkt-section { background: hsl(var(--mkt-bg)); border-radius: 20px; padding: 20px; }
+.mkt-card { background: linear-gradient(180deg, hsl(var(--mkt-card-from)) 0%, hsl(var(--mkt-card-to)) 100%); border: 1px solid hsl(0 0% 100% / 0.06); border-radius: 16px; padding: 20px; transition: border-color .2s; }
+.mkt-card:hover { border-color: hsl(var(--mkt-gold) / 0.35); }
+.mkt-card-gold { background: linear-gradient(135deg, hsl(var(--mkt-gold) / 0.18), hsl(var(--mkt-gold) / 0.04)); border: 1px solid hsl(var(--mkt-gold) / 0.45); border-radius: 16px; padding: 20px; box-shadow: 0 0 0 1px hsl(var(--mkt-gold) / 0.15), 0 8px 32px -8px hsl(var(--mkt-gold) / 0.25); }
+.mkt-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: hsl(var(--mkt-muted)); }
+.mkt-value { font-weight: 600; color: hsl(var(--mkt-text)); font-variant-numeric: tabular-nums; }
+.mkt-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 20px; color: hsl(var(--mkt-text)); display: flex; align-items: center; gap: 10px; }
+.mkt-title::before { content: ""; width: 24px; height: 1px; background: hsl(var(--mkt-gold)); }

@@ -36,6 +36,15 @@ export default {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
+        mkt: {
+          gold: "hsl(var(--mkt-gold))",
+          text: "hsl(var(--mkt-text))",
+          muted: "hsl(var(--mkt-muted))",
+          track: "hsl(var(--mkt-track))",
+          good: "hsl(var(--mkt-good))",
+          warn: "hsl(var(--mkt-warn))",
+          bad: "hsl(var(--mkt-bad))",
+        },
         success: {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
