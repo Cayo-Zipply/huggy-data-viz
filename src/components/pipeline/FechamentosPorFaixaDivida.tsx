@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { sbExt } from "@/lib/supabaseExternal";
 import { formatBRL } from "./types";
 
@@ -18,24 +18,10 @@ const FAIXAS: Faixa[] = [
   { label: "Acima de R$ 1M", min: 1_000_000, max: Infinity },
 ];
 
-function monthOptions() {
-  const opts = [{ value: "all", label: "Todos os períodos" }];
-  const now = new Date();
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const label = d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
-    opts.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
-  }
-  return opts;
-}
-
-export function FechamentosPorFaixaDivida() {
-  const [mes, setMes] = useState<string>("all");
+export function FechamentosPorFaixaDivida({ mes, mesLabel }: { mes: string; mesLabel: string }) {
   const [faixaSel, setFaixaSel] = useState<string>("all");
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const months = useMemo(() => monthOptions(), []);
 
   useEffect(() => {
     let mounted = true;
@@ -43,14 +29,12 @@ export function FechamentosPorFaixaDivida() {
     (async () => {
       let q = db
         .from("leads")
-        .select("id,nome,empresa,closer,valor_divida,etapa_atual,data_reuniao_realizada,contrato_assinado_em,created_at")
+        .select("id,nome,empresa,closer,valor_divida,etapa_atual,data_venda,created_at")
         .or("etapa_atual.eq.Contrato Assinado,etapa_atual.eq.Ganho");
-      if (mes !== "all") {
-        const [y, m] = mes.split("-").map(Number);
-        const start = new Date(Date.UTC(y, m - 1, 1)).toISOString();
-        const end = new Date(Date.UTC(y, m, 1)).toISOString();
-        q = q.gte("created_at", start).lt("created_at", end);
-      }
+      const [y, m] = mes.split("-").map(Number);
+      const start = `${y}-${String(m).padStart(2, "0")}-01`;
+      const end = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, "0")}-01`;
+      q = q.gte("data_venda", start).lt("data_venda", end);
       const { data, error } = await q;
       if (!mounted) return;
       if (error) { console.error("Erro fechamentos:", error); setRows([]); }
@@ -83,17 +67,10 @@ export function FechamentosPorFaixaDivida() {
         <div>
           <h4 className="text-sm font-semibold text-foreground">Fechamentos por Valor da Dívida</h4>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {countGeral} contratos · {formatBRL(totalGeral)} em dívida total
+            <span className="capitalize">{mesLabel}</span> · {countGeral} contratos · {formatBRL(totalGeral)} em dívida total
           </p>
         </div>
         <div className="flex gap-2">
-          <select
-            value={mes}
-            onChange={(e) => setMes(e.target.value)}
-            className="text-xs bg-background border border-border rounded px-2 py-1 text-foreground"
-          >
-            {months.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
           <select
             value={faixaSel}
             onChange={(e) => setFaixaSel(e.target.value)}
