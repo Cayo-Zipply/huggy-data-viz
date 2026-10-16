@@ -85,6 +85,7 @@ import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { CalendarDays } from "lucide-react";
 import { EmailPendenciaStatus } from "@/components/pipeline/EmailPendenciaStatus";
 import { useAgentChat } from "@/components/agentes/AgentesContext";
+import { Button } from "@/components/ui/button";
 
 function DataReuniaoRealizadaBadge({ value, onChange }: { value: string | null; onChange: (iso: string | null) => void }) {
   const [openPop, setOpenPop] = useState(false);
