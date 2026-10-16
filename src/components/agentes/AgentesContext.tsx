@@ -96,6 +96,13 @@ export function useBriefingsHoje() {
   });
 }
 
+export interface ChatState {
+  conversaId: string | null;
+  msgs: any[];
+  loaded: boolean;
+}
+const EMPTY_CHAT: ChatState = { conversaId: null, msgs: [], loaded: false };
+
 interface Ctx {
   openChat: (agenteId: string, initialMessage?: string) => void;
 }
@@ -105,8 +112,11 @@ export const useAgentChat = () => useContext(AgentesCtx);
 export function AgentesProvider({ children }: { children: ReactNode }) {
   const { data: agentes = [] } = useAgentes();
   const [state, setState] = useState<{ id: string; msg?: string; nonce: number } | null>(null);
+  const [chats, setChats] = useState<Record<string, ChatState>>({});
   const openChat = useCallback((id: string, msg?: string) => setState({ id, msg, nonce: Date.now() }), []);
   const agente = agentes.find((a) => a.id === state?.id) ?? (state ? { id: state.id, nome: state.id === "pipeline" ? "Ghost" : "Atlas" } : null);
+  const setChat = useCallback((id: string, fn: (c: ChatState) => ChatState) =>
+    setChats((all) => ({ ...all, [id]: fn(all[id] ?? EMPTY_CHAT) })), []);
 
   return (
     <AgentesCtx.Provider value={{ openChat }}>
@@ -118,6 +128,8 @@ export function AgentesProvider({ children }: { children: ReactNode }) {
           open
           initialMessage={state.msg}
           nonce={state.nonce}
+          chat={chats[state.id] ?? EMPTY_CHAT}
+          setChat={(fn) => setChat(state.id, fn)}
           onClose={() => setState(null)}
         />
       )}
