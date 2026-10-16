@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabaseExternal";
 import { cn } from "@/lib/utils";
 import { AgentAvatar } from "./AgentAvatar";
 import { RascunhoCard, type Rascunho } from "./RascunhoCard";
-import { agentColor, FERRAMENTA_LABELS, SUBTITULO, SUGESTOES, type Agente, type ChatState } from "./AgentesContext";
+import { agentColor, FERRAMENTA_LABELS, ferramentaLabel, SUBTITULO, SUGESTOES, type Agente, type ChatState } from "./AgentesContext";
 
 interface Msg {
   role: "user" | "assistant";
