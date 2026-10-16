@@ -20,6 +20,7 @@ import { ConsolidatedPanel } from "@/components/ConsolidatedPanel";
 import { PipelinePanel } from "@/components/PipelinePanel";
 import { HelpPanel } from "@/components/HelpPanel";
 import { FarolPanel } from "@/components/FarolPanel";
+import { MissoesHoje } from "@/components/agentes/MissoesHoje";
 import { SalesPieChart } from "@/components/SalesPieChart";
 import { usePipelineData } from "@/components/pipeline/usePipelineData";
 import { useAuth } from "@/contexts/AuthContext";
@@ -434,6 +435,7 @@ const Index = () => {
 
           {/* Farol Tab — kept mounted to preserve state and avoid reload flicker */}
           <div className={activeTab === "farol" ? "" : "hidden"}>
+            <MissoesHoje />
             <FarolPanel cards={cards} goals={goals} owners={pipelineOwners} onSaveGoal={upsertGoal} onRefresh={refresh} />
           </div>
 
