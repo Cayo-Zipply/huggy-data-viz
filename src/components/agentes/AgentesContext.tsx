@@ -45,7 +45,15 @@ export const FERRAMENTA_LABELS: Record<string, string> = {
   buscar_lead: "Localizar lead",
   comparativo: "Melhorou ou piorou?",
   preparar_mensagem_whatsapp: "Mensagem pronta no WhatsApp",
+  briefing_do_dia: "Pasta do dia",
 };
+
+/** Rótulo amigável; nunca exibe nome técnico com underline. */
+export function ferramentaLabel(f: string) {
+  if (FERRAMENTA_LABELS[f]) return FERRAMENTA_LABELS[f];
+  const t = f.replace(/_/g, " ").trim();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
 
 export const SUGESTOES: Record<string, string[]> = {
   black_ops: [
@@ -89,6 +97,7 @@ export function hojeEmSaoPaulo() {
 }
 
 export function agentColor(a?: Agente | null) {
+  if (a?.id === "marketing") return "#F59E0B";
   return a?.cor || "#8B5CF6";
 }
 
