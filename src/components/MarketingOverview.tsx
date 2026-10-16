@@ -52,7 +52,7 @@ const useResumo = (p: PeriodoFunil, camp: string | null) => useQuery({
   },
 });
 
-type Tile = { l: string; v: string; cur: number; prev: number; inverso?: boolean; real?: boolean };
+type Tile = { l: string; v: string; cur: number; prev: number; inverso?: boolean; real?: boolean; full?: string; sub?: string };
 
 function Chip({ cur, prev, inverso }: { cur: number; prev: number; inverso?: boolean }) {
   if (!prev || !cur) return <span className="text-[11px] text-mkt-muted">—</span>;
