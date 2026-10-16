@@ -172,3 +172,8 @@ html {
 .mkt-value { font-weight: 600; color: hsl(var(--mkt-text)); font-variant-numeric: tabular-nums; }
 .mkt-title { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 20px; color: hsl(var(--mkt-text)); display: flex; align-items: center; gap: 10px; }
 .mkt-title::before { content: ""; width: 24px; height: 1px; background: hsl(var(--mkt-gold)); }
+
+@keyframes brasao-fade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes brasao-pulse { 0%,100% { opacity: .7 } 50% { opacity: 1 } }
+.brasao-fade { animation: brasao-fade 400ms ease-out both; }
+.brasao-pulse { animation: brasao-pulse 2s ease-in-out infinite; }
