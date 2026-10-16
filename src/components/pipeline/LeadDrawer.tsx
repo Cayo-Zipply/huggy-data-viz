@@ -84,6 +84,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { CalendarDays } from "lucide-react";
 import { EmailPendenciaStatus } from "@/components/pipeline/EmailPendenciaStatus";
+import { useAgentChat } from "@/components/agentes/AgentesContext";
 
 function DataReuniaoRealizadaBadge({ value, onChange }: { value: string | null; onChange: (iso: string | null) => void }) {
   const [openPop, setOpenPop] = useState(false);
@@ -147,6 +148,7 @@ type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "contrato" | "a
 
 export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onSaveObservation, labels = [], cardLabels = [], onAddLabel, onRemoveLabel, ownerOptions: ownerOptionsProp, duplicates = [], onDelete, onOpenLead, highlightObs = false }: Props) {
   const { user, isAdmin, profile } = useAuth();
+  const { openChat } = useAgentChat();
   const { activeOrigens } = useOrigensLeads();
   const db = supabaseExt as any;
   const [editing, setEditing] = useState<string | null>(null);
@@ -652,6 +654,9 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
             {/* DADOS */}
             {activeSection === "dados" && (
               <div className="space-y-1">
+                <Button variant="outline" size="sm" className="w-full mb-2" onClick={() => openChat("pipeline", `Me dá a tratativa do lead ${card.empresa || card.nome} (id ${card.id})`)}>
+                  Pedir tratativa ao Ghost
+                </Button>
                 {renderEditableField("nome", "Nome", <UserCircle size={16} />, card.nome)}
                 <Separator className="my-1" />
                 {renderEditableField("empresa", "Empresa", <Building2 size={16} />, card.empresa)}

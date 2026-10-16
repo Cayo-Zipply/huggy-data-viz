@@ -16,6 +16,7 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+        hud: ['Oswald', '"Barlow Condensed"', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

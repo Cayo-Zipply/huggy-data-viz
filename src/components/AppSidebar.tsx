@@ -20,6 +20,7 @@ import {
   Sparkles,
   Flame,
   MailWarning,
+  Crosshair,
 } from "lucide-react";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { cn } from "@/lib/utils";
@@ -58,6 +59,7 @@ const MENU_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "PERFORMANCE",
     items: [
       { key: "/sales-enablement", label: "Black Ops", icon: Sparkles, roles: ["admin", "sdr", "closer"] },
+      { key: "/esquadrao", label: "Esquadrão", icon: Crosshair, roles: ["admin", "sdr", "closer"] },
       { key: "/material-apoio", label: "Material de Apoio", icon: BookOpen, roles: ["admin", "sdr", "closer"] },
     ],
   },

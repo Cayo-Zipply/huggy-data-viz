@@ -16,6 +16,9 @@ import MaterialApoio from "@/pages/MaterialApoio";
 import SalesEnablement from "@/pages/SalesEnablement";
 import Pool from "@/pages/Pool";
 import PendenciasPosVenda from "@/pages/PendenciasPosVenda";
+import Esquadrao from "@/pages/Esquadrao";
+import { AgentesProvider } from "@/components/agentes/AgentesContext";
+import { AgentFab } from "@/components/agentes/AgentFab";
 import { AppSidebar } from "@/components/AppSidebar";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { NovidadesModal } from "@/components/NovidadesModal";
@@ -131,6 +134,7 @@ function AuthLayout() {
   }
 
   return (
+    <AgentesProvider>
     <div className="min-h-screen flex w-full">
       <AppSidebar />
       <main className="flex-1 min-w-0">
@@ -143,7 +147,9 @@ function AuthLayout() {
       </main>
       <FeedbackWidget />
       <NovidadesModal />
+      <AgentFab />
     </div>
+    </AgentesProvider>
   );
 }
 
@@ -188,6 +194,7 @@ const App = () => (
               <Route path="/feedbacks" element={<RoleGuard roles={["admin"]}><Feedbacks /></RoleGuard>} />
               <Route path="/material-apoio" element={<MaterialApoio />} />
               <Route path="/sales-enablement" element={<SalesEnablement />} />
+              <Route path="/esquadrao" element={<Esquadrao />} />
               <Route path="/pool" element={<Pool />} />
               <Route path="/pendencias-pos-venda" element={<PendenciasPosVenda />} />
             </Route>
