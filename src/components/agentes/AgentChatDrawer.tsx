@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { History, Plus, Send, X } from "lucide-react";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { History, Minus, Plus, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabaseExternal";
@@ -49,7 +48,7 @@ async function carregarConversa(db: any, id: string): Promise<Msg[]> {
   return lista;
 }
 
-export function AgentChatDrawer({ agente, open, onClose, initialMessage, nonce, chat, setChat }: { agente: Agente; open: boolean; onClose: () => void; initialMessage?: string; nonce: number; chat: ChatState; setChat: (fn: (c: ChatState) => ChatState) => void }) {
+export function AgentChatDrawer({ agente, agentes, onSwitch, open, onClose, initialMessage, nonce, chat, setChat }: { agente: Agente; agentes: Agente[]; onSwitch: (id: string) => void; open: boolean; onClose: () => void; initialMessage?: string; nonce: number; chat: ChatState; setChat: (fn: (c: ChatState) => ChatState) => void }) {
   const db = supabase as any;
   const qc = useQueryClient();
   const conversaId = chat.conversaId;
@@ -57,7 +56,8 @@ export function AgentChatDrawer({ agente, open, onClose, initialMessage, nonce, 
   const setConversaId = (id: string | null) => setChat((c) => ({ ...c, conversaId: id }));
   const setMsgs = (v: Msg[] | ((m: Msg[]) => Msg[])) => setChat((c) => ({ ...c, msgs: typeof v === "function" ? v(c.msgs as Msg[]) : v }));
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const loading = !!chat.loading;
+  const setLoading = (v: boolean) => setChat((c) => ({ ...c, loading: v }));
   const [carregando, setCarregando] = useState(false);
   const [showHist, setShowHist] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
@@ -141,17 +141,26 @@ export function AgentChatDrawer({ agente, open, onClose, initialMessage, nonce, 
   const nova = () => { setChat((c) => ({ ...c, conversaId: null, msgs: [] })); setShowHist(false); };
 
   return (
-    <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent side="right" className="w-full sm:max-w-xl p-0 flex flex-col gap-0 [&>button]:hidden">
-        <div className="flex items-center gap-3 border-b border-border px-4 py-3" style={{ borderBottomColor: cor + "55" }}>
-          <AgentAvatar agente={agente} className="h-10 w-10 rounded-full shrink-0" />
-          <div className="flex-1 min-w-0">
-            <SheetTitle className="font-hud uppercase tracking-wider text-lg leading-none">{agente.nome}</SheetTitle>
-            {agente.titulo && <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mt-1">{agente.titulo}</p>}
+    <div className={cn("fixed z-[60] flex flex-col bg-card border border-border shadow-2xl overflow-hidden inset-0 md:inset-auto md:bottom-6 md:right-6 md:w-[420px] md:h-[640px] md:max-h-[calc(100vh-3rem)] md:rounded-2xl", !open && "hidden")}>
+        <div className="flex items-center gap-1 border-b border-border px-2 py-2">
+          <div className="flex flex-1 min-w-0 gap-1">
+            {agentes.map((a) => {
+              const ativo = a.id === agente.id;
+              return (
+                <button key={a.id} onClick={() => onSwitch(a.id)} className={cn("flex items-center gap-2 rounded-lg border-2 px-2 py-1 min-w-0 transition-colors", !ativo && "border-transparent opacity-60 hover:opacity-100")} style={ativo ? { borderColor: agentColor(a) } : undefined}>
+                  <AgentAvatar agente={a} className="h-8 w-8 rounded-full shrink-0" imgClassName="object-[center_25%]" />
+                  <span className="text-left min-w-0">
+                    <span className="block font-hud uppercase tracking-wider text-sm leading-none">{a.nome}</span>
+                    <span className="block text-[9px] text-muted-foreground truncate mt-0.5">{a.id === "black_ops" ? "Analista de dados e vendas" : "Operador de pipeline"}</span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
-          <Button variant="ghost" size="icon" title="Histórico" onClick={() => setShowHist((s) => !s)}><History className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" title="Nova conversa" onClick={nova}><Plus className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" title="Fechar" onClick={onClose}><X className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" title="Histórico" onClick={() => setShowHist((s) => !s)}><History className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" title="Nova conversa" onClick={nova}><Plus className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" title="Minimizar" onClick={onClose}><Minus className="h-4 w-4" /></Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" title="Fechar" onClick={onClose}><X className="h-4 w-4" /></Button>
         </div>
 
         {showHist ? (
@@ -220,7 +229,6 @@ export function AgentChatDrawer({ agente, open, onClose, initialMessage, nonce, 
           </div>
           <p className="text-[10px] text-muted-foreground text-right mt-1">{input.length}/{MAX}</p>
         </div>
-      </SheetContent>
-    </Sheet>
+    </div>
   );
 }
