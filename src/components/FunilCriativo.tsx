@@ -401,7 +401,7 @@ export const FunilCriativo = () => {
                   <Th k="conv" label="Conv." />
                   <Th k="faturamento" label="Faturamento" />
                   {agrupamento !== "campanha" && <Th k="campanhas_distintas" label="Campanhas" />}
-                  {<><Th k="gasto" label="Gasto" /><Th k="cpl" label="CPL" /><Th k="cac" label="CAC" /></>}
+                  {<><Th k="gasto" label="Gasto" /><Th k="cpl" label="Custo/lead" /><Th k="cac" label="CAC" /></>}
                 </tr>
               </thead>
               <tbody>
@@ -491,7 +491,7 @@ export const FunilCriativo = () => {
                 ({fmtPct(funnel[gargaloIdx].pctStep)} da etapa anterior). Coluna à direita = conversão etapa a etapa.
               </p>
             )}
-            {agrupamento === "campanha" && (
+            {(
               <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 border-t pt-3 text-xs text-muted-foreground">
                 <span>Gasto <strong className="text-foreground">{formatCurrency(Number(active.gasto ?? 0))}</strong></span>
                 <span>CPL <strong className="text-foreground">{formatCurrency(Number(active.cpl ?? 0))}</strong></span>
