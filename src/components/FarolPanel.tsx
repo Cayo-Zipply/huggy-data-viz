@@ -861,7 +861,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
         return (
           <section className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <TeamCard title="Faturamento" subtitle={subtitle} showLabel info={{ ...base, realizado: inboundTotal.realizado, meta: inboundTotal.meta, projecao: projOf(inboundTotal.realizado), fmt: fmtBRL0 }} />
+              <TeamCard title="Faturamento" subtitle={subtitle} showLabel info={{ ...base, realizado: inboundTotal.realizado, meta: inboundTotal.meta, projecao: inboundTotal.projecao, fmt: fmtBRL0 }} />
               <TeamCard title="Contratos" subtitle={subtitle} info={{ ...base, realizado: inboundTotal.contratos, meta: metaContratosTime, projecao: projOf(inboundTotal.contratos), fmt: (v) => String(Math.round(v)) }} />
               <TeamCard title="Reuniões realizadas" subtitle={subtitle} info={{ ...base, realizado: preVendasTotal.rr, meta: preVendasTotal.metaRR, projecao: projOf(preVendasTotal.rr), fmt: (v) => String(Math.round(v)) }} />
             </div>
