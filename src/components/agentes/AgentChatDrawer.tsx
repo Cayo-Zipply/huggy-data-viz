@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabaseExternal";
 import { cn } from "@/lib/utils";
 import { AgentAvatar } from "./AgentAvatar";
 import { RascunhoCard, type Rascunho } from "./RascunhoCard";
-import { agentColor, FERRAMENTA_LABELS, SUGESTOES, type Agente, type ChatState } from "./AgentesContext";
+import { agentColor, FERRAMENTA_LABELS, SUBTITULO, SUGESTOES, type Agente, type ChatState } from "./AgentesContext";
 
 interface Msg {
   role: "user" | "assistant";
@@ -151,7 +151,7 @@ export function AgentChatDrawer({ agente, agentes, onSwitch, open, onClose, init
                   <AgentAvatar agente={a} className="h-8 w-8 rounded-full shrink-0" imgClassName="object-[center_25%]" />
                   <span className="text-left min-w-0">
                     <span className="block font-hud uppercase tracking-wider text-sm leading-none">{a.nome}</span>
-                    <span className="block text-[9px] text-muted-foreground truncate mt-0.5">{a.id === "black_ops" ? "Analista de dados e vendas" : "Operador de pipeline"}</span>
+                    <span className="block text-[9px] text-muted-foreground truncate mt-0.5">{SUBTITULO[a.id] ?? a.titulo ?? ""}</span>
                   </span>
                 </button>
               );
