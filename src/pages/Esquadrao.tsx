@@ -9,6 +9,8 @@ const TITULO: Record<string, string> = { marketing: "Inteligência de sinais · 
 const DESCRICAO: Record<string, string> = {
   marketing: "Vigia o sinal das campanhas: saúde da CAPI, eventos de conversão, fadiga de criativo e o ritmo do mês. Avisa antes de o faturamento sentir.",
 };
+import { UsoAgentes } from "@/components/agentes/UsoAgentes";
+import { useAuth } from "@/contexts/AuthContext";
 import { BriefingSheet, useBriefingPanel } from "@/components/agentes/MissoesHoje";
 
 const ICONS: Record<string, any> = {
@@ -24,13 +26,23 @@ export default function Esquadrao() {
   const { data: briefings = [] } = useBriefingsHoje();
   const { openChat } = useAgentChat();
   const { aberto, abrir, fechar } = useBriefingPanel();
+  const { isAdmin } = useAuth();
+  const [aba, setAba] = useState<"agentes" | "uso">("agentes");
 
   return (
     <div className="hud-bg min-h-screen px-4 py-8 md:px-10">
       <div className="max-w-6xl mx-auto">
         <p className="text-[10px] uppercase tracking-[0.4em] text-muted-foreground">Black Ops · Seleção de agente</p>
         <h1 className="font-hud text-4xl md:text-5xl uppercase tracking-wider text-foreground mt-1">Esquadrão</h1>
+        {isAdmin && (
+          <div className="flex gap-4 mt-4 text-xs uppercase tracking-[0.3em]">
+            {(["agentes", "uso"] as const).map((k) => (
+              <button key={k} onClick={() => setAba(k)} className={aba === k ? "text-foreground border-b-2 pb-1" : "text-muted-foreground pb-1"} style={aba === k ? { borderColor: "#B8956A" } : undefined}>{k === "agentes" ? "Agentes" : "Uso"}</button>
+            ))}
+          </div>
+        )}
         <div className="h-px w-full bg-gradient-to-r from-border via-border/40 to-transparent my-6" />
+        {isAdmin && aba === "uso" ? <UsoAgentes /> : <>
 
         {isLoading && <p className="text-sm text-muted-foreground">Carregando agentes…</p>}
         {!isLoading && agentes.length === 0 && <p className="text-sm text-muted-foreground">Nenhum agente ativo.</p>}
@@ -40,6 +52,7 @@ export default function Esquadrao() {
             <AgentCard key={a.id} a={a} b={briefings.find((x) => x.agente_id === a.id)} compacto={agentes.length >= 3} onAbrir={abrir} onChat={openChat} />
           ))}
         </div>
+        </>}
       </div>
       {aberto && <BriefingSheet agente={aberto.agente} briefing={aberto.briefing} onClose={fechar} />}
     </div>
