@@ -8,10 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabaseExternal";
 import { cn } from "@/lib/utils";
 import { AgentAvatar } from "./AgentAvatar";
+import { MsgFeedback } from "./MsgFeedback";
 import { RascunhoCard, type Rascunho } from "./RascunhoCard";
 import { agentColor, FERRAMENTA_LABELS, ferramentaLabel, SUBTITULO, SUGESTOES, type Agente, type ChatState } from "./AgentesContext";
 
 interface Msg {
+  id?: string | null;
+  feedback?: number | null;
   role: "user" | "assistant";
   conteudo: string;
   ferramentas_usadas?: string[] | null;
@@ -26,7 +29,7 @@ const nomeFerramenta = (f: any) => (typeof f === "string" ? f : f?.nome ?? "");
 
 async function carregarConversa(db: any, id: string): Promise<Msg[]> {
   const [{ data }, { data: acoes }] = await Promise.all([
-    db.from("agente_mensagens").select("id, role, conteudo, ferramentas_usadas, created_at").eq("conversa_id", id).order("created_at", { ascending: true }),
+    db.from("agente_mensagens").select("id, role, conteudo, ferramentas_usadas, created_at, feedback, feedback_comentario").eq("conversa_id", id).order("created_at", { ascending: true }),
     db.from("agente_acoes").select("id, lead_id, texto, motivo, status, enviado_em").eq("conversa_id", id).order("created_at"),
   ]);
   let rasc = (acoes ?? []) as Rascunho[];
@@ -38,7 +41,7 @@ async function carregarConversa(db: any, id: string): Promise<Msg[]> {
   }
   const lista = ((data ?? []) as any[])
     .filter((m) => m.role === "user" || m.role === "assistant")
-    .map((m) => ({ role: m.role, conteudo: m.conteudo ?? "", ferramentas_usadas: (m.ferramentas_usadas ?? []).map(nomeFerramenta).filter(Boolean) })) as Msg[];
+    .map((m) => ({ id: m.id, feedback: m.feedback, role: m.role, conteudo: m.conteudo ?? "", ferramentas_usadas: (m.ferramentas_usadas ?? []).map(nomeFerramenta).filter(Boolean) })) as Msg[];
   if (rasc.length) {
     let last = -1;
     lista.forEach((m, i) => { if (m.role === "assistant") last = i; });
@@ -117,7 +120,13 @@ export function AgentChatDrawer({ agente, agentes, onSwitch, open, onClose, init
       return;
     }
     if (data?.conversa_id) setConversaId(data.conversa_id);
-    setMsgs((m) => [...m, { role: "assistant", conteudo: data?.resposta ?? "", ferramentas_usadas: (data?.ferramentas_usadas ?? []).map(nomeFerramenta).filter(Boolean), rascunhos: Array.isArray(data?.rascunhos) ? data.rascunhos : [] }]);
+    let novoId: string | null = null;
+    const cid = data?.conversa_id ?? conversaId;
+    if (cid) {
+      const { data: ult } = await db.from("agente_mensagens").select("id").eq("conversa_id", cid).eq("role", "assistant").order("created_at", { ascending: false }).limit(1);
+      novoId = ult?.[0]?.id ?? null;
+    }
+    setMsgs((m) => [...m, { id: novoId, role: "assistant", conteudo: data?.resposta ?? "", ferramentas_usadas: (data?.ferramentas_usadas ?? []).map(nomeFerramenta).filter(Boolean), rascunhos: Array.isArray(data?.rascunhos) ? data.rascunhos : [] }]);
     qc.invalidateQueries({ queryKey: ["agente-conversas", agente.id] });
   };
 
@@ -191,7 +200,7 @@ export function AgentChatDrawer({ agente, agentes, onSwitch, open, onClose, init
                 <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-primary text-primary-foreground px-3 py-2 text-sm whitespace-pre-wrap">{m.conteudo}</div>
               </div>
             ) : (
-              <div key={i} className="space-y-1">
+              <div key={m.id ?? i} className="group space-y-1">
                 <div className={cn("prose prose-sm dark:prose-invert max-w-none text-sm [&_table]:text-xs [&_table]:w-full [&_th]:border [&_td]:border [&_th]:border-border [&_td]:border-border [&_th]:px-2 [&_td]:px-2 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5", m.erro && "rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-destructive")}>
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.conteudo}</ReactMarkdown>
                 </div>
@@ -199,6 +208,7 @@ export function AgentChatDrawer({ agente, agentes, onSwitch, open, onClose, init
                   <p className="text-[11px] text-muted-foreground">Consultou: {m.ferramentas_usadas.map((f) => ferramentaLabel(f)).join(", ")}</p>
                 )}
                 {m.rascunhos?.map((r) => <RascunhoCard key={r.id} r={r} />)}
+                {!m.erro && <MsgFeedback id={m.id} cor={cor} inicial={m.feedback} />}
               </div>
             ))}
             {loading && (
