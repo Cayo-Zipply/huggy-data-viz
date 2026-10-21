@@ -43,8 +43,9 @@ const anterior = (p: PeriodoFunil): PeriodoFunil => {
   return { desde: iso(ini), ate: iso(fim) };
 };
 
-const useResumo = (p: PeriodoFunil, camp: string | null) => useQuery({
+const useResumo = (p: PeriodoFunil, camp: string | null, enabled = true) => useQuery({
   queryKey: ["mkt-criativos-resumo", p.desde, p.ate, camp],
+  enabled,
   queryFn: async () => {
     const { data, error } = await (supabase as any).rpc("mkt_criativos_resumo", { p_inicio: p.desde, p_fim: p.ate, p_campanha: camp });
     if (error) throw error;
@@ -52,7 +53,35 @@ const useResumo = (p: PeriodoFunil, camp: string | null) => useQuery({
   },
 });
 
-type Tile = { l: string; v: string; cur: number; prev: number; inverso?: boolean; real?: boolean; full?: string; sub?: string };
+// Mês inteiro: começa no dia 1 e termina no último dia do mês (ou hoje, no mês atual).
+const mesInteiro = (p: PeriodoFunil): string | null => {
+  const a = parse(p.desde), b = parse(p.ate);
+  if (a.getDate() !== 1 || a.getMonth() !== b.getMonth() || a.getFullYear() !== b.getFullYear()) return null;
+  const ultimo = new Date(a.getFullYear(), a.getMonth() + 1, 0);
+  const fimOk = iso(b) === iso(ultimo) || iso(b) === iso(hojeSP());
+  return fimOk ? p.desde.slice(0, 7) : null;
+};
+const mesAnteriorDe = (mes: string) => {
+  const [y, m] = mes.split("-").map(Number);
+  const d = new Date(y, m - 2, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+};
+const periodoDoMes = (mes: string): PeriodoFunil => {
+  const [y, m] = mes.split("-").map(Number);
+  return { desde: `${mes}-01`, ate: iso(new Date(y, m, 0)) };
+};
+// Reuniões realizadas oficiais (regra no banco): soma de reunioes_realizadas de farol_metricas_time.
+const useReunioesTime = (mes: string | null) => useQuery({
+  queryKey: ["farol-metricas-time-rr", mes],
+  enabled: !!mes,
+  queryFn: async () => {
+    const { data, error } = await (supabase as any).rpc("farol_metricas_time", { p_mes: mes });
+    if (error) throw error;
+    return (Array.isArray(data) ? data : []).reduce((s: number, r: any) => s + n(r.reunioes_realizadas), 0) as number;
+  },
+});
+
+type Tile = { l: string; v: string; cur: number; prev: number; inverso?: boolean; real?: boolean; full?: string; sub?: string; semSeta?: boolean };
 
 function Chip({ cur, prev, inverso }: { cur: number; prev: number; inverso?: boolean }) {
   if (!prev || !cur) return <span className="text-[11px] text-mkt-muted">—</span>;
@@ -73,6 +102,12 @@ export function MarketingOverview() {
   const prevP = useMemo(() => anterior(periodo), [periodo]);
   const cur = useResumo(periodo, pCamp);
   const prev = useResumo(prevP, pCamp);
+  // Custo/reunião: só em mês inteiro e sem filtro de campanha (reuniões são do time todo).
+  const mesSel = pCamp ? null : mesInteiro(periodo);
+  const mesPrev = mesSel ? mesAnteriorDe(mesSel) : null;
+  const rrMes = useReunioesTime(mesSel);
+  const rrPrev = useReunioesTime(mesPrev);
+  const prevMesResumo = useResumo(mesPrev ? periodoDoMes(mesPrev) : { desde: "", ate: "" }, null, !!mesPrev);
   const lista = useQuery({
     queryKey: ["mkt-criativos", periodo.desde, periodo.ate, pCamp],
     queryFn: async () => {
@@ -84,6 +119,9 @@ export function MarketingOverview() {
 
   const t = cur.data?.totais ?? {};
   const pt = prev.data?.totais ?? {};
+  const custoReuniao = mesSel && rrMes.data ? n(t.gasto) / rrMes.data : null;
+  const gastoPrevMes = n(prevMesResumo.data?.totais?.gasto);
+  const custoReuniaoPrev = mesPrev && rrPrev.data && gastoPrevMes ? gastoPrevMes / rrPrev.data : null;
   const campanhas: string[] = (cur.data?.campanhas ?? []).map((c: any) => (typeof c === "string" ? c : c?.campanha ?? c?.nome)).filter(Boolean);
   const loading = cur.isLoading;
   const semDados = !loading && n(t.gasto) === 0;
@@ -96,7 +134,17 @@ export function MarketingOverview() {
     { l: "Conversas", v: numKpi(t.conversas), full: numFull(t.conversas), cur: n(t.conversas), prev: n(pt.conversas) },
     { l: "Custo/conversa", v: brlKpi(t.custo_conversa), full: brlFull(t.custo_conversa), cur: n(t.custo_conversa), prev: n(pt.custo_conversa), inverso: true },
     { l: "Custo/lead", v: brlKpi(t.custo_lead), full: brlFull(t.custo_lead), cur: n(t.custo_lead), prev: n(pt.custo_lead), inverso: true },
-    { l: "Custo/reunião", v: brlKpi(t.custo_reuniao), full: brlFull(t.custo_reuniao), cur: n(t.custo_reuniao), prev: n(pt.custo_reuniao), inverso: true },
+    {
+      l: "Custo/reunião",
+      v: custoReuniao != null ? brlKpi(custoReuniao) : "—",
+      full: custoReuniao != null
+        ? `${brlFull(custoReuniao)} · gasto do período ÷ reuniões realizadas do mês (pela data da reunião realizada, ou da reunião, ou da última mudança de etapa)`
+        : pCamp ? "Disponível só sem filtro de campanha" : "Disponível só no mês",
+      cur: custoReuniao ?? 0,
+      prev: custoReuniaoPrev ?? 0,
+      inverso: true,
+      semSeta: custoReuniao == null || custoReuniaoPrev == null,
+    },
     { l: "Leads", v: numKpi(t.leads), full: numFull(t.leads), cur: n(t.leads), prev: n(pt.leads) },
     { l: "Contratos", v: numKpi(t.contratos), full: numFull(t.contratos), cur: n(t.contratos), prev: n(pt.contratos), real: true },
     { l: "CAC", v: n(t.cac) ? brlKpi(t.cac) : "—", full: brlFull(t.cac), cur: n(t.cac), prev: n(pt.cac), inverso: true, real: true },
@@ -165,7 +213,7 @@ export function MarketingOverview() {
             <p className="mkt-label">{k.l}</p>
             {loading ? <Skeleton className="h-8 w-24 mt-2" /> : <p title={k.full ?? k.v} style={KPI_VALUE_STYLE} className={cn("mkt-value mt-1", KPI_VALUE_CLASS, k.real && "text-mkt-gold")}>{k.v}</p>}
             {k.sub && !loading && <p className="text-[10px] text-mkt-muted mt-0.5 leading-snug">{k.sub}</p>}
-            <div className="mt-1.5 h-5">{!loading && !prev.isLoading && <Chip cur={k.cur} prev={k.prev} inverso={k.inverso} />}</div>
+            <div className="mt-1.5 h-5">{!loading && !prev.isLoading && !k.semSeta && <Chip cur={k.cur} prev={k.prev} inverso={k.inverso} />}</div>
           </div>
         ))}
       </div>
