@@ -178,7 +178,7 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
     porcentagem_exito: card.porcentagem_exito || "",
     data_primeiro_pagamento: card.data_primeiro_pagamento || "",
     dia_demais_pagamentos: card.dia_demais_pagamentos || "",
-    prazo_entrega_relatorios: card.prazo_entrega_relatorios?.toString() || "",
+    prazo_entrega_relatorios: card.prazo_entrega_relatorios?.toString() || "7",
     prazo_contrato: card.prazo_contrato || "",
   });
 
@@ -517,7 +517,7 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
       porcentagem_exito: prev.porcentagem_exito || card.porcentagem_exito || "",
       data_primeiro_pagamento: prev.data_primeiro_pagamento || card.data_primeiro_pagamento || "",
       dia_demais_pagamentos: prev.dia_demais_pagamentos || card.dia_demais_pagamentos || "",
-      prazo_entrega_relatorios: prev.prazo_entrega_relatorios || card.prazo_entrega_relatorios?.toString() || "",
+      prazo_entrega_relatorios: prev.prazo_entrega_relatorios || card.prazo_entrega_relatorios?.toString() || "7",
       prazo_contrato: prev.prazo_contrato || card.prazo_contrato || "",
     }));
     setValorMensalidade(prev => prev ?? card.valor_mensalidade ?? null);
