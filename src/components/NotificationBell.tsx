@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useAgentChat } from "@/components/agentes/AgentesContext";
 
 interface Recipient {
   id: string;
@@ -45,6 +46,7 @@ const PAGE_SIZE = 20;
 export function NotificationBell() {
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const { openChat } = useAgentChat();
   const [items, setItems] = useState<Recipient[]>([]);
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState(0);
@@ -163,12 +165,19 @@ export function NotificationBell() {
                     const unreadItem = r.read_at === null;
                     const tipoIcon =
                       n.tipo === "contrato_assinado" ? "✅" :
-                      n.tipo === "contrato_aberto" ? "📄" : null;
+                      n.tipo === "contrato_aberto" ? "📄" :
+                      n.tipo === "aprovacao_agente" ? "⏳" : null;
                     const tipoAccent =
                       n.tipo === "contrato_assinado" ? "border-l-2 border-emerald-500" :
-                      n.tipo === "contrato_aberto" ? "border-l-2 border-amber-500" : "";
+                      n.tipo === "contrato_aberto" ? "border-l-2 border-amber-500" :
+                      n.tipo === "aprovacao_agente" ? "border-l-4 border-amber-500 bg-amber-500/10" : "";
                     const handleClick = () => {
                       if (unreadItem) markOne(r.id);
+                      if (n.tipo === "aprovacao_agente") {
+                        setOpen(false);
+                        openChat("black_ops", "Quais pedidos estão aguardando minha aprovação?");
+                        return;
+                      }
                       if (n.lead_id) {
                         setOpen(false);
                         navigate("/pipeline");
