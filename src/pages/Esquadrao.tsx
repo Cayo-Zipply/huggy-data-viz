@@ -10,6 +10,7 @@ const DESCRICAO: Record<string, string> = {
   marketing: "Vigia o sinal das campanhas: saúde da CAPI, eventos de conversão, fadiga de criativo e o ritmo do mês. Avisa antes de o faturamento sentir.",
 };
 import { UsoAgentes } from "@/components/agentes/UsoAgentes";
+import { AprovacoesPendentes } from "@/components/agentes/AprovacoesPendentes";
 import { useAuth } from "@/contexts/AuthContext";
 import { BriefingSheet, useBriefingPanel } from "@/components/agentes/MissoesHoje";
 
@@ -43,6 +44,7 @@ export default function Esquadrao() {
         )}
         <div className="h-px w-full bg-gradient-to-r from-border via-border/40 to-transparent my-6" />
         {isAdmin && aba === "uso" ? <UsoAgentes /> : <>
+        <AprovacoesPendentes />
 
         {isLoading && <p className="text-sm text-muted-foreground">Carregando agentes…</p>}
         {!isLoading && agentes.length === 0 && <p className="text-sm text-muted-foreground">Nenhum agente ativo.</p>}
