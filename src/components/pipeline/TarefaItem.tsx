@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseExternal";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { patchTaskLocal } from "./usePipelineData";
 import { cn } from "@/lib/utils";
 import { Check, Paperclip, Trash2, ImagePlus, RotateCw, CalendarPlus, ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -202,6 +203,7 @@ export function TarefaItem({ task, onToggle }: { task: PipelineTask; onToggle: (
     const { error } = await sb.from("tarefas").update({ observacao: v }).eq("id", task.id);
     if (error) { toast.error("Erro ao salvar observação: " + error.message); return false; }
     setSavedObs(v ?? "");
+    patchTaskLocal(task.id, { observacao: v });
     if (!silent) toast.success("Observação salva");
     return true;
   };

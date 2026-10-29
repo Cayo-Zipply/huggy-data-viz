@@ -191,6 +191,10 @@ function publishPipelineSnapshot(snapshot: PipelineSnapshot) {
   pipelineDataListeners.forEach((listener) => listener(snapshot));
 }
 
+export function patchTaskLocal(id: string, patch: Partial<PipelineTask>) {
+  publishPipelineSnapshot({ ...pipelineDataCache, tasks: pipelineDataCache.tasks.map(t => t.id === id ? { ...t, ...patch } : t) });
+}
+
 /* ── main hook ── */
 export function usePipelineData(actorName: string) {
   const [cards, setCards] = useState<PipelineCard[]>(() => pipelineDataCache.cards);
