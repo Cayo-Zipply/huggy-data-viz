@@ -28,6 +28,7 @@ import { GrupoWhatsappSection } from "./GrupoWhatsappSection";
 import { AbrirConversaButton, MensagensLeadSection } from "./WhatsappLeadSection";
 import { BotaoReengajarWhatsApp } from "./BotaoReengajarWhatsApp";
 import { AbaAnexos } from "@/components/lead/aba-anexos";
+import { TarefaItem } from "./TarefaItem";
 import type { PipelineLabel } from "@/hooks/useLabels";
 import { CallButton } from "./CallButton";
 import { CallHistory } from "./CallHistory";
@@ -1134,22 +1135,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     <button onClick={submitTask} className="text-sm px-4 py-1.5 bg-primary text-primary-foreground rounded-md w-full hover:bg-primary/90">Criar tarefa</button>
                   </div>
                 )}
-                {cardTasks.map(t => (
-                  <div key={t.id} className="flex items-center gap-3 py-2 border-b border-border/30 last:border-0">
-                    <button onClick={() => onToggleTask(t.id)}
-                      className={cn("flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors",
-                        t.status === "concluida" ? "border-green-400 bg-green-400/20 text-green-400" : "border-muted-foreground text-transparent hover:border-primary")}>
-                      <Check size={10} />
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <span className={cn("text-sm", t.status === "concluida" && "line-through text-muted-foreground")}>{t.title}</span>
-                      <div className="flex gap-2 mt-0.5">
-                        <span className="text-[10px] text-muted-foreground">{new Date(t.due_date + "T12:00:00").toLocaleDateString("pt-BR")}{t.due_time ? ` · ${t.due_time}` : ""}</span>
-                        {t.auto_generated && <span className="text-[10px] text-muted-foreground italic">auto</span>}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                {cardTasks.map(t => <TarefaItem key={t.id} task={t} onToggle={onToggleTask} />)}
               </div>
             )}
 
@@ -1248,7 +1234,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                   </>
                 )}
                 {/* Anexos from lead_anexos table */}
-                <AbaAnexos leadId={card.id} />
+                <AbaAnexos leadId={card.id} taskTitles={Object.fromEntries(cardTasks.map(t => [t.id, t.title]))} />
               </div>
             )}
 

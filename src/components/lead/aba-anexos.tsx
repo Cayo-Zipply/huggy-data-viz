@@ -32,6 +32,7 @@ const TIPO_META: Record<string, { label: string; cls: string; Icon: any }> = {
   transcricao: { label: "Transcrição", cls: "border-blue-500/40 bg-blue-500/10 text-blue-400", Icon: Video },
   documento: { label: "Documento", cls: "border-slate-500/40 bg-slate-500/10 text-slate-300", Icon: FileText },
   imagem: { label: "Imagem", cls: "border-green-500/40 bg-green-500/10 text-green-400", Icon: ImageIcon },
+  print_tarefa: { label: "Print de tarefa", cls: "border-sky-500/40 bg-sky-500/10 text-sky-400", Icon: ImageIcon },
   outro: { label: "Outro", cls: "border-amber-500/40 bg-amber-500/10 text-amber-400", Icon: FileQuestion },
 };
 
@@ -47,8 +48,13 @@ function formatarTamanho(bytes: number | null) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-export function AbaAnexos({ leadId }: { leadId: string }) {
-  const { data: anexos, isLoading } = useLeadAnexos(leadId);
+export function AbaAnexos({ leadId, taskTitles = {} }: { leadId: string; taskTitles?: Record<string, string> }) {
+  const { data: anexosRaw, isLoading } = useLeadAnexos(leadId);
+  // Prints de tarefa ficam agrupados por tarefa, depois dos demais anexos.
+  const anexos = anexosRaw ? [
+    ...anexosRaw.filter(a => a.tipo !== "print_tarefa"),
+    ...anexosRaw.filter(a => a.tipo === "print_tarefa").sort((x: any, y: any) => String(x.tarefa_id).localeCompare(String(y.tarefa_id))),
+  ] : anexosRaw;
   const upload = useUploadAnexo(leadId);
   const remove = useDeleteAnexo(leadId);
   const [previewing, setPreviewing] = useState<LeadAnexo | null>(null);
@@ -138,7 +144,7 @@ export function AbaAnexos({ leadId }: { leadId: string }) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-medium text-foreground truncate">{a.nome_arquivo}</span>
-                  <Badge variant="outline" className={`text-[10px] ${meta.cls}`}>{meta.label}</Badge>
+                  <Badge variant="outline" className={`text-[10px] ${meta.cls}`}>{a.tipo === "print_tarefa" ? `Print de tarefa: ${taskTitles[(a as any).tarefa_id] ?? "tarefa"}` : meta.label}</Badge>
                   {a.source === "readai" && (
                     <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-500">Read.ai</Badge>
                   )}
