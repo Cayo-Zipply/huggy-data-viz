@@ -148,6 +148,9 @@ function dbRowToTask(row: any): PipelineTask {
     pipe_context: (row.pipeline || "sdr") as PipeType,
     auto_generated: row.auto || false,
     created_at: row.created_at || new Date().toISOString(),
+    observacao: row.observacao ?? null,
+    reagendamentos: row.reagendamentos ?? 0,
+    data_original: row.data_original ?? null,
   };
 }
 
@@ -786,7 +789,7 @@ export function usePipelineData(actorName: string) {
   }, [tasks, updateTasksState]);
 
   const rescheduleTask = useCallback(async (id: string, date: string, time?: string | null) => {
-    const patch: Record<string, any> = { data_tarefa: date, lembrete_enviado: false };
+    const patch: Record<string, any> = { data_tarefa: date };
     if (time !== undefined) patch.hora_tarefa = time ? time.slice(0, 5) : null;
     await sbExt.from("tarefas").update(patch).eq("id", id);
     updateTasksState(prev => prev.map(t => t.id === id ? { ...t, due_date: date, ...(time !== undefined ? { due_time: time ? time.slice(0, 5) : null } : {}) } : t));
