@@ -97,6 +97,9 @@ export interface PipelineTask {
   pipe_context: PipeType;
   auto_generated: boolean;
   created_at: string;
+  observacao?: string | null;
+  reagendamentos?: number | null;
+  data_original?: string | null;
 }
 
 export interface PipelineGoal {
