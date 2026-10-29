@@ -152,14 +152,27 @@ export function ReguaMes({ passedBD, totalBD, fatorPace }: { passedBD: number; t
   const pct = Math.min(100, fatorPace * 100);
   return (
     <div className="space-y-1.5">
-      <div className="relative h-2 rounded-full bg-muted">
+      <div className="relative h-2 rounded-full bg-muted mt-5">
         <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${pct}%`, backgroundColor: FAROL_COLORS.gold }} />
         <div className="absolute -top-1 h-4 w-[3px] -translate-x-1/2 rounded" style={{ left: `${pct}%`, backgroundColor: FAROL_COLORS.gold }} />
+        <span
+          className="absolute bottom-full mb-1 text-xs tabular-nums whitespace-nowrap"
+          style={
+            pct > 85 ? { right: 0, color: FAROL_COLORS.gold }
+            : pct < 15 ? { left: 0, color: FAROL_COLORS.gold }
+            : { left: `${pct}%`, transform: "translateX(-50%)", color: FAROL_COLORS.gold }
+          }
+        >{Math.round(pct)}%</span>
       </div>
-      <div className="relative flex justify-between text-xs text-muted-foreground tabular-nums">
-        <span>Dia útil {passedBD} de {totalBD}</span>
-        <span className="absolute -translate-x-1/2" style={{ left: `${pct}%`, color: FAROL_COLORS.gold }}>{Math.round(pct)}%</span>
-        <span>{Math.max(0, totalBD - passedBD)} dias úteis restantes</span>
+      <div className="flex justify-between gap-2 text-xs text-muted-foreground tabular-nums">
+        <span className="whitespace-nowrap">Dia útil {passedBD} de {totalBD}</span>
+        <span className="whitespace-nowrap text-right">{(() => {
+          const r = totalBD - passedBD;
+          if (r < 0) return "Mês encerrado";
+          if (r === 0) return "Último dia útil";
+          if (r === 1) return "1 dia útil restante";
+          return `${r} dias úteis restantes`;
+        })()}</span>
       </div>
     </div>
   );
