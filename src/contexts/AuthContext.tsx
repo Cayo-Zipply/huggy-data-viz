@@ -8,6 +8,8 @@ import {
   type ReactNode,
 } from "react";
 import { supabase } from "@/lib/supabaseExternal";
+import { useQueryClient } from "@tanstack/react-query";
+import { clearPersistedData } from "@/lib/clearLocalData";
 import type { User, Session } from "@supabase/supabase-js";
 
 interface UserProfile {
@@ -71,6 +73,7 @@ async function persistGoogleToken(session: Session | null) {
 
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -271,7 +274,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mountedRef.current = false;
       subscription.unsubscribe();
     };
-  }, [applySessionState, clearAuthState, loadProfile]);
+  }, [applySessionState, clearAuthState, loadProfile, queryClient]);
 
   const signOut = useCallback(async () => {
     try {
