@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Info, AlertTriangle } from "lucide-react";
@@ -38,6 +39,16 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
   const [dragOver, setDragOver] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const slaHoras = slaRule?.sla_horas ?? 24;
+  // Virtualização: só desenha os cards visíveis (+ margem). O drop é na
+  // coluna inteira, então o arrastar continua funcionando.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useVirtualizer({
+    count: cards.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 120,
+    overscan: 6,
+    getItemKey: (i) => cards[i]?.id ?? i,
+  });
 
   // Count SLA breaches
   const slaBreached = cards.filter(c => {
@@ -90,10 +101,14 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
           </div>
         )}
       </div>
-      <div className="flex-1 space-y-1.5 overflow-y-auto p-1.5 max-h-[72vh]">
-        {cards.map(card => (
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-1.5 max-h-[72vh]">
+        <div style={{ height: virtualizer.getTotalSize(), position: "relative", width: "100%" }}>
+        {virtualizer.getVirtualItems().map(vi => { const card = cards[vi.index]; return (
           <div
-            key={card.id}
+            key={vi.key}
+            data-index={vi.index}
+            ref={virtualizer.measureElement}
+            style={{ position: "absolute", top: 0, left: 0, width: "100%", transform: `translateY(${vi.start}px)`, paddingBottom: 6 }}
             draggable={!bulkMode}
             onDragStart={e => e.dataTransfer.setData("cardId", card.id)}
             onClick={(e) => {
@@ -125,7 +140,8 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
               onMarkWon={onMarkWon} onMarkLost={onMarkLost} onCreateTask={onCreateTask} onToggleTask={onToggleTask}
               onCardClick={onCardClick} onDelete={onDelete} />
           </div>
-        ))}
+        ); })}
+        </div>
         {cards.length === 0 && loading && (
           <div className="space-y-2" aria-busy="true" aria-label="Carregando leads">
             {[0, 1, 2].map(i => (
