@@ -1,29 +1,33 @@
+import { useState, lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
+import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval";
+import { APP_CACHE_BUSTER, CACHE_MAX_AGE } from "@/lib/persistCache";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Login from "@/pages/Login";
 import ResetPassword from "@/pages/ResetPassword";
 import Index from "@/pages/Index";
 import NotFound from "@/pages/NotFound";
-import UserManagement from "@/pages/UserManagement";
-import Settings from "@/pages/Settings";
-import Contratos from "@/pages/Contratos";
-import Feedbacks from "@/pages/Feedbacks";
-import MaterialApoio from "@/pages/MaterialApoio";
-import SalesEnablement from "@/pages/SalesEnablement";
-import Pool from "@/pages/Pool";
-import PendenciasPosVenda from "@/pages/PendenciasPosVenda";
-import Esquadrao from "@/pages/Esquadrao";
-import Criativos from "@/pages/Criativos";
+const UserManagement = lazy(() => import("@/pages/UserManagement"));
+const Settings = lazy(() => import("@/pages/Settings"));
+const Contratos = lazy(() => import("@/pages/Contratos"));
+const Feedbacks = lazy(() => import("@/pages/Feedbacks"));
+const MaterialApoio = lazy(() => import("@/pages/MaterialApoio"));
+const SalesEnablement = lazy(() => import("@/pages/SalesEnablement"));
+const Pool = lazy(() => import("@/pages/Pool"));
+const PendenciasPosVenda = lazy(() => import("@/pages/PendenciasPosVenda"));
+const Esquadrao = lazy(() => import("@/pages/Esquadrao"));
+const Criativos = lazy(() => import("@/pages/Criativos"));
 import { AgentesProvider } from "@/components/agentes/AgentesContext";
 import { AgentFab } from "@/components/agentes/AgentFab";
 import { AppSidebar } from "@/components/AppSidebar";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { NovidadesModal } from "@/components/NovidadesModal";
-import { useState } from "react";
 import { Users, UserCheck } from "lucide-react";
 
 const queryClient = new QueryClient({
@@ -39,6 +43,22 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Cache persistente (IndexedDB) só de dados de tela do Farol — nunca tokens.
+const PERSISTED_KEYS = new Set(["farol_metricas_time", "farol_metricas_sdr", "user_profiles"]);
+const persister = createAsyncStoragePersister({
+  storage: { getItem: (k) => idbGet(k), setItem: (k, v) => idbSet(k, v), removeItem: (k) => idbDel(k) },
+  key: "rq-farol-cache",
+  throttleTime: 2000,
+});
+const persistOptions = {
+  persister,
+  maxAge: CACHE_MAX_AGE,
+  buster: APP_CACHE_BUSTER,
+  dehydrateOptions: {
+    shouldDehydrateQuery: (q: any) => q.state.status === "success" && PERSISTED_KEYS.has(String(q.queryKey[0])),
+  },
+};
 
 const TAB_ROUTES = new Set(["pipeline", "marketing", "comercial", "comparativo", "rentabilidade", "consolidado", "ajuda", "farol"]);
 const ADMIN_TABS = new Set(["marketing", "comercial", "comparativo", "rentabilidade", "consolidado"]);
@@ -143,7 +163,11 @@ function AuthLayout() {
           <Index />
         </div>
         {/* Non-tab pages render via Outlet */}
-        {!isTabRoute && <Outlet />}
+        {!isTabRoute && (
+          <Suspense fallback={<div className="p-8 text-sm text-muted-foreground">Carregando…</div>}>
+            <Outlet />
+          </Suspense>
+        )}
       </main>
       <FeedbackWidget />
       <NovidadesModal />
@@ -168,7 +192,7 @@ function RoleGuard({
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
+  <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -206,7 +230,7 @@ const App = () => (
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
-  </QueryClientProvider>
+  </PersistQueryClientProvider>
 );
 
 export default App;

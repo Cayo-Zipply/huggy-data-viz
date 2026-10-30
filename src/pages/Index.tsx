@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { useLocation } from "react-router-dom";
 import { MetricCard } from "@/components/MetricCard";
 import { TrafficFunnel } from "@/components/TrafficFunnel";
@@ -6,7 +6,7 @@ import { TrafficFunnel } from "@/components/TrafficFunnel";
 import { PerformanceChart } from "@/components/PerformanceChart";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { SalesFunnel } from "@/components/SalesFunnel";
-import { ComparisonPanel } from "@/components/ComparisonPanel";
+const ComparisonPanel = lazy(() => import("@/components/ComparisonPanel").then(m => ({ default: m.ComparisonPanel })));
 import { metricTooltips } from "@/components/MetricTooltip";
 import {
   calculateVariation,
@@ -15,10 +15,10 @@ import {
   formatPercent,
 } from "@/data/marketingData";
 import { salesData } from "@/data/salesData";
-import { RevenuePanel } from "@/components/RevenuePanel";
-import { ConsolidatedPanel } from "@/components/ConsolidatedPanel";
+const RevenuePanel = lazy(() => import("@/components/RevenuePanel").then(m => ({ default: m.RevenuePanel })));
+const ConsolidatedPanel = lazy(() => import("@/components/ConsolidatedPanel").then(m => ({ default: m.ConsolidatedPanel })));
 import { PipelinePanel } from "@/components/PipelinePanel";
-import { HelpPanel } from "@/components/HelpPanel";
+const HelpPanel = lazy(() => import("@/components/HelpPanel").then(m => ({ default: m.HelpPanel })));
 import { FarolPanel } from "@/components/FarolPanel";
 import { MissoesHoje, SinalCampanhasHoje } from "@/components/agentes/MissoesHoje";
 import { SalesPieChart } from "@/components/SalesPieChart";
@@ -29,8 +29,8 @@ import { useMarketingOverrides } from "@/hooks/useMarketingOverrides";
 import { useMarketingLive } from "@/hooks/useMarketingLive";
 import { CampaignSelector } from "@/components/CampaignSelector";
 import { FarolCloserCards } from "@/components/FarolCloserCards";
-import { FunilCriativo } from "@/components/FunilCriativo";
-import { MarketingOverview } from "@/components/MarketingOverview";
+const FunilCriativo = lazy(() => import("@/components/FunilCriativo").then(m => ({ default: m.FunilCriativo })));
+const MarketingOverview = lazy(() => import("@/components/MarketingOverview").then(m => ({ default: m.MarketingOverview })));
 import { supabase } from "@/integrations/supabase/client";
 import { useFarolMetricasTime, useFarolMetricasSdr } from "@/hooks/useFarolRpc";
 
@@ -48,7 +48,7 @@ const Index = () => {
   const mounted = (k: string) => visited.has(k);
   const { profile } = useAuth();
   const pipelineName = profile?.nome ?? "Admin";
-  const { cards, goals, upsertGoal, refresh } = usePipelineData(pipelineName);
+  const { cards, goals, upsertGoal, refresh, refreshing } = usePipelineData(pipelineName);
   const pipelineOwners = [...new Set(cards.map(c => c.owner).filter(Boolean))] as string[];
 
   // Marketing overrides from internal DB
@@ -309,6 +309,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {refreshing && (activeTab === "pipeline" || activeTab === "farol") && (
+        <div role="status" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 rounded-full border border-border bg-card/95 px-3 py-1 text-[11px] text-muted-foreground shadow-sm backdrop-blur">
+          atualizando…
+        </div>
+      )}
       <main className="p-3 sm:p-4 lg:p-8 overflow-auto">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-wrap items-center justify-end gap-3 mb-8">
@@ -337,7 +342,7 @@ const Index = () => {
           {mounted("marketing") && (
           <div className={isMarketing ? "" : "hidden"}>
             <SinalCampanhasHoje />
-            <MarketingOverview />
+            <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando…</div>}><MarketingOverview /></Suspense>
 
             {/* ===== Bloco Comercial ===== */}
             <div className="mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-border">
@@ -385,7 +390,7 @@ const Index = () => {
 
             {/* ===== Funil por Criativo ===== */}
             <div className="mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-border">
-              <FunilCriativo />
+              <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando…</div>}><FunilCriativo /></Suspense>
             </div>
           </div>
           )}
@@ -394,21 +399,21 @@ const Index = () => {
           {/* Rentabilidade Tab — kept mounted */}
           {mounted("rentabilidade") && (
           <div className={activeTab === "rentabilidade" ? "" : "hidden"}>
-            <RevenuePanel />
+            <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando…</div>}><RevenuePanel /></Suspense>
           </div>
           )}
 
           {/* Comparativo Tab — kept mounted */}
           {mounted("comparativo") && (
           <div className={activeTab === "comparativo" ? "" : "hidden"}>
-            <ComparisonPanel />
+            <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando…</div>}><ComparisonPanel /></Suspense>
           </div>
           )}
 
           {/* Consolidado Tab — kept mounted */}
           {mounted("consolidado") && (
           <div className={activeTab === "consolidado" ? "" : "hidden"}>
-            <ConsolidatedPanel />
+            <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando…</div>}><ConsolidatedPanel /></Suspense>
           </div>
           )}
 
@@ -428,7 +433,7 @@ const Index = () => {
           {/* Ajuda Tab — kept mounted */}
           {mounted("ajuda") && (
           <div className={activeTab === "ajuda" ? "" : "hidden"}>
-            <HelpPanel />
+            <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando…</div>}><HelpPanel /></Suspense>
           </div>
           )}
         </div>

@@ -18,6 +18,8 @@ export function useFarolMetricasTime(mes: string | null | undefined, enabled = t
     queryFn: () => rpcRows("farol_metricas_time", mes as string),
     enabled: enabled && !!mes,
     placeholderData: keepPreviousData,
+    gcTime: 24 * 60 * 60_000,
+    refetchOnMount: true, // dado restaurado do cache local atualiza em 2º plano
   });
 }
 
@@ -27,5 +29,7 @@ export function useFarolMetricasSdr(mes: string | null | undefined, enabled = tr
     queryFn: () => rpcRows("farol_metricas_sdr", mes as string),
     enabled: enabled && !!mes,
     placeholderData: keepPreviousData,
+    gcTime: 24 * 60 * 60_000,
+    refetchOnMount: true, // dado restaurado do cache local atualiza em 2º plano
   });
 }
