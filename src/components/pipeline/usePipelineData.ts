@@ -228,8 +228,8 @@ const HIST_COLS = "lead_id,etapa_de,etapa_para,created_at,closer";
 const fullRowCache = new Map<string, any>();
 // Histórico: NÃO é baixado ao abrir o Pipeline. Por lead ao abrir o card;
 // completo só quando uma tela de métricas (Farol/Dashboard) pede.
-const historyState: { map: Map<string, StageChange[]>; allLoaded: boolean; allInFlight: Promise<void> | null } = {
-  map: new Map(), allLoaded: false, allInFlight: null,
+const historyState: { map: Map<string, StageChange[]> } = {
+  map: new Map(),
 };
 
 function buildHistMap(rows: any[]) {
@@ -255,32 +255,12 @@ function applyHistory(ids?: Set<string>) {
 
 /** Histórico de um lead (ao abrir o card). */
 export async function ensureLeadHistory(leadId: string) {
-  if (historyState.allLoaded || !leadId) return;
+  if (!leadId) return;
   const { data, error } = await sbExt.from("lead_historico").select(HIST_COLS).eq("lead_id", leadId).order("created_at", { ascending: true });
   if (error || !data) return;
   const m = buildHistMap(data as any[]);
   historyState.map.set(leadId, m.get(leadId) || []);
   if ((m.get(leadId) || []).length) applyHistory(new Set([leadId]));
-}
-
-/** Histórico completo — só para telas de métricas que dependem dele. */
-export function ensureAllHistory() {
-  if (historyState.allLoaded) return Promise.resolve();
-  if (historyState.allInFlight) return historyState.allInFlight;
-  historyState.allInFlight = (async () => {
-    const PAGE = 1000;
-    const head = await sbExt.from("lead_historico").select("lead_id", { count: "exact", head: true });
-    const count = head.count ?? 0;
-    const pages = Math.ceil(count / PAGE);
-    const res = await Promise.all(Array.from({ length: pages }, (_, i) =>
-      sbExt.from("lead_historico").select(HIST_COLS).order("created_at", { ascending: true }).order("lead_id", { ascending: true }).order("etapa_para", { ascending: true }).range(i * PAGE, i * PAGE + PAGE - 1)));
-    const rows: any[] = [];
-    for (const r of res) { if (r.error) { console.warn("lead_historico:", r.error.message); return; } rows.push(...(r.data || [])); }
-    historyState.map = buildHistMap(rows);
-    historyState.allLoaded = true;
-    applyHistory();
-  })().finally(() => { historyState.allInFlight = null; });
-  return historyState.allInFlight;
 }
 
 /** Mescla o lead completo (select '*') no cache do Pipeline. */
@@ -308,7 +288,6 @@ export async function fetchLeadFull(id: string) {
 export function resetPipelineCache() {
   fullRowCache.clear();
   historyState.map = new Map();
-  historyState.allLoaded = false;
   if (persistTimer) { clearTimeout(persistTimer); persistTimer = null; }
   pipelineDataCache.cards = [];
   pipelineDataCache.tasks = [];
@@ -395,22 +374,20 @@ export function usePipelineData(actorName: string) {
     }
 
     const fetchAll = fetchAllLocal;
-    const [leadsRes, tasksRes, goalsRes, histRes] = await Promise.all([
+    const [leadsRes, tasksRes, goalsRes] = await Promise.all([
       fetchAll("leads", LEADS_LIST_COLS),
       fetchAll("tarefas", "*"),
       sbExt.from("metas").select("*"),
-      historyState.allLoaded ? fetchAll("lead_historico", HIST_COLS, "created_at") : Promise.resolve({ data: null, error: null }),
     ]);
 
     // Log errors but DO NOT bail out — partial data is better than empty UI.
     // Previously, a single failing table (e.g. lead_historico under RLS for a
     // closer user) blanked the entire pipeline for that user.
-    if (leadsRes.error || tasksRes.error || goalsRes.error || histRes.error) {
+    if (leadsRes.error || tasksRes.error || goalsRes.error) {
       console.warn("Pipeline snapshot — algumas tabelas falharam:", {
         leads: leadsRes.error?.message,
         tasks: tasksRes.error?.message,
         goals: goalsRes.error?.message,
-        history: histRes.error?.message,
       });
     }
     // If the critical table (leads) failed entirely, keep cache untouched.
@@ -418,7 +395,6 @@ export function usePipelineData(actorName: string) {
       return;
     }
 
-    if (histRes.data) historyState.map = buildHistMap(histRes.data);
     const histMap = historyState.map;
     ([] as any[]).forEach((h: any) => {
       const arr = histMap.get(h.lead_id) || [];
@@ -524,7 +500,6 @@ export function usePipelineData(actorName: string) {
       .channel(`crm-realtime-${crypto.randomUUID()}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, debouncedFetch)
       .on("postgres_changes", { event: "*", schema: "public", table: "tarefas" }, debouncedFetch)
-      .on("postgres_changes", { event: "*", schema: "public", table: "lead_historico" }, debouncedFetch)
       .on("postgres_changes", { event: "*", schema: "public", table: "metas" }, debouncedFetch)
       .subscribe();
 

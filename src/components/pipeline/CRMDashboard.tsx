@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabaseExt as supabase } from "@/lib/supabaseExternal";
 import { useFarolMetricasTime } from "@/hooks/useFarolRpc";
-import { ensureAllHistory } from "./usePipelineData";
 import { buildCanonicalizer } from "@/lib/ownerNormalization";
 import { MesSelect, currentMonthSP } from "@/components/MesSelect";
 import { cn } from "@/lib/utils";
@@ -175,7 +174,6 @@ function WeekendConversionCard({ cards }: { cards: PipelineCard[] }) {
 
 export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
   // Tempo médio por etapa usa o histórico completo — só carrega aqui.
-  useEffect(() => { void ensureAllHistory(); }, []);
 
   const showAll = canViewAll && activeUser === "all";
   const vis = showAll ? cards : cards.filter(c => c.owner === activeUser);
