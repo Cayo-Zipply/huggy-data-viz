@@ -4,6 +4,7 @@ import type { PipelineCard, PipelineTask, PipelineGoal, Stage, PipeType, StageCh
 import { DEFAULT_DEAL_VALUE, STAGE_CONFIG, AUTO_TASKS, addDays } from "./types";
 import { supabase } from "@/lib/supabaseExternal";
 import { notifySlackGanho } from "@/lib/notifySlackGanho";
+import { readCache, writeCache } from "@/lib/persistCache";
 
 const sbExt = supabase as any;
 
@@ -171,12 +172,26 @@ function dbRowToGoal(row: any): PipelineGoal {
 /* ── localStorage legacy helpers ── */
 function loadLS<T>(k: string, d: T): T { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }
 
-type PipelineSnapshot = { cards: PipelineCard[]; tasks: PipelineTask[]; goals: PipelineGoal[]; loaded: boolean };
+type PipelineSnapshot = { cards: PipelineCard[]; tasks: PipelineTask[]; goals: PipelineGoal[]; loaded: boolean; refreshing?: boolean };
+const PIPE_CACHE_KEY = "pipeline-snapshot";
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+function schedulePersist() {
+  if (persistTimer) clearTimeout(persistTimer);
+  persistTimer = setTimeout(() => {
+    // Sem histórico pesado: só o necessário para desenhar o Kanban na hora.
+    void writeCache(PIPE_CACHE_KEY, {
+      cards: pipelineDataCache.cards.map(c => ({ ...c, history: c.history.slice(-3) })),
+      tasks: pipelineDataCache.tasks,
+      goals: pipelineDataCache.goals,
+    });
+  }, 1500);
+}
 const pipelineDataCache: PipelineSnapshot & { inFlight: Promise<void> | null } = {
   cards: [],
   tasks: [],
   goals: [],
   loaded: false,
+  refreshing: false,
   inFlight: null,
 };
 const pipelineDataListeners = new Set<(snapshot: PipelineSnapshot) => void>();
@@ -188,6 +203,8 @@ function publishPipelineSnapshot(snapshot: PipelineSnapshot) {
   pipelineDataCache.tasks = snapshot.tasks;
   pipelineDataCache.goals = snapshot.goals;
   pipelineDataCache.loaded = snapshot.loaded;
+  pipelineDataCache.refreshing = !!snapshot.refreshing;
+  if (snapshot.loaded && !snapshot.refreshing) schedulePersist();
   pipelineDataListeners.forEach((listener) => listener(snapshot));
 }
 
@@ -293,6 +310,7 @@ export function usePipelineData(actorName: string) {
   const [tasks, setTasks] = useState<PipelineTask[]>(() => pipelineDataCache.tasks);
   const [goals, setGoals] = useState<PipelineGoal[]>(() => pipelineDataCache.goals);
   const [loaded, setLoaded] = useState(() => pipelineDataCache.loaded);
+  const [refreshing, setRefreshing] = useState(() => !!pipelineDataCache.refreshing);
   const channelRef = useRef<any>(null);
   const legacyRef = useRef<{ cards: PipelineCard[]; tasks: PipelineTask[]; goals: PipelineGoal[] }>({
     cards: [],
@@ -303,6 +321,7 @@ export function usePipelineData(actorName: string) {
   const fetchPipelineSnapshot = useCallback(async () => {
     if (pipelineDataCache.inFlight) return pipelineDataCache.inFlight;
 
+    if (pipelineDataCache.loaded) publishPipelineSnapshot({ ...pipelineDataCache, refreshing: true });
     pipelineDataCache.inFlight = (async () => {
     // Paginated fetch to bypass PostgREST's default 1000-row cap
     const PAGE_SIZE = 1000;
@@ -423,6 +442,7 @@ export function usePipelineData(actorName: string) {
     publishPipelineSnapshot(nextSnapshot);
     })().finally(() => {
       pipelineDataCache.inFlight = null;
+      if (pipelineDataCache.refreshing) publishPipelineSnapshot({ ...pipelineDataCache, refreshing: false });
     });
 
     return pipelineDataCache.inFlight;
@@ -435,6 +455,7 @@ export function usePipelineData(actorName: string) {
       setTasks(snapshot.tasks);
       setGoals(snapshot.goals);
       setLoaded(snapshot.loaded);
+      setRefreshing(!!snapshot.refreshing);
     };
     pipelineDataListeners.add(listener);
     listener(pipelineDataCache);
@@ -451,7 +472,14 @@ export function usePipelineData(actorName: string) {
       tasks: loadLS("crm_tasks", []),
       goals: loadLS("crm_goals", []),
     };
-    void fetchPipelineSnapshot();
+    // Mostra a última versão conhecida (IndexedDB, até 24h) e atualiza em 2º plano.
+    void (async () => {
+      const cached = await readCache<{ cards: PipelineCard[]; tasks: PipelineTask[]; goals: PipelineGoal[] }>(PIPE_CACHE_KEY);
+      if (cached && !pipelineDataCache.loaded && cached.cards?.length) {
+        publishPipelineSnapshot({ cards: cached.cards, tasks: cached.tasks || [], goals: cached.goals || [], loaded: true, refreshing: true });
+      }
+      void fetchPipelineSnapshot();
+    })();
   }, [fetchPipelineSnapshot]);
 
   const updateCardsState = useCallback((updater: SetStateAction<PipelineCard[]>) => {
@@ -1063,7 +1091,7 @@ export function usePipelineData(actorName: string) {
   }, [actorName, updateCardsState]);
 
   return {
-    cards, tasks, goals, loaded,
+    cards, tasks, goals, loaded, refreshing,
     createCard, updateCard, moveCard, markWon, markLost,
     createTask, toggleTask, rescheduleTask, deleteTask, deleteTasks, upsertGoal, importCSV, deleteCard, saveObservation,
     refresh: fetchPipelineSnapshot,
