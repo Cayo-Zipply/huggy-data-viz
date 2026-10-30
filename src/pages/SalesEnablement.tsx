@@ -531,6 +531,7 @@ export default function SalesEnablement() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
+      <ScreenRefreshing keys={[...SE_VIEW_KEYS, "se-rubrica"]} />
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">

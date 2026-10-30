@@ -138,6 +138,7 @@ export default function Criativos() {
 
   return (
     <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-8">
+      <ScreenRefreshing keys={CRIATIVOS_KEYS} />
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
