@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { useLocation } from "react-router-dom";
 import { MetricCard } from "@/components/MetricCard";
 import { TrafficFunnel } from "@/components/TrafficFunnel";
@@ -6,7 +6,7 @@ import { TrafficFunnel } from "@/components/TrafficFunnel";
 import { PerformanceChart } from "@/components/PerformanceChart";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { SalesFunnel } from "@/components/SalesFunnel";
-import { ComparisonPanel } from "@/components/ComparisonPanel";
+const ComparisonPanel = lazy(() => import("@/components/ComparisonPanel").then(m => ({ default: m.ComparisonPanel })));
 import { metricTooltips } from "@/components/MetricTooltip";
 import {
   calculateVariation,
@@ -15,10 +15,10 @@ import {
   formatPercent,
 } from "@/data/marketingData";
 import { salesData } from "@/data/salesData";
-import { RevenuePanel } from "@/components/RevenuePanel";
-import { ConsolidatedPanel } from "@/components/ConsolidatedPanel";
+const RevenuePanel = lazy(() => import("@/components/RevenuePanel").then(m => ({ default: m.RevenuePanel })));
+const ConsolidatedPanel = lazy(() => import("@/components/ConsolidatedPanel").then(m => ({ default: m.ConsolidatedPanel })));
 import { PipelinePanel } from "@/components/PipelinePanel";
-import { HelpPanel } from "@/components/HelpPanel";
+const HelpPanel = lazy(() => import("@/components/HelpPanel").then(m => ({ default: m.HelpPanel })));
 import { FarolPanel } from "@/components/FarolPanel";
 import { MissoesHoje, SinalCampanhasHoje } from "@/components/agentes/MissoesHoje";
 import { SalesPieChart } from "@/components/SalesPieChart";
@@ -29,8 +29,8 @@ import { useMarketingOverrides } from "@/hooks/useMarketingOverrides";
 import { useMarketingLive } from "@/hooks/useMarketingLive";
 import { CampaignSelector } from "@/components/CampaignSelector";
 import { FarolCloserCards } from "@/components/FarolCloserCards";
-import { FunilCriativo } from "@/components/FunilCriativo";
-import { MarketingOverview } from "@/components/MarketingOverview";
+const FunilCriativo = lazy(() => import("@/components/FunilCriativo").then(m => ({ default: m.FunilCriativo })));
+const MarketingOverview = lazy(() => import("@/components/MarketingOverview").then(m => ({ default: m.MarketingOverview })));
 import { supabase } from "@/integrations/supabase/client";
 import { useFarolMetricasTime, useFarolMetricasSdr } from "@/hooks/useFarolRpc";
 
@@ -316,6 +316,7 @@ const Index = () => {
       )}
       <main className="p-3 sm:p-4 lg:p-8 overflow-auto">
         <div className="max-w-7xl mx-auto">
+          <Suspense fallback={<div className="p-8 text-sm text-muted-foreground">Carregando…</div>}>
           <div className="flex flex-wrap items-center justify-end gap-3 mb-8">
             {(activeTab === "marketing" || activeTab === "comercial") && !isHardcoded && (
               <CampaignSelector
@@ -436,6 +437,7 @@ const Index = () => {
             <HelpPanel />
           </div>
           )}
+          </Suspense>
         </div>
       </main>
     </div>

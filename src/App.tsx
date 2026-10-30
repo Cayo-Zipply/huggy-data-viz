@@ -12,22 +12,22 @@ import Login from "@/pages/Login";
 import ResetPassword from "@/pages/ResetPassword";
 import Index from "@/pages/Index";
 import NotFound from "@/pages/NotFound";
-import UserManagement from "@/pages/UserManagement";
-import Settings from "@/pages/Settings";
-import Contratos from "@/pages/Contratos";
-import Feedbacks from "@/pages/Feedbacks";
-import MaterialApoio from "@/pages/MaterialApoio";
-import SalesEnablement from "@/pages/SalesEnablement";
-import Pool from "@/pages/Pool";
-import PendenciasPosVenda from "@/pages/PendenciasPosVenda";
-import Esquadrao from "@/pages/Esquadrao";
-import Criativos from "@/pages/Criativos";
+const UserManagement = lazy(() => import("@/pages/UserManagement"));
+const Settings = lazy(() => import("@/pages/Settings"));
+const Contratos = lazy(() => import("@/pages/Contratos"));
+const Feedbacks = lazy(() => import("@/pages/Feedbacks"));
+const MaterialApoio = lazy(() => import("@/pages/MaterialApoio"));
+const SalesEnablement = lazy(() => import("@/pages/SalesEnablement"));
+const Pool = lazy(() => import("@/pages/Pool"));
+const PendenciasPosVenda = lazy(() => import("@/pages/PendenciasPosVenda"));
+const Esquadrao = lazy(() => import("@/pages/Esquadrao"));
+const Criativos = lazy(() => import("@/pages/Criativos"));
 import { AgentesProvider } from "@/components/agentes/AgentesContext";
 import { AgentFab } from "@/components/agentes/AgentFab";
 import { AppSidebar } from "@/components/AppSidebar";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { NovidadesModal } from "@/components/NovidadesModal";
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { Users, UserCheck } from "lucide-react";
 
 const queryClient = new QueryClient({
@@ -163,7 +163,11 @@ function AuthLayout() {
           <Index />
         </div>
         {/* Non-tab pages render via Outlet */}
-        {!isTabRoute && <Outlet />}
+        {!isTabRoute && (
+          <Suspense fallback={<div className="p-8 text-sm text-muted-foreground">Carregando…</div>}>
+            <Outlet />
+          </Suspense>
+        )}
       </main>
       <FeedbackWidget />
       <NovidadesModal />
