@@ -697,13 +697,17 @@ export function usePipelineData(actorName: string) {
     if (updates.debitos_nao_mencionou !== undefined) dbUpdates.debitos_nao_mencionou = updates.debitos_nao_mencionou;
 
 
+    // Otimista: UI na hora; reverte só se o banco devolver erro.
+    const before = pipelineDataCache.cards.find(c => c.id === id);
+    updateCardsState(prev => prev.map(c => c.id === id ? { ...c, ...updates, updated_at: new Date().toISOString() } : c));
     if (Object.keys(dbUpdates).length) {
       const { error } = await sbExt.from("leads").update(dbUpdates).eq("id", id);
-      if (error) console.error("Update lead error:", error);
+      if (error) {
+        console.error("Update lead error:", error);
+        if (before) updateCardsState(prev => prev.map(c => c.id === id ? before : c));
+        toast.error("Não foi possível salvar a alteração. Tente novamente.");
+      }
     }
-
-    // optimistic
-    updateCardsState(prev => prev.map(c => c.id === id ? { ...c, ...updates, updated_at: new Date().toISOString() } : c));
   }, [updateCardsState]);
 
   /* ── move card ── */
@@ -742,7 +746,19 @@ export function usePipelineData(actorName: string) {
       data_ultima_mudanca_etapa: now,
     };
     if (autoDataReuniaoRealizada) moveUpdate.data_reuniao_realizada = autoDataReuniaoRealizada;
-    await sbExt.from("leads").update(moveUpdate).eq("id", cardId);
+    // Otimista: move o card na hora; reverte se o banco recusar.
+    updateCardsState(prev => prev.map(c => c.id === cardId ? {
+      ...c, stage: targetStage, pipe: STAGE_CONFIG[targetStage].pipe as PipeType,
+      stage_changed_at: now, updated_at: now,
+      data_reuniao_realizada: autoDataReuniaoRealizada || c.data_reuniao_realizada,
+    } : c));
+    const { error: moveError } = await sbExt.from("leads").update(moveUpdate).eq("id", cardId);
+    if (moveError) {
+      console.error("Move lead error:", moveError);
+      updateCardsState(prev => prev.map(c => c.id === cardId ? card : c));
+      toast.error("Não foi possível mover o card. Tente novamente.");
+      return;
+    }
 
     // insert legacy history
     await sbExt.from("lead_historico").insert({
@@ -898,8 +914,12 @@ export function usePipelineData(actorName: string) {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
     const newStatus = task.status === "pendente" ? "concluida" : "pendente";
-    await sbExt.from("tarefas").update({ status: newStatus }).eq("id", id);
     updateTasksState(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
+    const { error } = await sbExt.from("tarefas").update({ status: newStatus }).eq("id", id);
+    if (error) {
+      updateTasksState(prev => prev.map(t => t.id === id ? { ...t, status: task.status } : t));
+      toast.error("Não foi possível atualizar a tarefa. Tente novamente.");
+    }
   }, [tasks, updateTasksState]);
 
   const rescheduleTask = useCallback(async (id: string, date: string, time?: string | null) => {
