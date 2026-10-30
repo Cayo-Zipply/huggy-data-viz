@@ -13,6 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { MetricBar } from "@/components/MetricBar";
+import { ScreenRefreshing } from "@/components/ScreenRefreshing";
+import { CRIATIVOS_KEYS } from "@/lib/screenCache";
 
 type Criativo = Record<string, any> & { nome: string; ad_id: string };
 
@@ -35,7 +37,7 @@ const hojeSP = () => {
 const br = (s: string) => s.split("-").reverse().join("/");
 
 type Atalho = "7" | "14" | "30" | "mes" | "anterior";
-const periodoDe = (a: Atalho) => {
+export const periodoDe = (a: Atalho) => {
   const t = hojeSP();
   if (a === "mes") return { ini: iso(new Date(t.getFullYear(), t.getMonth(), 1)), fim: iso(t) };
   if (a === "anterior") return { ini: iso(new Date(t.getFullYear(), t.getMonth() - 1, 1)), fim: iso(new Date(t.getFullYear(), t.getMonth(), 0)) };

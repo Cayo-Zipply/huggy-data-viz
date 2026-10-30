@@ -44,6 +44,8 @@ import {
 import { PlacarTab } from "@/components/se/PlacarTab";
 import { PontualidadeTab } from "@/components/se/PontualidadeTab";
 import { useAuth } from "@/contexts/AuthContext";
+import { ScreenRefreshing } from "@/components/ScreenRefreshing";
+import { SE_VIEW_KEYS } from "@/lib/screenCache";
 
 
 /* ---------------- Types ---------------- */

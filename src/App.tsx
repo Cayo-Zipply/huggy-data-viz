@@ -7,6 +7,7 @@ import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import { get as idbGet, set as idbSet, del as idbDel } from "idb-keyval";
 import { APP_CACHE_BUSTER, CACHE_MAX_AGE } from "@/lib/persistCache";
+import { SCREEN_PERSISTED_KEYS, SE_VIEW_KEYS, SE_STALE_TIME } from "@/lib/screenCache";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Login from "@/pages/Login";
@@ -45,7 +46,9 @@ const queryClient = new QueryClient({
 });
 
 // Cache persistente (IndexedDB) só de dados de tela do Farol — nunca tokens.
-const PERSISTED_KEYS = new Set(["farol_metricas_time", "farol_metricas_sdr", "user_profiles"]);
+const PERSISTED_KEYS = new Set(["farol_metricas_time", "farol_metricas_sdr", "user_profiles", ...SCREEN_PERSISTED_KEYS]);
+// Views vw_se_* só mudam a cada 5 min no banco.
+SE_VIEW_KEYS.forEach((k) => queryClient.setQueryDefaults([k], { staleTime: SE_STALE_TIME }));
 const persister = createAsyncStoragePersister({
   storage: { getItem: (k) => idbGet(k), setItem: (k, v) => idbSet(k, v), removeItem: (k) => idbDel(k) },
   key: "rq-farol-cache",
