@@ -48,7 +48,7 @@ const Index = () => {
   const mounted = (k: string) => visited.has(k);
   const { profile } = useAuth();
   const pipelineName = profile?.nome ?? "Admin";
-  const { cards, goals, upsertGoal, refresh } = usePipelineData(pipelineName);
+  const { cards, goals, upsertGoal, refresh, refreshing } = usePipelineData(pipelineName);
   const pipelineOwners = [...new Set(cards.map(c => c.owner).filter(Boolean))] as string[];
 
   // Marketing overrides from internal DB
@@ -309,6 +309,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {refreshing && (activeTab === "pipeline" || activeTab === "farol") && (
+        <div role="status" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 rounded-full border border-border bg-card/95 px-3 py-1 text-[11px] text-muted-foreground shadow-sm backdrop-blur">
+          atualizando…
+        </div>
+      )}
       <main className="p-3 sm:p-4 lg:p-8 overflow-auto">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-wrap items-center justify-end gap-3 mb-8">
