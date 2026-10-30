@@ -55,6 +55,7 @@ export function useTeamMembers() {
     queryFn: fetchTeam,
     staleTime: 30 * 60_000,
     gcTime: 24 * 60 * 60_000,
+    refetchOnMount: true, // dado restaurado do cache local atualiza em 2º plano
   });
   const members = q.data?.members ?? EMPTY_MEMBERS;
   const visibleCloserNames = q.data?.visibleCloserNames ?? EMPTY_NAMES;
