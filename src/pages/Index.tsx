@@ -62,7 +62,7 @@ const Index = () => {
   }, [overridesList]);
 
   // Dynamic marketing data with overrides
-  const { months: dynamicMonths, defaultMonth, getMonthData, getPreviousMonthData, getLeadMetrics, getPreviousLeadMetrics, loading: marketingLoading } = useMarketingData(overridesMap);
+  const { months: dynamicMonths, defaultMonth, getMonthData, getPreviousMonthData, getLeadMetrics, getPreviousLeadMetrics, loading: marketingLoading } = useMarketingData(overridesMap, mounted("marketing") || mounted("comparativo"));
 
   const [selectedMonth, setSelectedMonth] = useState<string>("");
 
