@@ -19,6 +19,11 @@ import { supabase as supabaseCloud } from "@/integrations/supabase/client";
 
 async function resolveContractUrl(card: any): Promise<string | null> {
   if (card.contract_url) return card.contract_url;
+  // A lista leve do Pipeline não traz contract_url: busca por id.
+  try {
+    const { data } = await (sbExt as any).from("leads").select("contract_url").eq("id", card.id).maybeSingle();
+    if (data?.contract_url) return data.contract_url;
+  } catch { /* ignore */ }
   if (card.contrato_file_url) return card.contrato_file_url;
   try {
     const { data: anexos } = await (supabaseCloud as any)
