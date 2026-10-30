@@ -316,7 +316,6 @@ const Index = () => {
       )}
       <main className="p-3 sm:p-4 lg:p-8 overflow-auto">
         <div className="max-w-7xl mx-auto">
-          <Suspense fallback={<div className="p-8 text-sm text-muted-foreground">Carregando…</div>}>
           <div className="flex flex-wrap items-center justify-end gap-3 mb-8">
             {(activeTab === "marketing" || activeTab === "comercial") && !isHardcoded && (
               <CampaignSelector
@@ -343,7 +342,7 @@ const Index = () => {
           {mounted("marketing") && (
           <div className={isMarketing ? "" : "hidden"}>
             <SinalCampanhasHoje />
-            <MarketingOverview />
+            <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando…</div>}><MarketingOverview /></Suspense>
 
             {/* ===== Bloco Comercial ===== */}
             <div className="mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-border">
@@ -391,7 +390,7 @@ const Index = () => {
 
             {/* ===== Funil por Criativo ===== */}
             <div className="mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-border">
-              <FunilCriativo />
+              <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando…</div>}><FunilCriativo /></Suspense>
             </div>
           </div>
           )}
@@ -400,21 +399,21 @@ const Index = () => {
           {/* Rentabilidade Tab — kept mounted */}
           {mounted("rentabilidade") && (
           <div className={activeTab === "rentabilidade" ? "" : "hidden"}>
-            <RevenuePanel />
+            <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando…</div>}><RevenuePanel /></Suspense>
           </div>
           )}
 
           {/* Comparativo Tab — kept mounted */}
           {mounted("comparativo") && (
           <div className={activeTab === "comparativo" ? "" : "hidden"}>
-            <ComparisonPanel />
+            <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando…</div>}><ComparisonPanel /></Suspense>
           </div>
           )}
 
           {/* Consolidado Tab — kept mounted */}
           {mounted("consolidado") && (
           <div className={activeTab === "consolidado" ? "" : "hidden"}>
-            <ConsolidatedPanel />
+            <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando…</div>}><ConsolidatedPanel /></Suspense>
           </div>
           )}
 
@@ -434,10 +433,9 @@ const Index = () => {
           {/* Ajuda Tab — kept mounted */}
           {mounted("ajuda") && (
           <div className={activeTab === "ajuda" ? "" : "hidden"}>
-            <HelpPanel />
+            <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando…</div>}><HelpPanel /></Suspense>
           </div>
           )}
-          </Suspense>
         </div>
       </main>
     </div>
