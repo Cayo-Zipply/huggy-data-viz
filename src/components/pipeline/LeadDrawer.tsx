@@ -409,12 +409,19 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
     }
   };
 
-  const openContract = () => {
-    if (contractFile) {
-      const w = window.open();
-      if (w) {
-        w.document.write(`<iframe src="${contractFile.data}" style="width:100%;height:100%;border:none;" />`);
-      }
+  // Busca o contrato do storage na hora (Blob/ObjectURL por causa de CORS).
+  const openContract = async () => {
+    if (!contractFile) return;
+    const w = window.open("", "_blank");
+    try {
+      const { data, error } = await (supabaseCloud as any).storage.from("lead-anexos").download(contractFile.storage_path);
+      if (error || !data) throw error;
+      const url = URL.createObjectURL(data);
+      if (w) w.location.href = url; else window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch {
+      w?.close();
+      toast.error("Não foi possível abrir o contrato.");
     }
   };
 
