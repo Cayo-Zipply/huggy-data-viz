@@ -65,7 +65,7 @@ export function PipelinePanel() {
     return raw || "Usuário";
   }, [profile?.email, profile?.nome]);
 
-  const { cards, tasks, goals, createCard, updateCard, moveCard, markWon, markLost, createTask, toggleTask, rescheduleTask, deleteTask, deleteTasks, upsertGoal, importCSV, deleteCard, saveObservation, refresh } = usePipelineData(currentUserName);
+  const { cards, tasks, goals, createCard, updateCard, moveCard, markWon, markLost, createTask, toggleTask, rescheduleTask, deleteTask, deleteTasks, upsertGoal, importCSV, deleteCard, saveObservation, refresh, loaded: pipelineLoaded } = usePipelineData(currentUserName);
   const [refreshing, setRefreshing] = useState(false);
   const defaultPipe = isDual ? "all" : isCloser ? "closer" : isSdr ? "sdr" : "all";
   const [activePipe, setActivePipe] = useState<"sdr" | "closer" | "all">(() => {
@@ -798,7 +798,7 @@ export function PipelinePanel() {
           <PipelineFiltersBar filters={filters} onChange={setFilters} onExport={() => exportCSV(visibleCards, tasks)} closerOptions={reportOwnerOptions} />
           <div className="flex gap-2 overflow-x-auto rounded-xl border border-border bg-muted/20 p-2 pb-2">
             {getStages().map(s => (
-              <StageColumn key={s} stageKey={s} cards={getCardsForStage(s)} tasks={tasks}
+              <StageColumn key={s} stageKey={s} cards={getCardsForStage(s)} tasks={tasks} loading={!pipelineLoaded}
                 getCardLabels={getCardLabels}
                 bulkMode={bulkMode}
                 selectedIds={selectedIds}
