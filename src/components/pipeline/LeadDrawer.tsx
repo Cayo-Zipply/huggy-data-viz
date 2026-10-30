@@ -38,6 +38,7 @@ import { EmailReviewModal } from "./EmailReviewModal";
 import { useEmailEnvios, type EmailTipo } from "@/hooks/useEmailEnvios";
 import { useOrigensLeads } from "@/hooks/useOrigensLeads";
 import { hasContractAttached } from "@/lib/contractCheck";
+import { touchDraft } from "@/lib/clearLocalData";
 import type { DuplicateInfo } from "@/hooks/useDuplicateLeads";
 import { Trash2, Copy as CopyDup } from "lucide-react";
 import {
@@ -48,7 +49,7 @@ import {
 /* ── Draft helpers (localStorage) ── */
 const DRAFT_PREFIX = "crm_draft_";
 function saveDraft(cardId: string, field: string, value: string) {
-  try { localStorage.setItem(`${DRAFT_PREFIX}${cardId}_${field}`, value); } catch {}
+  try { localStorage.setItem(`${DRAFT_PREFIX}${cardId}_${field}`, value); touchDraft(`${DRAFT_PREFIX}${cardId}_${field}`); } catch {}
 }
 function loadDraft(cardId: string, field: string): string | null {
   try { return localStorage.getItem(`${DRAFT_PREFIX}${cardId}_${field}`); } catch { return null; }
@@ -63,16 +64,19 @@ function clearAllDrafts(cardId: string) {
   } catch {}
 }
 
-/* ── Contract storage (base64 in localStorage) ── */
-const CONTRACT_PREFIX = "crm_contract_";
-function saveContract(cardId: string, base64: string, name: string) {
-  try { localStorage.setItem(`${CONTRACT_PREFIX}${cardId}`, JSON.stringify({ data: base64, name })); } catch {}
-}
-function loadContract(cardId: string): { data: string; name: string } | null {
-  try {
-    const v = localStorage.getItem(`${CONTRACT_PREFIX}${cardId}`);
-    return v ? JSON.parse(v) : null;
-  } catch { return null; }
+/* ── Contrato: guardado no storage (lead-anexos), nunca no localStorage ── */
+type ContractRef = { name: string; storage_path: string; id: string };
+async function loadContractRef(cardId: string): Promise<ContractRef | null> {
+  const { data } = await (supabaseCloud as any)
+    .from("lead_anexos")
+    .select("id, nome_arquivo, storage_path, tipo, created_at")
+    .eq("lead_id", cardId)
+    .eq("tipo", "contrato")
+    .not("storage_path", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const r = data?.[0];
+  return r ? { id: r.id, name: r.nome_arquivo, storage_path: r.storage_path } : null;
 }
 
 function fileToBase64(file: File): Promise<string> {
@@ -168,7 +172,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const [ntTime, setNtTime] = useState("");
   const [ntResp, setNtResp] = useState("");
   const [copied, setCopied] = useState(false);
-  const [contractFile, setContractFile] = useState<{ data: string; name: string } | null>(null);
+  const [contractFile, setContractFile] = useState<ContractRef | null>(null);
   const [obsText, setObsText] = useState("");
   const [savingObs, setSavingObs] = useState(false);
   const [anotacoes, setAnotacoes] = useState<Anotacao[]>([]);
@@ -242,8 +246,9 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
     setActiveSection("dados");
     if (card) {
       setNtResp(card.owner || "");
-      const cf = loadContract(card.id);
-      setContractFile(cf);
+      setContractFile(null);
+      const cardIdAtLoad = card.id;
+      void loadContractRef(cardIdAtLoad).then(ref => { if (cardIdAtLoad === card.id) setContractFile(ref); }).catch(() => {});
       const obsDraft = loadDraft(card.id, "obs_new");
       setObsText(obsDraft || "");
       fetchAnotacoes();
@@ -386,17 +391,37 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
   const handleContractUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    const b64 = await fileToBase64(f);
-    saveContract(card.id, b64, f.name);
-    setContractFile({ data: b64, name: f.name });
+    try {
+      const ext = f.name.split(".").pop() ?? "pdf";
+      const path = `${card.id}/${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await (supabaseCloud as any).storage.from("lead-anexos").upload(path, f, { upsert: false, contentType: f.type });
+      if (upErr) throw upErr;
+      const { data: u } = await supabaseCloud.auth.getUser();
+      const { data: row, error } = await (supabaseCloud as any).from("lead_anexos").insert({
+        lead_id: card.id, nome_arquivo: f.name, tipo: "contrato", mime_type: f.type || null,
+        tamanho_bytes: f.size, storage_path: path, source: "manual",
+        uploaded_by: u.user?.id ?? null, uploaded_by_nome: u.user?.email ?? null,
+      }).select("id").single();
+      if (error) { await (supabaseCloud as any).storage.from("lead-anexos").remove([path]); throw error; }
+      setContractFile({ id: row.id, name: f.name, storage_path: path });
+    } catch (err: any) {
+      toast.error("Erro ao enviar contrato: " + (err?.message ?? "tente novamente."));
+    }
   };
 
-  const openContract = () => {
-    if (contractFile) {
-      const w = window.open();
-      if (w) {
-        w.document.write(`<iframe src="${contractFile.data}" style="width:100%;height:100%;border:none;" />`);
-      }
+  // Busca o contrato do storage na hora (Blob/ObjectURL por causa de CORS).
+  const openContract = async () => {
+    if (!contractFile) return;
+    const w = window.open("", "_blank");
+    try {
+      const { data, error } = await (supabaseCloud as any).storage.from("lead-anexos").download(contractFile.storage_path);
+      if (error || !data) throw error;
+      const url = URL.createObjectURL(data);
+      if (w) w.location.href = url; else window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch {
+      w?.close();
+      toast.error("Não foi possível abrir o contrato.");
     }
   };
 
@@ -877,7 +902,12 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                         <button onClick={openContract} className="text-sm text-primary hover:underline flex items-center gap-1">
                           <FileText size={14} />{contractFile.name} <ExternalLink size={10} />
                         </button>
-                        <button onClick={() => { localStorage.removeItem(`${CONTRACT_PREFIX}${card.id}`); setContractFile(null); }}
+                        <button onClick={async () => {
+                          const ref = contractFile; setContractFile(null);
+                          const { error } = await (supabaseCloud as any).from("lead_anexos").delete().eq("id", ref.id);
+                          if (error) { setContractFile(ref); toast.error("Não foi possível remover o contrato."); return; }
+                          await (supabaseCloud as any).storage.from("lead-anexos").remove([ref.storage_path]);
+                        }}
                           className="text-xs text-muted-foreground hover:text-destructive"><X size={12} /></button>
                       </div>
                     ) : card.contract_url ? (

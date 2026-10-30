@@ -2,26 +2,17 @@ import { sbExt } from "@/lib/supabaseExternal";
 import { supabase } from "@/lib/supabaseExternal";
 import type { PipelineCard } from "@/components/pipeline/types";
 
-const CONTRACT_PREFIX = "crm_contract_";
 
 /**
  * Verifica se o lead tem ao menos um contrato anexado.
  * Considera: lead_anexos (cloud) com tipo "contrato",
  * leads.contract_url ou contrato_file_url, zapsign_contracts.signed_file_url,
- * ou contrato salvo em localStorage (fallback).
  */
 export async function hasContractAttached(card: PipelineCard | { id: string; contract_url?: string | null; contrato_file_url?: string | null; }): Promise<boolean> {
   const id = card.id;
 
   // 1) campos diretos no lead
   if ((card as any).contract_url || (card as any).contrato_file_url) return true;
-
-  // 2) localStorage (workflow legado)
-  try {
-    if (typeof localStorage !== "undefined" && localStorage.getItem(`${CONTRACT_PREFIX}${id}`)) {
-      return true;
-    }
-  } catch {}
 
   // 3) lead_anexos com tipo contendo "contrato"
   try {

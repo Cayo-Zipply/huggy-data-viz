@@ -8,6 +8,8 @@ import {
   type ReactNode,
 } from "react";
 import { supabase } from "@/lib/supabaseExternal";
+import { useQueryClient } from "@tanstack/react-query";
+import { clearPersistedData } from "@/lib/clearLocalData";
 import type { User, Session } from "@supabase/supabase-js";
 
 interface UserProfile {
@@ -71,6 +73,7 @@ async function persistGoogleToken(session: Session | null) {
 
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -207,6 +210,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (event === "SIGNED_OUT" || !newSession?.user) {
         profileRequestRef.current += 1;
+        // Sessão encerrada/expirada: nada do usuário anterior fica no navegador.
+        void clearPersistedData(queryClient);
         clearAuthState();
         setLoading(false);
         return;
@@ -269,7 +274,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mountedRef.current = false;
       subscription.unsubscribe();
     };
-  }, [applySessionState, clearAuthState, loadProfile]);
+  }, [applySessionState, clearAuthState, loadProfile, queryClient]);
 
   const signOut = useCallback(async () => {
     try {
@@ -278,9 +283,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error("Erro ao fazer logout:", err);
     }
+    await clearPersistedData(queryClient);
     clearAuthState();
     setLoading(false);
-  }, [clearAuthState]);
+  }, [clearAuthState, queryClient]);
 
   const refreshProfile = useCallback(async () => {
     if (user?.email) {

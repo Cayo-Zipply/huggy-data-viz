@@ -304,6 +304,20 @@ export async function fetchLeadFull(id: string) {
   return data;
 }
 
+/** Zera o cache em memória (logout). */
+export function resetPipelineCache() {
+  fullRowCache.clear();
+  historyState.map = new Map();
+  historyState.allLoaded = false;
+  if (persistTimer) { clearTimeout(persistTimer); persistTimer = null; }
+  pipelineDataCache.cards = [];
+  pipelineDataCache.tasks = [];
+  pipelineDataCache.goals = [];
+  pipelineDataCache.loaded = false;
+  pipelineDataCache.refreshing = false;
+  pipelineDataListeners.forEach(l => l({ cards: [], tasks: [], goals: [], loaded: false }));
+}
+
 /* ── main hook ── */
 export function usePipelineData(actorName: string) {
   const [cards, setCards] = useState<PipelineCard[]>(() => pipelineDataCache.cards);
