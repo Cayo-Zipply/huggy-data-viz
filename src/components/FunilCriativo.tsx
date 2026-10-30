@@ -157,6 +157,7 @@ export const FunilCriativo = () => {
   }, [agrupamento, campanhas, conjuntos, criativos, periodo, searchParams, setSearchParams]);
 
   const optionsQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ["funil-criativo-filtros", periodo.desde, periodo.ate],
     queryFn: async () => {
       const { data, error } = await (supabase as any).rpc("fn_funil_criativo_filtros", { p_desde: periodo.desde, p_ate: periodo.ate });
@@ -167,6 +168,7 @@ export const FunilCriativo = () => {
   });
 
   const rowsQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ["funil-criativo-v2", periodo.desde, periodo.ate, debouncedFilters.campanhas, debouncedFilters.conjuntos, debouncedFilters.criativos, agrupamento],
     queryFn: async () => {
       const { data, error } = await (supabase as any).rpc("fn_funil_criativo_v2", {
@@ -203,6 +205,7 @@ export const FunilCriativo = () => {
   useEffect(() => setFocused(null), [agrupamento, debouncedFilters, periodo]);
 
   const spendQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ["mkt-criativos-gasto", periodo.desde, periodo.ate],
     queryFn: async () => {
       const { data, error } = await (supabase as any).rpc("mkt_criativos", { p_inicio: periodo.desde, p_fim: periodo.ate, p_campanha: null });

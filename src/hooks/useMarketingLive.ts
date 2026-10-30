@@ -258,6 +258,7 @@ export function useMarketingLive(selectedMonth: string) {
 
   // 1. Campanhas disponíveis no mês selecionado
   const campaignsQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ["meta-campaigns", selectedMonth],
     queryFn: () => fetchCampaigns(selectedMonth),
     enabled,
@@ -288,6 +289,7 @@ export function useMarketingLive(selectedMonth: string) {
   const prevMonth = enabled ? previousMonth(selectedMonth) : "";
 
   const metaQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ["meta-ads-stats", selectedMonth, selectedCampaigns],
     queryFn: () => fetchMetaStats(selectedMonth, selectedCampaigns),
     enabled: enabled && selectedCampaigns.length >= 0,
@@ -295,6 +297,7 @@ export function useMarketingLive(selectedMonth: string) {
   });
 
   const metaPrevQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ["meta-ads-stats", prevMonth, selectedCampaigns],
     queryFn: () => fetchMetaStats(prevMonth, selectedCampaigns),
     enabled: enabled && !!prevMonth,
@@ -306,6 +309,7 @@ export function useMarketingLive(selectedMonth: string) {
   //    NÃO dentro da `queryFn`, para não recalcular a cada render.
   //    `refetchInterval: 60_000` mantém o auto-refresh de 60s já existente.
   const leadsRawQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ["marketing-leads-raw", selectedMonth],
     queryFn: () => fetchLeadsRaw(selectedMonth),
     enabled,
@@ -314,6 +318,7 @@ export function useMarketingLive(selectedMonth: string) {
   });
 
   const leadsPrevRawQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ["marketing-leads-raw", prevMonth],
     queryFn: () => fetchLeadsRaw(prevMonth),
     enabled: enabled && !!prevMonth,
@@ -333,6 +338,7 @@ export function useMarketingLive(selectedMonth: string) {
 
   // 5. Metas dos closers para o mês selecionado
   const metasQuery = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ["metas-closer", selectedMonth],
     queryFn: async (): Promise<MetaCloser[]> => {
       const { data, error } = await supabaseExt

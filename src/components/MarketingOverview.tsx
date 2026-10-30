@@ -45,6 +45,7 @@ const anterior = (p: PeriodoFunil): PeriodoFunil => {
 };
 
 const useResumo = (p: PeriodoFunil, camp: string | null, enabled = true) => useQuery({
+    placeholderData: keepPreviousData,
   queryKey: ["mkt-criativos-resumo", p.desde, p.ate, camp],
   enabled,
   queryFn: async () => {
@@ -106,6 +107,7 @@ export function MarketingOverview() {
   const rrPrev = useReunioesTime(mesPrev);
   const prevMesResumo = useResumo(mesPrev ? periodoDoMes(mesPrev) : { desde: "", ate: "" }, null, !!mesPrev);
   const lista = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ["mkt-criativos", periodo.desde, periodo.ate, pCamp],
     queryFn: async () => {
       const { data, error } = await (supabase as any).rpc("mkt_criativos", { p_inicio: periodo.desde, p_fim: periodo.ate, p_campanha: pCamp });
