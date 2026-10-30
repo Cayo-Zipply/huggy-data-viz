@@ -256,7 +256,7 @@ export function ensureAllHistory() {
     const count = head.count ?? 0;
     const pages = Math.ceil(count / PAGE);
     const res = await Promise.all(Array.from({ length: pages }, (_, i) =>
-      sbExt.from("lead_historico").select(HIST_COLS).order("created_at", { ascending: true }).order("id", { ascending: true }).range(i * PAGE, i * PAGE + PAGE - 1)));
+      sbExt.from("lead_historico").select(HIST_COLS).order("created_at", { ascending: true }).order("lead_id", { ascending: true }).order("etapa_para", { ascending: true }).range(i * PAGE, i * PAGE + PAGE - 1)));
     const rows: any[] = [];
     for (const r of res) { if (r.error) { console.warn("lead_historico:", r.error.message); return; } rows.push(...(r.data || [])); }
     historyState.map = buildHistMap(rows);
