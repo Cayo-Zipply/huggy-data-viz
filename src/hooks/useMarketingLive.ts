@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { supabaseExt } from "@/lib/supabaseExternal";
 
 /**
@@ -253,8 +253,8 @@ function aggregateLeads(rows: any[], monthYYYYMM: string): LeadsStats {
   };
 }
 
-export function useMarketingLive(selectedMonth: string) {
-  const enabled = !!selectedMonth && /^\d{4}-\d{2}$/.test(selectedMonth);
+export function useMarketingLive(selectedMonth: string, active = true) {
+  const enabled = active && !!selectedMonth && /^\d{4}-\d{2}$/.test(selectedMonth);
 
   // 1. Campanhas disponíveis no mês selecionado
   const campaignsQuery = useQuery({
