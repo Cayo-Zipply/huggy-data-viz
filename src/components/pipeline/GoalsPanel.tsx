@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { useFunilAcumulado } from "@/hooks/useFarolRpc";
 import { Target, CheckCircle, AlertTriangle, TrendingDown } from "lucide-react";
 import type { PipelineCard, PipelineGoal } from "./types";
-import { formatBRL, getBusinessDays, getBusinessDaysPassed, cardsReachedStage } from "./types";
+import { formatBRL, getBusinessDays, getBusinessDaysPassed } from "./types";
 
 interface Props {
   cards: PipelineCard[];
@@ -27,11 +28,13 @@ function CloserGoals({ cards, goals, closer, onSave }: { cards: PipelineCard[]; 
   const [dirty, setDirty] = useState(false);
 
   const cc = cards.filter(c => c.owner === closer);
+  const funilQ = useFunilAcumulado(monthKey, closer);
+  const marcadasMes = Number(funilQ.data?.find(r => Number(r.ordem) === 4)?.qtd ?? 0);
   const totalBiz = getBusinessDays(now.getFullYear(), now.getMonth());
   const passedBiz = getBusinessDaysPassed(now.getFullYear(), now.getMonth(), now);
 
   const realized = useMemo(() => {
-    const rm = cardsReachedStage(cc, "reuniao_marcada").length;
+    const rm = marcadasMes;
     // Reuniões realizadas: agrupar por mês via data_reuniao_realizada
     const rr = cc.filter(c => {
       const drr = (c as any).data_reuniao_realizada as string | null;
@@ -43,7 +46,7 @@ function CloserGoals({ cards, goals, closer, onSave }: { cards: PipelineCard[]; 
     const total = cc.filter(c => c.lead_status !== "perdido").length;
     const conv = total > 0 ? (ganhos.length / total) * 100 : 0;
     return { rm, rr, fat, conv };
-  }, [cc, monthKey]);
+  }, [cc, monthKey, marcadasMes]);
 
   const project = (v: number) => passedBiz > 0 ? (v / passedBiz) * totalBiz : 0;
   const upd = (k: string, v: number) => { setMeta(p => ({ ...p, [k]: v })); setDirty(true); };

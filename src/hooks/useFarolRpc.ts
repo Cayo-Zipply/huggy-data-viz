@@ -33,3 +33,22 @@ export function useFarolMetricasSdr(mes: string | null | undefined, enabled = tr
     refetchOnMount: true, // dado restaurado do cache local atualiza em 2º plano
   });
 }
+
+/** Funil acumulado (8 linhas: ordem, etapa, qtd, qtd_na_etapa_hoje) do mês 'YYYY-MM'. */
+export function useFunilAcumulado(mes: string | null | undefined, closer: string | null, enabled = true) {
+  return useQuery({
+    queryKey: ["funil_acumulado", mes, closer],
+    queryFn: async () => {
+      const [y, m] = (mes as string).split("-").map(Number);
+      const last = new Date(y, m, 0).getDate();
+      const { data, error } = await (supabase as any).rpc("farol_funil_acumulado", {
+        p_inicio: `${mes}-01`, p_fim: `${mes}-${String(last).padStart(2, "0")}`, p_closer: closer || null,
+      });
+      if (error) { console.error("[Farol] farol_funil_acumulado RPC error:", error); throw error; }
+      return (Array.isArray(data) ? data : []) as { ordem: number; etapa: string; qtd: number; qtd_na_etapa_hoje: number }[];
+    },
+    enabled: enabled && !!mes,
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
+  });
+}
