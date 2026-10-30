@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { fetchLeadFull, ensureLeadHistory } from "./usePipelineData";
 import { cn, formatDocumento } from "@/lib/utils";
 import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
@@ -38,6 +40,7 @@ type Tab = "info" | "historico" | "tarefas" | "acoes";
 
 export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, ownerOptions: ownerOptionsProp, duplicates = [], onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick, onDelete, obsNaoLida = false }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("info");
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -116,7 +119,7 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
     : "bg-slate-300 dark:bg-slate-600";
 
   return (
-    <div className={cn(
+    <div onMouseEnter={() => { void queryClient.prefetchQuery({ queryKey: ["lead", card.id], queryFn: () => fetchLeadFull(card.id) }); }} className={cn(
       "group relative overflow-hidden rounded-lg border border-border bg-card transition-colors",
       "shadow-[0_1px_2px_0_rgba(0,0,0,0.04)] hover:bg-accent/40",
       isLost && "opacity-60"
@@ -251,7 +254,7 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
             {/* Tabs */}
             <div className="flex gap-1 mb-3">
               {tabs.map(t => (
-                <button key={t.key} onClick={() => setTab(t.key)}
+                <button key={t.key} onClick={() => { setTab(t.key); if (t.key === "historico") void ensureLeadHistory(card.id); }}
                   className={cn("flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg transition-all",
                     tab === t.key ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground")}>
                   <t.icon size={10} />{t.label}

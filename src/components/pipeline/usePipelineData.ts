@@ -195,6 +195,98 @@ export function patchTaskLocal(id: string, patch: Partial<PipelineTask>) {
   publishPipelineSnapshot({ ...pipelineDataCache, tasks: pipelineDataCache.tasks.map(t => t.id === id ? { ...t, ...patch } : t) });
 }
 
+const LEADS_LIGHT_COLS = [
+  "id","nome","empresa","telefone","email","cnpj","valor_divida",
+  "etapa_atual","origem","data_entrada","created_at","data_ultima_mudanca_etapa",
+  "closer","valor_negocio","status","motivo_perda","motivo_perda_detalhe","ultima_etapa",
+  "data_reuniao","data_reuniao_realizada","data_no_show",
+  "contrato_status","contrato_file_url","contrato_preparado_em","tipo_contrato",
+  "representante_nome","representante_cpf",
+  "valor_mensalidade","porcentagem_exito","estado","zapsign_signed_at",
+  "fim_de_semana","tipo_documento","data_venda","tags",
+].join(",");
+const HIST_COLS = "lead_id,etapa_de,etapa_para,created_at,closer";
+
+// Linhas completas (select '*') de leads já abertos — preservadas nos refetches.
+const fullRowCache = new Map<string, any>();
+// Histórico: NÃO é baixado ao abrir o Pipeline. Por lead ao abrir o card;
+// completo só quando uma tela de métricas (Farol/Dashboard) pede.
+const historyState: { map: Map<string, StageChange[]>; allLoaded: boolean; allInFlight: Promise<void> | null } = {
+  map: new Map(), allLoaded: false, allInFlight: null,
+};
+
+function buildHistMap(rows: any[]) {
+  const m = new Map<string, StageChange[]>();
+  rows.forEach((h: any) => {
+    const arr = m.get(h.lead_id) || [];
+    arr.push({ from: h.etapa_de || null, to: h.etapa_para || "", at: h.created_at, by: h.closer || "sistema", duration_days: null });
+    m.set(h.lead_id, arr);
+  });
+  return m;
+}
+
+function applyHistory(ids?: Set<string>) {
+  publishPipelineSnapshot({
+    ...pipelineDataCache,
+    cards: pipelineDataCache.cards.map(c => {
+      if (ids && !ids.has(c.id)) return c;
+      const h = historyState.map.get(c.id);
+      return h ? { ...c, history: [...h, ...c.history.filter(x => x.from === "__obs__")] } : c;
+    }),
+  });
+}
+
+/** Histórico de um lead (ao abrir o card). */
+export async function ensureLeadHistory(leadId: string) {
+  if (historyState.allLoaded || !leadId) return;
+  const { data, error } = await sbExt.from("lead_historico").select(HIST_COLS).eq("lead_id", leadId).order("created_at", { ascending: true });
+  if (error || !data) return;
+  const m = buildHistMap(data as any[]);
+  historyState.map.set(leadId, m.get(leadId) || []);
+  if ((m.get(leadId) || []).length) applyHistory(new Set([leadId]));
+}
+
+/** Histórico completo — só para telas de métricas que dependem dele. */
+export function ensureAllHistory() {
+  if (historyState.allLoaded) return Promise.resolve();
+  if (historyState.allInFlight) return historyState.allInFlight;
+  historyState.allInFlight = (async () => {
+    const PAGE = 1000;
+    const head = await sbExt.from("lead_historico").select("lead_id", { count: "exact", head: true });
+    const count = head.count ?? 0;
+    const pages = Math.ceil(count / PAGE);
+    const res = await Promise.all(Array.from({ length: pages }, (_, i) =>
+      sbExt.from("lead_historico").select(HIST_COLS).order("created_at", { ascending: true }).order("lead_id", { ascending: true }).order("etapa_para", { ascending: true }).range(i * PAGE, i * PAGE + PAGE - 1)));
+    const rows: any[] = [];
+    for (const r of res) { if (r.error) { console.warn("lead_historico:", r.error.message); return; } rows.push(...(r.data || [])); }
+    historyState.map = buildHistMap(rows);
+    historyState.allLoaded = true;
+    applyHistory();
+  })().finally(() => { historyState.allInFlight = null; });
+  return historyState.allInFlight;
+}
+
+/** Mescla o lead completo (select '*') no cache do Pipeline. */
+export function mergeFullLead(row: any) {
+  if (!row?.id) return;
+  fullRowCache.set(row.id, row);
+  publishPipelineSnapshot({
+    ...pipelineDataCache,
+    cards: pipelineDataCache.cards.map(c => {
+      if (c.id !== row.id) return c;
+      const next = dbRowToCard(row, c.history) as any;
+      next.__full = true;
+      return next;
+    }),
+  });
+}
+
+export async function fetchLeadFull(id: string) {
+  const { data, error } = await sbExt.from("leads").select("*").eq("id", id).single();
+  if (error) throw error;
+  return data;
+}
+
 /* ── main hook ── */
 export function usePipelineData(actorName: string) {
   const [cards, setCards] = useState<PipelineCard[]>(() => pipelineDataCache.cards);
@@ -217,32 +309,16 @@ export function usePipelineData(actorName: string) {
     // Colunas leves para listas/kanban. Pesadas (transcricao_reuniao,
     // resumo_reuniao) são carregadas SÓ no LeadDrawer via fetch por id.
     // Isso reduz drasticamente o I/O de disco no PostgREST.
-    const LEADS_LIST_COLS = [
-      "id","nome","empresa","telefone","email","cnpj","valor_divida",
-      "etapa_atual","origem","anotacoes","contract_url",
-      "data_entrada","created_at","data_ultima_mudanca_etapa",
-      "closer","valor_negocio","status",
-      "motivo_perda","motivo_perda_detalhe","ultima_etapa",
-      "data_reuniao","data_reuniao_realizada","duracao_reuniao","participantes_reuniao",
-      "data_no_show","contrato_status","contrato_file_url",
-      "contrato_preparado_em","contrato_preparado_por","tipo_contrato",
-      "representante_nome","representante_cpf",
-      "valor_mensalidade","qtd_salarios_minimos","porcentagem_exito",
-      "data_primeiro_pagamento","dia_demais_pagamentos","prazo_entrega_relatorios",
-      "prazo_contrato","valor_proposta","qtd_mensalidades_iniciais","valor_demais_mensalidades","qtd_mensalidades_demais",
-      "endereco","cidade","estado","cep","zapsign_signed_at","fim_de_semana",
-      "tipo_documento","data_venda","assistente_juridico","responsavel_juridico",
-      "cnpjs_adicionais","socios_adicionais","origem_divida",
-      "mensagem_recuperacao_enviada_em","mensagem_recuperacao_enviada_por",
-      "debito_municipal","debito_estadual","debitos_nao_mencionou","debitos_respondido_em","debitos_respondido_por",
-      "tags",
-    ].join(",");
-    const HIST_COLS = "lead_id,etapa_de,etapa_para,created_at,closer";
+    // Select LEVE: só campos usados pelo card do Kanban, filtros, busca e
+    // pelas telas que leem esta mesma lista (Farol, Dashboard, Contratos).
+    // Sem anotacoes, contract_url nem textos longos — o lead completo
+    // (select '*') é buscado ao abrir o card (queryKey ['lead', id]).
+    const LEADS_LIST_COLS = LEADS_LIGHT_COLS;
 
     // Conta primeiro e dispara todas as páginas EM PARALELO (antes eram
     // sequenciais: 10 idas e voltas para leads). Ordenação estável por id
     // garante que páginas paralelas não repitam nem pulem linhas.
-    async function fetchAll(table: string, cols: string, orderCol?: string) {
+    async function fetchAllLocal(table: string, cols: string, orderCol?: string) {
       const head = await sbExt.from(table).select("id", { count: "exact", head: true });
       if (head.error || head.count == null) {
         // Fallback: modo sequencial antigo
@@ -261,7 +337,9 @@ export function usePipelineData(actorName: string) {
         return { data: all, error: null };
       }
       // +1 página de folga para linhas inseridas entre o count e a leitura
-      const pages = Math.max(1, Math.ceil(head.count / PAGE_SIZE) + 1);
+      // Para no total real: nenhuma página com offset >= count
+      const pages = Math.ceil(head.count / PAGE_SIZE);
+      if (pages === 0) return { data: [], error: null };
       const results = await Promise.all(
         Array.from({ length: pages }, (_, i) => {
           let q = sbExt.from(table).select(cols);
@@ -283,11 +361,12 @@ export function usePipelineData(actorName: string) {
       return { data: all, error: null };
     }
 
+    const fetchAll = fetchAllLocal;
     const [leadsRes, tasksRes, goalsRes, histRes] = await Promise.all([
       fetchAll("leads", LEADS_LIST_COLS),
       fetchAll("tarefas", "*"),
       sbExt.from("metas").select("*"),
-      fetchAll("lead_historico", HIST_COLS, "created_at"),
+      historyState.allLoaded ? fetchAll("lead_historico", HIST_COLS, "created_at") : Promise.resolve({ data: null, error: null }),
     ]);
 
     // Log errors but DO NOT bail out — partial data is better than empty UI.
@@ -306,8 +385,9 @@ export function usePipelineData(actorName: string) {
       return;
     }
 
-    const histMap = new Map<string, StageChange[]>();
-    (histRes.data || []).forEach((h: any) => {
+    if (histRes.data) historyState.map = buildHistMap(histRes.data);
+    const histMap = historyState.map;
+    ([] as any[]).forEach((h: any) => {
       const arr = histMap.get(h.lead_id) || [];
       arr.push({
         from: h.etapa_de || null,
@@ -320,6 +400,8 @@ export function usePipelineData(actorName: string) {
     });
 
     const supaCards = (leadsRes.data || []).map((row: any) => {
+      const full = fullRowCache.get(row.id);
+      if (full) row = { ...full, ...row };
       const hist = histMap.get(row.id) || [{ from: null, to: mapEtapa(row.etapa_atual), at: row.data_entrada || new Date().toISOString(), by: "sistema", duration_days: null }];
       return dbRowToCard(row, hist);
     });
