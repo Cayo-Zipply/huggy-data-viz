@@ -933,7 +933,7 @@ export function usePipelineData(actorName: string) {
   }, [actorName, updateCardsState]);
 
   return {
-    cards, tasks, goals,
+    cards, tasks, goals, loaded,
     createCard, updateCard, moveCard, markWon, markLost,
     createTask, toggleTask, rescheduleTask, deleteTask, deleteTasks, upsertGoal, importCSV, deleteCard, saveObservation,
     refresh: fetchPipelineSnapshot,

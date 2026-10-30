@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, ArrowRight } from "lucide-react";
 import { Area, Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
+import { useFarolMetricasTime } from "@/hooks/useFarolRpc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PeriodPicker, type PeriodoFunil } from "@/components/FunilCriativoFilters";
@@ -44,6 +45,7 @@ const anterior = (p: PeriodoFunil): PeriodoFunil => {
 };
 
 const useResumo = (p: PeriodoFunil, camp: string | null, enabled = true) => useQuery({
+    placeholderData: keepPreviousData,
   queryKey: ["mkt-criativos-resumo", p.desde, p.ate, camp],
   enabled,
   queryFn: async () => {
@@ -71,15 +73,11 @@ const periodoDoMes = (mes: string): PeriodoFunil => {
   return { desde: `${mes}-01`, ate: iso(new Date(y, m, 0)) };
 };
 // Reuniões realizadas oficiais (regra no banco): soma de reunioes_realizadas de farol_metricas_time.
-const useReunioesTime = (mes: string | null) => useQuery({
-  queryKey: ["farol-metricas-time-rr", mes],
-  enabled: !!mes,
-  queryFn: async () => {
-    const { data, error } = await (supabase as any).rpc("farol_metricas_time", { p_mes: mes });
-    if (error) throw error;
-    return (Array.isArray(data) ? data : []).reduce((s: number, r: any) => s + n(r.reunioes_realizadas), 0) as number;
-  },
-});
+const useReunioesTime = (mes: string | null) => {
+  const q = useFarolMetricasTime(mes);
+  const total = q.data ? q.data.reduce((s: number, r: any) => s + n(r.reunioes_realizadas), 0) : undefined;
+  return { ...q, data: total as number | undefined };
+};
 
 type Tile = { l: string; v: string; cur: number; prev: number; inverso?: boolean; real?: boolean; full?: string; sub?: string; semSeta?: boolean };
 
@@ -109,6 +107,7 @@ export function MarketingOverview() {
   const rrPrev = useReunioesTime(mesPrev);
   const prevMesResumo = useResumo(mesPrev ? periodoDoMes(mesPrev) : { desde: "", ate: "" }, null, !!mesPrev);
   const lista = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ["mkt-criativos", periodo.desde, periodo.ate, pCamp],
     queryFn: async () => {
       const { data, error } = await (supabase as any).rpc("mkt_criativos", { p_inicio: periodo.desde, p_fim: periodo.ate, p_campanha: pCamp });

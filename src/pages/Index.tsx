@@ -32,10 +32,20 @@ import { FarolCloserCards } from "@/components/FarolCloserCards";
 import { FunilCriativo } from "@/components/FunilCriativo";
 import { MarketingOverview } from "@/components/MarketingOverview";
 import { supabase } from "@/integrations/supabase/client";
+import { useFarolMetricasTime, useFarolMetricasSdr } from "@/hooks/useFarolRpc";
 
 const Index = () => {
   const location = useLocation();
   const activeTab = location.pathname.replace("/", "") || "pipeline";
+  const isMarketing = activeTab === "marketing" || activeTab === "comercial";
+  // Abas montadas sob demanda: só carregam dados quando visitadas pela 1ª vez
+  // (depois ficam montadas para preservar estado). Pipeline sempre montado.
+  const [visited, setVisited] = useState<Set<string>>(() => new Set([activeTab === "comercial" ? "marketing" : activeTab]));
+  useEffect(() => {
+    const k = activeTab === "comercial" ? "marketing" : activeTab;
+    setVisited(prev => (prev.has(k) ? prev : new Set(prev).add(k)));
+  }, [activeTab]);
+  const mounted = (k: string) => visited.has(k);
   const { profile } = useAuth();
   const pipelineName = profile?.nome ?? "Admin";
   const { cards, goals, upsertGoal, refresh } = usePipelineData(pipelineName);
@@ -52,7 +62,7 @@ const Index = () => {
   }, [overridesList]);
 
   // Dynamic marketing data with overrides
-  const { months: dynamicMonths, defaultMonth, getMonthData, getPreviousMonthData, getLeadMetrics, getPreviousLeadMetrics, loading: marketingLoading } = useMarketingData(overridesMap);
+  const { months: dynamicMonths, defaultMonth, getMonthData, getPreviousMonthData, getLeadMetrics, getPreviousLeadMetrics, loading: marketingLoading } = useMarketingData(overridesMap, mounted("marketing") || mounted("comparativo"));
 
   const [selectedMonth, setSelectedMonth] = useState<string>("");
 
@@ -81,7 +91,7 @@ const Index = () => {
 
   // Live marketing data (Meta Ads from meta_ads_daily filtered by campaigns,
   // commercial metrics from leads). Only used for non-hardcoded months.
-  const live = useMarketingLive(selectedMonthYYYYMM);
+  const live = useMarketingLive(selectedMonthYYYYMM, mounted("marketing"));
 
   const getVariation = (current: number, previous: number | undefined) => {
     if (!previous) return undefined;
@@ -166,7 +176,7 @@ const Index = () => {
   const [snapshot, setSnapshot] = useState<any>(null);
   useEffect(() => {
     setSnapshot(null);
-    if (!selectedMonthYYYYMM || selectedMonthYYYYMM === currentYYYYMM) return;
+    if (!mounted("marketing") || !selectedMonthYYYYMM || selectedMonthYYYYMM === currentYYYYMM) return;
     let cancelled = false;
     supabase
       .from("farol_snapshot_mensal" as any)
@@ -179,7 +189,7 @@ const Index = () => {
     return () => {
       cancelled = true;
     };
-  }, [selectedMonthYYYYMM, currentYYYYMM]);
+  }, [selectedMonthYYYYMM, currentYYYYMM, visited]);
 
   if (snapshot) {
     effectiveVendas = Number(snapshot.vendas) || 0;
@@ -193,21 +203,8 @@ const Index = () => {
   // Faturamento / Vendas — espelho exato do Farol: soma da RPC
   // `farol_metricas_time` (mesma fonte usada em FarolPanel). Garante que
   // o card Faturamento do Marketing bate 1:1 com o Farol.
-  const [farolTimeRows, setFarolTimeRows] = useState<any[] | null>(null);
-  useEffect(() => {
-    setFarolTimeRows(null);
-    if (!selectedMonthYYYYMM || isHardcoded) return;
-    let cancelled = false;
-    (supabase as any)
-      .rpc("farol_metricas_time", { p_mes: selectedMonthYYYYMM })
-      .then(({ data, error }: any) => {
-        if (cancelled) return;
-        if (!error && Array.isArray(data)) setFarolTimeRows(data);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedMonthYYYYMM, isHardcoded]);
+  const farolTimeQ = useFarolMetricasTime(selectedMonthYYYYMM, mounted("marketing") && !isHardcoded);
+  const farolTimeRows: any[] | null = !isHardcoded && farolTimeQ.data ? farolTimeQ.data : null;
 
   if (!snapshot && farolTimeRows && !isHardcoded && overrideAtual?.manual_faturamento == null) {
     effectiveFaturamento = farolTimeRows.reduce(
@@ -230,7 +227,7 @@ const Index = () => {
   const [mktResumo, setMktResumo] = useState<Record<string, any> | null>(null);
   useEffect(() => {
     setMktResumo(null);
-    if (!selectedMonthYYYYMM) return;
+    if (!mounted("marketing") || !selectedMonthYYYYMM) return;
     const [yy, mm] = selectedMonthYYYYMM.split("-").map(Number);
     const ini = `${selectedMonthYYYYMM.slice(0, 7)}-01`;
     const last = new Date(yy, mm, 0).getDate();
@@ -239,23 +236,16 @@ const Index = () => {
     (supabase as any).rpc("mkt_criativos_resumo", { p_inicio: d[0], p_fim: d[1], p_campanha: null })
       .then(({ data }: any) => { if (!cancel) setMktResumo(data?.totais ?? null); });
     return () => { cancel = true; };
-  }, [selectedMonthYYYYMM]);
+  }, [selectedMonthYYYYMM, visited]);
 
-  const [sdrReunioes, setSdrReunioes] = useState<{ marcadas: number; realizadas: number } | null>(null);
-  useEffect(() => {
-    setSdrReunioes(null);
-    if (!selectedMonthYYYYMM || isHardcoded) return;
-    let cancelled = false;
-    (supabase as any)
-      .rpc("farol_metricas_sdr", { p_mes: selectedMonthYYYYMM })
-      .then(({ data, error }: any) => {
-        if (cancelled || error || !Array.isArray(data)) return;
-        const marcadas = data.reduce((s: number, r: any) => s + Number(r.reunioes_marcadas ?? 0), 0);
-        const realizadas = data.reduce((s: number, r: any) => s + Number(r.reunioes_realizadas ?? 0), 0);
-        setSdrReunioes({ marcadas, realizadas });
-      });
-    return () => { cancelled = true; };
-  }, [selectedMonthYYYYMM, isHardcoded]);
+  const sdrQ = useFarolMetricasSdr(selectedMonthYYYYMM, mounted("marketing") && !isHardcoded);
+  const sdrReunioes = useMemo(() => {
+    const data = sdrQ.data;
+    if (isHardcoded || !Array.isArray(data)) return null;
+    const marcadas = data.reduce((s: number, r: any) => s + Number(r.reunioes_marcadas ?? 0), 0);
+    const realizadas = data.reduce((s: number, r: any) => s + Number(r.reunioes_realizadas ?? 0), 0);
+    return { marcadas, realizadas };
+  }, [sdrQ.data, isHardcoded]);
 
   if (!snapshot && sdrReunioes && !isHardcoded) {
     reunioesMarcadas = sdrReunioes.marcadas;
@@ -344,7 +334,8 @@ const Index = () => {
           </div>
 
           {/* Dashboard Tab (Marketing + Comercial unificados) — kept mounted */}
-          <div className={activeTab === "marketing" || activeTab === "comercial" ? "" : "hidden"}>
+          {mounted("marketing") && (
+          <div className={isMarketing ? "" : "hidden"}>
             <SinalCampanhasHoje />
             <MarketingOverview />
 
@@ -397,22 +388,29 @@ const Index = () => {
               <FunilCriativo />
             </div>
           </div>
+          )}
 
 
           {/* Rentabilidade Tab — kept mounted */}
+          {mounted("rentabilidade") && (
           <div className={activeTab === "rentabilidade" ? "" : "hidden"}>
             <RevenuePanel />
           </div>
+          )}
 
           {/* Comparativo Tab — kept mounted */}
+          {mounted("comparativo") && (
           <div className={activeTab === "comparativo" ? "" : "hidden"}>
             <ComparisonPanel />
           </div>
+          )}
 
           {/* Consolidado Tab — kept mounted */}
+          {mounted("consolidado") && (
           <div className={activeTab === "consolidado" ? "" : "hidden"}>
             <ConsolidatedPanel />
           </div>
+          )}
 
           {/* Pipeline Tab — kept mounted to preserve state */}
           <div className={activeTab === "pipeline" ? "" : "hidden"}>
@@ -420,15 +418,19 @@ const Index = () => {
           </div>
 
           {/* Farol Tab — kept mounted to preserve state and avoid reload flicker */}
+          {mounted("farol") && (
           <div className={activeTab === "farol" ? "" : "hidden"}>
             <MissoesHoje />
             <FarolPanel cards={cards} goals={goals} owners={pipelineOwners} onSaveGoal={upsertGoal} onRefresh={refresh} />
           </div>
+          )}
 
           {/* Ajuda Tab — kept mounted */}
+          {mounted("ajuda") && (
           <div className={activeTab === "ajuda" ? "" : "hidden"}>
             <HelpPanel />
           </div>
+          )}
         </div>
       </main>
     </div>

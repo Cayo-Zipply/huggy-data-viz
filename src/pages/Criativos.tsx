@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Play, Sparkles, AlertTriangle } from "lucide-react";
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip as RTooltip, CartesianGrid } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
@@ -79,6 +79,7 @@ export default function Criativos() {
   const pCamp = campanha === "__all" ? null : campanha;
 
   const resumoQ = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ["mkt-criativos-resumo", ini, fim, pCamp],
     queryFn: async () => {
       const { data, error } = await (supabase as any).rpc("mkt_criativos_resumo", { p_inicio: ini, p_fim: fim, p_campanha: pCamp });
@@ -87,6 +88,7 @@ export default function Criativos() {
     },
   });
   const listQ = useQuery({
+    placeholderData: keepPreviousData,
     queryKey: ["mkt-criativos", ini, fim, pCamp],
     queryFn: async () => {
       const { data, error } = await (supabase as any).rpc("mkt_criativos", { p_inicio: ini, p_fim: fim, p_campanha: pCamp });

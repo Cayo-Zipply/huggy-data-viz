@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Info, AlertTriangle } from "lucide-react";
 import type { PipelineCard, PipelineTask, Stage } from "./types";
 import { STAGE_CONFIG, formatBRL, daysDiff } from "./types";
@@ -28,9 +29,10 @@ interface Props {
   ownerOptions?: string[];
   duplicatesMap?: Map<string, DuplicateInfo[]>;
   obsNaoLidas?: Set<string>;
+  loading?: boolean;
 }
 
-export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, selectedIds, onToggleSelect, onUpdate, onDrop, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick, onDelete, slaRule, ownerOptions, duplicatesMap, obsNaoLidas }: Props) {
+export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, selectedIds, onToggleSelect, onUpdate, onDrop, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onCardClick, onDelete, slaRule, ownerOptions, duplicatesMap, obsNaoLidas, loading }: Props) {
   const cfg = STAGE_CONFIG[stageKey];
   const Icon = cfg.icon;
   const [dragOver, setDragOver] = useState(false);
@@ -124,7 +126,18 @@ export function StageColumn({ stageKey, cards, tasks, getCardLabels, bulkMode, s
               onCardClick={onCardClick} onDelete={onDelete} />
           </div>
         ))}
-        {cards.length === 0 && <p className="text-xs text-muted-foreground text-center py-8">Nenhum lead</p>}
+        {cards.length === 0 && loading && (
+          <div className="space-y-2" aria-busy="true" aria-label="Carregando leads">
+            {[0, 1, 2].map(i => (
+              <div key={i} className="rounded-lg border border-border bg-card p-3 space-y-2">
+                <Skeleton className="h-3 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+                <Skeleton className="h-3 w-1/3" />
+              </div>
+            ))}
+          </div>
+        )}
+        {cards.length === 0 && !loading && <p className="text-xs text-muted-foreground text-center py-8">Nenhum lead</p>}
       </div>
     </div>
   );

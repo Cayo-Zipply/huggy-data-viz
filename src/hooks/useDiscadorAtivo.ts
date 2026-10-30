@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseExternal";
 
 export interface CallAtiva {
@@ -12,14 +13,37 @@ export interface CallAtiva {
   estado_raw?: any;
 }
 
+// Verifica 1x (cache 30 min) se o usuário tem ramal IPBOX cadastrado.
+// Se a checagem falhar, mantém o comportamento anterior (polling liberado).
+function useTemRamalIpbox(email: string | null | undefined) {
+  const q = useQuery({
+    queryKey: ["ipbox_ramal", email?.toLowerCase()],
+    enabled: !!email,
+    staleTime: 30 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("ipbox_agentes")
+        .select("*")
+        .ilike("email", String(email).toLowerCase())
+        .limit(1);
+      if (error) return true;
+      const row = Array.isArray(data) ? data[0] : null;
+      if (!row) return false;
+      return row.ramal == null ? true : String(row.ramal).trim() !== "";
+    },
+  });
+  return q.data === true;
+}
+
 export function useDiscadorAtivo(email: string | null | undefined, enabled = true) {
+  const temRamal = useTemRamalIpbox(enabled ? email : null);
   const [call, setCall] = useState<CallAtiva | null>(null);
   const lastKeyRef = useRef<string | null>(null);
   // Medição local de duração (a API do IPBOX não devolve)
   const activeRef = useRef<{ leadId: string; inicio: number } | null>(null);
 
   useEffect(() => {
-    if (!enabled || !email) {
+    if (!enabled || !email || !temRamal) {
       setCall(null);
       lastKeyRef.current = null;
       activeRef.current = null;
@@ -27,6 +51,7 @@ export function useDiscadorAtivo(email: string | null | undefined, enabled = tru
     }
     let cancelled = false;
     const tick = async () => {
+      if (document.visibilityState !== "visible") return;
       try {
         const { data } = await supabase.functions.invoke("ipbox-atendimento-ativo", {
           body: { email },
@@ -63,9 +88,11 @@ export function useDiscadorAtivo(email: string | null | undefined, enabled = tru
       }
     };
     tick();
-    const id = setInterval(tick, 2500);
-    return () => { cancelled = true; clearInterval(id); };
-  }, [email, enabled]);
+    const id = setInterval(tick, 10_000);
+    const onVis = () => { if (document.visibilityState === "visible") tick(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { cancelled = true; clearInterval(id); document.removeEventListener("visibilitychange", onVis); };
+  }, [email, enabled, temRamal]);
 
   return { call };
 }

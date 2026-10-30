@@ -103,12 +103,13 @@ export interface MarketingOverrideData {
   manual_cpm?: number | null;
 }
 
-export function useMarketingData(overrides?: Record<string, MarketingOverrideData>) {
+export function useMarketingData(overrides?: Record<string, MarketingOverrideData>, active = true) {
   const [rows, setRows] = useState<MetaAdsRow[]>([]);
   const [allLeads, setAllLeads] = useState<ExternalLead[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!active) return;
     (async () => {
       const [adsRes, leadsRes] = await Promise.all([
         supabaseExt.from("meta_ads_monthly").select("*").order("month", { ascending: false }),
@@ -118,7 +119,7 @@ export function useMarketingData(overrides?: Record<string, MarketingOverrideDat
       if (!leadsRes.error && leadsRes.data) setAllLeads(leadsRes.data as ExternalLead[]);
       setLoading(false);
     })();
-  }, []);
+  }, [active]);
 
   const leadsByMonth = useMemo(() => {
     const map: Record<string, ExternalLead[]> = {};
