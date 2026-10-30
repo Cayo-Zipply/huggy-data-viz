@@ -1,3 +1,5 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { prefetchRoute } from "@/lib/prefetchRoute";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AvatarUploader } from "@/components/AvatarUploader";
@@ -98,6 +100,7 @@ export function AppSidebar() {
     if (secondaryRole && item.roles.includes(secondaryRole)) return true;
     return false;
   };
+  const queryClient = useQueryClient();
   const visibleGroups = MENU_GROUPS
     .map((group) => ({ ...group, items: group.items.filter(canSee) }))
     .filter((group) => group.items.length > 0);
@@ -134,6 +137,7 @@ export function AppSidebar() {
                   <button
                     key={item.key}
                     onClick={() => navigate(item.key)}
+                    onMouseEnter={() => prefetchRoute(queryClient, item.key)}
                     className={cn(
                       "w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors",
                       active
