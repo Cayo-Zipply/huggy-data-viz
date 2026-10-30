@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabaseExt as supabase } from "@/lib/supabaseExternal";
-import { useFarolMetricasTime } from "@/hooks/useFarolRpc";
+import { useFarolMetricasTime, useFunilAcumulado } from "@/hooks/useFarolRpc";
 import { buildCanonicalizer } from "@/lib/ownerNormalization";
 import { MesSelect, currentMonthSP } from "@/components/MesSelect";
 import { cn } from "@/lib/utils";
 import { Users, Trophy, XCircle, TrendingUp, DollarSign, Clock, Target, ChevronDown, Tag, Calendar, Briefcase } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend, LabelList } from "recharts";
 import type { PipelineCard } from "./types";
-import { STAGE_ORDER, STAGE_CONFIG, LOSS_CATEGORIES, formatBRL, cardsReachedStage, daysDiff } from "./types";
+import { STAGE_ORDER, STAGE_CONFIG, LOSS_CATEGORIES, formatBRL, daysDiff } from "./types";
 import { useLabels } from "@/hooks/useLabels";
 import { MetricasTipoDocumentoCard } from "./MetricasTipoDocumentoCard";
 import { FechamentosPorFaixaDivida } from "./FechamentosPorFaixaDivida";
@@ -293,12 +293,11 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
     });
   }, [visMes]);
 
-  const funnelData = useMemo(() => {
-    return STAGE_ORDER.map(s => ({
-      stage: STAGE_CONFIG[s].label,
-      count: cardsReachedStage(visMes, s).length,
-    }));
-  }, [visMes]);
+  // Funil acumulado (fonte: banco). Cada negócio conta em todas as etapas que atingiu.
+  const funilQ = useFunilAcumulado(mesKey, showAll ? null : activeUser);
+  const funnelData = useMemo(() => [...(funilQ.data ?? [])]
+    .sort((a, b) => Number(a.ordem) - Number(b.ordem))
+    .map(r => ({ stage: String(r.etapa), count: Number(r.qtd) || 0 })), [funilQ.data]);
   const maxFunnel = funnelData[0]?.count || 1;
 
   const barColors = ["hsl(207,90%,54%)", "hsl(270,70%,60%)", "hsl(142,76%,36%)", "hsl(207,90%,54%)", "hsl(45,93%,47%)", "hsl(25,95%,53%)", "hsl(142,76%,50%)"];
@@ -575,7 +574,7 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
 
       {/* Funnel */}
       <div className="bg-card border border-border rounded-xl p-4">
-        <h4 className="text-sm font-semibold text-foreground mb-4">Funil de Conversão por Etapa <span className="text-xs font-normal text-muted-foreground capitalize">· {curLabel}</span></h4>
+        <h4 className="text-sm font-semibold text-foreground mb-4 cursor-help" title="Funil acumulado: cada negócio conta em todas as etapas que atingiu. Card do SDR e do closer contam como 1 negócio.">Funil de Conversão por Etapa <span className="text-xs font-normal text-muted-foreground capitalize">· {curLabel}</span></h4>
         <div className="space-y-2">
         {funnelData.map((d, i) => {
             const pct = maxFunnel > 0 ? (d.count / maxFunnel) * 100 : 0;
