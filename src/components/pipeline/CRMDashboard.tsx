@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabaseExt as supabase } from "@/lib/supabaseExternal";
+import { useFarolMetricasTime } from "@/hooks/useFarolRpc";
 import { buildCanonicalizer } from "@/lib/ownerNormalization";
 import { MesSelect, currentMonthSP } from "@/components/MesSelect";
 import { cn } from "@/lib/utils";
@@ -186,17 +187,8 @@ export function CRMDashboard({ cards, activeUser, canViewAll, owners }: Props) {
   const mesKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}`;
 
   // Fonte oficial (mesma do Farol): RPC farol_metricas_time
-  const [rpcRows, setRpcRows] = useState<any[]>([]);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const { data, error } = await (supabase as any).rpc("farol_metricas_time", { p_mes: mesKey });
-      if (cancelled) return;
-      if (error) { console.error("[Dashboard] farol_metricas_time:", error); setRpcRows([]); return; }
-      setRpcRows(Array.isArray(data) ? data : []);
-    })();
-    return () => { cancelled = true; };
-  }, [mesKey]);
+  const timeQ = useFarolMetricasTime(mesKey);
+  const rpcRows: any[] = useMemo(() => timeQ.data ?? [], [timeQ.data]);
 
   const canonical = useMemo(() => {
     const all: string[] = [];
