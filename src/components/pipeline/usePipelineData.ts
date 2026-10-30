@@ -239,18 +239,46 @@ export function usePipelineData(actorName: string) {
     ].join(",");
     const HIST_COLS = "lead_id,etapa_de,etapa_para,created_at,closer";
 
+    // Conta primeiro e dispara todas as páginas EM PARALELO (antes eram
+    // sequenciais: 10 idas e voltas para leads). Ordenação estável por id
+    // garante que páginas paralelas não repitam nem pulem linhas.
     async function fetchAll(table: string, cols: string, orderCol?: string) {
+      const head = await sbExt.from(table).select("id", { count: "exact", head: true });
+      if (head.error || head.count == null) {
+        // Fallback: modo sequencial antigo
+        const all: any[] = [];
+        let from = 0;
+        while (from < 100000) {
+          let q = sbExt.from(table).select(cols).range(from, from + PAGE_SIZE - 1);
+          if (orderCol) q = q.order(orderCol, { ascending: true });
+          const { data, error } = await q;
+          if (error) return { data: null, error };
+          const rows = data || [];
+          all.push(...rows);
+          if (rows.length < PAGE_SIZE) break;
+          from += PAGE_SIZE;
+        }
+        return { data: all, error: null };
+      }
+      // +1 página de folga para linhas inseridas entre o count e a leitura
+      const pages = Math.max(1, Math.ceil(head.count / PAGE_SIZE) + 1);
+      const results = await Promise.all(
+        Array.from({ length: pages }, (_, i) => {
+          let q = sbExt.from(table).select(cols);
+          if (orderCol) q = q.order(orderCol, { ascending: true });
+          q = q.order("id", { ascending: true });
+          return q.range(i * PAGE_SIZE, i * PAGE_SIZE + PAGE_SIZE - 1);
+        }),
+      );
       const all: any[] = [];
-      let from = 0;
-      while (from < 100000) {
-        let q = sbExt.from(table).select(cols).range(from, from + PAGE_SIZE - 1);
-        if (orderCol) q = q.order(orderCol, { ascending: true });
-        const { data, error } = await q;
-        if (error) return { data: null, error };
-        const rows = data || [];
-        all.push(...rows);
-        if (rows.length < PAGE_SIZE) break;
-        from += PAGE_SIZE;
+      const seen = new Set<string>();
+      for (const r of results) {
+        if (r.error) return { data: null, error: r.error };
+        for (const row of (r.data || []) as any[]) {
+          const k = row?.id ?? null;
+          if (k != null) { if (seen.has(k)) continue; seen.add(k); }
+          all.push(row);
+        }
       }
       return { data: all, error: null };
     }
