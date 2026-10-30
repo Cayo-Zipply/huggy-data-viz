@@ -80,20 +80,6 @@ function diasUteisDoMes(year: number, month: number, dataAlvo: Date) {
 const REUNIAO_STAGES: Stage[] = ["reuniao_marcada", "reuniao_agendada", "no_show", "reuniao_realizada", "link_enviado", "contrato_assinado"];
 const REUNIAO_REALIZADA_CURRENT_STAGES = new Set<Stage>(["reuniao_realizada", "link_enviado", "contrato_assinado"]);
 
-function normalizeStageName(stage: string | null | undefined): Stage | null {
-  const value = (stage || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().replace(/\s+/g, "_");
-  if (value === "fez_contato" || value === "lead") return "fez_contato";
-  if (value === "conectado") return "conectado";
-  if (value === "sql" || value === "contestado") return "sql";
-  if (value === "reuniao_marcada") return "reuniao_marcada";
-  if (value === "reuniao_agendada") return "reuniao_agendada";
-  if (value === "no_show") return "no_show";
-  if (value === "reuniao_realizada") return "reuniao_realizada";
-  if (value === "link_enviado") return "link_enviado";
-  if (value === "contrato_assinado") return "contrato_assinado";
-  return null;
-}
-
 function dateInRange(dateLike: string | null | undefined, start: Date, end: Date) {
   if (!dateLike) return false;
   const d = new Date(dateLike);
