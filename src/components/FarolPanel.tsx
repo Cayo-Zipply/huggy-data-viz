@@ -13,6 +13,7 @@ import { PersonAvatar } from "@/components/PersonAvatar";
 import { useTeamMembers, type TeamMember } from "@/hooks/useTeamMembers";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabaseExt as supabase } from "@/lib/supabaseExternal";
+import { ensureAllHistory } from "@/components/pipeline/usePipelineData";
 import { useFarolMetricasTime, useFarolMetricasSdr } from "@/hooks/useFarolRpc";
 import { useToast } from "@/hooks/use-toast";
 import { buildCanonicalizer } from "@/lib/ownerNormalization";
@@ -128,6 +129,8 @@ function reachedInMonth(cards: PipelineCard[], stages: Stage[], start: Date, end
 }
 
 export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
+  // Métricas locais (fallback/semana) dependem do histórico completo.
+  useEffect(() => { void ensureAllHistory(); }, []);
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const { members, closerNames, sdrNames, refetch } = useTeamMembers();

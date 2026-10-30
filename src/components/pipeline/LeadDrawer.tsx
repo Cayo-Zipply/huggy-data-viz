@@ -24,6 +24,8 @@ import { Separator } from "@/components/ui/separator";
 import type { PipelineCard as CardType, PipelineTask, LossCategory } from "./types";
 import { LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
 import { ContractTab } from "./ContractTab";
+import { useQuery } from "@tanstack/react-query";
+import { fetchLeadFull, mergeFullLead, ensureLeadHistory } from "./usePipelineData";
 import { GrupoWhatsappSection } from "./GrupoWhatsappSection";
 import { AbrirConversaButton, MensagensLeadSection } from "./WhatsappLeadSection";
 import { BotaoReengajarWhatsApp } from "./BotaoReengajarWhatsApp";
@@ -267,21 +269,23 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
       .then(({ data }: any) => setProximaReuniao(data || null));
   }, [card?.id, meetRefreshKey]);
 
-  // Lazy-load das colunas pesadas (transcricao/resumo) só ao abrir o drawer
+  // Lead completo (select '*') só ao abrir o card — queryKey ['lead', id].
+  // Também traz as colunas pesadas (transcricao/resumo) e o histórico do lead.
+  const leadFullQ = useQuery({
+    queryKey: ["lead", card?.id],
+    queryFn: () => fetchLeadFull(card!.id),
+    enabled: open && !!card?.id,
+  });
   useEffect(() => {
     if (!open || !card?.id) { setHeavy({ resumo_reuniao: null, transcricao_reuniao: null }); return; }
-    let cancelled = false;
-    (supabaseExt as any)
-      .from("leads")
-      .select("resumo_reuniao,transcricao_reuniao")
-      .eq("id", card.id)
-      .maybeSingle()
-      .then(({ data }: any) => {
-        if (cancelled || !data) return;
-        setHeavy({ resumo_reuniao: data.resumo_reuniao ?? null, transcricao_reuniao: data.transcricao_reuniao ?? null });
-      });
-    return () => { cancelled = true; };
+    void ensureLeadHistory(card.id);
   }, [open, card?.id]);
+  useEffect(() => {
+    const data: any = leadFullQ.data;
+    if (!data || data.id !== card?.id) return;
+    setHeavy({ resumo_reuniao: data.resumo_reuniao ?? null, transcricao_reuniao: data.transcricao_reuniao ?? null });
+    mergeFullLead(data);
+  }, [leadFullQ.data, card?.id]);
 
   // When starting to edit, check for draft first
   const startEdit = useCallback((f: string, v: string) => {
@@ -1141,7 +1145,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
 
             {/* CONTRATO */}
             {activeSection === "contrato" && (
-              <ContractTab card={card} onUpdate={onUpdate} onNavigateToDados={() => setActiveSection("dados")} />
+              <ContractTab key={`${card.id}-${(card as any).__full ? "f" : "l"}`} card={card} onUpdate={onUpdate} onNavigateToDados={() => setActiveSection("dados")} />
             )}
 
             {/* GRUPO WHATSAPP — só para ganhos */}
