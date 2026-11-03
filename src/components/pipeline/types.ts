@@ -6,7 +6,7 @@ export type CloserStage = "reuniao_agendada" | "no_show" | "reuniao_realizada" |
 export type Stage = SdrStage | CloserStage;
 export type LeadStatus = "aberto" | "ganho" | "perdido";
 export type LossCategory = "preco" | "timing" | "concorrente" | "sem_budget" | "sem_resposta" | "outro";
-export type ContractType = "tributario_cnpj" | "tributario_cpf" | "empresarial_completo";
+export type ContractType = "tributario_cnpj" | "tributario_cpf" | "empresarial_completo" | "termo_adesao_relatorio";
 export type ContractStatus = "pendente" | "gerado" | "enviado" | "enviado_whatsapp" | "assinado" | "recusado";
 
 export interface StageChange {
@@ -53,6 +53,11 @@ export interface PipelineCard {
   contrato_preparado_em: string | null;
   contrato_preparado_por: string | null;
   tipo_contrato: ContractType | null;
+  modalidade_contrato?: "venda_relatorio" | "mensalidade" | null;
+  valor_relatorio?: number | null;
+  forma_pagamento_relatorio?: "pix" | "cartao" | null;
+  parcelas_relatorio?: number | null;
+  pqa_onboarding_status?: string | null;
   representante_nome: string | null;
   representante_cpf: string | null;
   valor_mensalidade: number | null;
