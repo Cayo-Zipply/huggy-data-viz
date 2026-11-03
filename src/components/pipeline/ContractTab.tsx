@@ -671,13 +671,16 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
       const data = await invokeContractFunction({ lead_id: card.id, action });
 
       if (!data?.success) {
-        toast.error(data?.message || "Erro ao gerar contrato");
+        toast.error(data?.error || data?.message || "Erro ao gerar contrato");
         setActionLoading(null);
         return;
       }
 
       showPlaceholderWarning(data);
       setLastResult({ action, data });
+      if (data?.tipo_contrato || checkResult?.tipo_contrato) {
+        onUpdate(card.id, { tipo_contrato: data.tipo_contrato || checkResult.tipo_contrato });
+      }
 
       if (action === "zapsign") {
         if (data.zapsign_sent) {
@@ -1444,7 +1447,7 @@ ${signLink}`;
               </Button>
               <Button variant="ghost"
                 onClick={() => runCheckThen(handlePreview)}
-                disabled={(!isReport && !tipo) || actionLoading !== null || checking}
+                disabled={(!isReport && !tipo) || actionLoading !== null || checking || (isReport && (!checkResult || checkResult.pronto === false || !isFormValid()))}
                 className="text-sm px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20 flex items-center gap-2 disabled:opacity-40"
               >
                 {actionLoading === "preview" ? <Loader2 size={14} className="animate-spin" /> : <Eye size={14} />}
@@ -1471,7 +1474,7 @@ ${signLink}`;
               <Tooltip><TooltipTrigger asChild><span className="block"><Button variant="ghost"
                 onClick={() => runCheckThen(() => handleAction("zapsign"))}
                 disabled={actionLoading !== null || checking || (isReport ? !checkResult || checkResult.pronto === false || !isFormValid() : !debitosRespondidos)}
-                className="flex w-full flex-col items-center gap-1.5 px-4 py-4 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-40 border border-primary/20"
+                className="flex h-auto min-h-24 w-full whitespace-normal flex-col items-center gap-1.5 px-4 py-4 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-40 border border-primary/20"
               >
                 {actionLoading === "zapsign" ? <Loader2 size={20} className="animate-spin" /> : <FileSignature size={20} />}
                 <span className="text-sm font-medium">{actionLoading === "zapsign" ? "Enviando..." : (isReport ? "Enviar termo para assinatura (ZapSign)" : "Enviar para ZapSign")}</span>
@@ -1482,7 +1485,7 @@ ${signLink}`;
               <Tooltip><TooltipTrigger asChild><span className="block"><Button variant="ghost"
                 onClick={() => runCheckThen(() => handleAction("download"))}
                 disabled={actionLoading !== null || checking || (isReport ? !checkResult || checkResult.pronto === false || !isFormValid() : !debitosRespondidos)}
-                className="flex w-full flex-col items-center gap-1.5 px-4 py-4 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-all disabled:opacity-40 border border-border"
+                className="flex h-auto min-h-24 w-full whitespace-normal flex-col items-center gap-1.5 px-4 py-4 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-all disabled:opacity-40 border border-border"
               >
                 {actionLoading === "download" ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
                 <span className="text-sm font-medium">{actionLoading === "download" ? "Gerando..." : (isReport ? "Baixar termo (.docx)" : "Criar e Baixar")}</span>
@@ -1493,7 +1496,7 @@ ${signLink}`;
               <Tooltip><TooltipTrigger asChild><span className="block"><Button variant="ghost"
                 onClick={() => runCheckThen(() => handleAction("whatsapp"))}
                 disabled={actionLoading !== null || checking || (isReport ? !checkResult || checkResult.pronto === false || !isFormValid() : !debitosRespondidos)}
-                className="flex w-full flex-col items-center gap-1.5 px-4 py-4 rounded-lg text-success-foreground hover:opacity-90 transition-all disabled:opacity-40 border border-success/30 bg-success"
+                className="flex h-auto min-h-24 w-full whitespace-normal flex-col items-center gap-1.5 px-4 py-4 rounded-lg text-success-foreground hover:opacity-90 transition-all disabled:opacity-40 border border-success/30 bg-success"
               >
                 {actionLoading === "whatsapp" ? <Loader2 size={20} className="animate-spin" /> : <MessageCircle size={20} />}
                 <span className="text-sm font-medium">{actionLoading === "whatsapp" ? "Gerando..." : (isReport ? "Enviar termo por WhatsApp" : "Enviar via WhatsApp")}</span>
