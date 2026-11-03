@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { contractModality, reportDeadline, reportErrors, reportPaymentFields } from "./reportContract";
+import { contractModality, reportDeadline, reportErrors, reportPaymentFields } from "../src/lib/reportContract";
 
 describe("Termo de adesão", () => {
   test("modalidade vazia usa venda_relatorio e mantém mensalidade explícita", () => {
