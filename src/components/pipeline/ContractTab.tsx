@@ -404,7 +404,7 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
         ))}
         {salvandoDebitos && <Loader2 size={14} className="animate-spin text-muted-foreground" aria-label="Salvando" />}
       </div>
-      {!debitosRespondidos && <p className="text-xs text-amber-700 dark:text-amber-300">Obrigatório antes de enviar o contrato</p>}
+      {!debitosRespondidos && <p className="text-xs text-muted-foreground">{isReport ? "A verificação do termo indica se esta informação é necessária." : "Obrigatório antes de enviar o contrato"}</p>}
       {debitosRespondidos && debitos.respondidoPor && debitos.respondidoEm && (
         <p className="text-xs text-muted-foreground">
           Respondido por {debitos.respondidoPor} em {new Date(debitos.respondidoEm).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
@@ -420,9 +420,17 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
 
   useEffect(() => {
     let active = true;
+    if (isGenerated) return;
     setChecking(true);
     setCheckResult(null);
-    invokeContractFunction({ lead_id: card.id, action: "check" })
+    const check = async () => {
+      if (card.modalidade_contrato !== modalidade) {
+        const saved = await onUpdate(card.id, { modalidade_contrato: modalidade });
+        if (saved === false) throw new Error("Não foi possível salvar o tipo de contrato.");
+      }
+      return invokeContractFunction({ lead_id: card.id, action: "check" });
+    };
+    check()
       .then(data => { if (active) applyCheck(data); })
       .catch(e => { if (active) toast.error(e?.message || "Erro ao verificar contrato"); })
       .finally(() => { if (active) setChecking(false); });
@@ -443,7 +451,7 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
       if (data?.pronto === false) {
         const faltando = data.faltando || [];
         const recomendado = data.recomendado || [];
-        const hasDebitos = [...faltando, ...recomendado].some((item: MissingItem | string) => (typeof item === "string" ? item : item.campo) === "debitos_entes");
+        const hasDebitos = faltando.some((item: MissingItem | string) => (typeof item === "string" ? item : item.campo) === "debitos_entes");
         if (hasDebitos) {
           toast.error("Responda se o cliente mencionou débitos municipais/estaduais antes de enviar o contrato");
           scrollToDebitos();
@@ -878,6 +886,7 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
         <div className="flex flex-wrap gap-2">
           <span className="text-xs px-2.5 py-1 rounded-full bg-primary/20 text-primary font-medium">{tipoLabel}</span>
           <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusInfo.color}`}>{statusInfo.label}</span>
+          {card.pqa_onboarding_status && <span className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground">Envio ao PQA: {card.pqa_onboarding_status}</span>}
           <span className={`text-xs px-2.5 py-1 rounded-full font-medium bg-muted ${debitosRespondidos ? "text-foreground" : "text-muted-foreground"}`}>{debitosLabel}</span>
         </div>
 

@@ -1,4 +1,4 @@
 # Termo de adesão do relatório
-- [ ] Ajustar modalidade, formulário e pagamento do termo sem alterar mensalidade.
-- [ ] Ajustar check, ações de geração, avisos e rótulo do card.
-- [ ] Verificar regras e telas; registrar limitações de validação autenticada.
+- [x] Ajustar modalidade, formulário e pagamento do termo sem alterar mensalidade.
+- [x] Ajustar check, ações de geração, avisos e rótulo do card.
+- [x] Verificar regras e telas com dados controlados; testes passaram. Sessão real indisponível: geração/assinatura autenticada não verificada.
