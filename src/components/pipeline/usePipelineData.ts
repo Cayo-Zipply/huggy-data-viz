@@ -99,6 +99,11 @@ function dbRowToCard(row: any, history: StageChange[]): PipelineCard {
     contrato_preparado_em: row.contrato_preparado_em || null,
     contrato_preparado_por: row.contrato_preparado_por || null,
     tipo_contrato: row.tipo_contrato || null,
+    modalidade_contrato: row.modalidade_contrato ?? null,
+    valor_relatorio: row.valor_relatorio != null ? Number(row.valor_relatorio) : null,
+    forma_pagamento_relatorio: row.forma_pagamento_relatorio ?? null,
+    parcelas_relatorio: row.parcelas_relatorio != null ? Number(row.parcelas_relatorio) : null,
+    pqa_onboarding_status: row.pqa_onboarding_status ?? null,
     representante_nome: row.representante_nome || null,
     representante_cpf: row.representante_cpf || null,
     valor_mensalidade: row.valor_mensalidade != null ? Number(row.valor_mensalidade) : null,
@@ -686,6 +691,10 @@ export function usePipelineData(actorName: string) {
     if (updates.contrato_preparado_em !== undefined) dbUpdates.contrato_preparado_em = updates.contrato_preparado_em;
     if (updates.contrato_preparado_por !== undefined) dbUpdates.contrato_preparado_por = updates.contrato_preparado_por;
     if (updates.tipo_contrato !== undefined) dbUpdates.tipo_contrato = updates.tipo_contrato;
+    if (updates.modalidade_contrato !== undefined) dbUpdates.modalidade_contrato = updates.modalidade_contrato;
+    if (updates.valor_relatorio !== undefined) dbUpdates.valor_relatorio = updates.valor_relatorio;
+    if (updates.forma_pagamento_relatorio !== undefined) dbUpdates.forma_pagamento_relatorio = updates.forma_pagamento_relatorio;
+    if (updates.parcelas_relatorio !== undefined) dbUpdates.parcelas_relatorio = updates.parcelas_relatorio;
     if (updates.representante_nome !== undefined) dbUpdates.representante_nome = updates.representante_nome;
     if (updates.representante_cpf !== undefined) dbUpdates.representante_cpf = updates.representante_cpf;
     if (updates.valor_mensalidade !== undefined) dbUpdates.valor_mensalidade = updates.valor_mensalidade;
@@ -723,8 +732,10 @@ export function usePipelineData(actorName: string) {
         console.error("Update lead error:", error);
         if (before) updateCardsState(prev => prev.map(c => c.id === id ? before : c));
         toast.error("Não foi possível salvar a alteração. Tente novamente.");
+        return false;
       }
     }
+    return true;
   }, [updateCardsState]);
 
   /* ── move card ── */
