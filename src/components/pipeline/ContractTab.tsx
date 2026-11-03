@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { FileText, Download, Loader2, RefreshCw, FileSignature, ExternalLink, MessageCircle, Eye, Plus, Trash2, Copy, Send, CheckCircle2, AlertTriangle, ShieldCheck, ShieldAlert, ShieldX, Shield, XCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { contractModality, reportDeadline, reportErrors, reportPaymentFields, type ContractModality, type ReportPayment } from "@/lib/reportContract";
 import { ZapsignHistory } from "./ZapsignHistory";
 
 type CnpjAdicional = {
@@ -95,6 +98,7 @@ async function parseEdgeFunctionError(error: any, fallback: string): Promise<str
     }
   } catch { /* ignore */ }
 
+  if (parsed?.template_ausente && parsed?.error) return parsed.error;
   if (parsed?.error) {
     let msg = parsed.error as string;
     if (Array.isArray(parsed.missing) && parsed.missing.length) {
@@ -122,6 +126,7 @@ async function parseMissingFromError(error: any): Promise<{ faltando: MissingIte
     } else if (ctx?.body && typeof ctx.body === "object") {
       parsed = ctx.body;
     }
+    if (parsed?.template_ausente) return null;
     if ((parsed?.missing_labels && Array.isArray(parsed.missing_labels)) || Array.isArray(parsed?.missing)) {
       const rawMissing = Array.isArray(parsed.missing_labels) ? parsed.missing_labels : parsed.missing;
       const faltando: MissingItem[] = rawMissing.map((x: any) =>
@@ -153,11 +158,19 @@ async function invokeContractFunction(body: { lead_id: string; action: "zapsign"
 
 interface Props {
   card: CardType;
-  onUpdate: (id: string, u: Partial<CardType>) => void;
+  onUpdate: (id: string, u: Partial<CardType>) => void | boolean | Promise<void | boolean>;
   onNavigateToDados?: () => void;
 }
 
 export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
+  const [modalidade, setModalidade] = useState<ContractModality>(() => contractModality(card.modalidade_contrato));
+  const isReport = modalidade === "venda_relatorio";
+  const [valorRelatorio, setValorRelatorio] = useState<number | null>(card.valor_relatorio ?? null);
+  const [pagamentoRelatorio, setPagamentoRelatorio] = useState<ReportPayment | "">(card.forma_pagamento_relatorio ?? "");
+  const [parcelasRelatorio, setParcelasRelatorio] = useState<number | null>(card.parcelas_relatorio ?? null);
+  const [checkResult, setCheckResult] = useState<any>(null);
+  const [checking, setChecking] = useState(false);
+  const [placeholderWarning, setPlaceholderWarning] = useState<string[]>([]);
   const isGenerated = card.contrato_status && card.contrato_status !== "pendente";
 
   // Pré-preenche campos do contrato a partir dos dados do card.
@@ -178,7 +191,7 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
     porcentagem_exito: card.porcentagem_exito || "",
     data_primeiro_pagamento: card.data_primeiro_pagamento || "",
     dia_demais_pagamentos: card.dia_demais_pagamentos || "",
-    prazo_entrega_relatorios: card.prazo_entrega_relatorios?.toString() || "7",
+    prazo_entrega_relatorios: String(reportDeadline(card.prazo_entrega_relatorios, modalidade)),
     prazo_contrato: card.prazo_contrato || "",
   });
 
@@ -400,9 +413,33 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
     </div>
   );
 
+  const applyCheck = (data: any) => {
+    setCheckResult(data);
+    if (isReport) setValorRelatorio(prev => prev ?? data?.valor_relatorio_sugerido ?? null);
+  };
+
+  useEffect(() => {
+    let active = true;
+    setChecking(true);
+    setCheckResult(null);
+    invokeContractFunction({ lead_id: card.id, action: "check" })
+      .then(data => { if (active) applyCheck(data); })
+      .catch(e => { if (active) toast.error(e?.message || "Erro ao verificar contrato"); })
+      .finally(() => { if (active) setChecking(false); });
+    return () => { active = false; };
+  }, [card.id, modalidade]);
+
+  const showPlaceholderWarning = (data: any) => {
+    const items = Array.isArray(data?.placeholders_restantes) ? data.placeholders_restantes.map(String) : [];
+    setPlaceholderWarning(items);
+    if (items.length) toast.warning(`O termo foi gerado, mas ficaram campos sem preenchimento: ${items.join(", ")}. Avise o Cayo antes de enviar.`, { duration: 10000 });
+  };
+
   const runCheckThen = async (fn: () => Promise<void> | void) => {
     try {
+      await saveFields();
       const data = await invokeContractFunction({ lead_id: card.id, action: "check" });
+      applyCheck(data);
       if (data?.pronto === false) {
         const faltando = data.faltando || [];
         const recomendado = data.recomendado || [];
@@ -415,6 +452,7 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
         }
         return;
       }
+      if (data?.recomendado?.length) toast.warning(data.recomendado.map((it: MissingItem) => it.label).join("; "));
       await fn();
     } catch (e: any) {
       if (e?.missing) {
@@ -477,6 +515,11 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
   };
 
   useEffect(() => {
+    setModalidade(contractModality(card.modalidade_contrato));
+    setValorRelatorio(card.valor_relatorio ?? null);
+    setPagamentoRelatorio(card.forma_pagamento_relatorio ?? "");
+    setParcelasRelatorio(card.parcelas_relatorio ?? null);
+    setPlaceholderWarning([]);
     setTipo(card.tipo_contrato || "");
     setForm(buildInitialForm());
     setValorMensalidade(card.valor_mensalidade ?? null);
@@ -517,7 +560,7 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
       porcentagem_exito: prev.porcentagem_exito || card.porcentagem_exito || "",
       data_primeiro_pagamento: prev.data_primeiro_pagamento || card.data_primeiro_pagamento || "",
       dia_demais_pagamentos: prev.dia_demais_pagamentos || card.dia_demais_pagamentos || "",
-      prazo_entrega_relatorios: prev.prazo_entrega_relatorios || card.prazo_entrega_relatorios?.toString() || "7",
+      prazo_entrega_relatorios: prev.prazo_entrega_relatorios || String(reportDeadline(card.prazo_entrega_relatorios, modalidade)),
       prazo_contrato: prev.prazo_contrato || card.prazo_contrato || "",
     }));
     setValorMensalidade(prev => prev ?? card.valor_mensalidade ?? null);
@@ -526,10 +569,17 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
   }, [card.empresa, card.cnpj, card.representante_nome, card.representante_cpf, card.email, card.telefone, card.endereco, card.cidade, card.estado, card.cep, card.qtd_salarios_minimos, card.porcentagem_exito, card.data_primeiro_pagamento, card.dia_demais_pagamentos, card.prazo_entrega_relatorios, card.prazo_contrato, card.valor_mensalidade, card.valor_divida, card.valor_proposta, card.nome]);
 
 
-  const isCNPJType = tipo === "tributario_cnpj" || tipo === "empresarial_completo";
+  const isCNPJType = isReport || tipo === "tributario_cnpj" || tipo === "empresarial_completo";
 
   const validate = (): string[] => {
     const errs: string[] = [];
+    if (isReport) {
+      if (!form.empresa.trim()) errs.push("Nome da Empresa");
+      if (!form.cnpj.trim()) errs.push("CNPJ");
+      if (!form.representante_nome.trim()) errs.push("Nome do Representante");
+      if (!form.representante_cpf.trim()) errs.push("CPF do Representante");
+      return [...errs, ...reportErrors(valorRelatorio, pagamentoRelatorio, parcelasRelatorio)];
+    }
     if (!tipo) errs.push("Tipo de contrato");
     if (isCNPJType && !form.empresa.trim()) errs.push("Nome da Empresa");
     if (isCNPJType && !form.cnpj.trim()) errs.push("CNPJ");
@@ -568,8 +618,15 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
   const isFormValid = () => validate().length === 0;
 
   const saveFields = async () => {
+    if (isReport) {
+      const validation = validate();
+      setErrors(validation);
+      if (validation.length) throw new Error(`Campos obrigatórios faltando: ${validation.join(", ")}`);
+    }
     const updates: Partial<CardType> & Record<string, any> = {
-      tipo_contrato: tipo as ContractType || null,
+      ...(!isReport ? { tipo_contrato: tipo as ContractType || null } : {}),
+      modalidade_contrato: modalidade,
+      ...(isReport ? reportPaymentFields(valorRelatorio, pagamentoRelatorio, parcelasRelatorio) : {}),
       empresa: form.empresa || null,
       cnpj: form.cnpj || null,
       representante_nome: form.representante_nome || null,
@@ -580,16 +637,19 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
       cidade: form.cidade || null,
       estado: form.estado || null,
       cep: form.cep || null,
+      ...(!isReport ? {
       valor_mensalidade: valorMensalidade,
       qtd_salarios_minimos: form.qtd_salarios_minimos || null,
       porcentagem_exito: form.porcentagem_exito || null,
-      valor_divida: valorDivida,
+
       qtd_mensalidades_iniciais: escalonada ? (qtdIniciais ? parseInt(qtdIniciais) : null) : null,
       valor_demais_mensalidades: escalonada ? valorDemais : null,
       qtd_mensalidades_demais: escalonada ? (qtdDemais ? parseInt(qtdDemais) : null) : null,
       data_primeiro_pagamento: form.data_primeiro_pagamento || null,
       dia_demais_pagamentos: form.dia_demais_pagamentos || null,
-      prazo_entrega_relatorios: form.prazo_entrega_relatorios ? parseInt(form.prazo_entrega_relatorios) : null,
+      } : {}),
+      valor_divida: valorDivida,
+      prazo_entrega_relatorios: reportDeadline(form.prazo_entrega_relatorios, modalidade),
       prazo_contrato: form.prazo_contrato || null,
       cnpjs_adicionais: isCNPJType ? cnpjsAdicionais.map(c => c.mesmo_endereco
         ? { empresa: c.empresa, cnpj: c.cnpj, mesmo_endereco: true }
@@ -597,7 +657,8 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
       ) : [],
       socios_adicionais: isCNPJType ? sociosAdicionais.map(s => ({ nome: s.nome, cpf: s.cpf })) : [],
     } as any;
-    await onUpdate(card.id, updates);
+    const saved = await onUpdate(card.id, updates);
+    if (saved === false) throw new Error("Não foi possível salvar os dados do contrato.");
   };
 
   const handleAction = async (action: "zapsign" | "download" | "whatsapp") => {
@@ -607,9 +668,6 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
 
 
     try {
-      await saveFields();
-      await new Promise(r => setTimeout(r, 500));
-
       const data = await invokeContractFunction({ lead_id: card.id, action });
 
       if (!data?.success) {
@@ -618,6 +676,7 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
         return;
       }
 
+      showPlaceholderWarning(data);
       setLastResult({ action, data });
 
       if (action === "zapsign") {
@@ -718,15 +777,14 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
   };
 
   const handlePreview = async () => {
-    if (!tipo) {
+    if (!isReport && !tipo) {
       toast.error("Selecione o tipo de contrato primeiro");
       return;
     }
     setActionLoading("preview");
     try {
-      await saveFields();
-      await new Promise(r => setTimeout(r, 400));
       const data = await invokeContractFunction({ lead_id: card.id, action: "preview" });
+      showPlaceholderWarning(data);
       const url = data?.file_url || (data as any)?.preview_url || (data as any)?.url || data?.share_url;
       if (!url) {
         toast.error(data?.message || "Prévia não disponível");
@@ -806,11 +864,11 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
 
   // ── GENERATED / ENVIADO / ASSINADO VIEW ──
   if (isGenerated) {
-    const statusInfo = STATUS_BADGES[card.contrato_status!] || { label: card.contrato_status, color: "bg-muted text-foreground" };
-    const tipoLabel = CONTRACT_TYPE_OPTIONS.find(t => t.value === card.tipo_contrato)?.label || card.tipo_contrato;
+    const statusInfo = STATUS_BADGES[card.contrato_status ?? ""] || { label: card.contrato_status, color: "bg-muted text-foreground" };
+    const tipoLabel = card.tipo_contrato === "termo_adesao_relatorio" ? "Termo de adesão — Relatório" : CONTRACT_TYPE_OPTIONS.find(t => t.value === card.tipo_contrato)?.label || card.tipo_contrato;
     const isCPFType = card.tipo_contrato === "tributario_cpf";
     const empresaName = isCPFType ? (card.representante_nome || "Cliente") : (card.empresa || "Empresa");
-    const docName = `CONTRATO DE ASSESSORIA JURÍDICA TRIBUTÁRIA E EMPRESARIAL - PQA & ${empresaName}`;
+    const docName = card.tipo_contrato === "termo_adesao_relatorio" ? `TERMO DE ADESÃO — RELATÓRIO - PQA & ${empresaName}` : `CONTRATO DE ASSESSORIA JURÍDICA TRIBUTÁRIA E EMPRESARIAL - PQA & ${empresaName}`;
 
     return (
       <div className="space-y-4">
@@ -821,6 +879,7 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
         </div>
 
         <p className="text-sm font-medium text-foreground">{docName}</p>
+        {placeholderWarning.length > 0 && <p className="text-xs text-warning">O termo foi gerado, mas ficaram campos sem preenchimento: {placeholderWarning.join(", ")}. Avise o Cayo antes de enviar.</p>}
 
         {card.contrato_preparado_em && (
           <p className="text-xs text-muted-foreground">
@@ -847,7 +906,7 @@ export function ContractTab({ card, onUpdate, onNavigateToDados }: Props) {
           const signerToken = (card as any).zapsign_signer_token as string | null | undefined;
           const isZapUrl = card.contract_url && card.contract_url.startsWith("https://app.zapsign.com.br/");
           const signLink = isZapUrl
-            ? card.contract_url!
+            ? card.contract_url
             : (signerToken ? `https://app.zapsign.com.br/verificar/${signerToken}` : null);
           if (!signLink) return null;
 
@@ -943,7 +1002,7 @@ ${signLink}`;
 
         <div className="flex flex-wrap gap-2">
           {card.contrato_file_url && (
-            <button onClick={() => handleDownloadFile(card.contrato_file_url!, `contrato_${card.nome || card.id}.docx`)} className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20 w-fit">
+            <button onClick={() => handleDownloadFile(card.contrato_file_url ?? "", `contrato_${card.nome || card.id}.docx`)} className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20 w-fit">
               <Download size={16} />Baixar Word
             </button>
           )}
@@ -975,7 +1034,20 @@ ${signLink}`;
   // ── FORM VIEW ──
   return (
     <div className="space-y-5">
+      <div className="space-y-2">
+        <label htmlFor="modalidade-contrato" className="text-xs font-medium text-foreground">Tipo de contrato</label>
+        <select id="modalidade-contrato" value={modalidade} onChange={e => {
+          const next = e.target.value as ContractModality;
+          setModalidade(next);
+          if (card.prazo_entrega_relatorios == null) setForm(prev => ({ ...prev, prazo_entrega_relatorios: String(reportDeadline(null, next)) }));
+        }} className={inputClass("")}>
+          <option value="venda_relatorio">Venda de Relatório (termo de adesão)</option>
+          <option value="mensalidade">Mensalidade (continuidade / lead antigo)</option>
+        </select>
+        {isReport ? <p className="text-xs text-muted-foreground">{checkResult?.tipo_label || (checking ? "Verificando modelo…" : "Termo de adesão")}</p> : <p className="text-xs text-warning">Novo modelo: o contrato inicial é o termo de adesão. Use mensalidade só para continuidade ou lead já em andamento.</p>}
+      </div>
       {/* Type selector */}
+      {!isReport && (
       <div>
         <p className="text-xs font-medium text-foreground uppercase tracking-wider mb-2">Tipo de Contrato *</p>
         <div className="space-y-2">
@@ -992,7 +1064,9 @@ ${signLink}`;
         {errors.includes("Tipo de contrato") && <p className="text-xs text-red-500 mt-1">Selecione o tipo de contrato</p>}
       </div>
 
-      {tipo && (
+      )}
+
+      {(isReport || tipo) && (
         <>
           {/* Contratante */}
           <div>
@@ -1228,6 +1302,7 @@ ${signLink}`;
 
 
 
+          {!isReport && (<>
           {/* Financeiro */}
           <div>
             <p className="text-xs font-medium text-foreground uppercase tracking-wider mb-3">Dados Financeiros</p>
@@ -1309,7 +1384,40 @@ ${signLink}`;
             </div>
           </div>
 
-          {/* Operacional */}
+          </>)}
+
+          {isReport && (
+            <section className="space-y-3">
+              <h3 className="text-xs font-medium text-foreground uppercase tracking-wider">Termo de adesão</h3>
+              <div>
+                <label className="text-xs text-muted-foreground">Valor do relatório (R$) *</label>
+                <InputMoedaBRL value={valorRelatorio} onChange={setValorRelatorio} hasError={errors.includes("Valor do relatório")} />
+                {card.valor_relatorio == null && checkResult?.valor_relatorio_sugerido != null && <p className="text-xs text-muted-foreground mt-1">Sugerido pela faixa da dívida ({checkResult.faixa_divida}). Pode ajustar.</p>}
+              </div>
+              <p className="text-xs text-muted-foreground">Forma de pagamento *</p>
+              <RadioGroup value={pagamentoRelatorio} onValueChange={value => {
+                setPagamentoRelatorio(value as ReportPayment);
+                if (value === "pix") setParcelasRelatorio(1);
+              }} className="flex flex-wrap gap-4">
+                <label className="flex items-center gap-2 text-sm"><RadioGroupItem value="pix" />Pix à vista</label>
+                <label className="flex items-center gap-2 text-sm"><RadioGroupItem value="cartao" />Cartão de crédito</label>
+              </RadioGroup>
+              {pagamentoRelatorio === "cartao" && <div>
+                <label htmlFor="parcelas-relatorio" className="text-xs text-muted-foreground">Parcelas no cartão *</label>
+                <select id="parcelas-relatorio" value={parcelasRelatorio ?? ""} onChange={e => setParcelasRelatorio(e.target.value ? Number(e.target.value) : null)} className={inputClass("Parcelas no cartão")}>
+                  <option value="">Selecione</option>
+                  {Array.from({ length: 10 }, (_, i) => i + 1).map(n => <option key={n} value={n}>{n}x</option>)}
+                </select>
+              </div>}
+              <div>
+                <label className="text-xs text-muted-foreground">Prazo de entrega (dias úteis) *</label>
+                <input type="number" min={1} max={20} value={form.prazo_entrega_relatorios} onChange={e => updateField("prazo_entrega_relatorios", e.target.value)} className={inputClass("Prazo Entrega Relatórios")} />
+              </div>
+              {pagamentoRelatorio === "cartao" && parcelasRelatorio != null && parcelasRelatorio > 1 && valorRelatorio != null && <p className="text-sm text-foreground">Parcela: {formatBRL(valorRelatorio / parcelasRelatorio)}</p>}
+            </section>
+          )}
+
+          {!isReport && (
           <div>
             <p className="text-xs font-medium text-foreground uppercase tracking-wider mb-3">Dados Operacionais</p>
             <div className="space-y-3">
@@ -1320,21 +1428,28 @@ ${signLink}`;
             </div>
           </div>
 
+          )}
+
           {/* Actions - 3 buttons */}
           <div className="pt-2 space-y-3">
             {renderDebitosQuestion()}
             <div className="flex gap-2 flex-wrap">
-              <button onClick={saveFields} className="text-sm px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground transition-colors border border-border">
+              <Button variant="secondary" onClick={async () => {
+                setChecking(true);
+                try { await saveFields(); applyCheck(await invokeContractFunction({ lead_id: card.id, action: "check" })); toast.success("Dados salvos"); }
+                catch (e: any) { toast.error(e?.message || "Erro ao salvar dados"); }
+                finally { setChecking(false); }
+              }} className="text-sm px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground transition-colors border border-border">
                 Salvar Dados
-              </button>
-              <button
-                onClick={handlePreview}
-                disabled={!tipo || actionLoading !== null}
+              </Button>
+              <Button variant="ghost"
+                onClick={() => runCheckThen(handlePreview)}
+                disabled={(!isReport && !tipo) || actionLoading !== null || checking}
                 className="text-sm px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20 flex items-center gap-2 disabled:opacity-40"
               >
                 {actionLoading === "preview" ? <Loader2 size={14} className="animate-spin" /> : <Eye size={14} />}
-                {actionLoading === "preview" ? "Gerando prévia..." : "Visualizar Prévia"}
-              </button>
+                {actionLoading === "preview" ? "Gerando prévia..." : (isReport ? "Pré-visualizar termo" : "Visualizar Prévia")}
+              </Button>
             </div>
 
             <p className="text-xs font-medium text-foreground uppercase tracking-wider">Como deseja prosseguir com o contrato?</p>
@@ -1345,41 +1460,45 @@ ${signLink}`;
               </p>
             )}
 
+            {checking && <p className="text-xs text-muted-foreground">Verificando contrato…</p>}
+            {checkResult?.aviso && <p className="text-xs text-warning">{checkResult.aviso}</p>}
+            {checkResult?.faltando?.length > 0 && <ul className="text-xs text-destructive space-y-1">{checkResult.faltando.map((item: MissingItem) => <li key={item.campo}>{item.label}</li>)}</ul>}
+            {checkResult?.recomendado?.length > 0 && <ul className="text-xs text-warning space-y-1">{checkResult.recomendado.map((item: MissingItem) => <li key={item.campo}>{item.label}</li>)}</ul>}
+            {placeholderWarning.length > 0 && <p className="text-xs text-warning">O termo foi gerado, mas ficaram campos sem preenchimento: {placeholderWarning.join(", ")}. Avise o Cayo antes de enviar.</p>}
             <TooltipProvider>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* ZapSign */}
-              <Tooltip><TooltipTrigger asChild><span className="block"><button
+              <Tooltip><TooltipTrigger asChild><span className="block"><Button variant="ghost"
                 onClick={() => runCheckThen(() => handleAction("zapsign"))}
-                disabled={actionLoading !== null || !debitosRespondidos}
-                className="flex w-full flex-col items-center gap-1.5 px-4 py-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-40 border border-primary/20"
+                disabled={actionLoading !== null || checking || (isReport ? !checkResult || checkResult.pronto === false || !isFormValid() : !debitosRespondidos)}
+                className="flex w-full flex-col items-center gap-1.5 px-4 py-4 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all disabled:opacity-40 border border-primary/20"
               >
                 {actionLoading === "zapsign" ? <Loader2 size={20} className="animate-spin" /> : <FileSignature size={20} />}
-                <span className="text-sm font-medium">{actionLoading === "zapsign" ? "Enviando..." : "Enviar para ZapSign"}</span>
+                <span className="text-sm font-medium">{actionLoading === "zapsign" ? "Enviando..." : (isReport ? "Enviar termo para assinatura (ZapSign)" : "Enviar para ZapSign")}</span>
                 <span className="text-[10px] opacity-70">Assinatura eletrônica</span>
-              </button></span></TooltipTrigger>{!debitosRespondidos && <TooltipContent>Responda a pergunta sobre débitos municipais/estaduais</TooltipContent>}</Tooltip>
+              </Button></span></TooltipTrigger>{!isReport && !debitosRespondidos && <TooltipContent>Responda a pergunta sobre débitos municipais/estaduais</TooltipContent>}</Tooltip>
 
               {/* Download */}
-              <Tooltip><TooltipTrigger asChild><span className="block"><button
+              <Tooltip><TooltipTrigger asChild><span className="block"><Button variant="ghost"
                 onClick={() => runCheckThen(() => handleAction("download"))}
-                disabled={actionLoading !== null || !debitosRespondidos}
-                className="flex w-full flex-col items-center gap-1.5 px-4 py-4 rounded-xl bg-muted text-foreground hover:bg-muted/80 transition-all disabled:opacity-40 border border-border"
+                disabled={actionLoading !== null || checking || (isReport ? !checkResult || checkResult.pronto === false || !isFormValid() : !debitosRespondidos)}
+                className="flex w-full flex-col items-center gap-1.5 px-4 py-4 rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-all disabled:opacity-40 border border-border"
               >
                 {actionLoading === "download" ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
-                <span className="text-sm font-medium">{actionLoading === "download" ? "Gerando..." : "Criar e Baixar"}</span>
+                <span className="text-sm font-medium">{actionLoading === "download" ? "Gerando..." : (isReport ? "Baixar termo (.docx)" : "Criar e Baixar")}</span>
                 <span className="text-[10px] text-muted-foreground">Download do .docx</span>
-              </button></span></TooltipTrigger>{!debitosRespondidos && <TooltipContent>Responda a pergunta sobre débitos municipais/estaduais</TooltipContent>}</Tooltip>
+              </Button></span></TooltipTrigger>{!isReport && !debitosRespondidos && <TooltipContent>Responda a pergunta sobre débitos municipais/estaduais</TooltipContent>}</Tooltip>
 
               {/* WhatsApp */}
-              <Tooltip><TooltipTrigger asChild><span className="block"><button
+              <Tooltip><TooltipTrigger asChild><span className="block"><Button variant="ghost"
                 onClick={() => runCheckThen(() => handleAction("whatsapp"))}
-                disabled={actionLoading !== null || !debitosRespondidos}
-                className="flex w-full flex-col items-center gap-1.5 px-4 py-4 rounded-xl text-white hover:opacity-90 transition-all disabled:opacity-40 border border-emerald-600/30"
-                style={{ backgroundColor: "#25D366" }}
+                disabled={actionLoading !== null || checking || (isReport ? !checkResult || checkResult.pronto === false || !isFormValid() : !debitosRespondidos)}
+                className="flex w-full flex-col items-center gap-1.5 px-4 py-4 rounded-lg text-success-foreground hover:opacity-90 transition-all disabled:opacity-40 border border-success/30 bg-success"
               >
                 {actionLoading === "whatsapp" ? <Loader2 size={20} className="animate-spin" /> : <MessageCircle size={20} />}
-                <span className="text-sm font-medium">{actionLoading === "whatsapp" ? "Gerando..." : "Enviar via WhatsApp"}</span>
+                <span className="text-sm font-medium">{actionLoading === "whatsapp" ? "Gerando..." : (isReport ? "Enviar termo por WhatsApp" : "Enviar via WhatsApp")}</span>
                 <span className="text-[10px] opacity-80">Abre WhatsApp Web</span>
-              </button></span></TooltipTrigger>{!debitosRespondidos && <TooltipContent>Responda a pergunta sobre débitos municipais/estaduais</TooltipContent>}</Tooltip>
+              </Button></span></TooltipTrigger>{!isReport && !debitosRespondidos && <TooltipContent>Responda a pergunta sobre débitos municipais/estaduais</TooltipContent>}</Tooltip>
             </div>
             </TooltipProvider>
 
