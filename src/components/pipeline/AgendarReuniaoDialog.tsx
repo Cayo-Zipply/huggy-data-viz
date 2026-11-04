@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Calendar, Copy, ExternalLink, Loader2, MessageSquare, Plus, Trash2, Video, X } from "lucide-react";
 import { buildReuniaoMessage } from "@/lib/reuniaoMessage";
-import { missingLeadBasics } from "@/lib/leadReadyChecks";
+import { missingMeetingBasics } from "@/lib/leadReadyChecks";
 import { supabase } from "@/lib/supabaseExternal";
 import { toast } from "sonner";
 import type { PipelineCard } from "./types";
@@ -120,7 +120,7 @@ export function AgendarReuniaoDialog({ card, open, onOpenChange, onCreated }: Pr
   const removerExtra = (e: string) => setExtras(extras.filter(x => x !== e));
 
   const criar = async () => {
-    const faltando = missingLeadBasics(card as any);
+    const faltando = missingMeetingBasics(card);
     if (faltando.length) {
       toast.error(`Para agendar a reunião, preencha: ${faltando.join(", ")}.`);
       return;

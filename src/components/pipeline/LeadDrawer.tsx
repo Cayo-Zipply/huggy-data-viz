@@ -10,6 +10,7 @@ import {
 import { Document as DocxDocument, Packer, Paragraph as DocxParagraph, TextRun as DocxTextRun } from "docx";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AgendarReuniaoDialog } from "./AgendarReuniaoDialog";
+import { DocumentoBadge } from "./DocumentoBadge";
 import { EditarReuniaoDialog } from "./EditarReuniaoDialog";
 import { ReunioesAgendadasList } from "./ReunioesAgendadasList";
 import { InputMoedaBRL } from "@/components/ui/input-moeda-brl";
@@ -297,7 +298,8 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
     if (!card) return;
     const draft = loadDraft(card.id, f);
     setEditing(f);
-    setEditValue(draft !== null ? draft : (v || ""));
+    const value = draft !== null ? draft : (v || "");
+    setEditValue(f === "cnpj" ? formatDocumento(value) : value);
   }, [card]);
 
   const saveEdit = async (f: string) => {
@@ -314,8 +316,9 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
 
   // Save draft on every keystroke
   const handleEditChange = (value: string, field: string) => {
-    setEditValue(value);
-    if (card) saveDraft(card.id, field, value);
+    const formatted = field === "cnpj" ? formatDocumento(value.replace(/\D/g, "").slice(0, 14)) : value;
+    setEditValue(formatted);
+    if (card) saveDraft(card.id, field, formatted);
   };
 
   const handleObsChange = (value: string) => {
@@ -465,7 +468,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
         <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">{label}</p>
         {editing === field ? (
           <div className="flex gap-1.5">
-            <input value={editValue} onChange={e => handleEditChange(e.target.value, field)} type={type}
+            <input aria-label={label} value={editValue} onChange={e => handleEditChange(e.target.value, field)} type={type}
               className="flex-1 text-sm bg-muted/50 border border-border rounded-md px-2.5 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               autoFocus onKeyDown={e => e.key === "Enter" && saveEdit(field)} />
             <button onClick={() => saveEdit(field)} className="text-xs px-2.5 py-1.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 flex items-center gap-1">
@@ -509,9 +512,12 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
                     <button onClick={() => saveEdit("nome")} className="px-2 py-1 bg-primary text-primary-foreground rounded-md text-xs">OK</button>
                   </div>
                 ) : (
-                  <SheetTitle className="text-lg font-bold cursor-pointer hover:text-primary transition-colors" onClick={() => startEdit("nome", card.nome)}>
-                    {card.nome}
-                  </SheetTitle>
+                  <div className="flex items-center gap-2">
+                    <SheetTitle className="min-w-0 break-words text-lg font-bold cursor-pointer hover:text-primary transition-colors" onClick={() => startEdit("nome", card.nome)}>
+                      {card.nome}
+                    </SheetTitle>
+                    <DocumentoBadge tipo={card.tipo_documento} />
+                  </div>
                 )}
               </div>
             </div>
