@@ -5,6 +5,6 @@
 - [x] Conferir documento reenviado: aviso de placeholders já aparece após geração; ajustar rótulo de download do termo já gerado.
 
 # Vendas para CPF
-- [ ] Destacar CPF perto do nome no Kanban e no detalhe do lead.
-- [ ] Usar CPF / CNPJ e formatDocumento na edição do documento.
-- [ ] Liberar UF/endereço para CPF ao agendar e testar sem alterar CNPJ.
+- [x] Destacar CPF perto do nome no Kanban e no detalhe do lead.
+- [x] Usar CPF / CNPJ e formatDocumento na edição do documento.
+- [x] Liberar UF/endereço para CPF ao agendar sem alterar CNPJ; testes unitários e navegador com dados controlados passaram, sem criar reunião real.
