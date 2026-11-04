@@ -8,6 +8,7 @@ import {
   AlertTriangle, Calendar, User, Trash2, Copy as CopyIcon
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { DocumentoBadge } from "./DocumentoBadge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PipelineCard as CardType, PipelineTask, PipeType, LossCategory } from "./types";
 import { LOSS_CATEGORIES, STAGE_CONFIG, formatBRL, isStale, daysDiff } from "./types";
@@ -76,7 +77,7 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
     ? hoursInStage >= slaHoras ? "estourado" : hoursInStage >= slaHoras * 0.75 ? "proximo" : "dentro"
     : "dentro";
 
-  const startEdit = (f: string, v: string) => { setEditing(f); setEditValue(v || ""); };
+  const startEdit = (f: string, v: string) => { setEditing(f); setEditValue(f === "cnpj" ? formatDocumento(v) : (v || "")); };
   const saveEdit = (f: string) => {
     let val: any = editValue || null;
     if (f === "deal_value" || f === "valor_divida") val = editValue ? parseFloat(editValue.replace(/[^\d.,]/g, "").replace(",", ".")) : null;
@@ -153,6 +154,7 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
                 </Tooltip>
               )}
               <p className="font-medium text-foreground text-sm truncate">{card.nome}</p>
+              <DocumentoBadge tipo={card.tipo_documento} />
             </div>
             {card.empresa && (
               <p className="text-xs text-muted-foreground truncate mt-0.5">{card.empresa}</p>
@@ -172,7 +174,6 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
             {slaStatus === "proximo" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900">SLA próx.</span>}
             {stale && slaStatus === "dentro" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900">{staleDays}d parado</span>}
             {card.tipo_documento === "cnpj" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900">CNPJ</span>}
-            {card.tipo_documento === "cpf" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:border-violet-900">CPF</span>}
             {card.fim_de_semana && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900">FDS</span>}
             {(card.resumo_reuniao || card.transcricao_reuniao) && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">Anexo</span>}
             {card.contrato_status === "assinado" && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900">Assinado</span>}
@@ -276,14 +277,14 @@ export function PipelineCardItem({ card, tasks, cardLabels = [], slaHoras, owner
                 </div>
                 {([
                   { key: "email", label: "Email", icon: Mail },
-                  { key: "cnpj", label: "CNPJ", icon: Building2 },
+                  { key: "cnpj", label: "CPF / CNPJ", icon: Building2 },
                   { key: "valor_divida", label: "Valor da Dívida", icon: DollarSign },
                 ] as const).map(f => (
                   <div key={f.key} className="flex items-center gap-2">
                     <f.icon size={12} className="text-muted-foreground flex-shrink-0" />
                     {editing === f.key ? (
                       <div className="flex-1 flex gap-1">
-                        <input value={editValue} onChange={e => setEditValue(e.target.value)}
+                        <input aria-label={f.label} value={editValue} onChange={e => setEditValue(f.key === "cnpj" ? formatDocumento(e.target.value.replace(/\D/g, "").slice(0, 14)) : e.target.value)}
                           className="flex-1 text-xs bg-muted/50 border border-border rounded px-2 py-1 text-foreground"
                           autoFocus onKeyDown={e => e.key === "Enter" && saveEdit(f.key)} />
                         <button onClick={() => saveEdit(f.key)} className="text-xs px-2 py-1 bg-primary/20 text-primary rounded">OK</button>
