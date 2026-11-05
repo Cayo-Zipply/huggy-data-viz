@@ -32,7 +32,6 @@ import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { NovidadesModal } from "@/components/NovidadesModal";
 import { Users, UserCheck } from "lucide-react";
 import { usePresenceHeartbeat } from "@/hooks/usePresenceHeartbeat";
-import { PresenceGeoNotice } from "@/components/PresenceGeoNotice";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -73,7 +72,7 @@ function AuthLayout() {
   const { user, profile, loading, signOut, setRole } = useAuth();
   const [selecting, setSelecting] = useState(false);
   const location = useLocation();
-  const { geoNoticeOpen, confirmGeoNotice } = usePresenceHeartbeat(
+  usePresenceHeartbeat(
     !loading && profile?.role ? user?.id : undefined,
   );
 
@@ -180,7 +179,6 @@ function AuthLayout() {
       </main>
       <FeedbackWidget />
       <NovidadesModal />
-      <PresenceGeoNotice open={geoNoticeOpen} onConfirm={confirmGeoNotice} />
       <AgentFab />
     </div>
     </AgentesProvider>

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createPresenceGeoCollector, GEO_INTERVAL_MS, GEO_OPTIONS, hasGeoNotice, saveGeoNotice, locationFlags } from "../src/lib/presenceGeolocation";
+import { createPresenceGeoCollector, GEO_INTERVAL_MS, GEO_OPTIONS, locationFlags } from "../src/lib/presenceGeolocation";
 
 function setup({ state = "granted", error = 0, supported = true } = {}) {
   let visible = true;
@@ -49,19 +49,11 @@ describe("Localização de presença", () => {
       await s.collector.collect(); expect(s.sent).toEqual([{ p_geo_status: "indisponivel" }]);
     }
   });
-  test("aviso é separado por usuário na chave geo_aviso_visto", () => {
-    const values = new Map<string, string>();
-    const storage = { getItem: (k: string) => values.get(k) ?? null, setItem: (k: string, v: string) => { values.set(k, v); } };
-    expect(hasGeoNotice("a", storage)).toBe(false);
-    saveGeoNotice("a", storage);
-    expect(values.get("geo_aviso_visto")).toBe('["a"]');
-    expect(hasGeoNotice("a", storage)).toBe(true); expect(hasGeoNotice("b", storage)).toBe(false);
-    saveGeoNotice("b", storage); expect(hasGeoNotice("b", storage)).toBe(true);
-  });
-  test("armazenamento bloqueado não quebra a confirmação", () => {
-    const storage = { getItem: () => { throw Error("blocked"); }, setItem: () => { throw Error("blocked"); } };
-    expect(hasGeoNotice("a", storage)).toBe(false);
-    expect(() => saveGeoNotice("a", storage)).not.toThrow();
+  test("permissão prompt permite a coleta imediatamente", async () => {
+    const s = setup({ state: "prompt" });
+    await s.collector.collect();
+    expect(s.calls()).toBe(1);
+    expect(s.sent).toEqual([{ p_geo_status: "concedida", p_lat: -23.5, p_lng: -46.6, p_precisao_m: 1200.4 }]);
   });
   test("imprecisa só acima de 1000m e desatualizada só após 30min", () => {
     const now = Date.parse("2026-11-05T14:18:00Z");

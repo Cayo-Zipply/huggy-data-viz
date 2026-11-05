@@ -10,6 +10,6 @@
 - [x] Liberar UF/endereço para CPF ao agendar sem alterar CNPJ; testes unitários e navegador com dados controlados passaram, sem criar reunião real.
 
 # Localização da equipe
-- [x] Aviso por usuário antes da permissão e coleta visível a cada cinco minutos, sem alterar pings normais.
+- [x] Usar somente permissão nativa, sem aviso próprio, e coleta visível ao montar e a cada cinco minutos, sem alterar pings normais.
 - [x] Exibir localização e etiquetas no painel administrativo sem alterar o banco.
 - [x] Testar permissão, intervalos e estados de localização com testes unitários e navegador controlado; integração autenticada não verificada.
