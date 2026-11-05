@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseExternal";
+import { createPresenceGeoCollector, GEO_INTERVAL_MS, hasGeoNotice, saveGeoNotice } from "@/lib/presenceGeolocation";
 
 const SUPABASE_URL = "https://riyfdcmmabvpcubusujw.supabase.co";
 const SUPABASE_ANON_KEY =
@@ -15,12 +16,48 @@ const AUSENTE_APOS_S = 300;
  * Envia presence_ping ao montar, a cada 60s e em visibilitychange.
  * Erros são silenciosos (console.warn apenas).
  */
-export function usePresenceHeartbeat() {
+export function usePresenceHeartbeat(userId?: string) {
   const ultimaInteracaoRef = useRef<number>(Date.now());
   const lastTouchRef = useRef<number>(0);
   const tokenRef = useRef<string | null>(null);
+  const [acknowledgedUser, setAcknowledgedUser] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!userId) { setAcknowledgedUser(null); return; }
+    try {
+      setAcknowledgedUser(hasGeoNotice(userId, localStorage) ? userId : null);
+    } catch { setAcknowledgedUser(null); }
+  }, [userId]);
+
+  const confirmGeoNotice = () => {
+    if (!userId) return;
+    try { saveGeoNotice(userId, localStorage); } catch { /* localStorage bloqueado */ }
+    setAcknowledgedUser(userId);
+  };
+
+  useEffect(() => {
+    if (!userId || acknowledgedUser !== userId) return;
+    const collector = createPresenceGeoCollector({
+      browser: navigator,
+      visible: () => document.visibilityState === "visible",
+      send: async (geo) => {
+        const segundos = Math.floor((Date.now() - ultimaInteracaoRef.current) / 1000);
+        const estado = segundos > AUSENTE_APOS_S ? "ausente" : "ativo";
+        try {
+          const { error } = await (supabase as any).rpc("presence_ping", {
+            p_estado: estado, p_segundos_sem_interacao: segundos, ...geo,
+          });
+          if (error) console.warn("[presence] localização falhou:", error.message);
+        } catch { console.warn("[presence] localização indisponível"); }
+      },
+    });
+    void collector.collect();
+    const interval = window.setInterval(() => void collector.collect(), GEO_INTERVAL_MS);
+    return () => { collector.dispose(); window.clearInterval(interval); };
+  }, [userId, acknowledgedUser]);
+
+  useEffect(() => {
+    if (!userId) return;
     // Mantém o access_token atualizado para o fetch keepalive do pagehide.
     void supabase.auth.getSession().then(({ data }) => {
       tokenRef.current = data.session?.access_token ?? null;
@@ -88,7 +125,9 @@ export function usePresenceHeartbeat() {
       window.removeEventListener("pagehide", marcarOffline);
       sub.subscription.unsubscribe();
     };
-  }, []);
+  }, [userId]);
+
+  return { geoNoticeOpen: Boolean(userId && acknowledgedUser !== userId), confirmGeoNotice };
 }
 
 /** Marca o usuário como offline (usar antes do signOut). */
