@@ -62,10 +62,10 @@ const DOT: Record<string, string> = {
 
 function PresenceLocation({ row }: { row: PresenceRow }) {
   if (row.geo_status === "negada") {
-    return <span className="text-xs text-destructive">Localização negada</span>;
+    return <span className="inline-block rounded border border-destructive/30 bg-destructive/10 px-1.5 py-0.5 text-xs text-destructive">Localização negada</span>;
   }
   if (row.geo_status === "indisponivel") {
-    return <span className="text-xs text-muted-foreground">Localização indisponível</span>;
+    return <span className="inline-block rounded border border-border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">Localização indisponível</span>;
   }
   if (row.geo_status !== "concedida") return <span className="text-xs text-muted-foreground">—</span>;
   const flags = locationFlags(row.precisao_m, row.localizacao_at);
@@ -156,7 +156,7 @@ export default function EquipeOnline() {
           {filtradas.map((r) => (
             <div
               key={r.user_id}
-              className="bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3"
+              className="bg-card border border-border rounded-xl px-4 py-3 flex flex-wrap items-center gap-3"
             >
               <span
                 className={cn("h-2.5 w-2.5 rounded-full shrink-0", DOT[r.status] ?? DOT.offline)}
@@ -171,7 +171,7 @@ export default function EquipeOnline() {
                 <p className="text-xs text-muted-foreground">{apoio(r)}</p>
                 <PresenceLocation row={r} />
               </div>
-              <p className="text-xs text-muted-foreground shrink-0">
+              <p className="w-full sm:w-auto text-xs text-muted-foreground shrink-0">
                 Primeiro acesso hoje: {fmtHora(r.primeiro_acesso_hoje)}
               </p>
             </div>
