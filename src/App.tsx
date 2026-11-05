@@ -32,6 +32,7 @@ import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { NovidadesModal } from "@/components/NovidadesModal";
 import { Users, UserCheck } from "lucide-react";
 import { usePresenceHeartbeat } from "@/hooks/usePresenceHeartbeat";
+import { useAppVersion } from "@/hooks/useAppVersion";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,6 +76,7 @@ function AuthLayout() {
   usePresenceHeartbeat(
     !loading && profile?.role ? user?.id : undefined,
   );
+  useAppVersion(!loading && profile?.role ? user?.id : undefined);
 
   if (loading) {
     return (

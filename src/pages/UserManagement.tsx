@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Shield, Users, UserCheck, Plus, Trash2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ReloadFarolButton } from "@/components/ReloadFarolButton";
 
 interface UserRow {
   id: string;
@@ -144,12 +145,15 @@ export default function UserManagement() {
             Defina papel (admin / sdr / closer) e funções no pipe (SDR / Closer) de cada usuário.
           </p>
         </div>
+        <div className="flex flex-wrap justify-end gap-2">
+        <ReloadFarolButton />
         <button
           onClick={() => setShowAdd(true)}
           className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-3 py-2 rounded-lg text-sm font-medium hover:opacity-90"
         >
           <Plus className="h-4 w-4" /> Adicionar usuário
         </button>
+        </div>
       </div>
 
       <div className="mb-4 flex items-start gap-2 text-xs text-muted-foreground bg-muted/40 border border-border rounded-lg p-3">
