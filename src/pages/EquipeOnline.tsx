@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseExternal";
 import { cn } from "@/lib/utils";
+import { locationFlags } from "@/lib/presenceGeolocation";
 
 interface PresenceRow {
   user_id: string;
@@ -13,6 +14,12 @@ interface PresenceRow {
   ultima_interacao: string | null;
   primeiro_acesso_hoje: string | null;
   minutos_sem_interacao: number | null;
+  latitude: number | null;
+  longitude: number | null;
+  precisao_m: number | null;
+  localizacao_at: string | null;
+  geo_status: "concedida" | "negada" | "indisponivel" | "pendente" | null;
+  mapa_url: string | null;
 }
 
 const TZ = "America/Sao_Paulo";
@@ -52,6 +59,27 @@ const DOT: Record<string, string> = {
   ausente: "bg-amber-400",
   offline: "bg-muted-foreground/40",
 };
+
+function PresenceLocation({ row }: { row: PresenceRow }) {
+  if (row.geo_status === "negada") {
+    return <span className="inline-block rounded border border-destructive/30 bg-destructive/10 px-1.5 py-0.5 text-xs text-destructive">Localização negada</span>;
+  }
+  if (row.geo_status === "indisponivel") {
+    return <span className="inline-block rounded border border-border bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">Localização indisponível</span>;
+  }
+  if (row.geo_status !== "concedida") return <span className="text-xs text-muted-foreground">—</span>;
+  const flags = locationFlags(row.precisao_m, row.localizacao_at);
+  return (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+      <span aria-hidden="true">📍</span>
+      {row.mapa_url && <a href={row.mapa_url} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">Ver no mapa</a>}
+      {row.precisao_m !== null && <span>± {Math.round(row.precisao_m)} m</span>}
+      {row.localizacao_at && <span>atualizada às {fmtHora(row.localizacao_at)}</span>}
+      {flags.imprecisa && <span className="rounded border border-warning/30 bg-warning/10 px-1.5 py-0.5 text-warning">imprecisa</span>}
+      {flags.desatualizada && <span className="rounded border border-border bg-muted px-1.5 py-0.5">desatualizada</span>}
+    </div>
+  );
+}
 
 export default function EquipeOnline() {
   const [filtroRole, setFiltroRole] = useState<string>("todos");
@@ -128,7 +156,7 @@ export default function EquipeOnline() {
           {filtradas.map((r) => (
             <div
               key={r.user_id}
-              className="bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3"
+              className="bg-card border border-border rounded-xl px-4 py-3 flex flex-wrap items-center gap-3"
             >
               <span
                 className={cn("h-2.5 w-2.5 rounded-full shrink-0", DOT[r.status] ?? DOT.offline)}
@@ -141,8 +169,9 @@ export default function EquipeOnline() {
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">{apoio(r)}</p>
+                <PresenceLocation row={r} />
               </div>
-              <p className="text-xs text-muted-foreground shrink-0">
+              <p className="w-full sm:w-auto text-xs text-muted-foreground shrink-0">
                 Primeiro acesso hoje: {fmtHora(r.primeiro_acesso_hoje)}
               </p>
             </div>
