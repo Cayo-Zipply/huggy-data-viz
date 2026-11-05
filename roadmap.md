@@ -8,3 +8,8 @@
 - [x] Destacar CPF perto do nome no Kanban e no detalhe do lead.
 - [x] Usar CPF / CNPJ e formatDocumento na edição do documento.
 - [x] Liberar UF/endereço para CPF ao agendar sem alterar CNPJ; testes unitários e navegador com dados controlados passaram, sem criar reunião real.
+
+# Localização da equipe
+- [ ] Aviso por usuário antes da permissão e coleta visível a cada cinco minutos, sem alterar pings normais.
+- [ ] Exibir localização e etiquetas no painel administrativo sem alterar o banco.
+- [ ] Testar permissão, intervalos e estados de localização.
