@@ -10,6 +10,7 @@ import {
 import { supabase } from "@/lib/supabaseExternal";
 import { useQueryClient } from "@tanstack/react-query";
 import { clearPersistedData } from "@/lib/clearLocalData";
+import { presenceOffline } from "@/hooks/usePresenceHeartbeat";
 import type { User, Session } from "@supabase/supabase-js";
 
 interface UserProfile {
@@ -279,6 +280,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     try {
       profileRequestRef.current += 1;
+      await presenceOffline();
       await supabase.auth.signOut();
     } catch (err) {
       console.error("Erro ao fazer logout:", err);
