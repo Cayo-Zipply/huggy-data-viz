@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabaseExternal";
-import { createPresenceGeoCollector, GEO_INTERVAL_MS, hasGeoNotice, saveGeoNotice } from "@/lib/presenceGeolocation";
+import { createPresenceGeoCollector, GEO_INTERVAL_MS } from "@/lib/presenceGeolocation";
 
 const SUPABASE_URL = "https://riyfdcmmabvpcubusujw.supabase.co";
 const SUPABASE_ANON_KEY =
@@ -20,23 +20,8 @@ export function usePresenceHeartbeat(userId?: string) {
   const ultimaInteracaoRef = useRef<number>(Date.now());
   const lastTouchRef = useRef<number>(0);
   const tokenRef = useRef<string | null>(null);
-  const [acknowledgedUser, setAcknowledgedUser] = useState<string | null>(null);
-
   useEffect(() => {
-    if (!userId) { setAcknowledgedUser(null); return; }
-    try {
-      setAcknowledgedUser(hasGeoNotice(userId, localStorage) ? userId : null);
-    } catch { setAcknowledgedUser(null); }
-  }, [userId]);
-
-  const confirmGeoNotice = () => {
     if (!userId) return;
-    try { saveGeoNotice(userId, localStorage); } catch { /* localStorage bloqueado */ }
-    setAcknowledgedUser(userId);
-  };
-
-  useEffect(() => {
-    if (!userId || acknowledgedUser !== userId) return;
     const collector = createPresenceGeoCollector({
       browser: navigator,
       visible: () => document.visibilityState === "visible",
@@ -54,7 +39,7 @@ export function usePresenceHeartbeat(userId?: string) {
     void collector.collect();
     const interval = window.setInterval(() => void collector.collect(), GEO_INTERVAL_MS);
     return () => { collector.dispose(); window.clearInterval(interval); };
-  }, [userId, acknowledgedUser]);
+  }, [userId]);
 
   useEffect(() => {
     if (!userId) return;
@@ -126,8 +111,6 @@ export function usePresenceHeartbeat(userId?: string) {
       sub.subscription.unsubscribe();
     };
   }, [userId]);
-
-  return { geoNoticeOpen: Boolean(userId && acknowledgedUser !== userId), confirmGeoNotice };
 }
 
 /** Marca o usuário como offline (usar antes do signOut). */

@@ -80,19 +80,3 @@ export function locationFlags(precision: number | null, updatedAt: string | null
     desatualizada: updatedAt !== null && now - new Date(updatedAt).getTime() > 30 * 60_000,
   };
 }
-
-export function hasGeoNotice(userId: string, storage: Pick<Storage, "getItem">) {
-  try {
-    const users: unknown = JSON.parse(storage.getItem("geo_aviso_visto") ?? "[]");
-    return Array.isArray(users) && users.includes(userId);
-  } catch { return false; }
-}
-
-export function saveGeoNotice(userId: string, storage: Pick<Storage, "getItem" | "setItem">) {
-  try {
-    let users: unknown;
-    try { users = JSON.parse(storage.getItem("geo_aviso_visto") ?? "[]"); } catch { users = []; }
-    const ids = Array.isArray(users) ? users.filter((id): id is string => typeof id === "string") : [];
-    storage.setItem("geo_aviso_visto", JSON.stringify(Array.from(new Set([...ids, userId]))));
-  } catch { /* A confirmação em memória funciona mesmo com armazenamento bloqueado. */ }
-}
