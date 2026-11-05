@@ -15,6 +15,6 @@
 - [x] Testar permissão, intervalos e estados de localização com testes unitários e navegador controlado; integração autenticada não verificada.
 
 # Atualização de versão
-- [ ] Verificar versão no layout autenticado a cada três minutos e avisar sem interromper a aba ativa.
-- [ ] Adicionar comando administrativo com confirmação para sinalizar nova versão a todos.
-- [ ] Testar versão inicial, mudança de versão e comportamento por visibilidade.
+- [x] Verificar versão no layout autenticado a cada três minutos e avisar sem interromper a aba ativa.
+- [x] Adicionar comando administrativo com confirmação para sinalizar nova versão a todos.
+- [x] Testar versão inicial, mudança de versão e comportamento por visibilidade; testes unitários e navegador controlado passaram, integração autenticada não verificada.
