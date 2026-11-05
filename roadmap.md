@@ -13,3 +13,8 @@
 - [x] Usar somente permissão nativa, sem aviso próprio, e coleta visível ao montar e a cada cinco minutos, sem alterar pings normais.
 - [x] Exibir localização e etiquetas no painel administrativo sem alterar o banco.
 - [x] Testar permissão, intervalos e estados de localização com testes unitários e navegador controlado; integração autenticada não verificada.
+
+# Atualização de versão
+- [ ] Verificar versão no layout autenticado a cada três minutos e avisar sem interromper a aba ativa.
+- [ ] Adicionar comando administrativo com confirmação para sinalizar nova versão a todos.
+- [ ] Testar versão inicial, mudança de versão e comportamento por visibilidade.
