@@ -24,12 +24,14 @@ const Pool = lazy(() => import("@/pages/Pool"));
 const PendenciasPosVenda = lazy(() => import("@/pages/PendenciasPosVenda"));
 const Esquadrao = lazy(() => import("@/pages/Esquadrao"));
 const Criativos = lazy(() => import("@/pages/Criativos"));
+const EquipeOnline = lazy(() => import("@/pages/EquipeOnline"));
 import { AgentesProvider } from "@/components/agentes/AgentesContext";
 import { AgentFab } from "@/components/agentes/AgentFab";
 import { AppSidebar } from "@/components/AppSidebar";
 import { FeedbackWidget } from "@/components/FeedbackWidget";
 import { NovidadesModal } from "@/components/NovidadesModal";
 import { Users, UserCheck } from "lucide-react";
+import { usePresenceHeartbeat } from "@/hooks/usePresenceHeartbeat";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -70,6 +72,7 @@ function AuthLayout() {
   const { user, profile, loading, signOut, setRole } = useAuth();
   const [selecting, setSelecting] = useState(false);
   const location = useLocation();
+  usePresenceHeartbeat();
 
   if (loading) {
     return (
@@ -216,6 +219,7 @@ const App = () => (
               <Route path="/farol" element={null} />
 
               <Route path="/usuarios" element={<RoleGuard roles={["admin"]}><UserManagement /></RoleGuard>} />
+              <Route path="/equipe-online" element={<RoleGuard roles={["admin"]}><EquipeOnline /></RoleGuard>} />
               <Route path="/contratos" element={<Contratos />} />
               <Route path="/configuracoes" element={<RoleGuard roles={["admin"]}><Settings /></RoleGuard>} />
               <Route path="/feedbacks" element={<RoleGuard roles={["admin"]}><Feedbacks /></RoleGuard>} />
