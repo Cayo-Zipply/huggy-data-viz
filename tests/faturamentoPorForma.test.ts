@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import {
   linhasFormas,
   rangeDoMes,
-} from "@/components/FaturamentoPorFormaPagamento";
+} from "../src/components/FaturamentoPorFormaPagamento";
 
 describe("rangeDoMes", () => {
   it("usa o primeiro e o último dia do mês em YYYY-MM-DD", () => {
