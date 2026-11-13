@@ -54,10 +54,12 @@ describe("linhasFormas", () => {
       { forma_pagamento: "cartao", qtd_vendas: 2, valor_total: 1000 },
       { forma_pagamento: "cartao", qtd_vendas: 3, valor_total: 2000 },
     ]);
-    expect(linhas).toHaveLength(1);
-    expect(linhas[0].qtd).toBe(5);
-    expect(linhas[0].valor).toBe(3000);
-    expect(linhas[0].pct).toBeCloseTo(100, 5);
-    expect("parcelas" in linhas[0]).toBe(false);
+    // Pix continua aparecendo (zerada); Cartão concentra as duas linhas.
+    expect(linhas.map(l => l.chave)).toEqual(["pix", "cartao"]);
+    const cartao = linhas.find(l => l.chave === "cartao")!;
+    expect(cartao.qtd).toBe(5);
+    expect(cartao.valor).toBe(3000);
+    expect(cartao.pct).toBeCloseTo(100, 5);
+    expect("parcelas" in cartao).toBe(false);
   });
 });
