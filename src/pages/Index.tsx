@@ -29,6 +29,7 @@ import { useMarketingOverrides } from "@/hooks/useMarketingOverrides";
 import { useMarketingLive } from "@/hooks/useMarketingLive";
 import { CampaignSelector } from "@/components/CampaignSelector";
 import { FarolCloserCards } from "@/components/FarolCloserCards";
+import { FaturamentoPorFormaPagamentoCard } from "@/components/FaturamentoPorFormaPagamento";
 const FunilCriativo = lazy(() => import("@/components/FunilCriativo").then(m => ({ default: m.FunilCriativo })));
 const MarketingOverview = lazy(() => import("@/components/MarketingOverview").then(m => ({ default: m.MarketingOverview })));
 import { supabase } from "@/integrations/supabase/client";
@@ -371,6 +372,12 @@ const Index = () => {
                   <MetricCard title="Ticket Médio" value={effectiveVendas > 0 ? formatCurrency(effectiveFaturamento / effectiveVendas) : "—"} delay={200} />
                   <MetricCard title="Conv. Reuniões" value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "—"} variation={getVariation(conversaoReunioes, prevConversaoReunioes)} delay={250} />
                 </div>
+
+                {/* Faturamento por forma de pagamento — mesmo período do mês selecionado */}
+                <FaturamentoPorFormaPagamentoCard
+                  mes={selectedMonthYYYYMM}
+                  mesLabel={dynamicMonths.find(m => m.key === selectedMonth)?.label ?? ""}
+                />
 
                 {/* Farol por closer (pace + projeção por dias úteis) */}
                 <FarolCloserCards
