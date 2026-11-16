@@ -25,6 +25,7 @@ import {
   Crosshair,
   Images,
   Radio,
+  Send,
 } from "lucide-react";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { cn } from "@/lib/utils";
@@ -74,6 +75,7 @@ const MENU_GROUPS: { label: string; items: NavItem[] }[] = [
       { key: "/contratos", label: "Contratos", icon: FileText, roles: ["admin", "sdr", "closer"] },
       { key: "/usuarios", label: "Usuários", icon: UsersRound, roles: ["admin"] },
       { key: "/equipe-online", label: "Equipe online", icon: Radio, roles: ["admin"] },
+      { key: "/campanhas-disparo", label: "Campanhas de Disparo", icon: Send, roles: ["admin"] },
       { key: "/configuracoes", label: "Configurações", icon: Settings, roles: ["admin"] },
     ],
   },
