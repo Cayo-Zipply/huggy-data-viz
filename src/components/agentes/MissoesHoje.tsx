@@ -31,8 +31,7 @@ export function BriefingSheet({ agente, briefing, onClose }: { agente: Agente; b
   const itens = briefing.itens ?? [];
   const abrirLead = (id: string) => {
     onClose();
-    navigate("/pipeline");
-    setTimeout(() => window.dispatchEvent(new CustomEvent("open-lead-card", { detail: { leadId: id } })), 150);
+    navigate(`/lead/${id}`);
   };
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>

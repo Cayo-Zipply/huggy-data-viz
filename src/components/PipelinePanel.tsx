@@ -8,7 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { usePipelineData } from "./pipeline/usePipelineData";
+import { usePipelineData, fetchLeadFull, upsertLeadRow, leadRowToCard } from "./pipeline/usePipelineData";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { StageColumn } from "./pipeline/StageColumn";
 import { PipelineFiltersBar, applyFilters, exportCSV, defaultFilters, type FilterState } from "./pipeline/PipelineFilters";
 import { TasksPanel } from "./pipeline/TasksPanel";
@@ -140,20 +142,41 @@ export function PipelinePanel() {
   const obsNaoLidasRef = useRef(obsNaoLidas);
   obsNaoLidasRef.current = obsNaoLidas;
 
+  // Abertura por URL: /lead/:id (rota própria) ou /pipeline?lead=<id>.
+  // O lead é sempre buscado pelo id — nunca depende da lista filtrada.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const routeLeadId = location.pathname.startsWith("/lead/") ? decodeURIComponent(location.pathname.slice(6).split("/")[0] || "") : "";
+  const queryLeadId = location.pathname === "/pipeline" ? searchParams.get("lead") || "" : "";
+  const urlLeadId = routeLeadId || queryLeadId;
+  const urlMode: "route" | "query" | null = routeLeadId ? "route" : queryLeadId ? "query" : null;
+  const [openedViaUrl, setOpenedViaUrl] = useState<"route" | "query" | null>(null);
+  const [notFoundId, setNotFoundId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!urlLeadId || !urlMode) return;
+    setOpenedViaUrl(urlMode);
+    setNotFoundId(null);
+    setSelectedCardId(urlLeadId);
+    setDrawerOpen(true);
+    if (obsNaoLidasRef.current.has(urlLeadId)) {
+      setObsDestaqueId(urlLeadId);
+      marcarObsLida(urlLeadId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlLeadId, urlMode]);
+
+  // Evento global legado (ex.: discador): passa a usar a rota do card.
   useEffect(() => {
     const handler = (e: Event) => {
       const leadId = (e as CustomEvent<{ leadId: string }>).detail?.leadId;
       if (!leadId) return;
-      setSelectedCardId(leadId);
-      setDrawerOpen(true);
-      if (obsNaoLidasRef.current.has(leadId)) {
-        setObsDestaqueId(leadId);
-        marcarObsLida(leadId);
-      }
+      navigate(`/lead/${leadId}`);
     };
     window.addEventListener("open-lead-card", handler);
     return () => window.removeEventListener("open-lead-card", handler);
-  }, []);
+  }, [navigate]);
 
   const reportOwnerOptions = useMemo(() => {
     const raw: string[] = [
@@ -269,10 +292,31 @@ export function PipelinePanel() {
     }).length;
   }, [tasks, activeUser, showAllOwners]);
 
+  // Sempre busca o lead pelo id ao abrir (mesma chave do LeadDrawer).
+  const selectedInList = useMemo(
+    () => (selectedCardId ? cards.find(c => c.id === selectedCardId) || null : null),
+    [cards, selectedCardId],
+  );
+  const leadByIdQ = useQuery({
+    queryKey: ["lead", selectedCardId],
+    queryFn: () => fetchLeadFull(selectedCardId!),
+    enabled: drawerOpen && !!selectedCardId,
+    retry: false,
+  });
+  useEffect(() => {
+    const row: any = leadByIdQ.data;
+    if (row?.id && row.id === selectedCardId && !cards.some(c => c.id === row.id)) upsertLeadRow(row);
+  }, [leadByIdQ.data, selectedCardId, cards]);
   const selectedCard = useMemo(() => {
     if (!selectedCardId) return null;
-    return cards.find(c => c.id === selectedCardId) || null;
-  }, [cards, selectedCardId]);
+    if (selectedInList) return selectedInList;
+    const row: any = leadByIdQ.data;
+    return row?.id === selectedCardId ? leadRowToCard(row) : null;
+  }, [selectedCardId, selectedInList, leadByIdQ.data]);
+  useEffect(() => {
+    if (!drawerOpen || !selectedCardId || selectedInList) return;
+    if (leadByIdQ.isError || (leadByIdQ.isSuccess && !leadByIdQ.data)) setNotFoundId(selectedCardId);
+  }, [drawerOpen, selectedCardId, selectedInList, leadByIdQ.isError, leadByIdQ.isSuccess, leadByIdQ.data]);
 
   const [searchFocused, setSearchFocused] = useState(false);
   const searchSuggestions = useMemo(() => {
@@ -439,9 +483,41 @@ export function PipelinePanel() {
     }
   };
 
+  // Fecha o card. Aberto pela rota /lead/:id → volta à página anterior
+  // (ou ao pipe do lead); aberto por ?lead= → remove o parâmetro da URL.
+  const closeCard = (goToPipe = false) => {
+    const mode = openedViaUrl;
+    const pipe = selectedCard?.pipe;
+    setDrawerOpen(false);
+    setSelectedCardId(null);
+    setOpenedViaUrl(null);
+    if (mode === "route" && location.pathname.startsWith("/lead/")) {
+      const idx = (window.history.state as any)?.idx ?? 0;
+      if (!goToPipe && idx > 0) { navigate(-1); return; }
+      if (pipe && !(isSdr && !isCloser && !isAdmin)) setActivePipe(pipe);
+      navigate("/pipeline", { replace: true });
+    } else if (mode === "query" && searchParams.has("lead")) {
+      navigate("/pipeline", { replace: true });
+    } else if (goToPipe && location.pathname !== "/pipeline") {
+      navigate("/pipeline", { replace: true });
+    }
+  };
+
   const handleDrawerOpenChange = (open: boolean) => {
-    setDrawerOpen(open);
-    if (!open) setSelectedCardId(null);
+    if (open) { setDrawerOpen(true); return; }
+    closeCard();
+  };
+
+  // Aviso quando o card aberto pela URL não aparece na visualização atual.
+  const outOfFilters = !!openedViaUrl && !!selectedCard && (
+    !visibleCards.some(c => c.id === selectedCard.id) ||
+    (activePipe !== "all" && selectedCard.pipe !== activePipe)
+  );
+  const clearViewFilters = () => {
+    setFilters(defaultFilters);
+    setSearchQuery("");
+    if (isAdmin) setActiveUser("all");
+    if (!(isSdr && !isCloser && !isAdmin)) setActivePipe("all");
   };
 
   // Bulk helpers
@@ -850,12 +926,33 @@ export function PipelinePanel() {
         highlightObs={obsDestaqueId !== null && obsDestaqueId === selectedCard?.id}
         onDelete={async (id) => {
           await deleteCard(id);
-          setDrawerOpen(false);
-          setSelectedCardId(null);
+          closeCard(true);
           toast({ title: "Lead excluído" });
         }}
-        onOpenLead={(id) => { setSelectedCardId(id); setDrawerOpen(true); }}
+        onOpenLead={(id) => {
+          if (openedViaUrl === "route") { navigate(`/lead/${id}`, { replace: true }); return; }
+          setSelectedCardId(id); setDrawerOpen(true);
+        }}
+        topNotice={outOfFilters ? (
+          <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground">
+            <span>Este card não aparece nos seus filtros atuais</span>
+            <button type="button" onClick={clearViewFilters} className="shrink-0 font-medium text-primary hover:underline">
+              Limpar filtros
+            </button>
+          </div>
+        ) : null}
       />
+
+      <Dialog open={!!notFoundId} onOpenChange={(o) => { if (!o) { setNotFoundId(null); closeCard(true); } }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Card não encontrado ou sem permissão</DialogTitle>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => { setNotFoundId(null); closeCard(true); }}>Voltar ao pipe</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* No Show date popup */}
       <Dialog open={!!noShowPending} onOpenChange={(open) => { if (!open) setNoShowPending(null); }}>

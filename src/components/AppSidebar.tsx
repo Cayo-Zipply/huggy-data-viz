@@ -135,7 +135,7 @@ export function AppSidebar() {
             <div className="space-y-0.5">
               {group.items.map((item) => {
                 const Icon = item.icon;
-                const active = location.pathname === item.key;
+                const active = location.pathname === item.key || (item.key === "/pipeline" && location.pathname.startsWith("/lead/"));
                 const showBadge = item.badge === "pendencias" && count > 0;
                 return (
                   <button

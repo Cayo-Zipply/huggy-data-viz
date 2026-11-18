@@ -263,10 +263,7 @@ export default function CampanhasDisparo() {
   };
 
   const abrirCard = (leadId: string) => {
-    navigate("/pipeline");
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent("open-lead-card", { detail: { leadId } }));
-    }, 200);
+    navigate(`/lead/${leadId}`);
   };
 
   const fetchingSilencioso = (resumoQ.isFetching && !resumoQ.isLoading) || (contatosQ.isFetching && !contatosQ.isLoading);

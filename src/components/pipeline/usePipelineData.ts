@@ -283,6 +283,22 @@ export function mergeFullLead(row: any) {
   });
 }
 
+/** Converte uma linha completa de `leads` em card (lead aberto por id). */
+export function leadRowToCard(row: any): PipelineCard {
+  const hist = historyState.map.get(row.id) || [{ from: null, to: mapEtapa(row.etapa_atual), at: row.data_entrada || row.created_at || new Date().toISOString(), by: "sistema", duration_days: null }];
+  const card = dbRowToCard(row, hist) as any;
+  card.__full = true;
+  return card;
+}
+
+/** Lead buscado por id: mescla se já está na lista; senão acrescenta ao cache. */
+export function upsertLeadRow(row: any) {
+  if (!row?.id) return;
+  if (pipelineDataCache.cards.some(c => c.id === row.id)) { mergeFullLead(row); return; }
+  fullRowCache.set(row.id, row);
+  publishPipelineSnapshot({ ...pipelineDataCache, cards: [...pipelineDataCache.cards, leadRowToCard(row)] });
+}
+
 export async function fetchLeadFull(id: string) {
   const { data, error } = await sbExt.from("leads").select("*").eq("id", id).single();
   if (error) throw error;

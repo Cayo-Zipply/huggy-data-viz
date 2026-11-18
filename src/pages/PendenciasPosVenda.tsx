@@ -54,10 +54,7 @@ export default function PendenciasPosVenda() {
   }, [items, filtro, closerFiltro, isAdmin]);
 
   const abrirCard = (leadId: string) => {
-    navigate("/pipeline");
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent("open-lead-card", { detail: { leadId } }));
-    }, 200);
+    navigate(`/lead/${leadId}`);
   };
 
   return (

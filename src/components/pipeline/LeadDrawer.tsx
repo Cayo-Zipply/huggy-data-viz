@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, memo } from "react";
+import { useEffect, useState, useCallback, memo, type ReactNode } from "react";
 import { cn, formatDocumento } from "@/lib/utils";
 import {
   Phone, Mail, Building2, DollarSign, Paperclip, FileText, Upload,
@@ -152,11 +152,13 @@ interface Props {
   onDelete?: (id: string) => void | Promise<void>;
   onOpenLead?: (id: string) => void;
   highlightObs?: boolean;
+  /** Aviso discreto no topo (ex.: card fora dos filtros atuais). */
+  topNotice?: ReactNode;
 }
 
 type SectionKey = "dados" | "origem" | "historico" | "tarefas" | "contrato" | "anexo" | "chamadas" | "reunioes" | "emails" | "grupo_wpp" | "acoes";
 
-export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onSaveObservation, labels = [], cardLabels = [], onAddLabel, onRemoveLabel, ownerOptions: ownerOptionsProp, duplicates = [], onDelete, onOpenLead, highlightObs = false }: Props) {
+export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWon, onMarkLost, onCreateTask, onToggleTask, onSaveObservation, labels = [], cardLabels = [], onAddLabel, onRemoveLabel, ownerOptions: ownerOptionsProp, duplicates = [], onDelete, onOpenLead, highlightObs = false, topNotice }: Props) {
   const { user, isAdmin, profile } = useAuth();
   const { openChat } = useAgentChat();
   const { activeOrigens } = useOrigensLeads();
@@ -501,6 +503,7 @@ export function LeadDrawer({ card, tasks, open, onOpenChange, onUpdate, onMarkWo
       <SheetContent side="right" className="w-full sm:max-w-[50vw] p-0 flex flex-col">
         {/* Header */}
         <div className="p-5 pb-3 border-b border-border">
+          {topNotice && <div className="mb-3 pr-6">{topNotice}</div>}
           <SheetHeader className="mb-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">

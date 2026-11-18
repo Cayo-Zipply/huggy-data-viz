@@ -212,9 +212,7 @@ export function FarolPanel({ cards, goals, onSaveGoal, onRefresh }: Props) {
   }, []);
 
   const openCard = (cardId: string) => {
-    sessionStorage.setItem("crm_selected_card_id", cardId);
-    sessionStorage.setItem("crm_drawer_open", "true");
-    navigate("/pipeline");
+    navigate(`/lead/${cardId}`);
   };
 
   // ── Reuniões marcadas/realizadas/no-show no mês ──

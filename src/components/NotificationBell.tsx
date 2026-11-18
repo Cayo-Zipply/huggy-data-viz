@@ -180,12 +180,7 @@ export function NotificationBell() {
                       }
                       if (n.lead_id) {
                         setOpen(false);
-                        navigate("/pipeline");
-                        setTimeout(() => {
-                          window.dispatchEvent(
-                            new CustomEvent("open-lead-card", { detail: { leadId: n.lead_id } })
-                          );
-                        }, 50);
+                        navigate(`/lead/${n.lead_id}`);
                       }
                     };
                     return (

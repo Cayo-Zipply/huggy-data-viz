@@ -37,7 +37,8 @@ import { useFarolMetricasTime, useFarolMetricasSdr } from "@/hooks/useFarolRpc";
 
 const Index = () => {
   const location = useLocation();
-  const activeTab = location.pathname.replace("/", "") || "pipeline";
+  // /lead/:id abre o card por cima do Pipeline (mesmo detalhe de sempre).
+  const activeTab = location.pathname.startsWith("/lead/") ? "pipeline" : location.pathname.replace("/", "") || "pipeline";
   const isMarketing = activeTab === "marketing" || activeTab === "comercial";
   // Abas montadas sob demanda: só carregam dados quando visitadas pela 1ª vez
   // (depois ficam montadas para preservar estado). Pipeline sempre montado.

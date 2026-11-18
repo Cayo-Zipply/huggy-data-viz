@@ -157,7 +157,7 @@ function AuthLayout() {
   }
 
   const currentTab = location.pathname.replace("/", "") || "pipeline";
-  const isTabRoute = TAB_ROUTES.has(currentTab);
+  const isTabRoute = TAB_ROUTES.has(currentTab) || location.pathname.startsWith("/lead/");
   const isAdminTab = ADMIN_TABS.has(currentTab);
 
   if (isAdminTab && profile.role !== "admin") {
@@ -222,6 +222,7 @@ const App = () => (
               <Route path="/consolidado" element={null} />
               <Route path="/ajuda" element={null} />
               <Route path="/farol" element={null} />
+              <Route path="/lead/:id" element={null} />
 
               <Route path="/usuarios" element={<RoleGuard roles={["admin"]}><UserManagement /></RoleGuard>} />
               <Route path="/equipe-online" element={<RoleGuard roles={["admin"]}><EquipeOnline /></RoleGuard>} />
