@@ -52,3 +52,34 @@ export function useFunilAcumulado(mes: string | null | undefined, closer: string
     placeholderData: keepPreviousData,
   });
 }
+
+/** Etapas que contam como reunião realizada (independe de status perdido/ativo). */
+export const ETAPAS_REUNIAO_REALIZADA = ["Reunião Realizada", "Realizada", "Link Enviado", "Contrato Assinado"];
+
+/** Limites do mês 'YYYY-MM' no fuso America/Sao_Paulo (fim exclusivo). */
+export function limitesMesSP(mes: string): { inicio: string; fimExclusivo: string } {
+  const [y, m] = mes.split("-").map(Number);
+  const prox = m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, "0")}`;
+  return { inicio: `${mes}-01T00:00:00-03:00`, fimExclusivo: `${prox}-01T00:00:00-03:00` };
+}
+
+/** Reuniões realizadas no mês: contagem exata de leads na etapa com mudança de etapa no mês. */
+export function useReunioesRealizadasMes(mes: string | null | undefined, enabled = true) {
+  return useQuery({
+    queryKey: ["reunioes_realizadas_mes", mes],
+    queryFn: async () => {
+      const { inicio, fimExclusivo } = limitesMesSP(mes as string);
+      const { count, error } = await supabase
+        .from("leads")
+        .select("id", { count: "exact", head: true })
+        .in("etapa_atual", ETAPAS_REUNIAO_REALIZADA)
+        .gte("data_ultima_mudanca_etapa", inicio)
+        .lt("data_ultima_mudanca_etapa", fimExclusivo);
+      if (error) { console.error("[Marketing] reuniões realizadas:", error); throw error; }
+      return count ?? 0;
+    },
+    enabled: enabled && !!mes && /^\d{4}-\d{2}$/.test(mes as string),
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+  });
+}

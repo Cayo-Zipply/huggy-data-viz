@@ -18,3 +18,7 @@
 - [x] Verificar versão no layout autenticado a cada três minutos e avisar sem interromper a aba ativa.
 - [x] Adicionar comando administrativo com confirmação para sinalizar nova versão a todos.
 - [x] Testar versão inicial, mudança de versão e comportamento por visibilidade; testes unitários e navegador controlado passaram, integração autenticada não verificada.
+# Marketing Meta (Campanhas + Criativos)
+- [x] Tela Campanhas (admin): overview, status, orçamento, anúncios só leitura, histórico de ações.
+- [x] Biblioteca de criativos (admin): adicionar vídeo, grid, enviar ao Meta com acompanhamento, funil por criativo 30 dias.
+- [x] Corrigir card "Reuniões realizadas" do Marketing para contar leads perdidos.

@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils";
 import { MetricBar } from "@/components/MetricBar";
 import { ScreenRefreshing } from "@/components/ScreenRefreshing";
 import { CRIATIVOS_KEYS } from "@/lib/screenCache";
+import { useSearchParams } from "react-router-dom";
+import { BibliotecaCriativos } from "@/components/criativos/BibliotecaCriativos";
 
 type Criativo = Record<string, any> & { nome: string; ad_id: string };
 
@@ -69,7 +71,7 @@ const roasPill = (r: any) => {
   return <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", n >= 2 ? "bg-success/20 text-success" : n >= 1 ? "bg-warning/20 text-warning" : "bg-destructive/20 text-destructive")}>{dec(n)}x</span>;
 };
 
-export default function Criativos() {
+function CriativosDesempenho() {
   const { isAdmin } = useAuth();
   const { openChat } = useAgentChat();
   const [atalho, setAtalho] = useState<Atalho>("mes");
@@ -219,6 +221,33 @@ export default function Criativos() {
       <CriativoModal c={aberto} onClose={() => setAberto(null)} ini={ini} fim={fim} isAdmin={isAdmin}
         onEcho={(c) => { setAberto(null); openChat("marketing", `Analise o criativo '${c.nome}' no período ${br(ini)}–${br(fim)}: o que manter, o que mudar e se devo escalar ou pausar.`); }} />
     </div>
+  );
+}
+
+export default function Criativos() {
+  const [params, setParams] = useSearchParams();
+  const aba = params.get("aba") === "biblioteca" ? "biblioteca" : "desempenho";
+  return (
+    <Tabs value={aba} onValueChange={(v) => setParams(v === "biblioteca" ? { aba: v } : {}, { replace: true })} className="bg-background">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 pt-3 sm:pt-4 lg:pt-6">
+        <TabsList>
+          <TabsTrigger value="desempenho">Desempenho</TabsTrigger>
+          <TabsTrigger value="biblioteca">Biblioteca</TabsTrigger>
+        </TabsList>
+      </div>
+      <TabsContent value="desempenho" className="mt-0"><CriativosDesempenho /></TabsContent>
+      <TabsContent value="biblioteca" className="mt-0">
+        <div className="min-h-screen p-3 sm:p-4 lg:p-8">
+          <div className="max-w-7xl mx-auto space-y-4">
+            <div>
+              <h1 className="font-serif-display text-2xl text-foreground">Biblioteca de criativos</h1>
+              <p className="text-xs text-muted-foreground">Vídeos guardados, enviados ao Meta e funil por anúncio</p>
+            </div>
+            <BibliotecaCriativos />
+          </div>
+        </div>
+      </TabsContent>
+    </Tabs>
   );
 }
 

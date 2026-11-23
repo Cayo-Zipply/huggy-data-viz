@@ -26,6 +26,7 @@ const Esquadrao = lazy(() => import("@/pages/Esquadrao"));
 const Criativos = lazy(() => import("@/pages/Criativos"));
 const EquipeOnline = lazy(() => import("@/pages/EquipeOnline"));
 const CampanhasDisparo = lazy(() => import("@/pages/CampanhasDisparo"));
+const CampanhasMeta = lazy(() => import("@/pages/CampanhasMeta"));
 import { AgentesProvider } from "@/components/agentes/AgentesContext";
 import { AgentFab } from "@/components/agentes/AgentFab";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -232,6 +233,7 @@ const App = () => (
               <Route path="/feedbacks" element={<RoleGuard roles={["admin"]}><Feedbacks /></RoleGuard>} />
               <Route path="/material-apoio" element={<MaterialApoio />} />
               <Route path="/sales-enablement" element={<SalesEnablement />} />
+              <Route path="/campanhas" element={<RoleGuard roles={["admin"]}><CampanhasMeta /></RoleGuard>} />
               <Route path="/criativos" element={<RoleGuard roles={["admin"]}><Criativos /></RoleGuard>} />
               <Route path="/esquadrao" element={<Esquadrao />} />
               <Route path="/pool" element={<Pool />} />

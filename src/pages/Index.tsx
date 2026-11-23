@@ -33,7 +33,7 @@ import { FaturamentoPorFormaPagamentoCard } from "@/components/FaturamentoPorFor
 const FunilCriativo = lazy(() => import("@/components/FunilCriativo").then(m => ({ default: m.FunilCriativo })));
 const MarketingOverview = lazy(() => import("@/components/MarketingOverview").then(m => ({ default: m.MarketingOverview })));
 import { supabase } from "@/integrations/supabase/client";
-import { useFarolMetricasTime, useFarolMetricasSdr } from "@/hooks/useFarolRpc";
+import { useFarolMetricasTime, useFarolMetricasSdr, useReunioesRealizadasMes } from "@/hooks/useFarolRpc";
 
 const Index = () => {
   const location = useLocation();
@@ -251,7 +251,14 @@ const Index = () => {
 
   if (!snapshot && sdrReunioes && !isHardcoded) {
     reunioesMarcadas = sdrReunioes.marcadas;
-    reunioesRealizadas = sdrReunioes.realizadas;
+  }
+  // Reuniões realizadas: todo lead em Reunião Realizada / Realizada / Link
+  // Enviado / Contrato Assinado com mudança de etapa no mês, inclusive os
+  // perdidos depois (a reunião aconteceu). Contagem exata no banco.
+  const rrMesQ = useReunioesRealizadasMes(selectedMonthYYYYMM, mounted("marketing") && !isHardcoded);
+  const rrPrevQ = useReunioesRealizadasMes(prevMonthYYYYMM, mounted("marketing") && !isHardcoded);
+  if (!snapshot && !isHardcoded && overrideAtual?.manual_reunioes == null && rrMesQ.data != null) {
+    reunioesRealizadas = rrMesQ.data;
   }
 
 
@@ -288,7 +295,7 @@ const Index = () => {
   const isHardcodedPrev = dynamicMonths.length > 1 && dynamicMonths[dynamicMonths.findIndex(m => m.key === selectedMonth) + 1]?.source === "hardcoded";
   const prevReunioes = isHardcodedPrev
     ? (prevSales?.funnel?.reunioes?.realizado || 0)
-    : (overridePrev?.manual_reunioes ?? live.leadsStatsPrev?.reunioesRealizadas ?? 0);
+    : (overridePrev?.manual_reunioes ?? rrPrevQ.data ?? live.leadsStatsPrev?.reunioesRealizadas ?? 0);
   const prevCustoPorReuniao = prevReunioes > 0 && (prevInvestimentoView ?? 0) > 0
     ? (prevInvestimentoView ?? 0) / prevReunioes
     : undefined;
@@ -368,7 +375,7 @@ const Index = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">
                   <MetricCard title="Vendas" value={formatNumber(effectiveVendas)} variation={getVariation(effectiveVendas, prevEffectiveVendas)} delay={0} />
                   <MetricCard title="Faturamento" value={formatCurrency(effectiveFaturamento)} delay={50} />
-                  <MetricCard title="Reuniões Realizadas" value={formatNumber(reunioesRealizadas)} variation={getVariation(reunioesRealizadas, prevReunioes)} tooltip="Conta leads em Reunião Realizada, Link Enviado ou Contrato Assinado, pela data da última mudança de etapa. Fonte única usada em Marketing, Farol e Pipeline." delay={100} />
+                  <MetricCard title="Reuniões Realizadas" value={formatNumber(reunioesRealizadas)} variation={getVariation(reunioesRealizadas, prevReunioes)} tooltip="Conta todo lead em Reunião Realizada, Realizada, Link Enviado ou Contrato Assinado com mudança de etapa no mês, inclusive os perdidos depois da reunião." delay={100} />
                   <MetricCard title="Mensagens" value={formatNumber(effectiveMensagens)} variation={getVariation(effectiveMensagens, prevEffectiveMensagens)} delay={150} />
                   <MetricCard title="Ticket Médio" value={effectiveVendas > 0 ? formatCurrency(effectiveFaturamento / effectiveVendas) : "—"} delay={200} />
                   <MetricCard title="Conv. Reuniões" value={conversaoReunioes > 0 ? formatPercent(conversaoReunioes) : "—"} variation={getVariation(conversaoReunioes, prevConversaoReunioes)} delay={250} />
