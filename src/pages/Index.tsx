@@ -344,7 +344,7 @@ const Index = () => {
           {mounted("marketing") && (
           <div className={isMarketing ? "" : "hidden"}>
             <SinalCampanhasHoje />
-            <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando…</div>}><MarketingOverview /></Suspense>
+            <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Carregando…</div>}><MarketingOverview mes={selectedMonthYYYYMM || undefined} /></Suspense>
 
             {/* ===== Bloco Comercial ===== */}
             <div className="mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-border">

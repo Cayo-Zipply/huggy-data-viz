@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, ArrowRight } from "lucide-react";
@@ -29,8 +29,15 @@ const hojeSP = () => {
   const p = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date()).map((x) => [x.type, x.value]));
   return new Date(Number(p.year), Number(p.month) - 1, Number(p.day));
 };
-const atalho = (k: "7" | "14" | "mes" | "anterior"): PeriodoFunil => {
-  const t = hojeSP();
+// Data-âncora: último dia do mês selecionado, ou hoje se for o mês atual (ou mês vazio).
+const ancoraDoMes = (mes?: string): Date => {
+  const hoje = hojeSP();
+  if (!mes || !/^\d{4}-\d{2}$/.test(mes)) return hoje;
+  const [y, m] = mes.split("-").map(Number);
+  if (y === hoje.getFullYear() && m === hoje.getMonth() + 1) return hoje;
+  return new Date(y, m, 0);
+};
+const atalho = (k: "7" | "14" | "mes" | "anterior", t: Date = hojeSP()): PeriodoFunil => {
   if (k === "mes") return { desde: iso(new Date(t.getFullYear(), t.getMonth(), 1)), ate: iso(t) };
   if (k === "anterior") return { desde: iso(new Date(t.getFullYear(), t.getMonth() - 1, 1)), ate: iso(new Date(t.getFullYear(), t.getMonth(), 0)) };
   const s = new Date(t); s.setDate(s.getDate() - (Number(k) - 1));
@@ -72,6 +79,13 @@ const periodoDoMes = (mes: string): PeriodoFunil => {
   const [y, m] = mes.split("-").map(Number);
   return { desde: `${mes}-01`, ate: iso(new Date(y, m, 0)) };
 };
+// Período do mês do topo: mês atual = dia 1 até hoje; mês passado = mês inteiro.
+const periodoDoMesSelecionado = (mes?: string): PeriodoFunil => {
+  const t = ancoraDoMes(mes);
+  const hoje = hojeSP();
+  if (t.getFullYear() === hoje.getFullYear() && t.getMonth() === hoje.getMonth()) return atalho("mes", hoje);
+  return periodoDoMes(`${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}`);
+};
 // Reuniões realizadas oficiais (regra no banco): soma de reunioes_realizadas de farol_metricas_time.
 const useReunioesTime = (mes: string | null) => {
   const q = useFarolMetricasTime(mes);
@@ -93,8 +107,10 @@ function Chip({ cur, prev, inverso }: { cur: number; prev: number; inverso?: boo
   );
 }
 
-export function MarketingOverview() {
-  const [periodo, setPeriodo] = useState<PeriodoFunil>(() => atalho("mes"));
+export function MarketingOverview({ mes }: { mes?: string } = {}) {
+  const [periodo, setPeriodo] = useState<PeriodoFunil>(() => periodoDoMesSelecionado(mes));
+  useEffect(() => { setPeriodo(periodoDoMesSelecionado(mes)); }, [mes]);
+  const ancora = useMemo(() => ancoraDoMes(mes), [mes]);
   const [camp, setCamp] = useState("__all");
   const pCamp = camp === "__all" ? null : camp;
   const prevP = useMemo(() => anterior(periodo), [periodo]);
@@ -189,7 +205,7 @@ export function MarketingOverview() {
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex rounded-md border border-foreground/10 p-0.5">
             {([["7", "7d"], ["14", "14d"], ["mes", "Mês"], ["anterior", "Mês anterior"]] as const).map(([k, l]) => {
-              const p = atalho(k);
+              const p = atalho(k, ancora);
               const on = p.desde === periodo.desde && p.ate === periodo.ate;
               return <button key={k} onClick={() => setPeriodo(p)} className={cn("px-2.5 py-1 text-xs rounded", on ? "bg-mkt-gold/15 text-mkt-gold" : "text-mkt-muted hover:text-mkt-text")}>{l}</button>;
             })}
