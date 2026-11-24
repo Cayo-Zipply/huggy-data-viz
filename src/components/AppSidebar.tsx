@@ -27,6 +27,7 @@ import {
   Radio,
   Send,
   Megaphone,
+  Clock,
 } from "lucide-react";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { cn } from "@/lib/utils";
@@ -49,6 +50,7 @@ const MENU_GROUPS: { label: string; items: NavItem[] }[] = [
       { key: "/farol", label: "Farol", icon: Gauge, roles: ["admin", "sdr", "closer"] },
       { key: "/pipeline", label: "Pipeline", icon: Kanban, roles: ["admin", "sdr", "closer"] },
       { key: "/pool", label: "Modo Pool", icon: Flame, roles: ["admin", "closer"] },
+      { key: "/horarios-atendimento", label: "Horários de atendimento", icon: Clock, roles: ["admin", "closer"] },
       { key: "/pendencias-pos-venda", label: "Pendências pós-venda", icon: MailWarning, roles: ["admin", "sdr", "closer"], badge: "pendencias" },
     ],
   },

@@ -22,3 +22,6 @@
 - [x] Tela Campanhas (admin): overview, status, orçamento, anúncios só leitura, histórico de ações.
 - [x] Biblioteca de criativos (admin): adicionar vídeo, grid, enviar ao Meta com acompanhamento, funil por criativo 30 dias.
 - [x] Corrigir card "Reuniões realizadas" do Marketing para contar leads perdidos.
+
+# Horários de atendimento
+- [x] Tela, menu, atalho no pipe e pop-up de segunda; sem teste autenticado.

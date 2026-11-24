@@ -1,3 +1,5 @@
+import { HorariosDialog } from "@/components/horarios/HorariosDialog";
+import { Clock } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Search, UserCircle, LayoutGrid, ListChecks, BarChart3, Target, Upload, Plus, ChevronDown, Trash2, ArrowRightLeft, UserPlus, CheckSquare, X, CalendarIcon, RefreshCw, Flame } from "lucide-react";
@@ -57,6 +59,7 @@ export function PipelinePanel() {
   const [searchQuery, setSearchQuery] = useState(() => sessionStorage.getItem(PIPELINE_UI_KEYS.search) || "");
   const [activeUser, setActiveUser] = useState<string>("all");
   const { profile, isAdmin, isSdr, isCloser, isDual } = useAuth();
+  const [showHorarios, setShowHorarios] = useState(false);
   const { labels, getCardLabels, addLabelToCard, removeLabelFromCard } = useLabels();
   const { rules: slaRules, getRuleForStage } = useSlaRules();
   const { allNames: teamNames, ownerNames, visibleCloserNames } = useTeamMembers();
@@ -797,6 +800,13 @@ export function PipelinePanel() {
               )}
             </div>
 
+            {(profile?.funcoes ?? []).includes("closer") && (
+              <button onClick={() => setShowHorarios(true)}
+                className="rounded-lg border px-2.5 py-1 text-xs font-medium inline-flex items-center gap-1 hover:bg-muted">
+                <Clock className="h-3.5 w-3.5" /> Meus horários
+              </button>
+            )}
+            <HorariosDialog open={showHorarios} onOpenChange={setShowHorarios} />
             <div className="flex flex-wrap gap-1">
               {([
                 { key: "all", label: "Todos", count: visibleCards.length, roles: ["admin", "dual", "closer"] },

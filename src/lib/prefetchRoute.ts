@@ -20,6 +20,7 @@ const CHUNKS: Record<string, () => Promise<unknown>> = {
   "/campanhas-disparo": () => import("@/pages/CampanhasDisparo"),
   "/campanhas": () => import("@/pages/CampanhasMeta"),
   "/contratos": () => import("@/pages/Contratos"),
+  "/horarios-atendimento": () => import("@/pages/HorariosAtendimento"),
   "/pool": () => import("@/pages/Pool"),
   "/pendencias-pos-venda": () => import("@/pages/PendenciasPosVenda"),
   "/material-apoio": () => import("@/pages/MaterialApoio"),

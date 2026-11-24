@@ -27,6 +27,7 @@ const Criativos = lazy(() => import("@/pages/Criativos"));
 const EquipeOnline = lazy(() => import("@/pages/EquipeOnline"));
 const CampanhasDisparo = lazy(() => import("@/pages/CampanhasDisparo"));
 const CampanhasMeta = lazy(() => import("@/pages/CampanhasMeta"));
+const HorariosAtendimentoPage = lazy(() => import("@/pages/HorariosAtendimento"));
 import { AgentesProvider } from "@/components/agentes/AgentesContext";
 import { AgentFab } from "@/components/agentes/AgentFab";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -35,6 +36,7 @@ import { NovidadesModal } from "@/components/NovidadesModal";
 import { Users, UserCheck } from "lucide-react";
 import { usePresenceHeartbeat } from "@/hooks/usePresenceHeartbeat";
 import { useAppVersion } from "@/hooks/useAppVersion";
+import { ConfiraHorariosSemana } from "@/components/horarios/ConfiraHorariosSemana";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -182,6 +184,7 @@ function AuthLayout() {
         )}
       </main>
       <FeedbackWidget />
+      <ConfiraHorariosSemana />
       <NovidadesModal />
       <AgentFab />
     </div>
@@ -237,6 +240,7 @@ const App = () => (
               <Route path="/criativos" element={<RoleGuard roles={["admin"]}><Criativos /></RoleGuard>} />
               <Route path="/esquadrao" element={<Esquadrao />} />
               <Route path="/pool" element={<Pool />} />
+              <Route path="/horarios-atendimento" element={<HorariosAtendimentoPage />} />
               <Route path="/pendencias-pos-venda" element={<PendenciasPosVenda />} />
             </Route>
 
