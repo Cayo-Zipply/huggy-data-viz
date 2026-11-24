@@ -800,7 +800,7 @@ export function PipelinePanel() {
               )}
             </div>
 
-            {(profile?.funcoes ?? []).includes("closer") && (
+            {isCloser && (
               <button onClick={() => setShowHorarios(true)}
                 className="rounded-lg border px-2.5 py-1 text-xs font-medium inline-flex items-center gap-1 hover:bg-muted">
                 <Clock className="h-3.5 w-3.5" /> Meus horários
