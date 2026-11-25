@@ -25,3 +25,6 @@
 
 # Horários de atendimento
 - [x] Tela, menu, atalho no pipe e pop-up de segunda; sem teste autenticado.
+- [x] Adicionar almoço padrão e exibir bloqueios efetivos dos próximos 14 dias, sem alterar outras telas ou banco.
+- [ ] Completar edição de ausências/almoço por data: aguarda continuação do arquivo enviado, interrompido no item 2.
+- [ ] Verificar almoço e etiquetas com testes e navegador.

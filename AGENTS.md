@@ -8,3 +8,4 @@
 - Open lead cards from outside the Pipeline via /lead/:id (or /pipeline?lead=); PipelinePanel always fetches the lead by id so cards open regardless of the loaded list or active filters, and the shared LeadDrawer stays the only detail view.
 - Meta Ads actions (overview, status, budget, video upload/status) go only through the meta-manager edge function; the frontend never reads meta_ads_config, and budget/registration rules live in metaCampanhas with unit tests.
 - The Marketing "Reuniões realizadas" card counts leads by current post-meeting stage and stage-change month regardless of lost status, via useReunioesRealizadasMes, so it never depends on farol_metricas_sdr.
+- Keep lunch/block controls within the shared attendance screen; read effective blocks from the existing RPC and select before inserting/updating lunch by id because its unique indexes are partial.

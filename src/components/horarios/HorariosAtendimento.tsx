@@ -9,6 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DIAS, HORAS, addDias, diaSemana, hhmm, hojeSP, intervaloValido, rotuloData, ultimaReuniao } from "@/lib/horarios";
+import { AlmocoAtendimento } from "./AlmocoAtendimento";
+import type { BloqueioEfetivo } from "@/lib/closerBloqueios";
 
 const TOAST_OK = "Horários salvos. A IA já passa a oferecer só esses horários.";
 
@@ -128,6 +130,19 @@ export function HorariosAtendimento() {
   const hoje = hojeSP();
   const datas = useMemo(() => Array.from({ length: 14 }, (_, i) => addDias(hoje, i)), [hoje]);
   const janelasQ = useJanelas(closer, 14);
+  const bloqueiosQ = useQuery({
+    queryKey: ["closer_bloqueios_efetivos", closer, hoje, 14],
+    enabled: !!closer,
+    staleTime: 0,
+    queryFn: async (): Promise<BloqueioEfetivo[]> => {
+      if (!closer) return [];
+      const { data, error } = await supabase.rpc("closer_bloqueios_efetivos" as any, {
+        p_de: hoje, p_dias: 14, p_closer: closer,
+      });
+      if (error) throw error;
+      return (data as BloqueioEfetivo[] | null) ?? [];
+    },
+  });
   const excQ = useQuery({
     queryKey: ["closer_agenda_dia", closer, hoje],
     enabled: !!closer,
@@ -199,12 +214,15 @@ export function HorariosAtendimento() {
         </CardContent>
       </Card>
 
+      {closer && <AlmocoAtendimento key={closer} closer={closer} />}
+
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Próximos 14 dias</CardTitle>
           <p className="text-xs text-muted-foreground">Exemplos: "Sábado das 9h às 13h", "Sexta até as 22h", "Folga na quinta".</p>
         </CardHeader>
         <CardContent className="space-y-1">
+          {bloqueiosQ.isError && <p role="alert" className="text-xs text-destructive">Não foi possível carregar os bloqueios de horário.</p>}
           {janelasQ.isLoading ? <p className="text-sm text-muted-foreground">Carregando…</p> : datas.map((data) => {
             const j = janelasQ.data?.find((x) => x.data === data);
             const exc = excQ.data?.find((x) => x.data === data);
@@ -225,6 +243,14 @@ export function HorariosAtendimento() {
                     {exc && <Button size="sm" variant="ghost" className="h-7 text-xs" disabled={busy}
                       onClick={() => acaoDia(data, () => supabase.from("closer_agenda_dia" as any).delete().eq("closer", closer!).eq("data", data))}>Voltar ao padrão</Button>}
                   </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {bloqueiosQ.data?.filter((b) => b.data.slice(0, 10) === data).map((b) => (
+                    <Badge key={`${b.id}-${data}`} variant="secondary" className="max-w-full text-[11px] font-normal whitespace-normal break-words">
+                      {b.tipo === "almoco" ? "Almoço" : "Ausente"} {hhmm(b.inicio)} – {hhmm(b.fim)}
+                      {b.padrao ? " · padrão" : ""}{b.motivo ? ` · ${b.motivo}` : ""}
+                    </Badge>
+                  ))}
                 </div>
                 {editando === data && (
                   <div className="mt-2 flex flex-wrap items-center gap-2 pl-20">
