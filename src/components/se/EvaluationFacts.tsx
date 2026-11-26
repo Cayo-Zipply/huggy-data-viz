@@ -19,7 +19,7 @@ export function SelosReuniao({ selo }: { selo?: SeloSE }) {
   ];
   return <div className="flex flex-wrap gap-1 font-normal">{chips.map(c => {
     const chip = <Badge variant="outline" className={cn('text-[10px] whitespace-nowrap', estado(c.valor))}>{c.label}</Badge>;
-    return c.dica ? <Tooltip key={c.label}><TooltipTrigger asChild><span tabIndex={0} onClick={e => e.stopPropagation()}>{chip}</span></TooltipTrigger><TooltipContent>{c.dica}</TooltipContent></Tooltip> : <span key={c.label}>{chip}</span>;
+    return c.dica ? <Tooltip key={c.label}><TooltipTrigger asChild><div tabIndex={0} onClick={e => e.stopPropagation()}>{chip}</div></TooltipTrigger><TooltipContent>{c.dica}</TooltipContent></Tooltip> : <div key={c.label}>{chip}</div>;
   })}</div>;
 }
 

@@ -45,7 +45,7 @@ import { PlacarTab } from "@/components/se/PlacarTab";
 import { PontualidadeTab } from "@/components/se/PontualidadeTab";
 import { useAuth } from "@/contexts/AuthContext";
 import { ScreenRefreshing } from "@/components/ScreenRefreshing";
-import { SE_VIEW_KEYS } from "@/lib/screenCache";
+import { SE_VIEW_KEYS, SE_STALE_TIME } from "@/lib/screenCache";
 import { AjusteCriterio, FatosCall, GuardrailChip, SelosReuniao } from "@/components/se/EvaluationFacts";
 import { CRITERIOS_V3, criteriosPreenchidos, evidenciaSE, filtrarSelo, itensRegua, objetoSE, versaoRegua, type RubricaSE, type SeloSE } from "@/lib/seEvaluation";
 
@@ -425,6 +425,7 @@ export default function SalesEnablement() {
 
   const { data: rubricasVersoes = [] } = useQuery({
     queryKey: ["se-rubrica-versoes"],
+    staleTime: SE_STALE_TIME,
     queryFn: async () => {
       const { data, error } = await supabase.from("se_rubrica").select("*").in("versao", [2, 3]);
       if (error) throw error;
@@ -1371,6 +1372,7 @@ function ReunioesTab({
   const ids = useMemo(() => [...new Set(rows.map(r => r.reuniao_id))].sort(), [rows]);
   const { data: selos = [], isError: erroSelos } = useQuery({
     queryKey: ["se-selos", ids],
+    staleTime: SE_STALE_TIME,
     enabled: ids.length > 0,
     queryFn: async () => {
       const { data, error } = await supabase.from("se_selos")

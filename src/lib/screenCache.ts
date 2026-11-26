@@ -5,5 +5,5 @@ export const SE_VIEW_KEYS = [
   "se-alertas-assertividade", "se-pontualidade-revisar", "se-pontualidade-ranking",
 ];
 export const CRIATIVOS_KEYS = ["mkt-criativos-resumo", "mkt-criativos"];
-export const SCREEN_PERSISTED_KEYS = [...SE_VIEW_KEYS, "se-rubrica", ...CRIATIVOS_KEYS];
+export const SCREEN_PERSISTED_KEYS = [...SE_VIEW_KEYS, "se-rubrica", "se-rubrica-versoes", "se-selos", ...CRIATIVOS_KEYS];
 export const SE_STALE_TIME = 5 * 60_000;

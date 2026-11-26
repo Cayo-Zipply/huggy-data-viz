@@ -10,3 +10,4 @@
 - The Marketing "Reuniões realizadas" card counts leads by current post-meeting stage and stage-change month regardless of lost status, via useReunioesRealizadasMes, so it never depends on farol_metricas_sdr.
 - Keep lunch/block controls within the shared attendance screen; read effective blocks from the existing RPC and select before inserting/updating lunch by id because its unique indexes are partial.
 - Keep profile lookup/linking and deletion checks in userProfileAccess; authentication must never recreate a missing profile, so removing access survives the next login or profile refresh.
+- Black Ops reads evaluation criteria/guardrails by rubric version separately from the active legend and batches factual seals by meeting IDs, so historical scores remain unchanged and rows never fetch seals individually.

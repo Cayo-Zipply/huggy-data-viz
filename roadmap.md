@@ -39,6 +39,6 @@
 - [x] Validar com 12 testes unitários e navegador simulado: confirmação, admin, falha/zero linhas/sucesso e perfil ausente no login e na atualização; claro/escuro sem erros. Sessão real indisponível; banco e histórico não alterados.
 
 # Black Ops — régua e selos
-- [ ] Exibir selos em lote, filtros e detalhe, sem novas escritas.
-- [ ] Renderizar critérios/guardrails por versão, fatos, ajustes e legenda dinâmica.
-- [ ] Ajustar evolução mensal e testar compatibilidade das réguas.
+- [x] Exibir selos em lote, filtros e detalhe, sem novas escritas.
+- [x] Renderizar critérios/guardrails por versão, fatos, ajustes e legenda dinâmica.
+- [x] Ajustar evolução mensal e testar compatibilidade das réguas: 6 testes unitários e navegador com dados controlados, claro/escuro e mobile; uma consulta de selos em lote, sem escritas novas. Sessão de teste não acessa o CRM externo; validação com dados reais indisponível.
