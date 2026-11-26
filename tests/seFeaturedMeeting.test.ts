@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { featuredMeetingKey, featuredSwapParams, requestMeetingVideo, videoErrorMessage } from '../src/lib/seFeaturedMeeting';
+import { featuredChips, featuredDontCopy, featuredExceptionAlerts, featuredMeetingKey, featuredSwapParams, requestMeetingVideo, videoErrorMessage } from '../src/lib/seFeaturedMeeting';
 
 const client = (result: unknown) => ({ functions: { invoke: async () => result } }) as unknown as Pick<SupabaseClient, 'functions'>;
 describe('Reunião em destaque', () => {
@@ -31,5 +31,26 @@ describe('Reunião em destaque', () => {
   test('resposta inválida ou URL insegura não vira src', async () => {
     const result = await requestMeetingVideo(client({ data: { url: 'javascript:alert(1)', readai_url: 'data:text/html,unsafe' }, error: null }), 'id', null);
     expect(result.url).toBeNull(); expect(result.link).toBeNull(); expect(result.message).toBe(videoErrorMessage());
+  });
+  test('chips: assinou na call verde, na tabela verde', () => {
+    expect(featuredChips({ selo_assinou_na_call: true, selo_tabela: true })).toEqual([{ label: 'Assinou na call', tone: 'ok' }, { label: 'Na tabela', tone: 'ok' }]);
+  });
+  test('fora da tabela fica vermelho com valor vendido e preço de tabela', () => {
+    const chips = featuredChips({ selo_assinou_na_call: false, selo_tabela: false, valor_relatorio: 1200, preco_tabela: 1621 });
+    expect(chips[0].tone).toBe('off');
+    expect(chips[1].tone).toBe('bad');
+    expect(chips[1].label.replace(/\s/g, ' ')).toBe('R$ 1.200 de R$ 1.621');
+  });
+  test('selos sem valor no banco não geram chip', () => {
+    expect(featuredChips({ selo_assinou_na_call: null, selo_tabela: null })).toEqual([]);
+  });
+  test('Não copie junta ressalvas e pontos de melhoria; vazio quando ambos vazios', () => {
+    expect(featuredDontCopy(['Prometeu prazo'], ['Falou demais', 'Prometeu prazo'])).toEqual(['Prometeu prazo', 'Falou demais']);
+    expect(featuredDontCopy(null, [])).toEqual([]);
+  });
+  test('faixa de exceção só para criterio_escolha excecao', () => {
+    expect(featuredExceptionAlerts('excecao', ['Fora da tabela'])).toEqual(['Fora da tabela']);
+    expect(featuredExceptionAlerts('completo', ['Fora da tabela'])).toBeNull();
+    expect(featuredExceptionAlerts('manual', null)).toBeNull();
   });
 });

@@ -70,3 +70,7 @@
 - [x] Fileiras por trilha (foco primeiro, selo "Seu foco"), cards só com capa e título, sem textos de gap.
 - [x] Player com descrição e "Marcar como assistido"; admin com "Ver como", "Gerenciar", select de trilha, capa e cobertura nova.
 - [x] Validar: 21 testes unitários passaram; navegador com dados simulados conferiu admin/vendedor, foco por closer, 9 trilhas no formulário, salvar sem codigo_alvo, player e registro de progresso. Sem alterações no banco; dados reais não verificados.
+
+# Black Ops — Reunião em destaque em formato grande
+- [x] Bloco principal com vídeo à esquerda e dados/nota/chips à direita; faixa âmbar de exceção; três colunas de observações; fileira "Anteriores"; texto central quando não há destaque.
+- [x] Validar: 15 testes unitários passaram; navegador com dados simulados conferiu faixa, chips, play via readai-video, tela cheia, troca pelo histórico e período sem destaque. Sem alterações no banco; dados reais não verificados.

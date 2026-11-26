@@ -27,3 +27,19 @@ export async function requestMeetingVideo(client: Pick<SupabaseClient, 'function
     return { url: null, link: safeLink(fallback), message: videoErrorMessage() };
   }
 }
+const brl = (v: number | null | undefined) => v == null ? '—' : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 2 });
+export type FeaturedChip = { label: string; tone: 'ok' | 'bad' | 'off' };
+/** Selos da reunião em destaque; selo sem valor no banco não vira chip. */
+export function featuredChips(m: { selo_assinou_na_call?: boolean | null; selo_tabela?: boolean | null; valor_relatorio?: number | null; preco_tabela?: number | null }): FeaturedChip[] {
+  const chips: FeaturedChip[] = [];
+  if (m.selo_assinou_na_call != null) chips.push(m.selo_assinou_na_call ? { label: 'Assinou na call', tone: 'ok' } : { label: 'Não assinou na call', tone: 'off' });
+  if (m.selo_tabela === true) chips.push({ label: 'Na tabela', tone: 'ok' });
+  if (m.selo_tabela === false) chips.push({ label: `${brl(m.valor_relatorio)} de ${brl(m.preco_tabela)}`, tone: 'bad' });
+  return chips;
+}
+/** "Não copie": ressalvas (guardrails) seguidas dos pontos de melhoria, sem vazios nem repetidos. */
+export function featuredDontCopy(ressalvas: string[] | null | undefined, pontosMelhoria: string[] | null | undefined) {
+  return [...new Set([...(ressalvas ?? []), ...(pontosMelhoria ?? [])].map(t => t?.trim()).filter(Boolean))] as string[];
+}
+/** A faixa âmbar só aparece quando a escolha foi por exceção. */
+export const featuredExceptionAlerts = (criterio: string | null | undefined, alertas: string[] | null | undefined) => criterio === 'excecao' ? (alertas ?? []).filter(Boolean) : null;
