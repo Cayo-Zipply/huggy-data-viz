@@ -43,6 +43,8 @@ import {
 } from "@/components/se/AssertividadeTab";
 import { PlacarTab } from "@/components/se/PlacarTab";
 import { PontualidadeTab } from "@/components/se/PontualidadeTab";
+import { ReuniaoSemanaTab } from "@/components/se/ReuniaoSemanaTab";
+import { TrainingTab } from "@/components/se/TrainingTab";
 import { useAuth } from "@/contexts/AuthContext";
 import { ScreenRefreshing } from "@/components/ScreenRefreshing";
 import { SE_VIEW_KEYS, SE_STALE_TIME } from "@/lib/screenCache";
@@ -569,7 +571,7 @@ export default function SalesEnablement() {
       </div>
 
       <Tabs defaultValue="desempenho">
-        <TabsList>
+        <TabsList className="h-auto flex-wrap justify-start gap-y-1">
           <TabsTrigger value="desempenho">Desempenho vs Meta</TabsTrigger>
           <TabsTrigger value="assertividade">Assertividade</TabsTrigger>
           {isAdmin && <TabsTrigger value="placar">Placar</TabsTrigger>}
@@ -577,6 +579,8 @@ export default function SalesEnablement() {
           <TabsTrigger value="reunioes">Reuniões</TabsTrigger>
           <TabsTrigger value="evolucao">Evolução</TabsTrigger>
           <TabsTrigger value="rubrica">Legenda</TabsTrigger>
+          <TabsTrigger value="reuniao-semana">Reunião da semana</TabsTrigger>
+          <TabsTrigger value="treinamento">Treinamento</TabsTrigger>
         </TabsList>
 
         <TabsContent value="desempenho" className="mt-4">
@@ -625,6 +629,12 @@ export default function SalesEnablement() {
 
         <TabsContent value="rubrica" className="mt-4">
           <RubricaTab rows={rubrica} />
+        </TabsContent>
+        <TabsContent value="reuniao-semana" className="mt-4">
+          <ReuniaoSemanaTab />
+        </TabsContent>
+        <TabsContent value="treinamento" className="mt-4">
+          <TrainingTab />
         </TabsContent>
       </Tabs>
     </div>

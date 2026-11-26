@@ -42,3 +42,9 @@
 - [x] Exibir selos em lote, filtros e detalhe, sem novas escritas.
 - [x] Renderizar critérios/guardrails por versão, fatos, ajustes e legenda dinâmica.
 - [x] Ajustar evolução mensal e testar compatibilidade das réguas: 6 testes unitários e navegador com dados controlados, claro/escuro e mobile; uma consulta de selos em lote, sem escritas novas. Sessão de teste não acessa o CRM externo; validação com dados reais indisponível.
+
+# Black Ops — reunião da semana e treinamento
+- [x] Adicionar reunião atual, histórico e troca administrativa pela RPC existente.
+- [x] Adicionar gaps, materiais privados e progresso do próprio usuário.
+- [x] Adicionar biblioteca, cobertura e acompanhamento administrativos.
+- [x] Testar com dados controlados: vendedor/admin, consultas sob demanda, semana/histórico/troca, CRUD e status, upload privado, filtro por closer, vídeo/PDF, assinatura e conclusão com falhas/sucesso, claro/escuro e mobile; sem mudanças no backend. Sessão temporária não acessa o CRM externo: integração com dados reais não verificada.
