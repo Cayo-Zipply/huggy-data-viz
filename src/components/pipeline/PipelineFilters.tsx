@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Filter, X, Download, CalendarIcon, ChevronDown } from "lucide-react";
+import { Filter, X, CalendarIcon, ChevronDown } from "lucide-react";
 import { format, startOfMonth, endOfMonth, subMonths, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { PipelineCard, PipelineTask, LeadStatus, Stage } from "./types";
@@ -165,11 +165,10 @@ function detectPreset(f: FilterState): DatePreset {
 interface Props {
   filters: FilterState;
   onChange: (f: FilterState) => void;
-  onExport: () => void;
   closerOptions?: string[];
 }
 
-export function PipelineFiltersBar({ filters, onChange, onExport, closerOptions = [] }: Props) {
+export function PipelineFiltersBar({ filters, onChange, closerOptions = [] }: Props) {
   const [open, setOpen] = useState(false);
   const [presetOpen, setPresetOpen] = useState(false);
   const [calFromOpen, setCalFromOpen] = useState(false);
@@ -316,9 +315,6 @@ export function PipelineFiltersBar({ filters, onChange, onExport, closerOptions 
           <Filter size={12} />Filtros
         </button>
         {hasF && <button onClick={() => onChange(defaultFilters)} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><X size={12} />Limpar</button>}
-        <button onClick={onExport} className="flex items-center gap-1.5 text-xs border border-border rounded-lg px-3 py-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/30">
-          <Download size={12} />CSV
-        </button>
       </div>
       {open && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-card/50 border border-border rounded-xl p-3">

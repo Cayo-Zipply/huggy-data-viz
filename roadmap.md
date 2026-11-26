@@ -28,3 +28,7 @@
 - [x] Adicionar almoço padrão e exibir bloqueios efetivos dos próximos 14 dias, sem alterar outras telas ou banco.
 - [ ] Completar edição de ausências/almoço por data: aguarda continuação do arquivo enviado, interrompido no item 2.
 - [x] Verificar almoço e etiquetas: 11 testes passaram; inserir/reabrir/editar/remover e falha de remoção conferidos no navegador com dados simulados em claro/escuro e 390/1001px. Sessão real não verificada.
+
+# Cabeçalho do Pipe
+- [x] Reorganizar navegação SDR/Closer/Todos, ações e filtros sem alterar regras, permissões ou Kanban.
+- [x] Conferir cabeçalho, troca de Pipe, menu e Novo Lead em 1440/1002/390px, claro/escuro, com dados simulados; sessão real indisponível.
