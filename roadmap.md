@@ -59,3 +59,8 @@
 - [x] Exibir vídeos em modal de tela inteira, preservando progresso e conclusão.
 - [x] Listar todos os materiais aprovados para vendedores, agrupados por alvo e com recomendações.
 - [x] Validar: 29 testes unitários passaram; navegador controlado conferiu catálogo sem gap para Luka/Fillipe simulados, 7 critérios/9 guardrails, erros de insert/update, progresso e conclusão, YouTube/Loom/Vimeo/vídeo privado, tela inteira 16:9 em claro/escuro/mobile. Conta temporária real redirecionou para login do CRM externo; dados reais e incorporação dos vídeos originais não verificados. Sem alterações em banco, views ou funções.
+
+# Black Ops — Ver como no treinamento
+- [x] Selecionar primeiro closer para admin e filtrar apenas suas duas views; vendedor sem filtros de identidade.
+- [x] Corrigir estados vazios e exibir Todos os materiais também na visão administrativa.
+- [x] Validar: 24 testes unitários passaram; navegador com dados controlados conferiu seleção inicial/deduplicação, Fillipe/Luka nas duas views, vendedor sem seletor/filtros, catálogo independente, conclusão e estados de vazio/erro em claro e mobile escuro. Sem alterações no banco; contas e conteúdos reais não verificados.

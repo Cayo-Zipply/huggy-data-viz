@@ -1,10 +1,28 @@
 import { describe, expect, test } from 'bun:test';
-import { completeTraining, dateSE, draftTrainingContent, embedTrainingUrl, groupTraining, groupTrainingLibrary, nextDay, safeLink, signedTrainingUrl, startTraining, trainingErrorMessage, trainingTargets, type TrainingContent, type TrainingGap, type TrainingSuggestion } from '../src/lib/seTraining';
+import { completeTraining, dateSE, draftTrainingContent, embedTrainingUrl, groupTraining, groupTrainingLibrary, nextDay, safeLink, selectedTrainingCloser, signedTrainingUrl, startTraining, trainingErrorMessage, trainingTargets, trainingViewQuery, type TrainingContent, type TrainingGap, type TrainingSuggestion } from '../src/lib/seTraining';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { RubricaSE } from '../src/lib/seEvaluation';
 const gap = (closer='Ana',codigo='diagnostico',posicao=1):TrainingGap=>({closer,codigo,posicao,tipo_gap:'criterio',media:5,frequencia:null,pontos_perdidos:4,reunioes:2,amostra_suficiente:false});
 const content = (closer='Ana',codigo='diagnostico',ordem=1):TrainingSuggestion=>({...gap(closer,codigo),conteudo_id:`${closer}-${ordem}`,conteudo_titulo:'Aula',descricao:null,conteudo_tipo:'video',url:'https://youtu.be/abc',storage_path:null,duracao_min:5,ordem,iniciado_em:null,concluido_em:null});
 describe('Treinamento e reunião da semana',()=>{
+ test('admin inicia no primeiro closer e mantém uma seleção válida',()=>{
+  expect(selectedTrainingCloser('', ['Fillipe','Luka'])).toBe('Fillipe');
+  expect(selectedTrainingCloser('Luka', ['Fillipe','Luka'])).toBe('Luka');
+  expect(selectedTrainingCloser('Antigo', ['Fillipe','Luka'])).toBe('Fillipe');
+  expect(selectedTrainingCloser('', [])).toBe('');
+ });
+ for (const view of ['vw_se_gaps_closer','vw_se_treinamento_sugestoes'] as const) {
+  test(`${view}: admin filtra pelo closer escolhido`,()=>{
+   const calls:unknown[]=[];const builder={select:(c:string)=>{calls.push(c);return builder;},eq:(...args:unknown[])=>{calls.push(args);return builder;}};
+   const client={from:(name:string)=>{calls.push(name);return builder;}} as unknown as Pick<SupabaseClient,'from'>;
+   trainingViewQuery(client,view,'Luka');expect(calls).toEqual([view,'*',['closer','Luka']]);
+  });
+  test(`${view}: vendedor não recebe nenhum filtro de identidade`,()=>{
+   const calls:unknown[]=[];const builder={select:(c:string)=>{calls.push(c);return builder;},eq:(...args:unknown[])=>{calls.push(args);return builder;}};
+   const client={from:(name:string)=>{calls.push(name);return builder;}} as unknown as Pick<SupabaseClient,'from'>;
+   trainingViewQuery(client,view,null);expect(calls).toEqual([view,'*']);
+  });
+ }
  test('material nasce em rascunho e não envia autoria/data de aprovação',()=>{const payload=draftTrainingContent({titulo:'Aula',descricao:null,tipo:'link',url:'https://example.org',storage_path:null,codigo_alvo:'abertura',duracao_min:null,ordem:1});expect(payload.status).toBe('rascunho');expect(Object.keys(payload)).not.toContain('aprovado_por');expect(Object.keys(payload)).not.toContain('aprovado_em');});
  test('semana inclui todo o último dia, inclusive virada do mês',()=>{expect(nextDay('2026-11-30')).toBe('2026-12-01');expect(nextDay('2026-12-31')).toBe('2027-01-01');});
  test('quando_local sem fuso preserva a hora de São Paulo',()=>{expect(dateSE('2026-11-26T15:30:00',true)).toContain('15:30');expect(dateSE('2026-11-26T18:30:00Z',true)).toContain('15:30');});

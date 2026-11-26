@@ -18,6 +18,11 @@ export type TrainingSuggestion = TrainingGap & {
 };
 export type TrainingPlayable = Pick<TrainingSuggestion, 'conteudo_id' | 'conteudo_titulo' | 'descricao' | 'conteudo_tipo' | 'url' | 'storage_path' | 'duracao_min' | 'iniciado_em' | 'concluido_em'>;
 export type TrainingProgress = { conteudo_id: string; iniciado_em: string | null; concluido_em: string | null };
+export const selectedTrainingCloser = (selected: string, closers: string[]) => closers.includes(selected) ? selected : closers[0] ?? '';
+export function trainingViewQuery(client: Pick<SupabaseClient, 'from'>, view: 'vw_se_gaps_closer' | 'vw_se_treinamento_sugestoes', closer: string | null) {
+  const query = client.from(view).select('*');
+  return closer ? query.eq('closer', closer) : query;
+}
 export function trainingTargets(rubric: RubricaSE[], tipo: 'criterio' | 'guardrail') {
   return rubric.filter((r, i, all) => r.ativo === true && r.tipo === tipo && !!r.codigo && all.findIndex(x => x.ativo === true && x.tipo === tipo && x.codigo === r.codigo) === i);
 }
