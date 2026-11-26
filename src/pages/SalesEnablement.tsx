@@ -46,6 +46,8 @@ import { PontualidadeTab } from "@/components/se/PontualidadeTab";
 import { useAuth } from "@/contexts/AuthContext";
 import { ScreenRefreshing } from "@/components/ScreenRefreshing";
 import { SE_VIEW_KEYS } from "@/lib/screenCache";
+import { AjusteCriterio, FatosCall, GuardrailChip, SelosReuniao } from "@/components/se/EvaluationFacts";
+import { CRITERIOS_V3, criteriosPreenchidos, evidenciaSE, filtrarSelo, itensRegua, objetoSE, versaoRegua, type RubricaSE, type SeloSE } from "@/lib/seEvaluation";
 
 
 /* ---------------- Types ---------------- */
@@ -138,37 +140,20 @@ type ReuniaoSE = {
   outcome_obs: string | null;
   outcome_em: string | null;
   guardrails: string[] | null;
-  notas_criterios: Record<string, number> | null;
+  notas_criterios: Record<string, unknown> | null;
   pontos_fortes: string[] | null;
   pontos_melhoria: string[] | null;
   resumo_treinador: string | null;
   modelo: string | null;
   prompt_versao: string | null;
-  rubrica_versao: string | null;
+  rubrica_versao: string | number | null;
   ignorada?: boolean | null;
   ignorada_motivo?: string | null;
 };
 
-type RubricaRow = {
-  tipo: string | null;
-  codigo: string | null;
-  titulo: string | null;
-  peso: number | null;
-  penalidade: number | null;
-  descricao: string | null;
-  como_pontuar: string | null;
-  ativo?: boolean | null;
-};
+type RubricaRow = RubricaSE;
 
 /* ---------------- Labels ---------------- */
-const GUARDRAIL_LABELS: Record<string, string> = {
-  g1_promete_70: "Prometeu 70% como certo",
-  g2_sem_mensalidade: "Deu a entender que pode não pagar mensalidade",
-  g3_modelo_nao_claro: "Modelo mensalidade+êxito não ficou claro",
-  g4_rescisao_nao_clara: "Não esclareceu rescisão 30 dias",
-  g5_sem_ancoragem: "Fechou sem ancorar valor cheio",
-};
-
 const CRITERIO_LABELS: Record<string, string> = {
   abertura: "Abertura & Rapport",
   diagnostico: "Diagnóstico",
@@ -316,14 +301,14 @@ function MetaBar({
   );
 }
 
-function MiniCriterio({ code, value }: { code: string; value: number }) {
+function MiniCriterio({ code, value, titulo, peso, ajuste }: { code: string; value: number; titulo?: string | null; peso?: number | null; ajuste?: unknown }) {
   const color =
     value >= 8 ? "bg-emerald-500" : value >= 6 ? "bg-yellow-500" : "bg-red-500";
   return (
     <div>
       <div className="flex justify-between text-xs mb-1">
         <span className="text-muted-foreground">
-          {CRITERIO_LABELS[code] ?? code}
+          {titulo ?? CRITERIO_LABELS[code] ?? code}{peso != null && <span className="ml-1 text-[10px]">(peso {peso})</span>}<AjusteCriterio ajuste={ajuste} />
         </span>
         <span className="text-foreground font-medium">{value}/10</span>
       </div>
@@ -433,6 +418,15 @@ export default function SalesEnablement() {
         .from("se_rubrica")
         .select("*")
         .eq("ativo", true);
+      if (error) throw error;
+      return (data ?? []) as RubricaRow[];
+    },
+  });
+
+  const { data: rubricasVersoes = [] } = useQuery({
+    queryKey: ["se-rubrica-versoes"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("se_rubrica").select("*").in("versao", [2, 3]);
       if (error) throw error;
       return (data ?? []) as RubricaRow[];
     },
@@ -581,7 +575,7 @@ export default function SalesEnablement() {
           <TabsTrigger value="pontualidade">Pontualidade</TabsTrigger>
           <TabsTrigger value="reunioes">Reuniões</TabsTrigger>
           <TabsTrigger value="evolucao">Evolução</TabsTrigger>
-          <TabsTrigger value="rubrica">Rubrica</TabsTrigger>
+          <TabsTrigger value="rubrica">Legenda</TabsTrigger>
         </TabsList>
 
         <TabsContent value="desempenho" className="mt-4">
@@ -615,6 +609,7 @@ export default function SalesEnablement() {
             rows={reunioes}
             loading={loadingReu}
             desfechos={desfechoPorLead}
+            rubricas={rubricasVersoes}
           />
         </TabsContent>
 
@@ -801,6 +796,7 @@ function EvolucaoTab({
           const linhas = notasFiltradas
             .filter((n) => (n.closer ?? "") === c)
             .sort((a, b) => (a.mes ?? "").localeCompare(b.mes ?? ""));
+          const codigos = [...CRITERIO_ORDER, ...Object.keys(CRITERIOS_V3).filter(k => !CRITERIO_ORDER.includes(k))].filter(code => linhas.some(n => criteriosPreenchidos(n, [code]).length > 0));
           return (
             <div
               key={c}
@@ -815,12 +811,12 @@ function EvolucaoTab({
                   <thead className="bg-muted/50 text-muted-foreground">
                     <tr>
                       <th className="text-left px-3 py-2 font-medium">Mês</th>
-                      {CRITERIO_ORDER.map((code) => (
+                      {codigos.map((code) => (
                         <th
                           key={code}
                           className="text-left px-3 py-2 font-medium whitespace-nowrap"
                         >
-                          {CRITERIO_LABELS[code]}
+                          {CRITERIOS_V3[code] ?? CRITERIO_LABELS[code]}
                         </th>
                       ))}
                     </tr>
@@ -831,8 +827,9 @@ function EvolucaoTab({
                         <td className="px-3 py-2 font-medium text-foreground whitespace-nowrap">
                           {n.mes}
                         </td>
-                        {CRITERIO_ORDER.map((code) => {
+                        {codigos.map((code) => {
                           const v = (n as any)[code] as number | null;
+                          if (v == null) return <td key={code} />;
                           return (
                             <td key={code} className="px-3 py-2 min-w-[90px]">
                               <div className="flex items-center gap-1.5">
@@ -1351,10 +1348,12 @@ function ReunioesTab({
   rows,
   loading,
   desfechos,
+  rubricas,
 }: {
   rows: ReuniaoSE[];
   loading: boolean;
   desfechos: Map<string, ReuniaoDesfechoRow>;
+  rubricas: RubricaRow[];
 }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -1367,6 +1366,22 @@ function ReunioesTab({
   const [aberta, setAberta] = useState<string | null>(null);
 
 
+  const [foraTabela, setForaTabela] = useState(false);
+  const [assinouCall, setAssinouCall] = useState(false);
+  const ids = useMemo(() => [...new Set(rows.map(r => r.reuniao_id))].sort(), [rows]);
+  const { data: selos = [], isError: erroSelos } = useQuery({
+    queryKey: ["se-selos", ids],
+    enabled: ids.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("se_selos")
+        .select("readai_meeting_id,preco_tabela,valor_relatorio,valor_divida,selo_tabela,selo_assinou_na_call,signed_at,selo_pago")
+        .in("readai_meeting_id", ids);
+      if (error) throw error;
+      return (data ?? []) as SeloSE[];
+    },
+  });
+  const selosPorReuniao = useMemo(() => new Map(selos.map(s => [s.readai_meeting_id, s])), [selos]);
+
   const closers = useMemo(
     () =>
       Array.from(
@@ -1378,6 +1393,7 @@ function ReunioesTab({
   const filtered = useMemo(() => {
     const q = busca.trim().toLowerCase();
     let out = rows.filter((r) => {
+      if (!filtrarSelo(selosPorReuniao.get(r.reuniao_id), foraTabela, assinouCall)) return false;
       if (q && !(r.empresa ?? "").toLowerCase().includes(q)) return false;
       if (closer !== "all" && (r.closer ?? "") !== closer) return false;
       if (soHoje && !isToday(r.quando_local ?? r.meeting_date)) return false;
@@ -1400,7 +1416,7 @@ function ReunioesTab({
       return sortAsc ? cmp : -cmp;
     });
     return out;
-  }, [rows, busca, closer, soHoje, sortKey, sortAsc, desfechoFiltro, desfechos]);
+  }, [rows, busca, closer, soHoje, sortKey, sortAsc, desfechoFiltro, desfechos, selosPorReuniao, foraTabela, assinouCall]);
 
 
   const toggleSort = (k: SortKey) => {
@@ -1469,11 +1485,14 @@ function ReunioesTab({
         >
           Só hoje
         </Button>
+        <Button size="sm" variant={foraTabela ? "default" : "outline"} aria-pressed={foraTabela} onClick={() => setForaTabela(v => !v)}>Fora da tabela</Button>
+        <Button size="sm" variant={assinouCall ? "default" : "outline"} aria-pressed={assinouCall} onClick={() => setAssinouCall(v => !v)}>Assinou na call</Button>
         <span className="text-xs text-muted-foreground self-center ml-auto">
           {filtered.length} reuniões
         </span>
       </div>
 
+      {erroSelos && <p role="alert" className="text-xs text-destructive">Não foi possível carregar os selos.</p>}
       <div className="bg-card border border-border rounded-lg overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="text-xs text-muted-foreground border-b border-border">
@@ -1575,7 +1594,7 @@ function ReunioesTab({
                         notaClass(r.nota)
                       )}
                     >
-                      {r.nota ?? "—"}
+                      <div className="flex items-center gap-2"><span>{r.nota ?? "—"}</span><SelosReuniao selo={selosPorReuniao.get(r.reuniao_id)} /></div>
                     </td>
                     <td className="px-3 py-2">
                       <DesfechoChip desfecho={df?.desfecho ?? null} />
@@ -1586,15 +1605,7 @@ function ReunioesTab({
                     <td className="px-3 py-2">
 
                       <div className="flex flex-wrap gap-1">
-                        {(r.guardrails ?? []).map((g) => (
-                          <span
-                            key={g}
-                            title={GUARDRAIL_LABELS[g] ?? g}
-                            className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-500 border border-red-500/20 whitespace-nowrap"
-                          >
-                            {g.split("_")[0]}
-                          </span>
-                        ))}
+                        {(r.guardrails ?? []).map(g => <GuardrailChip key={g} label={itensRegua(rubricas, r.rubrica_versao, "guardrail").find(item => item.codigo === g)?.titulo ?? g} evidencia={evidenciaSE(r.notas_criterios, g)} />)}
                         {!(r.guardrails ?? []).length && (
                           <span className="text-xs text-muted-foreground">
                             —
@@ -1608,6 +1619,8 @@ function ReunioesTab({
                       <td colSpan={9} className="px-4 py-4 bg-muted/10">
                         <ReuniaoDetalhe
                           r={r}
+                          selo={selosPorReuniao.get(r.reuniao_id)}
+                          rubricas={rubricas}
                           onSaved={() => {
                             void queryClient.invalidateQueries({
                               queryKey: ["se-reunioes"],
@@ -1637,10 +1650,14 @@ function ReunioesTab({
 
 function ReuniaoDetalhe({
   r,
+  selo,
+  rubricas,
   onSaved,
   toast,
 }: {
   r: ReuniaoSE;
+  selo?: SeloSE;
+  rubricas: RubricaRow[];
   onSaved: () => void;
   toast: ReturnType<typeof useToast>["toast"];
 }) {
@@ -1731,6 +1748,7 @@ function ReuniaoDetalhe({
           <p className={cn("text-3xl font-semibold", notaClass(r.nota))}>
             {r.nota ?? "—"}
           </p>
+          <SelosReuniao selo={selo} />
           <p className="text-[11px] text-muted-foreground">
             {partes.join(" ")} = {r.nota ?? "—"}
           </p>
@@ -1742,15 +1760,10 @@ function ReuniaoDetalhe({
         <div className="space-y-2">
           <h4 className="text-sm font-semibold text-foreground">Critérios</h4>
           <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
-            {CRITERIO_ORDER.filter((c) => r.notas_criterios?.[c] != null).map(
-              (c) => (
-                <MiniCriterio
-                  key={c}
-                  code={c}
-                  value={Number(r.notas_criterios![c])}
-                />
-              )
-            )}
+            {itensRegua(rubricas, r.rubrica_versao, "criterio").filter(c => r.notas_criterios?.[c.codigo ?? ""] != null).map(c => (
+              <MiniCriterio key={c.codigo} code={c.codigo ?? ""} titulo={versaoRegua(r.rubrica_versao) >= 3 ? CRITERIOS_V3[c.codigo ?? ""] ?? c.titulo : c.titulo}
+                peso={c.peso} value={Number(r.notas_criterios?.[c.codigo ?? ""])} ajuste={objetoSE(r.notas_criterios?._ajustes_farol)[c.codigo ?? ""]} />
+            ))}
           </div>
         </div>
       )}
@@ -1764,11 +1777,13 @@ function ReuniaoDetalhe({
           </h4>
           <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-0.5">
             {(r.guardrails ?? []).map((g) => (
-              <li key={g}>{GUARDRAIL_LABELS[g] ?? g}</li>
+              <li key={g}><GuardrailChip label={itensRegua(rubricas, r.rubrica_versao, "guardrail").find(item => item.codigo === g)?.titulo ?? g} evidencia={evidenciaSE(r.notas_criterios, g)} /></li>
             ))}
           </ul>
         </div>
       )}
+
+      {versaoRegua(r.rubrica_versao) >= 3 && <FatosCall fatos={r.notas_criterios?._fatos} selo={selo} />}
 
       <div className="grid md:grid-cols-2 gap-5">
         {(r.pontos_fortes ?? []).length > 0 && (
@@ -1922,12 +1937,9 @@ function ReuniaoDetalhe({
 
 /* ---------------- Tab 3 ---------------- */
 function RubricaTab({ rows }: { rows: RubricaRow[] }) {
-  const criterios = rows.filter(
-    (r) => (r.tipo ?? "").toLowerCase() !== "guardrail"
-  );
-  const guardrails = rows.filter(
-    (r) => (r.tipo ?? "").toLowerCase() === "guardrail"
-  );
+  const versao = Math.max(2, ...rows.map(r => versaoRegua(r.versao)));
+  const criterios = itensRegua(rows, versao, "criterio");
+  const guardrails = itensRegua(rows, versao, "guardrail");
 
   if (!rows.length) {
     return (
@@ -1998,6 +2010,7 @@ function RubricaTab({ rows }: { rows: RubricaRow[] }) {
 
   return (
     <div className="space-y-4">
+      <h3 className="text-sm font-semibold text-foreground">Régua versão {versao}</h3>
       <Table
         title="Critérios"
         data={criterios}
