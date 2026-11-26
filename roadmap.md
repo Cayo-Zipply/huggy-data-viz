@@ -32,3 +32,8 @@
 # Cabeçalho do Pipe
 - [x] Reorganizar navegação SDR/Closer/Todos, ações e filtros sem alterar regras, permissões ou Kanban.
 - [x] Conferir cabeçalho, troca de Pipe, menu e Novo Lead em 1440/1002/390px, claro/escuro, com dados simulados; sessão real indisponível.
+
+# Exclusão de usuários
+- [x] Liberar exclusão com proteção ao próprio usuário/último admin e confirmação pelo primeiro nome.
+- [x] Detectar perfil ausente sem recriá-lo, encerrar sessão e bloquear telas internas.
+- [x] Validar com 12 testes unitários e navegador simulado: confirmação, admin, falha/zero linhas/sucesso e perfil ausente no login e na atualização; claro/escuro sem erros. Sessão real indisponível; banco e histórico não alterados.

@@ -5,6 +5,11 @@ import { Navigate } from "react-router-dom";
 import { Shield, Users, UserCheck, Plus, Trash2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ReloadFarolButton } from "@/components/ReloadFarolButton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from "@/components/ui/alert-dialog";
+import { deleteUserProfile, deletionBlockReason, firstNameMatches } from "@/lib/userProfileAccess";
 
 interface UserRow {
   id: string;
@@ -30,13 +35,15 @@ const ROLE_BADGE: Record<string, { label: string; cls: string; icon: any }> = {
 };
 
 export default function UserManagement() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, session } = useAuth();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<UserRow | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   // Add user form state
   const [newEmail, setNewEmail] = useState("");
@@ -127,11 +134,19 @@ export default function UserManagement() {
   };
 
   const deleteUser = async (u: UserRow) => {
-    if (u.user_id) return;
-    const { error } = await (supabase as any).from("user_profiles").delete().eq("id", u.id);
-    if (error) toast({ title: "Erro", description: error.message, variant: "destructive" });
-    setConfirmDelete(null);
-    fetchUsers();
+    if (!isAdmin || deleting || deletionBlockReason(u, session?.user.id, users) || !firstNameMatches(u.nome, deleteConfirmation)) return;
+    setDeleting(true);
+    try {
+      await deleteUserProfile(supabase, u.id);
+      toast({ title: "Usuário excluído." });
+      setConfirmDelete(null);
+      setDeleteConfirmation("");
+      await fetchUsers();
+    } catch (error) {
+      toast({ title: error instanceof Error ? error.message : "Não foi possível excluir este usuário.", variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   if (!isAdmin) return <Navigate to="/pipeline" replace />;
@@ -185,6 +200,7 @@ export default function UserManagement() {
                 const badge = u.role ? ROLE_BADGE[u.role] : null;
                 const ativo = !!u.user_id;
                 const funcoes = u.funcoes || [];
+                const deleteBlocked = deletionBlockReason(u, session?.user.id, users);
                 return (
                   <tr key={u.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 text-sm font-medium text-foreground">{u.nome || "—"}</td>
@@ -229,14 +245,22 @@ export default function UserManagement() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => setConfirmDelete(u)}
-                        disabled={ativo}
-                        title={ativo ? "Não é possível excluir usuário já vinculado" : "Excluir"}
-                        className="inline-flex items-center gap-1 text-xs text-destructive hover:bg-destructive/10 px-2 py-1 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex" tabIndex={deleteBlocked ? 0 : undefined}>
+                            <Button
+                              variant="ghost" size="icon"
+                              aria-label={`Excluir ${u.nome}`}
+                              onClick={() => { setDeleteConfirmation(""); setConfirmDelete(u); }}
+                              disabled={Boolean(deleteBlocked) || deleting}
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>{deleteBlocked || "Excluir usuário"}</TooltipContent>
+                      </Tooltip>
                     </td>
                   </tr>
                 );
@@ -304,20 +328,27 @@ export default function UserManagement() {
       )}
 
       {/* Confirm delete */}
-      {confirmDelete && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setConfirmDelete(null)}>
-          <div className="bg-card border border-border rounded-xl w-full max-w-md p-5" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold mb-2">Excluir usuário?</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              <strong>{confirmDelete.nome}</strong> ({confirmDelete.email}) será removido. Como ainda não fez login, não há sessão ativa. Após excluir, esse e-mail não conseguirá mais entrar no sistema.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setConfirmDelete(null)} className="text-sm px-3 py-2 rounded-lg border border-border">Cancelar</button>
-              <button onClick={() => deleteUser(confirmDelete)} className="text-sm px-3 py-2 rounded-lg bg-destructive text-destructive-foreground hover:opacity-90">Excluir</button>
-            </div>
+      <AlertDialog open={Boolean(confirmDelete)} onOpenChange={(open) => { if (!open && !deleting) { setConfirmDelete(null); setDeleteConfirmation(""); } }}>
+        <AlertDialogContent className="max-w-[calc(100%_-_2rem)] sm:max-w-lg" onEscapeKeyDown={(event) => { if (deleting) event.preventDefault(); }}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir usuário</AlertDialogTitle>
+            <AlertDialogDescription className="break-words">
+              Você está removendo <strong>{confirmDelete?.nome}</strong> ({confirmDelete?.email}). Essa pessoa perde o acesso ao Farol imediatamente. O histórico dela (leads, reuniões, contratos e metas) é preservado. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {confirmDelete?.role === "admin" && <p className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm font-medium text-destructive">Este usuário é administrador.</p>}
+          <div className="space-y-2">
+            <label htmlFor="delete-user-confirmation" className="text-sm text-foreground">Digite o primeiro nome ({confirmDelete?.nome.trim().split(/\s+/)[0]}) para confirmar</label>
+            <Input id="delete-user-confirmation" autoComplete="off" value={deleteConfirmation} onChange={(event) => setDeleteConfirmation(event.target.value)} disabled={deleting} />
           </div>
-        </div>
-      )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <Button variant="destructive" disabled={deleting || !confirmDelete || Boolean(deletionBlockReason(confirmDelete, session?.user.id, users)) || !firstNameMatches(confirmDelete.nome, deleteConfirmation)} onClick={() => { if (confirmDelete) void deleteUser(confirmDelete); }}>
+              {deleting ? "Excluindo…" : "Excluir usuário"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

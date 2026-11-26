@@ -12,6 +12,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { clearPersistedData } from "@/lib/clearLocalData";
 import { presenceOffline } from "@/hooks/usePresenceHeartbeat";
 import type { User, Session } from "@supabase/supabase-js";
+import { findExistingProfile } from "@/lib/userProfileAccess";
+import { Button } from "@/components/ui/button";
 
 interface UserProfile {
   id: string;
@@ -79,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
   const mountedRef = useRef(true);
   const profileRef = useRef<UserProfile | null>(null);
   const profileRequestRef = useRef(0);
@@ -88,86 +91,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [profile]);
 
   const fetchProfile = useCallback(async (userId: string, email: string) => {
-    try {
-      const normalizedEmail = email.toLowerCase().trim();
-      const fallbackName = normalizedEmail
-        .split("@")[0]
-        .split(/[._-]+/)
-        .filter(Boolean)
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(" ");
-
-      // Try by user_id first
-      let { data, error } = await (supabase as any)
-        .from("user_profiles")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      // Fallback: try by email
-      if (!data && !error) {
-        const res = await (supabase as any)
-          .from("user_profiles")
-          .select("*")
-          .eq("email", normalizedEmail)
-          .maybeSingle();
-        data = res.data;
-        error = res.error;
-
-        // Auto-link user_id if found by email
-        if (data && data.user_id !== userId) {
-          await (supabase as any)
-            .from("user_profiles")
-            .update({ user_id: userId })
-            .eq("id", data.id);
-          data = { ...data, user_id: userId };
-        }
-      }
-
-      if (error) {
-        console.error("Erro ao buscar perfil:", error.message);
-        return null;
-      }
-
-      if (!data) {
-        // Profile should have been auto-created by trigger, wait a moment and retry
-        await new Promise((r) => setTimeout(r, 1000));
-        const retry = await (supabase as any)
-          .from("user_profiles")
-          .select("*")
-          .eq("user_id", userId)
-          .maybeSingle();
-        if (retry.data) {
-          return retry.data as UserProfile;
-        } else {
-          const created = await (supabase as any)
-            .from("user_profiles")
-            .insert({
-              user_id: userId,
-              email: normalizedEmail,
-              nome: fallbackName || "Usuário",
-              role: null,
-            })
-            .select("*")
-            .maybeSingle();
-
-          if (created.data) {
-            return created.data as UserProfile;
-          } else {
-            console.warn("Perfil não encontrado para:", normalizedEmail, created.error?.message);
-            return null;
-          }
-        }
-      } else {
-        return data as UserProfile;
-      }
-    } catch (err) {
-      console.error("Erro inesperado ao buscar perfil:", err);
-      return null;
-    }
+    return await findExistingProfile(supabase, userId, email) as UserProfile | null;
   }, []);
 
   const clearAuthState = useCallback(() => {
+    profileRef.current = null;
     setSession(null);
     setUser(null);
     setProfile(null);
@@ -189,16 +117,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadProfile = useCallback(
     async (userId: string, email: string) => {
       const requestId = ++profileRequestRef.current;
-      const nextProfile = await fetchProfile(userId, email);
-
-      if (!mountedRef.current || requestId !== profileRequestRef.current) {
-        return;
+      try {
+        const nextProfile = await fetchProfile(userId, email);
+        if (!mountedRef.current || requestId !== profileRequestRef.current) return;
+        if (!nextProfile) {
+          setAccessDenied(true);
+          clearAuthState();
+          setLoading(false);
+          await clearPersistedData(queryClient);
+          await supabase.auth.signOut();
+          return;
+        }
+        profileRef.current = nextProfile;
+        setProfile(nextProfile);
+        setAccessDenied(false);
+        setLoading(false);
+      } catch (error) {
+        if (!mountedRef.current || requestId !== profileRequestRef.current) return;
+        console.error("Erro ao buscar perfil:", error);
+        // A failed request is not proof that the profile was deleted.
+        setProfile(null);
+        profileRef.current = null;
+        setLoading(false);
       }
-
-      setProfile(nextProfile);
-      setLoading(false);
     },
-    [fetchProfile]
+    [fetchProfile, clearAuthState, queryClient]
   );
 
   useEffect(() => {
@@ -225,7 +168,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (event === "TOKEN_REFRESHED") {
-        setLoading(false);
+        window.setTimeout(() => {
+          if (mountedRef.current && newSession.user.email) void loadProfile(newSession.user.id, newSession.user.email);
+        }, 0);
         return;
       }
 
@@ -292,9 +237,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshProfile = useCallback(async () => {
     if (user?.email) {
-      await fetchProfile(user.id, user.email);
+      await loadProfile(user.id, user.email);
     }
-  }, [user, fetchProfile]);
+  }, [user, loadProfile]);
+
+  useEffect(() => {
+    if (!user?.email) return;
+    const recheck = () => { if (document.visibilityState === "visible") void refreshProfile(); };
+    window.addEventListener("focus", recheck);
+    return () => window.removeEventListener("focus", recheck);
+  }, [user?.id, user?.email, refreshProfile]);
 
   const isAdmin = profile?.role === "admin";
   // Fonte de verdade para gating no pipe: coluna `funcoes` (array). `role`
@@ -336,7 +288,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRole,
       }}
     >
-      {children}
+      {accessDenied ? (
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+          <div className="max-w-md space-y-4 text-center">
+            <h1 className="text-xl font-semibold text-foreground">Acesso não autorizado — fale com o administrador</h1>
+            <Button variant="outline" onClick={() => setAccessDenied(false)}>Voltar ao login</Button>
+          </div>
+        </div>
+      ) : children}
     </AuthContext.Provider>
   );
 }
