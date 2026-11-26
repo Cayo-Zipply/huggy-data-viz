@@ -25,6 +25,7 @@ const CHUNKS: Record<string, () => Promise<unknown>> = {
   "/pendencias-pos-venda": () => import("@/pages/PendenciasPosVenda"),
   "/material-apoio": () => import("@/pages/MaterialApoio"),
   "/sales-enablement": () => import("@/pages/SalesEnablement"),
+  "/treinamento": () => import("@/pages/Treinamento"),
   "/feedbacks": () => import("@/pages/Feedbacks"),
   "/comparativo": () => import("@/components/ComparisonPanel"),
   "/rentabilidade": () => import("@/components/RevenuePanel"),

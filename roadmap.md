@@ -66,7 +66,7 @@
 - [x] Validar: 24 testes unitários passaram; navegador com dados controlados conferiu seleção inicial/deduplicação, Fillipe/Luka nas duas views, vendedor sem seletor/filtros, catálogo independente, conclusão e estados de vazio/erro em claro e mobile escuro. Sem alterações no banco; contas e conteúdos reais não verificados.
 
 # Treinamento — página própria
-- [ ] Separar rota/menu e acesso pelo Black Ops; manter gestão apenas para admin.
-- [ ] Exibir destaque, fileiras, capas, progresso, gaps recolhidos e descrição no player.
-- [ ] Adicionar capa opcional na biblioteca e corrigir associação por closer/código.
-- [ ] Validar regras, navegação e telas; registrar limites da validação real.
+- [x] Página /treinamento com item no menu para todos; sub-aba removida do Black Ops.
+- [x] Fileiras por trilha (foco primeiro, selo "Seu foco"), cards só com capa e título, sem textos de gap.
+- [x] Player com descrição e "Marcar como assistido"; admin com "Ver como", "Gerenciar", select de trilha, capa e cobertura nova.
+- [x] Validar: 21 testes unitários passaram; navegador com dados simulados conferiu admin/vendedor, foco por closer, 9 trilhas no formulário, salvar sem codigo_alvo, player e registro de progresso. Sem alterações no banco; dados reais não verificados.

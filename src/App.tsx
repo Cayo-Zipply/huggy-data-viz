@@ -20,6 +20,7 @@ const Contratos = lazy(() => import("@/pages/Contratos"));
 const Feedbacks = lazy(() => import("@/pages/Feedbacks"));
 const MaterialApoio = lazy(() => import("@/pages/MaterialApoio"));
 const SalesEnablement = lazy(() => import("@/pages/SalesEnablement"));
+const Treinamento = lazy(() => import("@/pages/Treinamento"));
 const Pool = lazy(() => import("@/pages/Pool"));
 const PendenciasPosVenda = lazy(() => import("@/pages/PendenciasPosVenda"));
 const Esquadrao = lazy(() => import("@/pages/Esquadrao"));
@@ -236,6 +237,7 @@ const App = () => (
               <Route path="/feedbacks" element={<RoleGuard roles={["admin"]}><Feedbacks /></RoleGuard>} />
               <Route path="/material-apoio" element={<MaterialApoio />} />
               <Route path="/sales-enablement" element={<SalesEnablement />} />
+              <Route path="/treinamento" element={<Treinamento />} />
               <Route path="/campanhas" element={<RoleGuard roles={["admin"]}><CampanhasMeta /></RoleGuard>} />
               <Route path="/criativos" element={<RoleGuard roles={["admin"]}><Criativos /></RoleGuard>} />
               <Route path="/esquadrao" element={<Esquadrao />} />

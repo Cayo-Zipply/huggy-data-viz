@@ -158,6 +158,8 @@ html {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
 }
+.training-cover { background-color: hsl(var(--training-player-border)); color: hsl(var(--training-player-foreground)); }
+.training-cover-chip { background-color: hsl(var(--training-player-background) / 0.8); color: hsl(var(--training-player-foreground)); }
 .training-video-stage { container-type: size; }
 .training-video-frame {
   width: min(100cqw, calc(100cqh * 16 / 9));

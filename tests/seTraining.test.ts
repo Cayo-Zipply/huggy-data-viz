@@ -1,9 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { completeTraining, dateSE, draftTrainingContent, embedTrainingUrl, groupTraining, groupTrainingLibrary, nextDay, safeLink, selectedTrainingCloser, signedTrainingUrl, startTraining, trainingErrorMessage, trainingTargets, trainingViewQuery, type TrainingContent, type TrainingGap, type TrainingSuggestion } from '../src/lib/seTraining';
+import { completeTraining, dateSE, draftTrainingContent, embedTrainingUrl, focusTrackCodes, nextDay, safeLink, selectedTrainingCloser, signedTrainingCovers, signedTrainingUrl, startTraining, trainingCover, trainingErrorMessage, trainingFocusQuery, trainingRows, youtubeTrainingThumbnail, type TrainingContent, type TrainingTrack } from '../src/lib/seTraining';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { RubricaSE } from '../src/lib/seEvaluation';
-const gap = (closer='Ana',codigo='diagnostico',posicao=1):TrainingGap=>({closer,codigo,posicao,tipo_gap:'criterio',media:5,frequencia:null,pontos_perdidos:4,reunioes:2,amostra_suficiente:false});
-const content = (closer='Ana',codigo='diagnostico',ordem=1):TrainingSuggestion=>({...gap(closer,codigo),conteudo_id:`${closer}-${ordem}`,conteudo_titulo:'Aula',descricao:null,conteudo_tipo:'video',url:'https://youtu.be/abc',storage_path:null,duracao_min:5,ordem,iniciado_em:null,concluido_em:null});
 describe('Treinamento e reunião da semana',()=>{
  test('admin inicia no primeiro closer e mantém uma seleção válida',()=>{
   expect(selectedTrainingCloser('', ['Fillipe','Luka'])).toBe('Fillipe');
@@ -11,24 +8,19 @@ describe('Treinamento e reunião da semana',()=>{
   expect(selectedTrainingCloser('Antigo', ['Fillipe','Luka'])).toBe('Fillipe');
   expect(selectedTrainingCloser('', [])).toBe('');
  });
- for (const view of ['vw_se_gaps_closer','vw_se_treinamento_sugestoes'] as const) {
-  test(`${view}: admin filtra pelo closer escolhido`,()=>{
-   const calls:unknown[]=[];const builder={select:(c:string)=>{calls.push(c);return builder;},eq:(...args:unknown[])=>{calls.push(args);return builder;}};
-   const client={from:(name:string)=>{calls.push(name);return builder;}} as unknown as Pick<SupabaseClient,'from'>;
-   trainingViewQuery(client,view,'Luka');expect(calls).toEqual([view,'*',['closer','Luka']]);
-  });
-  test(`${view}: vendedor não recebe nenhum filtro de identidade`,()=>{
-   const calls:unknown[]=[];const builder={select:(c:string)=>{calls.push(c);return builder;},eq:(...args:unknown[])=>{calls.push(args);return builder;}};
-   const client={from:(name:string)=>{calls.push(name);return builder;}} as unknown as Pick<SupabaseClient,'from'>;
-   trainingViewQuery(client,view,null);expect(calls).toEqual([view,'*']);
-  });
- }
- test('material nasce em rascunho e não envia autoria/data de aprovação',()=>{const payload=draftTrainingContent({titulo:'Aula',descricao:null,tipo:'link',url:'https://example.org',storage_path:null,codigo_alvo:'abertura',duracao_min:null,ordem:1});expect(payload.status).toBe('rascunho');expect(Object.keys(payload)).not.toContain('aprovado_por');expect(Object.keys(payload)).not.toContain('aprovado_em');});
+ test('admin filtra o foco pelo closer escolhido',()=>{
+  const calls:unknown[]=[];const builder={select:(c:string)=>{calls.push(c);return builder;},eq:(...args:unknown[])=>{calls.push(args);return builder;}};
+  const client={from:(name:string)=>{calls.push(name);return builder;}} as unknown as Pick<SupabaseClient,'from'>;
+  trainingFocusQuery(client,'Luka');expect(calls).toEqual(['vw_treinamento_foco','*',['closer','Luka']]);
+ });
+ test('vendedor não recebe nenhum filtro de identidade no foco',()=>{
+  const calls:unknown[]=[];const builder={select:(c:string)=>{calls.push(c);return builder;},eq:(...args:unknown[])=>{calls.push(args);return builder;}};
+  const client={from:(name:string)=>{calls.push(name);return builder;}} as unknown as Pick<SupabaseClient,'from'>;
+  trainingFocusQuery(client,null);expect(calls).toEqual(['vw_treinamento_foco','*']);
+ });
+ test('material nasce em rascunho e não envia autoria/data de aprovação',()=>{const payload=draftTrainingContent({titulo:'Aula',descricao:null,tipo:'link',url:'https://example.org',storage_path:null,trilha:'fechamento',duracao_min:null,ordem:1});expect(payload.status).toBe('rascunho');expect(Object.keys(payload)).not.toContain('codigo_alvo');expect(Object.keys(payload)).not.toContain('aprovado_por');expect(Object.keys(payload)).not.toContain('aprovado_em');});
  test('semana inclui todo o último dia, inclusive virada do mês',()=>{expect(nextDay('2026-11-30')).toBe('2026-12-01');expect(nextDay('2026-12-31')).toBe('2027-01-01');});
  test('quando_local sem fuso preserva a hora de São Paulo',()=>{expect(dateSE('2026-11-26T15:30:00',true)).toContain('15:30');expect(dateSE('2026-11-26T18:30:00Z',true)).toContain('15:30');});
- test('gaps são limitados às posições 1–4 e preservam os sem material',()=>{const groups=groupTraining([gap(),gap('Ana','objecoes',4),gap('Ana','abertura',5)],[],'todos');expect(groups.map(g=>g.gap.codigo)).toEqual(['diagnostico','objecoes']);expect(groups[1].contents).toEqual([]);});
- test('conteúdos e filtro administrativo não misturam closers',()=>{const groups=groupTraining([gap(),gap('Bia')],[content('Bia'),content('Ana')],'Ana');expect(groups).toHaveLength(1);expect(groups[0].contents.map(c=>c.closer)).toEqual(['Ana']);});
- test('conteúdos são ordenados por ordem dentro de cada gap',()=>{expect(groupTraining([gap()],[content('Ana','diagnostico',3),content('Ana','diagnostico',1)],'todos')[0].contents.map(c=>c.ordem)).toEqual([1,3]);});
  test('YouTube, Loom e Vimeo viram embeds e rejeitam domínios falsos',()=>{
   expect(embedTrainingUrl('https://youtu.be/abc-123')).toBe('https://www.youtube-nocookie.com/embed/abc-123?autoplay=1&rel=0');
   expect(embedTrainingUrl('https://www.youtube.com/watch?v=abc')).toBe('https://www.youtube-nocookie.com/embed/abc?autoplay=1&rel=0');
@@ -61,34 +53,48 @@ describe('Treinamento e reunião da semana',()=>{
  });
 });
 
-describe('Biblioteca de treinamento', () => {
- const rubricRow = (codigo:string, tipo='criterio', ativo=true):RubricaSE => ({codigo,tipo,ativo,titulo:`Título ${codigo}`,peso:null,penalidade:null,descricao:null,como_pontuar:null});
- const material = (id:string, ordem=0, status:TrainingContent['status']='aprovado'):TrainingContent => ({id,titulo:id,descricao:null,tipo:'video',url:'https://youtu.be/abc',storage_path:null,codigo_alvo:'fechamento_data',duracao_min:5,ordem,status});
- test('régua ativa de 7 critérios e 9 guardrails não inclui registros inativos ou duplicados', () => {
-  const rows=[...Array.from({length:7},(_,i)=>rubricRow(`criterio_${i}`)),...Array.from({length:9},(_,i)=>rubricRow(`guardrail_${i}`,'guardrail')),rubricRow('legado','criterio',false),rubricRow('criterio_0')];
-  expect(trainingTargets(rows,'criterio').map(r=>r.codigo)).toEqual(Array.from({length:7},(_,i)=>`criterio_${i}`));
-  expect(trainingTargets(rows,'guardrail').map(r=>r.codigo)).toEqual(Array.from({length:9},(_,i)=>`guardrail_${i}`));
+describe('Página de treinamento', () => {
+ const track = (codigo:string, ordem:number, ativo=true):TrainingTrack => ({codigo,titulo:`Trilha ${codigo}`,ordem,ativo});
+ const material = (id:string, trilha:string|null='fechamento', ordem=0, status:TrainingContent['status']='aprovado'):TrainingContent => ({id,titulo:id,descricao:null,tipo:'video',url:'https://youtu.be/abc',storage_path:null,trilha,duracao_min:5,ordem,status});
+ const tracks=[track('rapport',1),track('fechamento',2),track('objecoes',3),track('vazia',4),track('inativa',0,false)];
+ test('uma fileira por trilha ativa na ordem da coluna ordem, com vídeos por ordem',()=>{
+  const rows=trainingRows(tracks,[material('b','fechamento',2),material('a','fechamento',1),material('r','rapport')],[],[]);
+  expect(rows.map(r=>r.codigo)).toEqual(['rapport','fechamento']);
+  expect(rows[1].contents.map(c=>c.id)).toEqual(['a','b']);
  });
- test('alvos desconhecidos pelo código do app vêm da régua e não de lista fixa',()=>{
-  expect(trainingTargets([rubricRow('novo_alvo_dinamico')],'criterio').map(r=>r.codigo)).toEqual(['novo_alvo_dinamico']);
+ test('trilha sem vídeo aprovado, inativa ou conteúdo sem trilha não aparecem',()=>{
+  const rows=trainingRows(tracks,[material('x','inativa'),material('rasc','vazia',0,'rascunho'),material('solto',null),material('ok','objecoes')],[],[]);
+  expect(rows.map(r=>r.codigo)).toEqual(['objecoes']);
  });
- test('todos os aprovados aparecem mesmo sem gap, ordenados e associados pelo codigo_alvo',()=>{
-  const groups=groupTrainingLibrary([material('segundo',2),material('primeiro',1),material('rascunho',0,'rascunho'),material('arquivado',0,'arquivado')],[rubricRow('fechamento_data')],[],[]);
-  expect(groups).toHaveLength(1);expect(groups[0].codigo).toBe('fechamento_data');
-  expect(groups[0].contents.map(c=>c.content.conteudo_id)).toEqual(['primeiro','segundo']);
-  expect(groups[0].contents.map(c=>c.recommended)).toEqual([false,false]);
+ test('trilhas de foco são só posições 1 e 2, vêm primeiro na ordem da posição',()=>{
+  const focus=[{closer:'Luka',posicao:2,trilha:'rapport'},{closer:'Luka',posicao:1,trilha:'objecoes'},{closer:'Luka',posicao:3,trilha:'fechamento'}];
+  expect(focusTrackCodes(focus)).toEqual(['objecoes','rapport']);
+  const rows=trainingRows(tracks,[material('f','fechamento'),material('r','rapport'),material('o','objecoes')],focus,[]);
+  expect(rows.map(r=>[r.codigo,r.foco])).toEqual([['objecoes',true],['rapport',true],['fechamento',false]]);
  });
- test('recomendação cruza pelo id, sem ocultar os outros materiais',()=>{
-  const s={...content(),conteudo_id:'recomendado'};
-  const groups=groupTrainingLibrary([material('recomendado'),material('outro')],[rubricRow('fechamento_data')],[s],[]);
-  expect(groups[0].contents.map(c=>[c.content.conteudo_id,c.recommended])).toEqual([['recomendado',true],['outro',false]]);
+ test('Assistido só para o conteúdo com concluido_em',()=>{
+  const rows=trainingRows(tracks,[material('visto'),material('aberto'),material('novo')],[],[{conteudo_id:'visto',concluido_em:'2026-11-26T19:00:00Z'},{conteudo_id:'aberto',concluido_em:null}]);
+  expect(rows[0].contents.map(c=>c.concluido_em)).toEqual(['2026-11-26T19:00:00Z',null,null]);
  });
- test('progresso existente é associado só ao material correto',()=>{
-  const groups=groupTrainingLibrary([material('concluido'),material('novo')],[rubricRow('fechamento_data')],[],[{conteudo_id:'concluido',iniciado_em:'2026-11-26T18:00:00Z',concluido_em:'2026-11-26T19:00:00Z'}]);
-  expect(groups[0].contents[0].content.concluido_em).toBe('2026-11-26T19:00:00Z');expect(groups[0].contents[1].content.concluido_em).toBeNull();
+ test('miniatura do YouTube sai de watch, youtu.be e shorts',()=>{
+  for (const u of ['https://www.youtube.com/watch?v=AbC_12-x','https://youtu.be/AbC_12-x','https://www.youtube.com/shorts/AbC_12-x']) expect(youtubeTrainingThumbnail(u)).toBe('https://i.ytimg.com/vi/AbC_12-x/hqdefault.jpg');
+  expect(youtubeTrainingThumbnail('https://vimeo.com/123')).toBeNull();
+ });
+ test('capa: capa_path assinada > capa_url > miniatura do YouTube > nenhuma',()=>{
+  const signed={'u/capa.jpg':'https://example.org/signed.jpg'};const url='https://youtu.be/abc';
+  expect(trainingCover({capa_path:'u/capa.jpg',capa_url:'https://example.org/c.jpg',url},signed)).toBe('https://example.org/signed.jpg');
+  expect(trainingCover({capa_path:null,capa_url:'https://example.org/c.jpg',url},signed)).toBe('https://example.org/c.jpg');
+  expect(trainingCover({capa_path:null,capa_url:null,url},signed)).toBe('https://i.ytimg.com/vi/abc/hqdefault.jpg');
+  expect(trainingCover({capa_path:null,capa_url:'javascript:alert(1)',url:'https://example.org/video.mp4'})).toBeNull();
+ });
+ test('capas privadas são assinadas em lote no bucket treinamento por uma hora',async()=>{
+  const calls:unknown[]=[];
+  const client={storage:{from:(bucket:string)=>{calls.push(bucket);return {createSignedUrls:async(paths:string[],seconds:number)=>{calls.push(paths,seconds);return {data:[{path:'a.jpg',signedUrl:'https://example.org/a',error:null},{path:'b.jpg',signedUrl:'',error:'not found'}],error:null};}};}}} as unknown as Pick<SupabaseClient,'storage'>;
+  expect(await signedTrainingCovers(client,['a.jpg','b.jpg'])).toEqual({'a.jpg':'https://example.org/a'});
+  expect(calls).toEqual(['treinamento',['a.jpg','b.jpg'],3600]);
  });
  test('mensagem de erro do banco é preservada mesmo quando não é instância de Error',()=>{
-  expect(trainingErrorMessage({message:'codigo_alvo inválido',code:'23514'})).toBe('codigo_alvo inválido');
+  expect(trainingErrorMessage({message:'trilha inválida',code:'23514'})).toBe('trilha inválida');
   expect(trainingErrorMessage(new Error('Falha de upload'))).toBe('Falha de upload');
  });
 });

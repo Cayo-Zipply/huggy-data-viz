@@ -1,49 +1,47 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { RubricaSE } from './seEvaluation';
 export type TrainingContent = {
   id: string; titulo: string; descricao: string | null; tipo: 'video' | 'arquivo' | 'link';
-  url: string | null; storage_path: string | null; codigo_alvo: string; duracao_min: number | null;
+  url: string | null; storage_path: string | null; trilha: string | null; duracao_min: number | null;
   ordem: number; status: 'rascunho' | 'aprovado' | 'arquivado';
-  capa_path?: string | null; capa_url?: string | null; criado_em?: string | null; aprovado_em?: string | null; created_at?: string | null;
-};
-export const draftTrainingContent = (values: Omit<TrainingContent, 'id' | 'status'>) => ({ ...values, status: 'rascunho' as const });
-export type TrainingGap = {
-  closer: string; posicao?: number; posicao_gap?: number; tipo_gap: string; codigo: string;
-  gap_titulo?: string; titulo?: string; media: number | null; frequencia: number | null;
-  pontos_perdidos: number | null; reunioes: number; amostra_suficiente: boolean;
-};
-export type TrainingSuggestion = TrainingGap & {
-  conteudo_id: string | null; conteudo_titulo: string | null; descricao: string | null;
-  conteudo_tipo: TrainingContent['tipo']; url: string | null; storage_path: string | null;
-  duracao_min: number | null; ordem: number; iniciado_em: string | null; concluido_em: string | null;
   capa_path?: string | null; capa_url?: string | null;
 };
-export type TrainingPlayable = Pick<TrainingSuggestion, 'conteudo_id' | 'conteudo_titulo' | 'descricao' | 'conteudo_tipo' | 'url' | 'storage_path' | 'duracao_min' | 'iniciado_em' | 'concluido_em' | 'capa_path' | 'capa_url'> & { codigo_alvo?: string; alvo_titulo?: string; gap_titulo?: string };
-export type TrainingProgress = { conteudo_id: string; iniciado_em: string | null; concluido_em: string | null };
+export const draftTrainingContent = (values: Omit<TrainingContent, 'id' | 'status'>) => ({ ...values, status: 'rascunho' as const });
+export type TrainingTrack = { codigo: string; titulo: string; ordem: number | null; ativo?: boolean | null };
+export type TrainingFocus = { closer?: string | null; posicao: number | null; trilha?: string | null; trilha_codigo?: string | null; codigo?: string | null };
+export type TrainingProgress = { conteudo_id: string; iniciado_em?: string | null; concluido_em: string | null };
+export type TrainingPlayable = TrainingContent & { concluido_em: string | null };
+export type TrainingRow = { codigo: string; titulo: string; foco: boolean; contents: TrainingPlayable[] };
 export const selectedTrainingCloser = (selected: string, closers: string[]) => closers.includes(selected) ? selected : closers[0] ?? '';
-export function trainingViewQuery(client: Pick<SupabaseClient, 'from'>, view: 'vw_se_gaps_closer' | 'vw_se_treinamento_sugestoes', closer: string | null) {
-  const query = client.from(view).select('*');
+/** Admin filtra pelo closer escolhido; vendedor recebe do banco só as próprias linhas, sem filtro de identidade. */
+export function trainingFocusQuery(client: Pick<SupabaseClient, 'from'>, closer: string | null) {
+  const query = client.from('vw_treinamento_foco').select('*');
   return closer ? query.eq('closer', closer) : query;
 }
-export function trainingTargets(rubric: RubricaSE[], tipo: 'criterio' | 'guardrail') {
-  return rubric.filter((r, i, all) => r.ativo === true && r.tipo === tipo && !!r.codigo && all.findIndex(x => x.ativo === true && x.tipo === tipo && x.codigo === r.codigo) === i);
+export const focusTrackCode = (f: TrainingFocus) => f.trilha ?? f.trilha_codigo ?? f.codigo ?? null;
+/** Trilhas de foco: posições 1 e 2, na ordem da posição. */
+export function focusTrackCodes(focus: TrainingFocus[]) {
+  const codes = [...focus].filter(f => f.posicao != null && f.posicao <= 2).sort((a, b) => (a.posicao ?? 0) - (b.posicao ?? 0)).map(focusTrackCode).filter((c): c is string => !!c);
+  return [...new Set(codes)];
 }
-export const trainingTargetTitle = (rubric: RubricaSE[], codigo: string) => rubric.find(r => r.codigo === codigo && r.ativo === true)?.titulo || 'Ponto da régua indisponível';
-export function groupTrainingLibrary(contents: TrainingContent[], rubric: RubricaSE[], suggestions: TrainingSuggestion[], progress: TrainingProgress[]) {
-  const recommended = new Set(suggestions.map(s => s.conteudo_id).filter(Boolean));
-  const groups = new Map<string, { codigo: string; titulo: string; contents: { content: TrainingPlayable; recommended: boolean }[] }>();
-  for (const c of [...contents].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))) {
-    if (c.status !== 'aprovado') continue;
-    const group = groups.get(c.codigo_alvo) ?? { codigo: c.codigo_alvo, titulo: trainingTargetTitle(rubric, c.codigo_alvo), contents: [] };
-    const p = progress.find(row => row.conteudo_id === c.id);
-    group.contents.push({ recommended: recommended.has(c.id), content: {
-      conteudo_id: c.id, conteudo_titulo: c.titulo, descricao: c.descricao, conteudo_tipo: c.tipo, url: c.url,
-      storage_path: c.storage_path, duracao_min: c.duracao_min, iniciado_em: p?.iniciado_em ?? null, concluido_em: p?.concluido_em ?? null,
-      capa_path: c.capa_path, capa_url: c.capa_url, codigo_alvo: c.codigo_alvo, alvo_titulo: group.titulo,
-    } });
-    groups.set(c.codigo_alvo, group);
-  }
-  return [...groups.values()];
+/** Uma fileira por trilha ativa com vídeo; foco primeiro, depois a ordem normal. */
+export function trainingRows(tracks: TrainingTrack[], contents: TrainingContent[], focus: TrainingFocus[], progress: TrainingProgress[]): TrainingRow[] {
+  const focusCodes = focusTrackCodes(focus);
+  const done = new Map(progress.map(p => [p.conteudo_id, p.concluido_em ?? null]));
+  const rows = [...tracks].filter(t => t.ativo !== false).sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)).map(t => ({
+    codigo: t.codigo, titulo: t.titulo, foco: focusCodes.includes(t.codigo),
+    contents: contents.filter(c => c.trilha === t.codigo && c.status === 'aprovado').sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)).map(c => ({ ...c, concluido_em: done.get(c.id) ?? null })),
+  })).filter(r => r.contents.length > 0);
+  return [...rows.filter(r => r.foco).sort((a, b) => focusCodes.indexOf(a.codigo) - focusCodes.indexOf(b.codigo)), ...rows.filter(r => !r.foco)];
+}
+/** Capa: capa_path (assinada) > capa_url > miniatura do YouTube > nenhuma. */
+export function trainingCover(c: Pick<TrainingContent, 'capa_path' | 'capa_url' | 'url'>, signed: Record<string, string> = {}): string | null {
+  return (c.capa_path ? signed[c.capa_path] : null) ?? safeLink(c.capa_url) ?? youtubeTrainingThumbnail(c.url);
+}
+export async function signedTrainingCovers(client: Pick<SupabaseClient, 'storage'>, paths: string[]) {
+  if (!paths.length) return {} as Record<string, string>;
+  const { data, error } = await client.storage.from('treinamento').createSignedUrls(paths, 3600);
+  if (error) throw error;
+  return Object.fromEntries((data ?? []).filter(d => d.path && d.signedUrl && !d.error).map(d => [d.path as string, d.signedUrl]));
 }
 export function trainingErrorMessage(error: unknown, fallback = 'Tente novamente.') {
   return error && typeof error === 'object' && 'message' in error && typeof error.message === 'string' ? error.message : fallback;
@@ -64,33 +62,10 @@ export function embedTrainingUrl(value: string | null | undefined): string | nul
   return null;
 }
 export function nextDay(iso: string): string { const d = new Date(`${iso.slice(0,10)}T12:00:00Z`); d.setUTCDate(d.getUTCDate()+1); return d.toISOString().slice(0,10); }
-export const gapKey = (g: TrainingGap) => `${g.closer}|${g.tipo_gap}|${g.codigo}`;
-export function groupTraining(gaps: TrainingGap[], suggestions: TrainingSuggestion[], closer: string) {
-  return gaps.filter(g => (g.posicao ?? g.posicao_gap ?? Infinity) <= 4 && (closer === 'todos' || g.closer === closer))
-    .sort((a,b) => (a.posicao ?? a.posicao_gap ?? 0)-(b.posicao ?? b.posicao_gap ?? 0))
-    .map(g => ({ gap:g, contents:suggestions.filter(s => s.conteudo_id && s.closer === g.closer && s.codigo === g.codigo).sort((a,b) => (a.ordem ?? 0)-(b.ordem ?? 0)) }));
-}
 export function youtubeTrainingThumbnail(value: string | null | undefined): string | null {
   const embed = embedTrainingUrl(value);
   const id = embed?.match(/^https:\/\/www\.youtube-nocookie\.com\/embed\/([\w-]+)/)?.[1];
   return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
-}
-export function trainingExperience(library: TrainingContent[], suggestions: TrainingSuggestion[], progress: TrainingProgress[], rubric: RubricaSE[]) {
-  const groups = groupTrainingLibrary(library, rubric, suggestions, progress);
-  const catalog = groups.flatMap(g => g.contents.map(c => c.content));
-  const recommended: TrainingPlayable[] = [];
-  const seen = new Set<string>();
-  for (const s of [...suggestions].sort((a,b) => (a.posicao_gap ?? a.posicao ?? Infinity) - (b.posicao_gap ?? b.posicao ?? Infinity) || (a.ordem ?? 0) - (b.ordem ?? 0))) {
-    if (!s.conteudo_id || seen.has(s.conteudo_id)) continue;
-    seen.add(s.conteudo_id);
-    const c = catalog.find(c => c.conteudo_id === s.conteudo_id);
-    recommended.push({ ...c, ...s, capa_path: s.capa_path ?? c?.capa_path, capa_url: s.capa_url ?? c?.capa_url, codigo_alvo: s.codigo, alvo_titulo: trainingTargetTitle(rubric, s.codigo), gap_titulo: s.gap_titulo ?? s.titulo ?? trainingTargetTitle(rubric, s.codigo) });
-  }
-  const latest = [...library].filter(c => c.status === 'aprovado').sort((a,b) => (b.aprovado_em ?? b.criado_em ?? b.created_at ?? '').localeCompare(a.aprovado_em ?? a.criado_em ?? a.created_at ?? ''))[0];
-  const hero = recommended.find(c => !c.concluido_em) ?? catalog.find(c => c.conteudo_id === latest?.id) ?? null;
-  const byId = new Map(catalog.map(c => [c.conteudo_id,c]));
-  recommended.forEach(c => byId.set(c.conteudo_id,c));
-  return { groups, recommended, hero, continuing: [...byId.values()].filter(c => c.iniciado_em && !c.concluido_em) };
 }
 export async function signedTrainingUrl(client: Pick<SupabaseClient, 'storage'>, path: string) {
   const { data, error } = await client.storage.from('treinamento').createSignedUrl(path, 3600);
