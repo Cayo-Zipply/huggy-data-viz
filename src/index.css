@@ -48,6 +48,10 @@ html {
     --ring: 29 36% 53%;
 
     --radius: 0.5rem;
+    --training-player-background: 0 0% 0%;
+    --training-player-foreground: 0 0% 100%;
+    --training-player-muted: 0 0% 70%;
+    --training-player-border: 0 0% 22%;
 
     --chart-blue: 29 36% 53%;
     --chart-orange: 25 70% 50%;
@@ -143,6 +147,24 @@ html {
 }
 
 /* Esquadrão — fundo HUD com ruído/fumaça sutil */
+.training-video-dialog {
+  --background: var(--training-player-background);
+  --foreground: var(--training-player-foreground);
+  --muted-foreground: var(--training-player-muted);
+  --border: var(--training-player-border);
+  --input: var(--training-player-border);
+  --accent: var(--training-player-border);
+  --accent-foreground: var(--training-player-foreground);
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+.training-video-stage { container-type: size; }
+.training-video-frame {
+  width: min(100cqw, calc(100cqh * 16 / 9));
+  aspect-ratio: 16 / 9;
+  max-height: 100%;
+}
+
 .hud-bg {
   background-color: hsl(240 6% 4%);
   background-image:

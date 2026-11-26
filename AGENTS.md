@@ -13,3 +13,4 @@
 - Black Ops reads evaluation criteria/guardrails by rubric version separately from the active legend and batches factual seals by meeting IDs, so historical scores remain unchanged and rows never fetch seals individually.
 - Mount weekly meeting and training queries only within their Black Ops tabs; use existing authenticated views/RPCs for access, signed private training URLs for one hour, and user-scoped progress mutations so other tabs and users remain isolated.
 - Key featured meetings by period and keep Read AI video URLs only in the mounted player with one refresh per playback failure, so monthly/weekly caches stay isolated and expiring URLs are never persisted.
+- Share active-rubric targets and training content cards across suggestions/catalog; scope seller catalog/progress caches by user and keep video playback in the shared fullscreen viewer so material access is independent of gaps without mixing user progress.

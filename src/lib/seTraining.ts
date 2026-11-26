@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { RubricaSE } from './seEvaluation';
 export type TrainingContent = {
   id: string; titulo: string; descricao: string | null; tipo: 'video' | 'arquivo' | 'link';
   url: string | null; storage_path: string | null; codigo_alvo: string; duracao_min: number | null;
@@ -15,6 +16,30 @@ export type TrainingSuggestion = TrainingGap & {
   conteudo_tipo: TrainingContent['tipo']; url: string | null; storage_path: string | null;
   duracao_min: number | null; ordem: number; iniciado_em: string | null; concluido_em: string | null;
 };
+export type TrainingPlayable = Pick<TrainingSuggestion, 'conteudo_id' | 'conteudo_titulo' | 'descricao' | 'conteudo_tipo' | 'url' | 'storage_path' | 'duracao_min' | 'iniciado_em' | 'concluido_em'>;
+export type TrainingProgress = { conteudo_id: string; iniciado_em: string | null; concluido_em: string | null };
+export function trainingTargets(rubric: RubricaSE[], tipo: 'criterio' | 'guardrail') {
+  return rubric.filter((r, i, all) => r.ativo === true && r.tipo === tipo && !!r.codigo && all.findIndex(x => x.ativo === true && x.tipo === tipo && x.codigo === r.codigo) === i);
+}
+export const trainingTargetTitle = (rubric: RubricaSE[], codigo: string) => rubric.find(r => r.codigo === codigo && r.ativo === true)?.titulo || 'Ponto da régua indisponível';
+export function groupTrainingLibrary(contents: TrainingContent[], rubric: RubricaSE[], suggestions: TrainingSuggestion[], progress: TrainingProgress[]) {
+  const recommended = new Set(suggestions.map(s => s.conteudo_id).filter(Boolean));
+  const groups = new Map<string, { codigo: string; titulo: string; contents: { content: TrainingPlayable; recommended: boolean }[] }>();
+  for (const c of [...contents].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))) {
+    if (c.status !== 'aprovado') continue;
+    const group = groups.get(c.codigo_alvo) ?? { codigo: c.codigo_alvo, titulo: trainingTargetTitle(rubric, c.codigo_alvo), contents: [] };
+    const p = progress.find(row => row.conteudo_id === c.id);
+    group.contents.push({ recommended: recommended.has(c.id), content: {
+      conteudo_id: c.id, conteudo_titulo: c.titulo, descricao: c.descricao, conteudo_tipo: c.tipo, url: c.url,
+      storage_path: c.storage_path, duracao_min: c.duracao_min, iniciado_em: p?.iniciado_em ?? null, concluido_em: p?.concluido_em ?? null,
+    } });
+    groups.set(c.codigo_alvo, group);
+  }
+  return [...groups.values()];
+}
+export function trainingErrorMessage(error: unknown, fallback = 'Tente novamente.') {
+  return error && typeof error === 'object' && 'message' in error && typeof error.message === 'string' ? error.message : fallback;
+}
 export const safeLink = (value: string | null | undefined) => {
   try { const u = new URL(value ?? ''); return u.protocol === 'https:' || u.protocol === 'http:' ? u.href : null; } catch { return null; }
 };
@@ -24,7 +49,7 @@ export function embedTrainingUrl(value: string | null | undefined): string | nul
   const u = new URL(safe); const host = u.hostname.replace(/^www\./, '');
   if (['youtube.com', 'm.youtube.com', 'youtube-nocookie.com', 'youtu.be'].includes(host)) {
     const id = host === 'youtu.be' ? u.pathname.split('/')[1] : u.searchParams.get('v') ?? u.pathname.match(/^\/(?:embed|shorts)\/([^/]+)/)?.[1];
-    return id && /^[\w-]+$/.test(id) ? `https://www.youtube-nocookie.com/embed/${id}` : null;
+    return id && /^[\w-]+$/.test(id) ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0` : null;
   }
   if (host === 'loom.com') { const id = u.pathname.match(/^\/(?:share|embed)\/([a-zA-Z0-9-]+)/)?.[1]; return id ? `https://www.loom.com/embed/${id}` : null; }
   if (host === 'vimeo.com' || host === 'player.vimeo.com') { const id = u.pathname.match(/(?:^\/|\/video\/)(\d+)/)?.[1]; return id ? `https://player.vimeo.com/video/${id}${u.searchParams.has('h') ? `?h=${encodeURIComponent(u.searchParams.get('h') ?? '')}` : ''}` : null; }

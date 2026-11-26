@@ -53,3 +53,9 @@
 - [x] Alternar mês/semana, histórico e troca administrativa com período explícito.
 - [x] Reproduzir vídeo no card sob demanda, tratar erros e renovar uma vez sem persistir URL.
 - [x] Validação: 23 testes unitários passaram; navegador com dados controlados conferiu vendedor/admin, histórico mensal/semanal, troca com p_periodo, reprodução, renovação única, quatro erros e mobile claro/escuro. Backend não alterado; sessão real indisponível, integração com Read AI real não verificada.
+
+# Black Ops — correções de treinamento
+- [x] Usar somente os alvos ativos da régua, títulos na biblioteca e erros do banco no toast.
+- [x] Exibir vídeos em modal de tela inteira, preservando progresso e conclusão.
+- [x] Listar todos os materiais aprovados para vendedores, agrupados por alvo e com recomendações.
+- [x] Validar: 29 testes unitários passaram; navegador controlado conferiu catálogo sem gap para Luka/Fillipe simulados, 7 critérios/9 guardrails, erros de insert/update, progresso e conclusão, YouTube/Loom/Vimeo/vídeo privado, tela inteira 16:9 em claro/escuro/mobile. Conta temporária real redirecionou para login do CRM externo; dados reais e incorporação dos vídeos originais não verificados. Sem alterações em banco, views ou funções.
