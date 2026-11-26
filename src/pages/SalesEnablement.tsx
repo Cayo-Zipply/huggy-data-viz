@@ -579,7 +579,7 @@ export default function SalesEnablement() {
           <TabsTrigger value="reunioes">Reuniões</TabsTrigger>
           <TabsTrigger value="evolucao">Evolução</TabsTrigger>
           <TabsTrigger value="rubrica">Legenda</TabsTrigger>
-          <TabsTrigger value="reuniao-semana">Reunião da semana</TabsTrigger>
+          <TabsTrigger value="reuniao-semana">Reunião em destaque</TabsTrigger>
           <TabsTrigger value="treinamento">Treinamento</TabsTrigger>
         </TabsList>
 

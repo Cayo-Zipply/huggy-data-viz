@@ -48,3 +48,8 @@
 - [x] Adicionar gaps, materiais privados e progresso do próprio usuário.
 - [x] Adicionar biblioteca, cobertura e acompanhamento administrativos.
 - [x] Testar com dados controlados: vendedor/admin, consultas sob demanda, semana/histórico/troca, CRUD e status, upload privado, filtro por closer, vídeo/PDF, assinatura e conclusão com falhas/sucesso, claro/escuro e mobile; sem mudanças no backend. Sessão temporária não acessa o CRM externo: integração com dados reais não verificada.
+
+# Black Ops — reunião em destaque
+- [x] Alternar mês/semana, histórico e troca administrativa com período explícito.
+- [x] Reproduzir vídeo no card sob demanda, tratar erros e renovar uma vez sem persistir URL.
+- [x] Validação: 23 testes unitários passaram; navegador com dados controlados conferiu vendedor/admin, histórico mensal/semanal, troca com p_periodo, reprodução, renovação única, quatro erros e mobile claro/escuro. Backend não alterado; sessão real indisponível, integração com Read AI real não verificada.
