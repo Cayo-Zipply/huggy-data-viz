@@ -64,3 +64,9 @@
 - [x] Selecionar primeiro closer para admin e filtrar apenas suas duas views; vendedor sem filtros de identidade.
 - [x] Corrigir estados vazios e exibir Todos os materiais também na visão administrativa.
 - [x] Validar: 24 testes unitários passaram; navegador com dados controlados conferiu seleção inicial/deduplicação, Fillipe/Luka nas duas views, vendedor sem seletor/filtros, catálogo independente, conclusão e estados de vazio/erro em claro e mobile escuro. Sem alterações no banco; contas e conteúdos reais não verificados.
+
+# Treinamento — página própria
+- [ ] Separar rota/menu e acesso pelo Black Ops; manter gestão apenas para admin.
+- [ ] Exibir destaque, fileiras, capas, progresso, gaps recolhidos e descrição no player.
+- [ ] Adicionar capa opcional na biblioteca e corrigir associação por closer/código.
+- [ ] Validar regras, navegação e telas; registrar limites da validação real.

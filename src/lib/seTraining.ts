@@ -4,6 +4,7 @@ export type TrainingContent = {
   id: string; titulo: string; descricao: string | null; tipo: 'video' | 'arquivo' | 'link';
   url: string | null; storage_path: string | null; codigo_alvo: string; duracao_min: number | null;
   ordem: number; status: 'rascunho' | 'aprovado' | 'arquivado';
+  capa_path?: string | null; capa_url?: string | null; criado_em?: string | null; aprovado_em?: string | null; created_at?: string | null;
 };
 export const draftTrainingContent = (values: Omit<TrainingContent, 'id' | 'status'>) => ({ ...values, status: 'rascunho' as const });
 export type TrainingGap = {
@@ -15,8 +16,9 @@ export type TrainingSuggestion = TrainingGap & {
   conteudo_id: string | null; conteudo_titulo: string | null; descricao: string | null;
   conteudo_tipo: TrainingContent['tipo']; url: string | null; storage_path: string | null;
   duracao_min: number | null; ordem: number; iniciado_em: string | null; concluido_em: string | null;
+  capa_path?: string | null; capa_url?: string | null;
 };
-export type TrainingPlayable = Pick<TrainingSuggestion, 'conteudo_id' | 'conteudo_titulo' | 'descricao' | 'conteudo_tipo' | 'url' | 'storage_path' | 'duracao_min' | 'iniciado_em' | 'concluido_em'>;
+export type TrainingPlayable = Pick<TrainingSuggestion, 'conteudo_id' | 'conteudo_titulo' | 'descricao' | 'conteudo_tipo' | 'url' | 'storage_path' | 'duracao_min' | 'iniciado_em' | 'concluido_em' | 'capa_path' | 'capa_url'> & { codigo_alvo?: string; alvo_titulo?: string; gap_titulo?: string };
 export type TrainingProgress = { conteudo_id: string; iniciado_em: string | null; concluido_em: string | null };
 export const selectedTrainingCloser = (selected: string, closers: string[]) => closers.includes(selected) ? selected : closers[0] ?? '';
 export function trainingViewQuery(client: Pick<SupabaseClient, 'from'>, view: 'vw_se_gaps_closer' | 'vw_se_treinamento_sugestoes', closer: string | null) {
@@ -37,6 +39,7 @@ export function groupTrainingLibrary(contents: TrainingContent[], rubric: Rubric
     group.contents.push({ recommended: recommended.has(c.id), content: {
       conteudo_id: c.id, conteudo_titulo: c.titulo, descricao: c.descricao, conteudo_tipo: c.tipo, url: c.url,
       storage_path: c.storage_path, duracao_min: c.duracao_min, iniciado_em: p?.iniciado_em ?? null, concluido_em: p?.concluido_em ?? null,
+      capa_path: c.capa_path, capa_url: c.capa_url, codigo_alvo: c.codigo_alvo, alvo_titulo: group.titulo,
     } });
     groups.set(c.codigo_alvo, group);
   }
@@ -65,7 +68,29 @@ export const gapKey = (g: TrainingGap) => `${g.closer}|${g.tipo_gap}|${g.codigo}
 export function groupTraining(gaps: TrainingGap[], suggestions: TrainingSuggestion[], closer: string) {
   return gaps.filter(g => (g.posicao ?? g.posicao_gap ?? Infinity) <= 4 && (closer === 'todos' || g.closer === closer))
     .sort((a,b) => (a.posicao ?? a.posicao_gap ?? 0)-(b.posicao ?? b.posicao_gap ?? 0))
-    .map(g => ({ gap:g, contents:suggestions.filter(s => s.conteudo_id && gapKey(s) === gapKey(g)).sort((a,b) => (a.ordem ?? 0)-(b.ordem ?? 0)) }));
+    .map(g => ({ gap:g, contents:suggestions.filter(s => s.conteudo_id && s.closer === g.closer && s.codigo === g.codigo).sort((a,b) => (a.ordem ?? 0)-(b.ordem ?? 0)) }));
+}
+export function youtubeTrainingThumbnail(value: string | null | undefined): string | null {
+  const embed = embedTrainingUrl(value);
+  const id = embed?.match(/^https:\/\/www\.youtube-nocookie\.com\/embed\/([\w-]+)/)?.[1];
+  return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
+}
+export function trainingExperience(library: TrainingContent[], suggestions: TrainingSuggestion[], progress: TrainingProgress[], rubric: RubricaSE[]) {
+  const groups = groupTrainingLibrary(library, rubric, suggestions, progress);
+  const catalog = groups.flatMap(g => g.contents.map(c => c.content));
+  const recommended: TrainingPlayable[] = [];
+  const seen = new Set<string>();
+  for (const s of [...suggestions].sort((a,b) => (a.posicao_gap ?? a.posicao ?? Infinity) - (b.posicao_gap ?? b.posicao ?? Infinity) || (a.ordem ?? 0) - (b.ordem ?? 0))) {
+    if (!s.conteudo_id || seen.has(s.conteudo_id)) continue;
+    seen.add(s.conteudo_id);
+    const c = catalog.find(c => c.conteudo_id === s.conteudo_id);
+    recommended.push({ ...c, ...s, capa_path: s.capa_path ?? c?.capa_path, capa_url: s.capa_url ?? c?.capa_url, codigo_alvo: s.codigo, alvo_titulo: trainingTargetTitle(rubric, s.codigo), gap_titulo: s.gap_titulo ?? s.titulo ?? trainingTargetTitle(rubric, s.codigo) });
+  }
+  const latest = [...library].filter(c => c.status === 'aprovado').sort((a,b) => (b.aprovado_em ?? b.criado_em ?? b.created_at ?? '').localeCompare(a.aprovado_em ?? a.criado_em ?? a.created_at ?? ''))[0];
+  const hero = recommended.find(c => !c.concluido_em) ?? catalog.find(c => c.conteudo_id === latest?.id) ?? null;
+  const byId = new Map(catalog.map(c => [c.conteudo_id,c]));
+  recommended.forEach(c => byId.set(c.conteudo_id,c));
+  return { groups, recommended, hero, continuing: [...byId.values()].filter(c => c.iniciado_em && !c.concluido_em) };
 }
 export async function signedTrainingUrl(client: Pick<SupabaseClient, 'storage'>, path: string) {
   const { data, error } = await client.storage.from('treinamento').createSignedUrl(path, 3600);
