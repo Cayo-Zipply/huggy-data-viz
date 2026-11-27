@@ -8,8 +8,8 @@ export type TrainingContent = {
 export const draftTrainingContent = (values: Omit<TrainingContent, 'id' | 'status'>) => ({ ...values, status: 'rascunho' as const });
 export type TrainingTrack = { codigo: string; titulo: string; ordem: number | null; ativo?: boolean | null };
 export type TrainingFocus = { closer?: string | null; posicao: number | null; trilha?: string | null; trilha_codigo?: string | null; codigo?: string | null };
-export type TrainingProgress = { conteudo_id: string; iniciado_em?: string | null; concluido_em: string | null };
-export type TrainingPlayable = TrainingContent & { concluido_em: string | null };
+export type TrainingProgress = { conteudo_id: string; iniciado_em?: string | null; concluido_em: string | null; segundos_assistidos?: number | null };
+export type TrainingPlayable = TrainingContent & { concluido_em: string | null; segundos_assistidos?: number | null };
 export type TrainingRow = { codigo: string; titulo: string; foco: boolean; contents: TrainingPlayable[] };
 export const selectedTrainingCloser = (selected: string, closers: string[]) => closers.includes(selected) ? selected : closers[0] ?? '';
 /** Admin filtra pelo closer escolhido; vendedor recebe do banco só as próprias linhas, sem filtro de identidade. */
@@ -26,10 +26,10 @@ export function focusTrackCodes(focus: TrainingFocus[]) {
 /** Uma fileira por trilha ativa com vídeo; foco primeiro, depois a ordem normal. */
 export function trainingRows(tracks: TrainingTrack[], contents: TrainingContent[], focus: TrainingFocus[], progress: TrainingProgress[]): TrainingRow[] {
   const focusCodes = focusTrackCodes(focus);
-  const done = new Map(progress.map(p => [p.conteudo_id, p.concluido_em ?? null]));
+  const done = new Map(progress.map(p => [p.conteudo_id, p]));
   const rows = [...tracks].filter(t => t.ativo !== false).sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)).map(t => ({
     codigo: t.codigo, titulo: t.titulo, foco: focusCodes.includes(t.codigo),
-    contents: contents.filter(c => c.trilha === t.codigo && c.status === 'aprovado').sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)).map(c => ({ ...c, concluido_em: done.get(c.id) ?? null })),
+    contents: contents.filter(c => c.trilha === t.codigo && c.status === 'aprovado').sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)).map(c => ({ ...c, concluido_em: done.get(c.id)?.concluido_em ?? null, segundos_assistidos: done.get(c.id)?.segundos_assistidos ?? null })),
   })).filter(r => r.contents.length > 0);
   return [...rows.filter(r => r.foco).sort((a, b) => focusCodes.indexOf(a.codigo) - focusCodes.indexOf(b.codigo)), ...rows.filter(r => !r.foco)];
 }
@@ -72,15 +72,6 @@ export async function signedTrainingUrl(client: Pick<SupabaseClient, 'storage'>,
   if (error) throw error;
   if (!data?.signedUrl) throw new Error('Não foi possível abrir o arquivo.');
   return data.signedUrl;
-}
-export async function startTraining(client: Pick<SupabaseClient, 'from'>, conteudoId: string) {
-  const { error } = await client.from('se_treinamento_progresso').upsert({ conteudo_id: conteudoId }, { onConflict: 'user_id,conteudo_id', ignoreDuplicates: true });
-  if (error) throw error;
-}
-export async function completeTraining(client: Pick<SupabaseClient, 'from'>, conteudoId: string, userId: string) {
-  const { data, error } = await client.from('se_treinamento_progresso').update({ concluido_em: new Date().toISOString() }).eq('conteudo_id', conteudoId).eq('user_id', userId).select('conteudo_id');
-  if (error) throw error;
-  if (!data?.length) throw new Error('Não foi possível concluir este conteúdo. Abra-o novamente e tente de novo.');
 }
 export async function downloadTraining(url: string, name: string) {
   const response = await fetch(url);

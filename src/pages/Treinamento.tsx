@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { selectedTrainingCloser, signedTrainingCovers, trainingCover, trainingFocusQuery, trainingRows, type TrainingContent, type TrainingFocus, type TrainingPlayable, type TrainingProgress } from '@/lib/seTraining';
 import { useTrainingTracks } from '@/hooks/useTrainingTracks';
+import { useMyTrainingProgress } from '@/hooks/useMyTrainingProgress';
 import { TrainingCard } from '@/components/se/TrainingCard';
 import { TrainingViewer } from '@/components/se/TrainingViewer';
 import { TrainingAdmin } from '@/components/se/TrainingAdmin';
@@ -25,6 +26,7 @@ export default function Treinamento() {
   const [opened, setOpened] = useState<TrainingPlayable | null>(null);
   const [managing, setManaging] = useState(false);
   const tracks = useTrainingTracks(!!user);
+  const myProgress = useMyTrainingProgress();
   const contents = useQuery({
     queryKey: ['se-training-library', user?.id, 'aprovados'], enabled: !!user,
     queryFn: async () => {
@@ -54,7 +56,7 @@ export default function Treinamento() {
   const { data: progress = [] } = useQuery({
     queryKey: ['se-training-progress', user?.id], enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase.from('se_treinamento_progresso').select('conteudo_id,concluido_em').eq('user_id', user!.id);
+      const { data, error } = await supabase.from('se_treinamento_progresso').select('conteudo_id,concluido_em,segundos_assistidos').eq('user_id', user!.id);
       if (error) throw error;
       return (data ?? []) as TrainingProgress[];
     },
@@ -95,7 +97,7 @@ export default function Treinamento() {
           {row.foco && <Badge variant="outline" className="shrink-0 whitespace-nowrap border-primary/40 text-primary">Seu foco</Badge>}
         </div>
         <div className="-mx-6 flex snap-x gap-4 overflow-x-auto px-6 pb-3 scroll-px-6">
-          {row.contents.map(c => <TrainingCard key={c.id} content={c} cover={trainingCover(c, covers)} onOpen={setOpened} />)}
+          {row.contents.map(c => <TrainingCard key={c.id} content={c} cover={trainingCover(c, covers)} progress={myProgress.get(`conteudo:${c.id}`)} onOpen={setOpened} />)}
         </div>
       </section>)}
 
@@ -105,6 +107,6 @@ export default function Treinamento() {
         {managing && <TrainingAdmin />}
       </DialogContent>
     </Dialog>}
-    {opened && <TrainingViewer key={opened.id} content={opened} onClose={() => setOpened(null)} />}
+    {opened && <TrainingViewer key={opened.id} content={opened} progress={myProgress.get(`conteudo:${opened.id}`)} onClose={() => setOpened(null)} />}
   </div>;
 }

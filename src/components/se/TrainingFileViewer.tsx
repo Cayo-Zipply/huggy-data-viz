@@ -6,19 +6,22 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { completeTraining, downloadTraining, presentationHtml, signedTrainingUrl, startTraining, trainingErrorMessage, trainingFileFormat, TRAINING_CLOSE_MESSAGE, type TrainingPlayable } from '@/lib/seTraining';
+import { downloadTraining, presentationHtml, signedTrainingUrl, trainingErrorMessage, trainingFileFormat, TRAINING_CLOSE_MESSAGE, type TrainingPlayable } from '@/lib/seTraining';
+import { registerTrainingProgress, type MyProgress } from '@/lib/seProgress';
+import { MY_TRAINING_PROGRESS_KEY } from '@/hooks/useMyTrainingProgress';
 
 type Frame = { src: string } | { html: string };
 type Action = 'apresentar' | 'aba' | 'baixar' | 'concluir' | null;
 
 /** Modal de um arquivo do bucket privado: apresenta HTML/PDF em tela cheia dentro do Farol. */
-export function TrainingFileViewer({ content, onClose }: { content: TrainingPlayable; onClose: () => void }) {
+export function TrainingFileViewer({ content, progress, onClose }: { content: TrainingPlayable; progress?: MyProgress; onClose: () => void }) {
   const { user } = useAuth(); const qc = useQueryClient(); const { toast } = useToast();
   const format = trainingFileFormat(content.storage_path);
   const urlRef = useRef<string | null>(null); const iframe = useRef<HTMLIFrameElement>(null);
   const [frame, setFrame] = useState<Frame | null>(null);
   const [action, setAction] = useState<Action>(null);
-  const [completed, setCompleted] = useState(!!content.concluido_em);
+  const [completed, setCompleted] = useState(!!content.concluido_em || progress?.status === 'concluido');
+  const refresh = () => Promise.all([qc.invalidateQueries({ queryKey: [MY_TRAINING_PROGRESS_KEY] }), qc.invalidateQueries({ queryKey: ['se-training-progress'] })]);
 
   // A URL assinada (1h) só é gerada no primeiro clique e reaproveitada nos três botões.
   const fileUrl = async () => {
@@ -28,7 +31,7 @@ export function TrainingFileViewer({ content, onClose }: { content: TrainingPlay
   };
   const markStarted = async () => {
     if (!content.id || !user) return;
-    try { await startTraining(supabase, content.id); void qc.invalidateQueries({ queryKey: ['se-training-progress'] }); } catch { /* progresso não impede a leitura */ }
+    try { await registerTrainingProgress(supabase, content.id, 0, null, false); void refresh(); } catch { /* progresso não impede a leitura */ }
   };
   const present = async () => {
     setAction('apresentar');
@@ -67,9 +70,9 @@ export function TrainingFileViewer({ content, onClose }: { content: TrainingPlay
     if (!user || !content.id) return;
     setAction('concluir');
     try {
-      await startTraining(supabase, content.id); await completeTraining(supabase, content.id, user.id);
-      setCompleted(true); await qc.invalidateQueries({ queryKey: ['se-training-progress'] }); toast({ title: 'Marcado como assistido' });
-    } catch (e) { toast({ title: 'Não foi possível marcar como assistido', description: trainingErrorMessage(e), variant: 'destructive' }); }
+      await registerTrainingProgress(supabase, content.id, 0, null, true);
+      setCompleted(true); await refresh(); toast({ title: 'Marcado como concluído' });
+    } catch (e) { toast({ title: 'Não foi possível marcar como concluído', description: trainingErrorMessage(e), variant: 'destructive' }); }
     finally { setAction(null); }
   };
 
@@ -106,7 +109,7 @@ export function TrainingFileViewer({ content, onClose }: { content: TrainingPlay
         {viewable && <Button variant="outline" disabled={busy} onClick={() => void openTab()}>{spin('aba', ExternalLink)}Abrir em nova aba</Button>}
         <Button variant="outline" disabled={busy} onClick={() => void download()}>{spin('baixar', Download)}Baixar arquivo</Button>
       </div>
-      <div className="border-t border-border pt-4"><Button variant={viewable ? 'outline' : 'default'} disabled={busy || completed} onClick={() => void finish()}><Check className="mr-2 h-4 w-4" />{completed ? 'Assistido' : action === 'concluir' ? 'Salvando…' : 'Marcar como assistido'}</Button></div>
+      <div className="border-t border-border pt-4"><Button variant={viewable ? 'outline' : 'default'} disabled={busy || completed} onClick={() => void finish()}><Check className="mr-2 h-4 w-4" />{completed ? 'Concluído' : action === 'concluir' ? 'Salvando…' : 'Marcar como concluído'}</Button></div>
     </DialogContent>}
   </Dialog>;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { completeTraining, dateSE, draftTrainingContent, embedTrainingUrl, focusTrackCodes, nextDay, safeLink, selectedTrainingCloser, signedTrainingCovers, signedTrainingUrl, startTraining, trainingCover, trainingErrorMessage, trainingFocusQuery, trainingRows, youtubeTrainingThumbnail, type TrainingContent, type TrainingTrack } from '../src/lib/seTraining';
+import { dateSE, draftTrainingContent, embedTrainingUrl, focusTrackCodes, nextDay, safeLink, selectedTrainingCloser, signedTrainingCovers, signedTrainingUrl, trainingCover, trainingErrorMessage, trainingFocusQuery, trainingRows, youtubeTrainingThumbnail, type TrainingContent, type TrainingTrack } from '../src/lib/seTraining';
 import type { SupabaseClient } from '@supabase/supabase-js';
 describe('Treinamento e reunião da semana',()=>{
  test('admin inicia no primeiro closer e mantém uma seleção válida',()=>{
@@ -38,18 +38,6 @@ describe('Treinamento e reunião da semana',()=>{
  test('falha da assinatura não gera URL pública de fallback',async()=>{
   const client={storage:{from:()=>({createSignedUrl:async()=>({data:null,error:new Error('negado')})})}} as unknown as Pick<SupabaseClient,'storage'>;
   await expect(signedTrainingUrl(client,'privado.pdf')).rejects.toThrow('negado');
- });
- test('abrir registra só conteudo_id sem sobrescrever conclusão prévia',async()=>{
-  const calls:unknown[]=[];const client={from:(table:string)=>{calls.push(table);return {upsert:async(...args:unknown[])=>{calls.push(...args);return {error:null};}};}} as unknown as Pick<SupabaseClient,'from'>;
-  await startTraining(client,'aula-1');expect(calls).toEqual(['se_treinamento_progresso',{conteudo_id:'aula-1'},{onConflict:'user_id,conteudo_id',ignoreDuplicates:true}]);
- });
- test('concluir atualiza somente a linha do usuário e conteúdo atuais',async()=>{
-  const calls:unknown[]=[];const builder={update:(value:unknown)=>{calls.push(value);return builder;},eq:(...args:unknown[])=>{calls.push(args);return builder;},select:async()=>({data:[{conteudo_id:'aula-1'}],error:null})};
-  const client={from:()=>builder} as unknown as Pick<SupabaseClient,'from'>;await completeTraining(client,'aula-1','user-1');expect(calls).toContainEqual(['conteudo_id','aula-1']);expect(calls).toContainEqual(['user_id','user-1']);expect(Number.isNaN(Date.parse((calls[0] as {concluido_em:string}).concluido_em))).toBe(false);
- });
- test('conclusão sem linha retornada é erro, não sucesso',async()=>{
-  const b={update:()=>b,eq:()=>b,select:async()=>({data:[],error:null})};const c={from:()=>b} as unknown as Pick<SupabaseClient,'from'>;
-  await expect(completeTraining(c,'aula','user')).rejects.toThrow('A');
  });
 });
 
