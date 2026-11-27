@@ -44,6 +44,7 @@ import {
 import { PlacarTab } from "@/components/se/PlacarTab";
 import { PontualidadeTab } from "@/components/se/PontualidadeTab";
 import { ReuniaoSemanaTab } from "@/components/se/ReuniaoSemanaTab";
+import { FundamentosTab } from "@/components/se/FundamentosTab";
 import { useAuth } from "@/contexts/AuthContext";
 import { ScreenRefreshing } from "@/components/ScreenRefreshing";
 import { SE_VIEW_KEYS, SE_STALE_TIME } from "@/lib/screenCache";
@@ -579,6 +580,7 @@ export default function SalesEnablement() {
           <TabsTrigger value="evolucao">Evolução</TabsTrigger>
           <TabsTrigger value="rubrica">Legenda</TabsTrigger>
           <TabsTrigger value="reuniao-semana">Reunião em destaque</TabsTrigger>
+          <TabsTrigger value="treinamento">Treinamento</TabsTrigger>
         </TabsList>
 
         <TabsContent value="desempenho" className="mt-4">
@@ -630,6 +632,9 @@ export default function SalesEnablement() {
         </TabsContent>
         <TabsContent value="reuniao-semana" className="mt-4">
           <ReuniaoSemanaTab />
+        </TabsContent>
+        <TabsContent value="treinamento" className="mt-4">
+          <FundamentosTab />
         </TabsContent>
       </Tabs>
     </div>
