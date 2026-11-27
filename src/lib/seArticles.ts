@@ -2,7 +2,7 @@
 export const APPROVAL_SCORE = 70;
 export type Article = {
   id: string; slug: string | null; modulo: string | null; titulo: string | null; resumo: string | null;
-  ordem: number | null; nivel: string | null; tempo_leitura_min: number | null; conteudo_md?: string | null;
+  ordem: number | null; nivel: string | null; tempo_leitura_min: number | null; capa: string | null; conteudo_md?: string | null;
 };
 export type QuizOption = { id: string; texto: string };
 export type QuizQuestion = { id: string; ordem: number | null; pergunta: string; alternativas: QuizOption[]; correta: string; explicacao: string | null };

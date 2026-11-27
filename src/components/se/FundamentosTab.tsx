@@ -28,7 +28,7 @@ export function FundamentosTab() {
   const { data: articles = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['se-articles'],
     queryFn: async () => {
-      const { data, error } = await db.from('se_treinamentos').select('id,slug,modulo,titulo,resumo,ordem,nivel,tempo_leitura_min').eq('ativo', true).order('ordem', { ascending: true });
+      const { data, error } = await db.from('se_treinamentos').select('id,slug,modulo,titulo,resumo,ordem,nivel,tempo_leitura_min,capa').eq('ativo', true).order('ordem', { ascending: true });
       if (error) throw error; return (data ?? []) as Article[];
     },
   });
@@ -51,6 +51,7 @@ export function FundamentosTab() {
       <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{g.modulo}</h2>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {g.items.map(a => <button key={a.id} type="button" onClick={() => setOpen(a)} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          {a.capa && <img src={a.capa} alt="" loading="lazy" decoding="async" className="h-32 w-full max-w-full rounded-lg object-cover" />}
           <div className="flex items-start justify-between gap-2">
             <h3 className="min-w-0 break-words text-base font-semibold leading-snug">{a.titulo}</h3>
             {best[a.id] != null && <span className={cn('shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold tabular-nums', scoreTone(best[a.id]))}>Nota {best[a.id]}</span>}
