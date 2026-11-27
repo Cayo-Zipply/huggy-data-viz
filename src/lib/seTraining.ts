@@ -95,3 +95,21 @@ export const dateSE = (value: string | null | undefined, time = false) => {
   const d = new Date(value.length === 10 ? `${value}T12:00:00Z` : /(?:Z|[+-]\d{2}:?\d{2})$/i.test(local) ? local : `${local}-03:00`);
   return Number.isNaN(d.getTime()) ? value : d.toLocaleString('pt-BR', { timeZone:'America/Sao_Paulo', day:'2-digit', month:'2-digit', year:'numeric', ...(time ? { hour:'2-digit', minute:'2-digit' } as const : {}) });
 };
+
+export type TrainingFileFormat = 'apresentacao' | 'pdf' | 'download';
+/** Formato do arquivo pelo final do storage_path: .html/.htm apresenta, .pdf exibe, o resto só baixa. */
+export function trainingFileFormat(path: string | null | undefined): TrainingFileFormat {
+  const clean = (path ?? '').split(/[?#]/)[0].trim().toLowerCase();
+  if (/\.html?$/.test(clean)) return 'apresentacao';
+  if (/\.pdf$/.test(clean)) return 'pdf';
+  return 'download';
+}
+export const TRAINING_CLOSE_MESSAGE = 'farol-training-close';
+/** Acrescenta ao HTML o aviso de Esc, já que teclas dentro do iframe não chegam à página do Farol. */
+export function presentationHtml(html: string): string {
+  const script = `<script>addEventListener('keydown',function(e){if(e.key==='Escape')parent.postMessage('${TRAINING_CLOSE_MESSAGE}','*')},true)</script>`;
+  const head = html.match(/<head[^>]*>/i) ?? html.match(/<html[^>]*>/i);
+  if (!head || head.index == null) return html + script;
+  const at = head.index + head[0].length;
+  return html.slice(0, at) + script + html.slice(at);
+}

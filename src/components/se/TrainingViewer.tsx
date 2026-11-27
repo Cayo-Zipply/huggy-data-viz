@@ -6,9 +6,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { TrainingFileViewer } from './TrainingFileViewer';
 import { completeTraining, downloadTraining, embedTrainingUrl, safeLink, signedTrainingUrl, startTraining, trainingErrorMessage, type TrainingPlayable } from '@/lib/seTraining';
 
-export function TrainingViewer({ content, onClose }: { content: TrainingPlayable; onClose: () => void }) {
+function TrainingMediaViewer({ content, onClose }: { content: TrainingPlayable; onClose: () => void }) {
   const { user } = useAuth(); const qc = useQueryClient(); const { toast } = useToast();
   const [url, setUrl] = useState<string | null>(null); const [loading, setLoading] = useState(true);
   const [error, setError] = useState(''); const [progressReady, setProgressReady] = useState(false);
@@ -63,4 +64,9 @@ export function TrainingViewer({ content, onClose }: { content: TrainingPlayable
       <div className="border-t border-border pt-4"><Button disabled={busy || completed || !progressReady} onClick={() => void finish()}><Check className="h-4 w-4 mr-2" />{completed ? 'Assistido' : busy ? 'Salvando…' : 'Marcar como assistido'}</Button></div>
     </div>)}
   </DialogContent></Dialog>;
+}
+
+/** Arquivos do bucket privado abrem no visualizador próprio; vídeos e links seguem como antes. */
+export function TrainingViewer(props: { content: TrainingPlayable; onClose: () => void }) {
+  return props.content.tipo !== 'video' && props.content.storage_path ? <TrainingFileViewer {...props} /> : <TrainingMediaViewer {...props} />;
 }

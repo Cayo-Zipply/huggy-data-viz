@@ -98,3 +98,21 @@ describe('Página de treinamento', () => {
   expect(trainingErrorMessage(new Error('Falha de upload'))).toBe('Falha de upload');
  });
 });
+
+describe('formato do arquivo de treinamento', () => {
+  test('.html e .htm viram apresentação', async () => {
+    const { trainingFileFormat } = await import('../src/lib/seTraining');
+    expect(trainingFileFormat('scripts/relatorio.html')).toBe('apresentacao');
+    expect(trainingFileFormat('scripts/Relatorio.HTM')).toBe('apresentacao');
+  });
+  test('.pdf vira pdf', async () => {
+    const { trainingFileFormat } = await import('../src/lib/seTraining');
+    expect(trainingFileFormat('guias/manual.PDF')).toBe('pdf');
+  });
+  test('qualquer outro formato só baixa', async () => {
+    const { trainingFileFormat } = await import('../src/lib/seTraining');
+    expect(trainingFileFormat('planilhas/metas.xlsx')).toBe('download');
+    expect(trainingFileFormat('arquivo.html.zip')).toBe('download');
+    expect(trainingFileFormat(null)).toBe('download');
+  });
+});

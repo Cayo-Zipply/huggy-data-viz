@@ -158,6 +158,8 @@ html {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
 }
+/* Fundo fixo do visualizador de apresentações (#0E0E0E). */
+.training-present { --background: 0 0% 5.5%; }
 .training-cover { background-color: hsl(var(--training-player-border)); color: hsl(var(--training-player-foreground)); }
 .training-cover-chip { background-color: hsl(var(--training-player-background) / 0.8); color: hsl(var(--training-player-foreground)); }
 .training-video-stage { container-type: size; }
