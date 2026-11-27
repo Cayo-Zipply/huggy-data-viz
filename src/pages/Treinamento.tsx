@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { Settings2 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseExternal';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,9 +13,14 @@ import { useTrainingTracks } from '@/hooks/useTrainingTracks';
 import { TrainingCard } from '@/components/se/TrainingCard';
 import { TrainingViewer } from '@/components/se/TrainingViewer';
 import { TrainingAdmin } from '@/components/se/TrainingAdmin';
+import { FundamentosTab } from '@/components/se/FundamentosTab';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function Treinamento() {
   const { isAdmin, user } = useAuth();
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('aba') === 'artigos' ? 'artigos' : 'videos';
+  const setTab = (v: string) => setParams(prev => { const next = new URLSearchParams(prev); if (v === 'artigos') next.set('aba', 'artigos'); else next.delete('aba'); return next; });
   const [closer, setCloser] = useState('');
   const [opened, setOpened] = useState<TrainingPlayable | null>(null);
   const [managing, setManaging] = useState(false);
@@ -65,7 +71,7 @@ export default function Treinamento() {
   return <div className="space-y-8 p-6">
     <header className="flex flex-wrap items-center justify-between gap-3">
       <h1 className="text-2xl font-semibold">Treinamento</h1>
-      {isAdmin && <div className="flex flex-wrap items-center gap-2">
+      {isAdmin && tab === 'videos' && <div className="flex flex-wrap items-center gap-2">
         <Select value={selectedCloser} onValueChange={setCloser} disabled={!closers.length}>
           <SelectTrigger aria-label="Ver como" className="w-52 max-w-full"><span className="mr-1 text-muted-foreground">Ver como</span><SelectValue placeholder="—" /></SelectTrigger>
           <SelectContent>{closers.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
@@ -73,8 +79,11 @@ export default function Treinamento() {
         <Button variant="outline" onClick={() => setManaging(true)}><Settings2 className="mr-2 h-4 w-4" />Gerenciar</Button>
       </div>}
     </header>
+    <Tabs value={tab} onValueChange={setTab}>
+      <TabsList><TabsTrigger value="videos">Vídeos</TabsTrigger><TabsTrigger value="artigos">Artigos e provas</TabsTrigger></TabsList>
+    </Tabs>
 
-    {loading ? <div className="space-y-8" aria-busy="true">{[0, 1].map(r => <div key={r} className="space-y-3">
+    {tab === 'artigos' ? <FundamentosTab /> : loading ? <div className="space-y-8" aria-busy="true">{[0, 1].map(r => <div key={r} className="space-y-3">
       <div className="h-6 w-48 animate-pulse rounded bg-muted" />
       <div className="flex gap-4 overflow-hidden">{[0, 1, 2, 3].map(i => <div key={i} className="aspect-video w-72 shrink-0 animate-pulse rounded-xl bg-muted" />)}</div>
     </div>)}</div>
